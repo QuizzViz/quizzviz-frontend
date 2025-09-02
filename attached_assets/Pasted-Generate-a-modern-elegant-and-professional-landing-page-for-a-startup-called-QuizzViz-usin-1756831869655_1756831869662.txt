@@ -1,0 +1,50 @@
+Generate a **modern, elegant, and professional landing page** for a startup called **QuizzViz** using **Next.js, TypeScript, and Tailwind CSS**. The design should be **clean, white-themed, and minimalistic**, inspired by websites like Scale AI.  
+
+---
+
+## 🔹 Requirements
+
+### 1. Logo & Animation  
+- Use the logo image I will attach.  
+- Animate the logo on page load using **CSS/Tailwind animations** (e.g., a smooth spin-in, fade-in, or scale-up effect).  
+- The animation must be **lightweight and not slow down performance**.  
+
+### 2. Hero Section (Top)  
+- Large centered logo with animation.  
+- Tagline: **"Hire Smarter, Faster."**  
+- Sub-tagline: **"Create enterprise-grade skill quizzes in under 3 minutes and filter the right candidates instantly."**  
+- A **primary CTA button**: “Get Started” (links to signup).  
+- Below the button, embed this YouTube demo video:  
+  `https://www.youtube.com/watch?v=LM683z0glJM`  
+
+### 3. Problems We Solve Section (MVP)  
+- Use a **3-column or stacked layout** with icons and short descriptions:  
+  - **Problem 1:** Making a good, real-world quiz takes at least a week → QuizzViz enables companies to create high-quality quizzes in **under 3 minutes**.  
+  - **Problem 2:** Helps filter participants with the right skillset → improving **applicant satisfaction**.  
+  - **Problem 3:** Saves companies’ time → avoids interviewing **wrong candidates**.  
+
+### 4. Features / Benefits Section  
+- Simple cards showing **speed, accuracy, efficiency, and scalability**.  
+
+### 5. Navbar  
+- Left: Logo (smaller version, animated subtly on hover).  
+- Right: Links → **About, Login, Signup**.  
+
+### 6. Footer  
+- Professional minimal footer with:  
+  - QuizzViz © 2025  
+  - Links → About, Privacy Policy, Terms, Contact  
+
+### 7. Technical Requirements  
+- Use **Next.js 14, TypeScript, Tailwind CSS**.  
+- Use **CSS animations & Tailwind transitions** (no Framer Motion).  
+- Responsive design (mobile, tablet, desktop).  
+- SEO-optimized with **meta tags and proper headings**.  
+
+---
+
+## 🔹 Deliverables  
+- A complete landing page in `pages/index.tsx`.  
+- Navbar and Footer as reusable components in `/components`.  
+- Tailwind configuration for elegant typography + spacing.  
+- Fully responsive, optimized, and production-ready.  
