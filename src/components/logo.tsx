@@ -1,4 +1,3 @@
-import logoPath from "@assets/Gemini_Generated_Image_pvxj0mpvxj0mpvxj_1756831893216.png";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
@@ -8,10 +7,10 @@ interface LogoProps {
 
 export function Logo({ size = "md", animate = false, className = "" }: LogoProps) {
   const sizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-12 h-12",
+    sm: "w-12 h-12",
+    md: "w-20 h-20",
     lg: "w-32 h-32",
-    xl: "w-40 h-40",
+    xl: "w-44 h-44"
   };
 
   return (
@@ -20,7 +19,7 @@ export function Logo({ size = "md", animate = false, className = "" }: LogoProps
       data-testid="logo-container"
     >
       <img
-        src={logoPath}
+        src={'/QuizzViz-Logo.png'}
         alt="QuizzViz Logo"
         className="w-full h-full object-contain drop-shadow-lg"
         data-testid="logo-image"

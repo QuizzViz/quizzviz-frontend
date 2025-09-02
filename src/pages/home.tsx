@@ -55,7 +55,7 @@ export default function Home() {
         
         <div className="relative z-10 text-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Animated Logo */}
-          <div className="mb-12 flex justify-center" data-testid="hero-logo-container">
+          <div className="mb-4 flex justify-center" data-testid="hero-logo-container">
             <Logo size="xl" animate={true} />
           </div>
           
@@ -86,7 +86,7 @@ export default function Home() {
             <div className="mb-16">
               <Button 
                 onClick={() => scrollToSection("signup")}
-                className="inline-flex items-center px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg text-lg"
+                className="inline-flex items-center px-10 py-6 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg text-lg"
                 data-testid="button-get-started"
               >
                 Get Started
@@ -399,7 +399,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 onClick={() => scrollToSection("signup")}
-                className="inline-flex items-center px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg text-lg"
+                className="inline-flex items-center px-10 py-6 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg text-lg"
                 data-testid="button-start-trial"
               >
                 Start Free Trial
@@ -408,7 +408,7 @@ export default function Home() {
               <Button 
                 variant="outline"
                 onClick={() => scrollToSection("demo")}
-                className="inline-flex items-center px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-xl hover:bg-white hover:text-black transition-all duration-300"
+                className="inline-flex items-center px-10 py-6 bg-transparent border-2 border-white text-white font-semibold rounded-xl hover:bg-white hover:text-black transition-all duration-300"
                 data-testid="button-book-demo"
               >
                 Book a Demo
@@ -417,85 +417,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Signup/Demo Placeholder Sections */}
-      <section id="signup" className="py-16 bg-secondary" data-testid="signup-section">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="signup-title">
-            Sign Up for QuizzViz
-          </h2>
-          <p className="text-muted-foreground" data-testid="signup-description">
-            Signup functionality will be implemented here.
-          </p>
-        </div>
-      </section>
-
-      <section id="demo" className="py-16 bg-background" data-testid="demo-section">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="demo-title">
-            Book a Demo
-          </h2>
-          <p className="text-muted-foreground" data-testid="demo-description">
-            Demo booking functionality will be implemented here.
-          </p>
-        </div>
-      </section>
-
-      <section id="about" className="py-16 bg-secondary" data-testid="about-section">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="about-title">
-            About QuizzViz
-          </h2>
-          <p className="text-muted-foreground" data-testid="about-description">
-            About page content will be implemented here.
-          </p>
-        </div>
-      </section>
-
-      <section id="login" className="py-16 bg-background" data-testid="login-section">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="login-title">
-            Login
-          </h2>
-          <p className="text-muted-foreground" data-testid="login-description">
-            Login functionality will be implemented here.
-          </p>
-        </div>
-      </section>
-
-      <section id="privacy" className="py-16 bg-secondary" data-testid="privacy-section">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="privacy-title">
-            Privacy Policy
-          </h2>
-          <p className="text-muted-foreground" data-testid="privacy-description">
-            Privacy policy content will be implemented here.
-          </p>
-        </div>
-      </section>
-
-      <section id="terms" className="py-16 bg-background" data-testid="terms-section">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="terms-title">
-            Terms of Service
-          </h2>
-          <p className="text-muted-foreground" data-testid="terms-description">
-            Terms of service content will be implemented here.
-          </p>
-        </div>
-      </section>
-
-      <section id="contact" className="py-16 bg-secondary" data-testid="contact-section">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="contact-title">
-            Contact Us
-          </h2>
-          <p className="text-muted-foreground" data-testid="contact-description">
-            Contact information and form will be implemented here.
-          </p>
-        </div>
-      </section>
-
       <Footer />
     </div>
   );

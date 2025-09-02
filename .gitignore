@@ -3,4 +3,16 @@ dist
 .DS_Store
 server/public
 vite.config.ts.*
+.next/
+.local/
+.env
+.env.*
+!.env.example
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vercel
 *.tar.gz
