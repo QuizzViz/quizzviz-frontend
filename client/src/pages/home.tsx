@@ -1,0 +1,502 @@
+import { useEffect, useRef } from "react";
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
+import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Clock, CheckCircle, Zap, BarChart3, ArrowRight } from "lucide-react";
+
+export default function Home() {
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    // Set up intersection observer for scroll animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: "0px 0px -50px 0px"
+    };
+
+    observerRef.current = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+        }
+      });
+    }, observerOptions);
+
+    // Observe all scroll-fade elements
+    document.querySelectorAll(".scroll-fade").forEach(el => {
+      observerRef.current?.observe(el);
+    });
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, []);
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      
+      {/* Hero Section */}
+      <section 
+        id="hero" 
+        className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden pt-16"
+        data-testid="hero-section"
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background"></div>
+        
+        <div className="relative z-10 text-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Animated Logo */}
+          <div className="mb-12 flex justify-center" data-testid="hero-logo-container">
+            <Logo size="xl" animate={true} />
+          </div>
+          
+          {/* Hero Content */}
+          <div className="animate-fade-in">
+            <h1 
+              className="text-5xl sm:text-6xl lg:text-7xl font-light text-foreground mb-6 leading-tight"
+              data-testid="hero-title"
+            >
+              Transform Hiring with<br />
+              <span className="gradient-text font-medium">Intelligent Assessments</span>
+            </h1>
+            
+            <p 
+              className="text-xl sm:text-2xl text-muted-foreground mb-4 max-w-4xl mx-auto leading-relaxed"
+              data-testid="hero-tagline"
+            >
+              Hire Smarter, Faster.
+            </p>
+            
+            <p 
+              className="text-lg text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed"
+              data-testid="hero-subtitle"
+            >
+              Create enterprise-grade skill quizzes in under 3 minutes and filter the right candidates instantly.
+            </p>
+            
+            <div className="mb-16">
+              <Button 
+                onClick={() => scrollToSection("signup")}
+                className="inline-flex items-center px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg text-lg"
+                data-testid="button-get-started"
+              >
+                Get Started
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </div>
+            
+            {/* YouTube Video Embed */}
+            <div className="max-w-4xl mx-auto" data-testid="hero-video-container">
+              <div className="glassmorphism rounded-2xl p-1">
+                <div className="aspect-video rounded-xl overflow-hidden">
+                  <iframe 
+                    src="https://www.youtube.com/embed/LM683z0glJM" 
+                    title="QuizzViz Demo"
+                    frameBorder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowFullScreen
+                    className="w-full h-full"
+                    data-testid="video-demo"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Problems We Solve Section */}
+      <section 
+        id="problems" 
+        className="py-24 bg-background relative"
+        data-testid="problems-section"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 scroll-fade">
+            <h2 
+              className="text-4xl lg:text-5xl font-light text-foreground mb-6"
+              data-testid="problems-title"
+            >
+              Problems We <span className="gradient-text font-medium">Solve</span>
+            </h2>
+            <p 
+              className="text-xl text-muted-foreground max-w-3xl mx-auto"
+              data-testid="problems-subtitle"
+            >
+              Transform your hiring process with intelligent solutions that save time and identify the right talent.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {/* Problem 1 - Speed */}
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center mx-auto mb-6">
+                  <Clock className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4" data-testid="problem-speed-title">
+                  Speed
+                </h3>
+                <p className="text-muted-foreground leading-relaxed" data-testid="problem-speed-description">
+                  Making a good, real-world quiz takes at least a week. QuizzViz enables companies to create high-quality quizzes in{" "}
+                  <strong className="text-white">under 3 minutes</strong>.
+                </p>
+              </CardContent>
+            </Card>
+            
+            {/* Problem 2 - Accuracy */}
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4" data-testid="problem-accuracy-title">
+                  Accuracy
+                </h3>
+                <p className="text-muted-foreground leading-relaxed" data-testid="problem-accuracy-description">
+                  Helps filter participants with the right skillset, improving{" "}
+                  <strong className="text-white">applicant satisfaction</strong> through fair and relevant assessments.
+                </p>
+              </CardContent>
+            </Card>
+            
+            {/* Problem 3 - Efficiency */}
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-green-500 rounded-xl flex items-center justify-center mx-auto mb-6">
+                  <Zap className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4" data-testid="problem-efficiency-title">
+                  Efficiency
+                </h3>
+                <p className="text-muted-foreground leading-relaxed" data-testid="problem-efficiency-description">
+                  Saves companies' time by avoiding interviews with{" "}
+                  <strong className="text-white">wrong candidates</strong> through precise skill matching.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section 
+        id="features" 
+        className="py-24 bg-background relative"
+        data-testid="features-section"
+      >
+        {/* Modern office workspace background with subtle overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div 
+            style={{
+              backgroundImage: "url('https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080')",
+              backgroundSize: "cover",
+              backgroundPosition: "center"
+            }} 
+            className="w-full h-full"
+          />
+        </div>
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 scroll-fade">
+            <h2 
+              className="text-4xl lg:text-5xl font-light text-foreground mb-6"
+              data-testid="features-title"
+            >
+              Features & <span className="gradient-text font-medium">Benefits</span>
+            </h2>
+            <p 
+              className="text-xl text-muted-foreground max-w-3xl mx-auto"
+              data-testid="features-subtitle"
+            >
+              Enterprise-grade capabilities designed for modern hiring teams.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Lightning Speed */}
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Zap className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4" data-testid="feature-speed-title">
+                  Lightning Speed
+                </h3>
+                <p className="text-muted-foreground" data-testid="feature-speed-description">
+                  Create comprehensive skill assessments in under 3 minutes with our AI-powered quiz generator.
+                </p>
+              </CardContent>
+            </Card>
+            
+            {/* Precision Matching */}
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4" data-testid="feature-accuracy-title">
+                  Precision Matching
+                </h3>
+                <p className="text-muted-foreground" data-testid="feature-accuracy-description">
+                  Advanced algorithms ensure candidates are matched based on actual skills, not just keywords.
+                </p>
+              </CardContent>
+            </Card>
+            
+            {/* Smart Efficiency */}
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <BarChart3 className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4" data-testid="feature-efficiency-title">
+                  Smart Efficiency
+                </h3>
+                <p className="text-muted-foreground" data-testid="feature-efficiency-description">
+                  Streamline your hiring pipeline and reduce time-to-hire by focusing on qualified candidates only.
+                </p>
+              </CardContent>
+            </Card>
+            
+            {/* Enterprise Scale */}
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-pink-500 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <BarChart3 className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground mb-4" data-testid="feature-scale-title">
+                  Enterprise Scale
+                </h3>
+                <p className="text-muted-foreground" data-testid="feature-scale-description">
+                  Built to handle high-volume hiring with enterprise-grade security and reliability.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section 
+        id="how-it-works" 
+        className="py-24 bg-background relative"
+        data-testid="how-it-works-section"
+      >
+        {/* Professional meeting room background */}
+        <div className="absolute inset-0 opacity-5">
+          <div 
+            style={{
+              backgroundImage: "url('https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080')",
+              backgroundSize: "cover",
+              backgroundPosition: "center"
+            }} 
+            className="w-full h-full"
+          />
+        </div>
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 scroll-fade">
+            <h2 
+              className="text-4xl lg:text-5xl font-light text-foreground mb-6"
+              data-testid="how-it-works-title"
+            >
+              How It <span className="gradient-text font-medium">Works</span>
+            </h2>
+            <p 
+              className="text-xl text-muted-foreground max-w-3xl mx-auto"
+              data-testid="how-it-works-subtitle"
+            >
+              Three simple steps to revolutionize your hiring process.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            {/* Step 1 */}
+            <div className="text-center scroll-fade" data-testid="step-1">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-8">
+                <span className="text-3xl font-bold text-white">1</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-foreground mb-4" data-testid="step-1-title">
+                Create Quiz
+              </h3>
+              <p className="text-muted-foreground leading-relaxed" data-testid="step-1-description">
+                Input your job requirements and let our AI generate comprehensive skill assessments tailored to your specific needs.
+              </p>
+            </div>
+            
+            {/* Step 2 */}
+            <div className="text-center scroll-fade" data-testid="step-2">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-8">
+                <span className="text-3xl font-bold text-white">2</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-foreground mb-4" data-testid="step-2-title">
+                Assess Candidates
+              </h3>
+              <p className="text-muted-foreground leading-relaxed" data-testid="step-2-description">
+                Send quizzes to candidates and get real-time results with detailed analytics and skill breakdowns.
+              </p>
+            </div>
+            
+            {/* Step 3 */}
+            <div className="text-center scroll-fade" data-testid="step-3">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-8">
+                <span className="text-3xl font-bold text-white">3</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-foreground mb-4" data-testid="step-3-title">
+                Make Decisions
+              </h3>
+              <p className="text-muted-foreground leading-relaxed" data-testid="step-3-description">
+                Review comprehensive candidate rankings and insights to make informed hiring decisions quickly.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action Section */}
+      <section 
+        id="cta" 
+        className="py-24 bg-background relative"
+        data-testid="cta-section"
+      >
+        {/* Elegant office interior background */}
+        <div className="absolute inset-0 opacity-5">
+          <div 
+            style={{
+              backgroundImage: "url('https://images.unsplash.com/photo-1568992687947-868a62a9f521?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&h=1080')",
+              backgroundSize: "cover",
+              backgroundPosition: "center"
+            }} 
+            className="w-full h-full"
+          />
+        </div>
+        
+        <div className="relative z-10 max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <div className="scroll-fade">
+            <h2 
+              className="text-4xl lg:text-5xl font-light text-foreground mb-6"
+              data-testid="cta-title"
+            >
+              Ready to Transform Your <span className="gradient-text font-medium">Hiring?</span>
+            </h2>
+            <p 
+              className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto"
+              data-testid="cta-subtitle"
+            >
+              Join forward-thinking companies using QuizzViz to build better teams faster.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                onClick={() => scrollToSection("signup")}
+                className="inline-flex items-center px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg text-lg"
+                data-testid="button-start-trial"
+              >
+                Start Free Trial
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => scrollToSection("demo")}
+                className="inline-flex items-center px-8 py-4 bg-transparent border-2 border-white text-white font-semibold rounded-xl hover:bg-white hover:text-black transition-all duration-300"
+                data-testid="button-book-demo"
+              >
+                Book a Demo
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Signup/Demo Placeholder Sections */}
+      <section id="signup" className="py-16 bg-secondary" data-testid="signup-section">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="signup-title">
+            Sign Up for QuizzViz
+          </h2>
+          <p className="text-muted-foreground" data-testid="signup-description">
+            Signup functionality will be implemented here.
+          </p>
+        </div>
+      </section>
+
+      <section id="demo" className="py-16 bg-background" data-testid="demo-section">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="demo-title">
+            Book a Demo
+          </h2>
+          <p className="text-muted-foreground" data-testid="demo-description">
+            Demo booking functionality will be implemented here.
+          </p>
+        </div>
+      </section>
+
+      <section id="about" className="py-16 bg-secondary" data-testid="about-section">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="about-title">
+            About QuizzViz
+          </h2>
+          <p className="text-muted-foreground" data-testid="about-description">
+            About page content will be implemented here.
+          </p>
+        </div>
+      </section>
+
+      <section id="login" className="py-16 bg-background" data-testid="login-section">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="login-title">
+            Login
+          </h2>
+          <p className="text-muted-foreground" data-testid="login-description">
+            Login functionality will be implemented here.
+          </p>
+        </div>
+      </section>
+
+      <section id="privacy" className="py-16 bg-secondary" data-testid="privacy-section">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="privacy-title">
+            Privacy Policy
+          </h2>
+          <p className="text-muted-foreground" data-testid="privacy-description">
+            Privacy policy content will be implemented here.
+          </p>
+        </div>
+      </section>
+
+      <section id="terms" className="py-16 bg-background" data-testid="terms-section">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="terms-title">
+            Terms of Service
+          </h2>
+          <p className="text-muted-foreground" data-testid="terms-description">
+            Terms of service content will be implemented here.
+          </p>
+        </div>
+      </section>
+
+      <section id="contact" className="py-16 bg-secondary" data-testid="contact-section">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-semibold text-foreground mb-4" data-testid="contact-title">
+            Contact Us
+          </h2>
+          <p className="text-muted-foreground" data-testid="contact-description">
+            Contact information and form will be implemented here.
+          </p>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  );
+}
