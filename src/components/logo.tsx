@@ -19,7 +19,7 @@ export function Logo({ size = "md", animate = false, className = "" }: LogoProps
       data-testid="logo-container"
     >
       <img
-        src={'/QuizzViz-Logo.png'}
+        src={'/QuizzViz-logo.png'}
         alt="QuizzViz Logo"
         className="w-full h-full object-contain drop-shadow-lg"
         data-testid="logo-image"
