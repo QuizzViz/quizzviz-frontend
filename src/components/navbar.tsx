@@ -41,7 +41,7 @@ export function Navbar() {
             onClick={() => scrollToSection("hero")}
             data-testid="logo-brand"
           >
-            <Logo size="md" animate={true} />
+            {/* <Logo size="md" animate={true} /> */}
             <span className="inline-block text-xl sm:text-2xl font-semibold text-foreground">QuizzViz</span>
           </div>
           
