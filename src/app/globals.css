@@ -88,6 +88,69 @@
   }
 }
 
+@layer components {
+  /* Hero logo container */
+  .hero-logo {
+    position: relative;
+    display: inline-block;
+  }
+
+  /* Subtle 3D tilt for premium feel */
+  .tilt {
+    perspective: 800px;
+    transform-style: preserve-3d;
+    animation: tiltFloat 8s ease-in-out infinite;
+  }
+
+  /* Phase 1: bubble pulse */
+  .hero-bubble {
+    position: absolute;
+    inset: 0;
+    border-radius: 24%;
+    background: radial-gradient(120% 120% at 30% 30%, rgba(34,197,94,0.35) 0%, rgba(59,130,246,0.35) 45%, rgba(255,255,255,0) 60%);
+    filter: blur(6px) saturate(1.2);
+    opacity: 0;
+    transform: scale(0.7);
+    animation: heroBubble 1.2s ease-out forwards;
+  }
+
+  /* Phase 2: orbiting dots (brief, understated) */
+  .hero-processing { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+  .hero-orbit { position: relative; width: 88%; height: 88%; opacity: 0; animation: heroProcessFade 0.4s ease-out 0.9s forwards, orbitFadeOut 0.3s ease 1.9s forwards; }
+  .hero-orbit span { position: absolute; display: block; width: 10px; height: 10px; background: #fff; border-radius: 9999px; box-shadow: 0 0 12px rgba(255,255,255,0.7); }
+  .hero-orbit span:nth-child(1) { top: -5px; left: 50%; transform: translateX(-50%); animation: heroOrbit 2s linear 1.0s 2; }
+  .hero-orbit span:nth-child(2) { right: -5px; top: 50%; transform: translateY(-50%); animation: heroOrbit 2.2s linear 1.0s 2 reverse; background: #60a5fa; }
+  .hero-orbit span:nth-child(3) { bottom: -5px; left: 50%; transform: translateX(-50%); animation: heroOrbit 1.8s linear 1.0s 2; background: #34d399; }
+
+  /* Energy trails (arrive as sleek light streaks) */
+  .hero-trails { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; }
+  .hero-trails .trail { position: absolute; height: 2px; left: 50%; top: 50%; width: 65%; border-radius: 9999px; filter: blur(1px) saturate(1.2); opacity: 0; transform-origin: left center; }
+  .hero-trails .trail.t1 { background: linear-gradient(90deg, rgba(59,130,246,0) 0%, rgba(59,130,246,0.9) 40%, rgba(255,255,255,0.95) 60%, rgba(34,197,94,0) 100%); transform: translate(-50%, -50%) rotate(0deg); animation: trailLeft 0.7s ease-out 1.5s forwards; }
+  .hero-trails .trail.t2 { background: linear-gradient(90deg, rgba(34,197,94,0) 0%, rgba(34,197,94,0.9) 40%, rgba(255,255,255,0.95) 60%, rgba(59,130,246,0) 100%); transform: translate(-50%, -50%) rotate(180deg); animation: trailRight 0.7s ease-out 1.6s forwards; }
+  .hero-trails .trail.t3 { background: linear-gradient(90deg, rgba(59,130,246,0) 0%, rgba(59,130,246,0.7) 45%, rgba(255,255,255,0.9) 55%, rgba(34,197,94,0) 100%); transform: translate(-50%, -50%) rotate(25deg); animation: trailDiag 0.8s ease-out 1.65s forwards; }
+
+  /* Phase 3: fragments assemble */
+  .hero-fragments { position: absolute; inset: 0; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.35)); }
+  .fragment { position: absolute; background: center/contain no-repeat url('/QuizzViz-logo.png'); opacity: 0; filter: blur(6px) brightness(1.05); animation: heroFragOut 0.35s ease-in 2.35s forwards; }
+  .fragment.f1 { inset: 0 50% 50% 0; background-position: left top; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); transform: translateX(-34%) rotate(-8deg); animation: heroFragIn 0.65s cubic-bezier(.2,.8,.2,1) 2.0s forwards, heroFragOut 0.35s ease-in 2.35s forwards; }
+  .fragment.f2 { inset: 0 0 50% 50%; background-position: right top; transform: translateX(34%) rotate(8deg); animation: heroFragIn 0.65s cubic-bezier(.2,.8,.2,1) 2.05s forwards, heroFragOut 0.35s ease-in 2.35s forwards; }
+  .fragment.f3 { inset: 50% 50% 0 0; background-position: left bottom; transform: translateY(34%) rotate(6deg); animation: heroFragIn 0.65s cubic-bezier(.2,.8,.2,1) 2.1s forwards, heroFragOut 0.35s ease-in 2.35s forwards; }
+  .fragment.f4 { inset: 50% 0 0 50%; background-position: right bottom; transform: translateY(-34%) rotate(-6deg); animation: heroFragIn 0.65s cubic-bezier(.2,.8,.2,1) 2.15s forwards, heroFragOut 0.35s ease-in 2.35s forwards; }
+
+  /* Final single logo */
+  .hero-logo .final-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; animation: heroLogoReveal 0.6s ease-out 2.5s forwards; }
+
+  /* Shine sweep */
+  .logo-shine { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .logo-shine::before { content: ""; position: absolute; top: -20%; bottom: -20%; width: 40%; left: -50%; transform: skewX(-20deg) translateX(0); background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.05) 60%, rgba(255,255,255,0) 100%); filter: blur(6px); animation: shineSweep 1.2s ease-in-out 2.6s forwards; }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .hero-bubble, .hero-orbit span, .fragment, .hero-logo .final-logo, .logo-shine::before, .hero-trails .trail { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+    .hero-orbit, .hero-trails { opacity: 0 !important; }
+  }
+}
+
 @layer utilities {
   @keyframes logoFloat {
     0%, 100% { 
@@ -127,6 +190,75 @@
       opacity: 1; 
       transform: translateY(0); 
     }
+  }
+  
+  /* Hero animation keyframes */
+  @keyframes heroBubble {
+    0% { opacity: 0; transform: scale(0.7); }
+    60% { opacity: 1; transform: scale(1.06); }
+    100% { opacity: 1; transform: scale(1.0); }
+  }
+
+  @keyframes heroProcessFade {
+    0% { opacity: 0; }
+    100% { opacity: 0.75; }
+  }
+
+  @keyframes heroOrbit {
+    0% { transform: rotate(0deg) translateX(45%) rotate(0deg); }
+    100% { transform: rotate(360deg) translateX(45%) rotate(-360deg); }
+  }
+
+  @keyframes orbitFadeOut {
+    0% { opacity: 0.75; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes heroFragIn {
+    0% { opacity: 0; filter: blur(8px) brightness(1.15); }
+    60% { opacity: 1; }
+    100% { opacity: 1; transform: translate(0, 0) rotate(0deg); filter: blur(0) brightness(1); }
+  }
+
+  @keyframes heroLogoReveal {
+    0% { opacity: 0; filter: blur(6px); }
+    100% { opacity: 1; filter: blur(0); }
+  }
+
+  @keyframes heroFragOut {
+    0% { opacity: 1; filter: blur(0); }
+    100% { opacity: 0; filter: blur(4px); }
+  }
+
+  @keyframes tiltFloat {
+    0%, 100% { transform: rotateX(0deg) rotateY(0deg) translateY(0); }
+    25% { transform: rotateX(4deg) rotateY(-6deg) translateY(-3px); }
+    50% { transform: rotateX(0deg) rotateY(0deg) translateY(0); }
+    75% { transform: rotateX(-4deg) rotateY(6deg) translateY(3px); }
+  }
+
+  @keyframes trailLeft {
+    0% { opacity: 0; transform: translate(-120%, -50%) rotate(0deg) scaleX(0.6); }
+    60% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(0deg) scaleX(1); }
+  }
+
+  @keyframes trailRight {
+    0% { opacity: 0; transform: translate(20%, -50%) rotate(180deg) scaleX(0.6); }
+    60% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(180deg) scaleX(1); }
+  }
+
+  @keyframes trailDiag {
+    0% { opacity: 0; transform: translate(-120%, -50%) rotate(25deg) scaleX(0.6); }
+    60% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) rotate(25deg) scaleX(1); }
+  }
+
+  @keyframes shineSweep {
+    0% { transform: skewX(-20deg) translateX(0); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: skewX(-20deg) translateX(260%); opacity: 0; }
   }
   
   .animate-fade-in {

@@ -25,46 +25,83 @@ export function Navbar() {
   };
 
   return (
-    <nav 
+    <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? "bg-background/80 backdrop-blur-md border-b border-border/50" : "bg-transparent"
+        isScrolled
+          ? "bg-background/80 backdrop-blur-md border-b border-border/50"
+          : "bg-transparent"
       }`}
       data-testid="navbar"
+      aria-label="Main navigation"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-14 sm:h-16">
           <div 
-            className="flex items-center space-x-2 cursor-pointer" 
+            className="flex items-center gap-2 cursor-pointer shrink-0"
             onClick={() => scrollToSection("hero")}
             data-testid="logo-brand"
           >
-            <Logo size="md" animate={true} />
-            <span className="text-2xl font-semibold text-foreground">QuizzViz</span>
+            {/* <Logo size="md" animate={true} /> */}
+            <span className="inline-block text-xl sm:text-2xl font-semibold text-foreground">QuizzViz</span>
           </div>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <button 
-              onClick={() => scrollToSection("about")}
-              className="text-muted-foreground hover:text-foreground transition-colors duration-200"
-              data-testid="link-about"
-            >
-              About
-            </button>
-            <button 
-              onClick={() => scrollToSection("login")}
-              className="text-muted-foreground hover:text-foreground transition-colors duration-200"
-              data-testid="link-login"
-            >
-              Login
-            </button>
-            <Button 
-              onClick={() => scrollToSection("signup")}
-              className="bg-white text-black hover:bg-gray-200 font-medium"
-              data-testid="button-signup"
-            >
-              Signup
-            </Button>
+          <div className="hidden md:flex items-center text-sm whitespace-nowrap">
+            <div className="flex items-center gap-4 md:gap-6 lg:gap-10">
+              <button 
+                onClick={() => scrollToSection("about")}
+                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                data-testid="link-about"
+              >
+                About
+              </button>
+              <button 
+                onClick={() => scrollToSection("about")}
+                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                data-testid="link-about"
+              >
+                Pricing
+              </button>
+              <button 
+                onClick={() => scrollToSection("about")}
+                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                data-testid="link-about"
+              >
+                Contact Us
+              </button>
+              <button 
+                onClick={() => scrollToSection("about")}
+                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                data-testid="link-about"
+              >
+                Partnership
+              </button>
+            </div>
+            <div className="hidden md:flex items-center gap-4 lg:gap-6 ml-6 md:ml-8 lg:ml-16 xl:ml-20">
+              <Button 
+                className="bg-white text-black hover:bg-gray-200 hover:translate-x-1 transition-all duration-150 font-medium"
+                data-testid="button-demo"
+                onClick={() => scrollToSection("demo")}
+              >
+                Book a Demo <span aria-hidden className="ml-2">→</span>
+              </Button>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => scrollToSection("login")}
+                  className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  data-testid="link-login"
+                >
+                  Login
+                </button>
+                <button 
+                  onClick={() => scrollToSection("signup")}
+                  className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  data-testid="link-signup"
+                >
+                  Sign up
+                </button>
+              </div>
+            </div>
           </div>
           
           {/* Mobile Menu Button */}
@@ -74,7 +111,9 @@ export function Navbar() {
               size="sm"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               data-testid="button-mobile-menu"
-            >
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
+              >
               {isMobileMenuOpen ? (
                 <X className="w-6 h-6 text-foreground" />
               ) : (
@@ -86,29 +125,23 @@ export function Navbar() {
         
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden glassmorphism rounded-lg mt-2 py-4" data-testid="mobile-menu">
-            <div className="flex flex-col space-y-4 px-4">
-              <button 
-                onClick={() => scrollToSection("about")}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200 text-left"
-                data-testid="mobile-link-about"
-              >
-                About
-              </button>
-              <button 
-                onClick={() => scrollToSection("login")}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200 text-left"
-                data-testid="mobile-link-login"
-              >
-                Login
-              </button>
-              <Button 
-                onClick={() => scrollToSection("signup")}
-                className="bg-white text-black hover:bg-gray-200 font-medium w-full"
-                data-testid="mobile-button-signup"
-              >
-                Signup
-              </Button>
+          <div id="mobile-menu" className="md:hidden glassmorphism rounded-lg mt-2 py-3" data-testid="mobile-menu">
+            <div className="flex flex-col divide-y divide-border/50">
+              <div className="flex flex-col py-2">
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground" data-testid="mobile-link-about">About</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground">Pricing</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground">Contact Us</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground">Partnership</button>
+              </div>
+              <div className="flex flex-col py-2">
+                <Button onClick={() => scrollToSection("demo")} className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium" data-testid="mobile-button-demo">
+                  Book a Demo <span aria-hidden className="ml-2">→</span>
+                </Button>
+                <div className="flex items-center justify-between px-4 pt-2">
+                  <button onClick={() => scrollToSection("login")} className="text-muted-foreground hover:text-foreground" data-testid="mobile-link-login">Login</button>
+                  <button onClick={() => scrollToSection("signup")} className="text-muted-foreground hover:text-foreground" data-testid="mobile-link-signup">Sign up</button>
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckCircle, Zap, BarChart3, ArrowRight } from "lucide-react";
+import { HeroLogoSVG } from "@/components/HeroLogoSVG";
 
 export default function Home() {
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -20,6 +20,8 @@ export default function Home() {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add("visible");
+        } else {
+          entry.target.classList.remove("visible");
         }
       });
     }, observerOptions);
@@ -48,21 +50,21 @@ export default function Home() {
       {/* Hero Section */}
       <section 
         id="hero" 
-        className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden pt-16"
+        className="min-h-screen flex flex-col justify-start items-center relative overflow-hidden pt-4 pb-4"
         data-testid="hero-section"
       >
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background"></div>
         
         <div className="relative z-10 text-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Animated Logo */}
-          <div className="mb-4 flex justify-center" data-testid="hero-logo-container">
-            <Logo size="xl" animate={true} />
+          <div className="mb-1 -mt-2 flex justify-center" data-testid="hero-logo-container">
+            <HeroLogoSVG size={560} />
           </div>
           
           {/* Hero Content */}
           <div className="animate-fade-in">
             <h1 
-              className="text-5xl sm:text-6xl lg:text-7xl font-light text-foreground mb-6 leading-tight"
+              className="text-5xl sm:text-6xl lg:text-7xl font-light text-foreground mb-4 leading-tight"
               data-testid="hero-title"
             >
               Transform Hiring with<br />
@@ -70,14 +72,14 @@ export default function Home() {
             </h1>
             
             <p 
-              className="text-xl sm:text-2xl text-muted-foreground mb-4 max-w-4xl mx-auto leading-relaxed"
+              className="text-xl sm:text-2xl text-muted-foreground mb-3 max-w-4xl mx-auto leading-relaxed"
               data-testid="hero-tagline"
             >
               Hire Smarter, Faster.
             </p>
             
             <p 
-              className="text-lg text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed"
+              className="text-lg text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed"
               data-testid="hero-subtitle"
             >
               Create enterprise-grade skill quizzes in under 3 minutes and filter the right candidates instantly.
