@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { Logo } from "@/components/logo";
+import { HeroLogo } from "@/components/HeroLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckCircle, Zap, BarChart3, ArrowRight } from "lucide-react";
@@ -56,7 +56,7 @@ export default function Home() {
         <div className="relative z-10 text-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Animated Logo */}
           <div className="mb-4 flex justify-center" data-testid="hero-logo-container">
-            <Logo size="xl" animate={true} />
+            <HeroLogo size="xl" />
           </div>
           
           {/* Hero Content */}

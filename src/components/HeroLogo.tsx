@@ -16,12 +16,12 @@ export function HeroLogo({ size = "lg", className = "" }: HeroLogoProps) {
   const box = sizeMap[size];
 
   return (
-    <div className={`hero-logo ${box} relative ${className}`} aria-label="QuizzViz animated hero logo">
+    <div className={`hero-logo tilt ${box} relative ${className}`} aria-label="QuizzViz animated hero logo">
       {/* Phase 1: Bubble creation/pulse */}
-      <div className="hero-bubble phase-bubble" />
+      <div className="hero-bubble" aria-hidden />
 
-      {/* Phase 2: Processing orbit dots */}
-      <div className="hero-processing phase-process">
+      {/* Phase 2: Processing orbit dots (brief, understated) */}
+      <div className="hero-processing" aria-hidden>
         <div className="hero-orbit">
           <span />
           <span />
@@ -29,21 +29,30 @@ export function HeroLogo({ size = "lg", className = "" }: HeroLogoProps) {
         </div>
       </div>
 
-      {/* Phase 3: Logo fragments assemble */}
-      <div className="hero-fragments phase-frag">
+      {/* Energy trails sweeping in from sides */}
+      <div className="hero-trails" aria-hidden>
+        <i className="trail t1" />
+        <i className="trail t2" />
+        <i className="trail t3" />
+      </div>
+
+      {/* Phase 3: transient fragments converge, then vanish */}
+      <div className="hero-fragments" aria-hidden>
         <div className="fragment f1" />
         <div className="fragment f2" />
         <div className="fragment f3" />
         <div className="fragment f4" />
       </div>
 
-      {/* Show a crisp base image during assembled phase so it looks perfect */}
+      {/* Final, single crisp logo */}
       <img
         src="/QuizzViz-logo.png"
         alt="QuizzViz Logo"
-        className="absolute inset-0 w-full h-full object-contain phase-frag"
-        aria-hidden
+        className="final-logo"
       />
+
+      {/* Shine sweep across the final logo */}
+      <div className="logo-shine" aria-hidden />
     </div>
   );
 }
