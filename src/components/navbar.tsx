@@ -43,7 +43,7 @@ export function Navbar() {
           </div>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-4 md:space-x-6 lg:space-x-10  text-sm">
             <button 
               onClick={() => scrollToSection("about")}
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
@@ -52,19 +52,50 @@ export function Navbar() {
               About
             </button>
             <button 
+              onClick={() => scrollToSection("about")}
+              className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+              data-testid="link-about"
+            >
+              Pricing
+            </button>
+            <button 
+              onClick={() => scrollToSection("about")}
+              className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+              data-testid="link-about"
+            >
+              Contact Us
+            </button>
+            <button 
+              onClick={() => scrollToSection("about")}
+              className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+              data-testid="link-about"
+            >
+              Partnership
+            </button>
+            </div>
+            <div className="hidden md:flex items-center lg:space-x-8">
+            <Button 
+              className="bg-white text-black hover:bg-gray-200 hover:translate-x-2 transition-all duration-100 font-medium"
+              data-testid="button-signup"
+            >
+              Book a Demo  <div>--&gt;</div>
+            </Button>
+            <div className="flex items-center space-x-6">
+            <button 
               onClick={() => scrollToSection("login")}
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
               data-testid="link-login"
             >
               Login
             </button>
-            <Button 
-              onClick={() => scrollToSection("signup")}
-              className="bg-white text-black hover:bg-gray-200 font-medium"
-              data-testid="button-signup"
+            <button 
+              onClick={() => scrollToSection("login")}
+              className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+              data-testid="link-login"
             >
-              Signup
-            </Button>
+              Sign up
+            </button>
+            </div>
           </div>
           
           {/* Mobile Menu Button */}
