@@ -71,6 +71,9 @@ export function HeroLogoSVG({ size = 480, className = "" }: HeroLogoSVGProps) {
           el.style.transition = "transform 900ms cubic-bezier(0.2,0.6,0.2,1), opacity 300ms ease-out";
         });
 
+        // Initial short pause before starting the sequence so users can orient
+        await sleep(400);
+
         // Phase 1: Blob processing (scale/opacity pulse ~1.2s)
         blob.style.transition = "transform 600ms ease-in-out, opacity 600ms ease-in-out, filter 600ms ease-in-out";
         blob.style.opacity = "0.9";
@@ -100,8 +103,8 @@ export function HeroLogoSVG({ size = 480, className = "" }: HeroLogoSVGProps) {
         group.style.animation = "svg-spin 1400ms ease-in-out forwards";
         await sleep(1500);
 
-        // Short pause
-        await sleep(200);
+        // Pause with completed logo visible to let users process the animation
+        await sleep(2000);
 
         // Reverse: reset slices offscreen and show blob again for next cycle
         blob.style.opacity = "0.9";
@@ -142,7 +145,7 @@ export function HeroLogoSVG({ size = 480, className = "" }: HeroLogoSVGProps) {
         />
 
         {/* Final assembled logo using exact PNG colors via slices */}
-        <g ref={groupRef} id="logo-group" transform-origin="256 256">
+        <g ref={groupRef} id="logo-group" style={{ transformOrigin: "256px 256px" }}>
           <g ref={slicesRef} id="logo-slices">
             <g id="slice-left">
               <image href="/QuizzViz-logo.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" clipPath="url(#clip-left)" />
