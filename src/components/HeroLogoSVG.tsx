@@ -7,7 +7,7 @@ type HeroLogoSVGProps = {
   className?: string;
 };
 
-export function HeroLogoSVG({ size = 480, className = "" }: HeroLogoSVGProps) {
+export function HeroLogoSVG({ size = 800, className = "" }: HeroLogoSVGProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const blobRef = useRef<SVGPathElement | null>(null);
   const groupRef = useRef<SVGGElement | null>(null);

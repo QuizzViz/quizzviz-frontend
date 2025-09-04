@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Logo } from "./logo";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -83,7 +83,7 @@ export function Navbar() {
                 data-testid="button-demo"
                 onClick={() => scrollToSection("demo")}
               >
-                Book a Demo <span aria-hidden className="ml-2">→</span>
+                Book a Demo <ArrowRight className=" w-9 h-5" />
               </Button>
               <div className="flex items-center gap-4">
                 <button 

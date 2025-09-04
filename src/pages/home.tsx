@@ -65,20 +65,19 @@ export default function Home() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-start md:items-center min-h-[calc(100vh-10rem)] py-1">
             {/* Left: Text/CTA */}
-            <div className="text-left order-2 md:order-1 animate-fade-in-smooth">
+            <div className="text-center md:text-left order-2 md:order-1 animate-fade-in-smooth">
               <div className="max-w-2xl">
                 <h1 
                   className="text-5xl md:text-6xl xl:text-7xl font-light tracking-[-0.02em] text-foreground mb-3 leading-[1.08] scroll-fade"
                   data-testid="hero-title"
                   style={{ transitionDelay: "0ms" }}
-                >
-                  Transform Hiring with
+                >Transform Hiring  <span className="ml-3">with</span>
                   <br />
-                  <span className="gradient-text font-medium">Intelligent Assessments</span>
+                  <span className="gradient-text font-medium ml-3">Intelligent Assessments</span>
                 </h1>
 
                 <p 
-                  className="text-lg md:text-xl text-muted-foreground/90 mb-3 leading-relaxed scroll-fade"
+                  className="text-lg md:text-xl text-muted-foreground/90 text-gray-200 mb-3 leading-relaxed scroll-fade"
                   data-testid="hero-tagline"
                   style={{ transitionDelay: "120ms" }}
                 >
@@ -86,31 +85,29 @@ export default function Home() {
                 </p>
 
                 <p 
-                  className="text-sm sm:text-base text-muted-foreground/90 mb-6 leading-relaxed scroll-fade"
+                  className="text-md text-muted-foreground/90 text-gray-200 mb-6 leading-relaxed scroll-fade"
                   data-testid="hero-subtitle"
                   style={{ transitionDelay: "240ms" }}
                 >
                   Create enterprise-grade skill quizzes in under 3 minutes and filter the right candidates instantly.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-3 mt-1 scroll-fade" style={{ transitionDelay: "360ms" }}>
-                  <Button 
-                    onClick={() => scrollToSection("signup")}
+                <div className="flex flex-col sm:flex-row gap-3 mt-1">
+                  <Button
                     aria-label="Get Started"
-                    className="inline-flex items-center rounded-full px-7 md:px-9 py-3.5 md:py-4 bg-white text-black font-semibold 
+                    className="inline-flex items-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-white text-black 
                                shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/90 
-                               text-base md:text-lg ring-1 ring-black/10 hover:ring-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                               text-base md:text-sm ring-1 ring-black/10 hover:ring-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:translate-x-2 duration-150"
                     data-testid="button-get-started"
                   >
                     Get Started
-                    <ArrowRight className="ml-2 w-5 h-5" />
+                    <ArrowRight className="ml-2 w-6 h-6" />
                   </Button>
                   <Button 
                     variant="outline"
-                    onClick={() => scrollToSection("demo")}
                     aria-label="Book a demo"
-                    className="inline-flex items-center rounded-full px-7 md:px-9 py-3.5 md:py-4 bg-transparent border border-white/70 text-white font-semibold 
-                               hover:bg-white/10 hover:border-white transition-all duration-300 text-base md:text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="md:ml-2 inline-flex items-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-transparent border border-white/70 text-white 
+                               hover:bg-white/10 hover:border-white transition-all duration-300 text-base md:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:translate-x-2 duration-150"
                   >
                     Book a Demo
                   </Button>
