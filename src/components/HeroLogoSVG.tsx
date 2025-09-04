@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 
 type HeroLogoSVGProps = {
-  size?: number; // px square
+  size?: number | string; // px or CSS size (e.g., "100%")
   className?: string;
 };
 

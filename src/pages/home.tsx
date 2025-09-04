@@ -47,70 +47,101 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       
-      {/* Hero Section */}
+      {/* Hero Section (Left-Right layout) */}
       <section 
         id="hero" 
-        className="min-h-screen flex flex-col justify-start items-center relative overflow-hidden pt-4 pb-4"
+        className="min-h-screen relative overflow-hidden pt-12 sm:pt-18 md:pt-28 pb-4 scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32"
         data-testid="hero-section"
       >
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background"></div>
-        
-        <div className="relative z-10 text-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Animated Logo */}
-          <div className="mb-1 -mt-2 flex justify-center" data-testid="hero-logo-container">
-            <HeroLogoSVG size={560} />
-          </div>
-          
-          {/* Hero Content */}
-          <div className="animate-fade-in">
-            <h1 
-              className="text-5xl sm:text-6xl lg:text-7xl font-light text-foreground mb-4 leading-tight"
-              data-testid="hero-title"
-            >
-              Transform Hiring with<br />
-              <span className="gradient-text font-medium">Intelligent Assessments</span>
-            </h1>
-            
-            <p 
-              className="text-xl sm:text-2xl text-muted-foreground mb-3 max-w-4xl mx-auto leading-relaxed"
-              data-testid="hero-tagline"
-            >
-              Hire Smarter, Faster.
-            </p>
-            
-            <p 
-              className="text-lg text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed"
-              data-testid="hero-subtitle"
-            >
-              Create enterprise-grade skill quizzes in under 3 minutes and filter the right candidates instantly.
-            </p>
-            
-            <div className="mb-16">
-              <Button 
-                onClick={() => scrollToSection("signup")}
-                className="inline-flex items-center px-10 py-6 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg text-lg"
-                data-testid="button-get-started"
-              >
-                Get Started
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </div>
-            
-            {/* YouTube Video Embed */}
-            <div className="max-w-4xl mx-auto" data-testid="hero-video-container">
-              <div className="glassmorphism rounded-2xl p-1">
-                <div className="aspect-video rounded-xl overflow-hidden">
-                  <iframe 
-                    src="https://www.youtube.com/embed/LM683z0glJM" 
-                    title="QuizzViz Demo"
-                    frameBorder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowFullScreen
-                    className="w-full h-full"
-                    data-testid="video-demo"
-                  />
+        {/* Soft gradient glow to the right for elegance */}
+        <div
+          aria-hidden="true"
+          className="absolute right-[-12%] top-10 w-[65vw] max-w-[980px] aspect-square rounded-[36%] 
+                     bg-[radial-gradient(60%_60%_at_30%_30%,rgba(147,197,253,0.25),rgba(59,130,246,0.12)_45%,rgba(34,197,94,0.08)_75%,transparent_85%)] 
+                     blur-3xl opacity-70 pointer-events-none"
+        />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-start md:items-center min-h-[calc(100vh-10rem)] py-1">
+            {/* Left: Text/CTA */}
+            <div className="text-left order-2 md:order-1 animate-fade-in-smooth">
+              <div className="max-w-2xl">
+                <h1 
+                  className="text-5xl md:text-6xl xl:text-7xl font-light tracking-[-0.02em] text-foreground mb-3 leading-[1.08] scroll-fade"
+                  data-testid="hero-title"
+                  style={{ transitionDelay: "0ms" }}
+                >
+                  Transform Hiring with
+                  <br />
+                  <span className="gradient-text font-medium">Intelligent Assessments</span>
+                </h1>
+
+                <p 
+                  className="text-lg md:text-xl text-muted-foreground/90 mb-3 leading-relaxed scroll-fade"
+                  data-testid="hero-tagline"
+                  style={{ transitionDelay: "120ms" }}
+                >
+                  Hire Smarter, Faster.
+                </p>
+
+                <p 
+                  className="text-sm sm:text-base text-muted-foreground/90 mb-6 leading-relaxed scroll-fade"
+                  data-testid="hero-subtitle"
+                  style={{ transitionDelay: "240ms" }}
+                >
+                  Create enterprise-grade skill quizzes in under 3 minutes and filter the right candidates instantly.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3 mt-1 scroll-fade" style={{ transitionDelay: "360ms" }}>
+                  <Button 
+                    onClick={() => scrollToSection("signup")}
+                    aria-label="Get Started"
+                    className="inline-flex items-center rounded-full px-7 md:px-9 py-3.5 md:py-4 bg-white text-black font-semibold 
+                               shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/90 
+                               text-base md:text-lg ring-1 ring-black/10 hover:ring-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    data-testid="button-get-started"
+                  >
+                    Get Started
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => scrollToSection("demo")}
+                    aria-label="Book a demo"
+                    className="inline-flex items-center rounded-full px-7 md:px-9 py-3.5 md:py-4 bg-transparent border border-white/70 text-white font-semibold 
+                               hover:bg-white/10 hover:border-white transition-all duration-300 text-base md:text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
+                    Book a Demo
+                  </Button>
                 </div>
               </div>
+            </div>
+
+            {/* Right: Logo Animation */}
+            <div className="order-1 md:order-2 flex justify-center md:justify-end" aria-hidden="true">
+              <div className="w-full md:w-[min(78vh,1000px)] lg:w-[min(82vh,1100px)] aspect-square md:aspect-auto md:h-[min(78vh,1000px)] lg:h-[min(82vh,1100px)]">
+                <HeroLogoSVG size="100%" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Demo Section (video only, centered) */}
+      <section id="demo" className="py-12 sm:py-16 bg-background scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 relative z-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="glassmorphism rounded-2xl p-1">
+            <div className="aspect-video rounded-xl overflow-hidden">
+              <iframe
+                src="https://www.youtube.com/embed/LM683z0glJM"
+                title="QuizzViz Demo"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+                loading="lazy"
+              />
             </div>
           </div>
         </div>
@@ -119,11 +150,11 @@ export default function Home() {
       {/* Problems We Solve Section */}
       <section 
         id="problems" 
-        className="py-24 bg-background relative"
+        className="py-24 bg-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32"
         data-testid="problems-section"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 scroll-fade">
+          <div className="text-center mb-16 scroll-fade visible">
             <h2 
               className="text-4xl lg:text-5xl font-light text-foreground mb-6"
               data-testid="problems-title"
@@ -140,7 +171,7 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
             {/* Problem 1 - Speed */}
-            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade visible border-border/50">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-500 rounded-xl flex items-center justify-center mx-auto mb-6">
                   <Clock className="w-8 h-8 text-white" />
@@ -156,7 +187,7 @@ export default function Home() {
             </Card>
             
             {/* Problem 2 - Accuracy */}
-            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade visible border-border/50">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center mx-auto mb-6">
                   <CheckCircle className="w-8 h-8 text-white" />
@@ -172,7 +203,7 @@ export default function Home() {
             </Card>
             
             {/* Problem 3 - Efficiency */}
-            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade visible border-border/50">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-green-500 rounded-xl flex items-center justify-center mx-auto mb-6">
                   <Zap className="w-8 h-8 text-white" />
@@ -193,7 +224,7 @@ export default function Home() {
       {/* Features Section */}
       <section 
         id="features" 
-        className="py-24 bg-background relative"
+        className="py-24 bg-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32"
         data-testid="features-section"
       >
         {/* Modern office workspace background with subtle overlay */}
@@ -209,7 +240,7 @@ export default function Home() {
         </div>
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 scroll-fade">
+          <div className="text-center mb-16 scroll-fade visible">
             <h2 
               className="text-4xl lg:text-5xl font-light text-foreground mb-6"
               data-testid="features-title"
@@ -226,7 +257,7 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Lightning Speed */}
-            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade visible border-border/50">
               <CardContent className="p-8 text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <Zap className="w-10 h-10 text-white" />
@@ -241,7 +272,7 @@ export default function Home() {
             </Card>
             
             {/* Precision Matching */}
-            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade visible border-border/50">
               <CardContent className="p-8 text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <CheckCircle className="w-10 h-10 text-white" />
@@ -256,7 +287,7 @@ export default function Home() {
             </Card>
             
             {/* Smart Efficiency */}
-            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade visible border-border/50">
               <CardContent className="p-8 text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <BarChart3 className="w-10 h-10 text-white" />
@@ -271,7 +302,7 @@ export default function Home() {
             </Card>
             
             {/* Enterprise Scale */}
-            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade border-border/50">
+            <Card className="glassmorphism rounded-2xl hover:bg-white/10 transition-all duration-300 scroll-fade visible border-border/50">
               <CardContent className="p-8 text-center">
                 <div className="w-20 h-20 bg-gradient-to-br from-pink-500 to-green-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <BarChart3 className="w-10 h-10 text-white" />
@@ -291,7 +322,7 @@ export default function Home() {
       {/* How It Works Section */}
       <section 
         id="how-it-works" 
-        className="py-24 bg-background relative"
+        className="py-24 bg-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32"
         data-testid="how-it-works-section"
       >
         {/* Professional meeting room background */}
@@ -307,7 +338,7 @@ export default function Home() {
         </div>
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 scroll-fade">
+          <div className="text-center mb-16 scroll-fade visible">
             <h2 
               className="text-4xl lg:text-5xl font-light text-foreground mb-6"
               data-testid="how-it-works-title"
@@ -324,7 +355,7 @@ export default function Home() {
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Step 1 */}
-            <div className="text-center scroll-fade" data-testid="step-1">
+            <div className="text-center scroll-fade visible" data-testid="step-1">
               <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-8">
                 <span className="text-3xl font-bold text-white">1</span>
               </div>
@@ -337,7 +368,7 @@ export default function Home() {
             </div>
             
             {/* Step 2 */}
-            <div className="text-center scroll-fade" data-testid="step-2">
+            <div className="text-center scroll-fade visible" data-testid="step-2">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-8">
                 <span className="text-3xl font-bold text-white">2</span>
               </div>
@@ -350,7 +381,7 @@ export default function Home() {
             </div>
             
             {/* Step 3 */}
-            <div className="text-center scroll-fade" data-testid="step-3">
+            <div className="text-center scroll-fade visible" data-testid="step-3">
               <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-green-500 rounded-full flex items-center justify-center mx-auto mb-8">
                 <span className="text-3xl font-bold text-white">3</span>
               </div>
@@ -368,7 +399,7 @@ export default function Home() {
       {/* Call to Action Section */}
       <section 
         id="cta" 
-        className="py-24 bg-background relative"
+        className="py-24 bg-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32"
         data-testid="cta-section"
       >
         {/* Elegant office interior background */}
