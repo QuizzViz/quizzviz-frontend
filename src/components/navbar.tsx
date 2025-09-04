@@ -1,7 +1,7 @@
+"use client"
 import { useState, useEffect } from "react";
-import { Logo } from "./logo";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -47,55 +47,55 @@ export function Navbar() {
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center text-sm whitespace-nowrap">
-            <div className="flex items-center gap-4 md:gap-6 lg:gap-10">
+            <div className="flex items-center gap-6 lg:gap-8 xl:gap-10">
               <button 
                 onClick={() => scrollToSection("about")}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 About
               </button>
               <button 
                 onClick={() => scrollToSection("about")}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Pricing
               </button>
               <button 
                 onClick={() => scrollToSection("about")}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Contact Us
               </button>
               <button 
                 onClick={() => scrollToSection("about")}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Partnership
               </button>
             </div>
-            <div className="hidden md:flex items-center gap-4 lg:gap-6 ml-6 md:ml-8 lg:ml-16 xl:ml-20">
+            <div className="hidden md:flex items-center gap-6 lg:gap-8 ml-6 md:ml-10 lg:ml-16 xl:ml-24">
               <Button 
                 className="bg-white text-black hover:bg-gray-200 hover:translate-x-1 transition-all duration-150 font-medium"
                 data-testid="button-demo"
                 onClick={() => scrollToSection("demo")}
               >
-                Book a Demo <span aria-hidden className="ml-2">→</span>
+                Book a Demo <ArrowRight className=" w-9 h-5" />
               </Button>
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => scrollToSection("login")}
-                  className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                   data-testid="link-login"
                 >
                   Login
                 </button>
                 <button 
                   onClick={() => scrollToSection("signup")}
-                  className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                   data-testid="link-signup"
                 >
                   Sign up
@@ -128,18 +128,18 @@ export function Navbar() {
           <div id="mobile-menu" className="md:hidden glassmorphism rounded-lg mt-2 py-3" data-testid="mobile-menu">
             <div className="flex flex-col divide-y divide-border/50">
               <div className="flex flex-col py-2">
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground" data-testid="mobile-link-about">About</button>
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground">Pricing</button>
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground">Contact Us</button>
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground">Partnership</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200" data-testid="mobile-link-about">About</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Pricing</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Contact Us</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Partnership</button>
               </div>
               <div className="flex flex-col py-2">
-                <Button onClick={() => scrollToSection("demo")} className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium" data-testid="mobile-button-demo">
-                  Book a Demo <span aria-hidden className="ml-2">→</span>
+                <Button onClick={() => scrollToSection("demo")} className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium hover:translate-x-2 duration-150" data-testid="mobile-button-demo">
+                  Book a Demo <ArrowRight className="ml-2" />
                 </Button>
                 <div className="flex items-center justify-between px-4 pt-2">
-                  <button onClick={() => scrollToSection("login")} className="text-muted-foreground hover:text-foreground" data-testid="mobile-link-login">Login</button>
-                  <button onClick={() => scrollToSection("signup")} className="text-muted-foreground hover:text-foreground" data-testid="mobile-link-signup">Sign up</button>
+                  <button onClick={() => scrollToSection("login")} className="text-white hover:text-gray-200" data-testid="mobile-link-login">Login</button>
+                  <button onClick={() => scrollToSection("signup")} className="text-white hover:text-gray-200" data-testid="mobile-link-signup">Sign up</button>
                 </div>
               </div>
             </div>

@@ -14,7 +14,7 @@ export type HeroLogoWebGLProps = {
 // Temporary stub to prevent build errors when '@react-three/fiber' and 'three' are not installed.
 // Renders the CSS-based HeroLogo so the app works. Once dependencies are installed,
 // this file can be replaced with the WebGL implementation again.
-export function HeroLogoWebGL({ size = 480, className = "" }: HeroLogoWebGLProps) {
+export function HeroLogoWebGL({ size = 800, className = "" }: HeroLogoWebGLProps) {
   const px = typeof size === "number" ? `${size}px` : size;
   return (
     <div className={`relative mx-auto ${className}`} style={{ width: px, height: px }}>

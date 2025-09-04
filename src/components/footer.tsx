@@ -1,5 +1,6 @@
+"use client"
 import { Logo } from "./logo";
-
+import Link from "next/link";
 export function Footer() {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -12,11 +13,11 @@ export function Footer() {
     <footer className="bg-secondary border-t border-border py-12" data-testid="footer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center space-x-3 mb-4 md:mb-0" data-testid="footer-brand">
+         <Link href="/"> <div className="flex items-center mb-4 md:mb-0" data-testid="footer-brand">
             <Logo size="sm" />
             <span className="text-lg font-medium text-foreground">QuizzViz</span>
             <span className="text-muted-foreground ml-2">© 2025</span>
-          </div>
+          </div></Link>
           
           <div className="flex flex-wrap justify-center md:justify-end space-x-8 text-sm">
             <button 

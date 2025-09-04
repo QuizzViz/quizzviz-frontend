@@ -3,22 +3,24 @@
 import React, { useEffect, useRef } from "react";
 
 type HeroLogoSVGProps = {
-  size?: number; // px square
+  size?: number | string; // px or CSS size (e.g., "100%")
   className?: string;
 };
 
-export function HeroLogoSVG({ size = 480, className = "" }: HeroLogoSVGProps) {
+export function HeroLogoSVG({ size = 800, className = "" }: HeroLogoSVGProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const blobRef = useRef<SVGPathElement | null>(null);
   const groupRef = useRef<SVGGElement | null>(null);
   const slicesRef = useRef<SVGGElement | null>(null);
+  const spinRef = useRef<SVGGElement | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
     const blob = blobRef.current;
-    const group = groupRef.current;
+    const group = groupRef.current; // will receive final scale
     const slices = slicesRef.current;
-    if (!container || !blob || !group || !slices) return;
+    const spin = spinRef.current;   // will receive spin animation
+    if (!container || !blob || !group || !slices || !spin) return;
 
     // Respect reduced motion
     const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -63,10 +65,12 @@ export function HeroLogoSVG({ size = 480, className = "" }: HeroLogoSVGProps) {
     const run = async () => {
       while (!cancelled) {
         // Reset state
-        group.style.animation = "none";
+        spin.style.animation = "none";
+        group.style.transition = "none";
+        group.style.transform = "scale(1)"; // start unscaled each cycle
         setOffscreen();
         // force reflow to apply 'transition: none' before enabling transitions
-        void group.getBoundingClientRect();
+        void spin.getBoundingClientRect();
         slicesEls.forEach((el) => {
           el.style.transition = "transform 900ms cubic-bezier(0.2,0.6,0.2,1), opacity 300ms ease-out";
         });
@@ -100,8 +104,12 @@ export function HeroLogoSVG({ size = 480, className = "" }: HeroLogoSVGProps) {
         await sleep(300);
 
         // Phase 3: Rotate full logo (1.4s)
-        group.style.animation = "svg-spin 1400ms ease-in-out forwards";
+        spin.style.animation = "svg-spin 1400ms ease-in-out forwards";
         await sleep(1500);
+
+        // Enlarge final assembled logo more for a stronger end state
+        group.style.transition = "transform 520ms cubic-bezier(.22,.61,.36,1)";
+        group.style.transform = "scale(1.32)";
 
         // Pause with completed logo visible to let users process the animation
         await sleep(2000);
@@ -146,18 +154,21 @@ export function HeroLogoSVG({ size = 480, className = "" }: HeroLogoSVGProps) {
 
         {/* Final assembled logo using exact PNG colors via slices */}
         <g ref={groupRef} id="logo-group" style={{ transformOrigin: "256px 256px" }}>
-          <g ref={slicesRef} id="logo-slices">
-            <g id="slice-left">
-              <image href="/QuizzViz-logo.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" clipPath="url(#clip-left)" />
-            </g>
-            <g id="slice-right">
-              <image href="/QuizzViz-logo.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" clipPath="url(#clip-right)" />
-            </g>
-            <g id="slice-top">
-              <image href="/QuizzViz-logo.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" clipPath="url(#clip-top)" />
-            </g>
-            <g id="slice-bottom">
-              <image href="/QuizzViz-logo.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" clipPath="url(#clip-bottom)" />
+          {/* Inner wrapper dedicated to rotation so the outer group can hold persistent scale */}
+          <g ref={spinRef} id="spin-wrapper" style={{ transformOrigin: "256px 256px" }}>
+            <g ref={slicesRef} id="logo-slices">
+              <g id="slice-left">
+                <image href="/QuizzViz-logo.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" clipPath="url(#clip-left)" />
+              </g>
+              <g id="slice-right">
+                <image href="/QuizzViz-logo.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" clipPath="url(#clip-right)" />
+              </g>
+              <g id="slice-top">
+                <image href="/QuizzViz-logo.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" clipPath="url(#clip-top)" />
+              </g>
+              <g id="slice-bottom">
+                <image href="/QuizzViz-logo.png" x="0" y="0" width="512" height="512" preserveAspectRatio="xMidYMid meet" clipPath="url(#clip-bottom)" />
+              </g>
             </g>
           </g>
         </g>

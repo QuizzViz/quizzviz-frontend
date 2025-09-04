@@ -78,8 +78,9 @@
   
   .scroll-fade {
     opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.8s ease-out;
+    transform: translateY(24px);
+    transition: opacity 700ms cubic-bezier(.22,.61,.36,1), transform 700ms cubic-bezier(.22,.61,.36,1);
+    will-change: opacity, transform;
   }
   
   .scroll-fade.visible {
@@ -148,10 +149,19 @@
   @media (prefers-reduced-motion: reduce) {
     .hero-bubble, .hero-orbit span, .fragment, .hero-logo .final-logo, .logo-shine::before, .hero-trails .trail { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
     .hero-orbit, .hero-trails { opacity: 0 !important; }
+    /* Disable scroll-fade motion for accessibility */
+    .scroll-fade { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .scroll-fade.visible { opacity: 1 !important; transform: none !important; }
   }
 }
 
 @layer utilities {
+  /* Smooth fade-in for premium motion */
+  .animate-fade-in-smooth {
+    animation: fadeIn 1.15s cubic-bezier(.22,.61,.36,1) both;
+    will-change: opacity, transform;
+  }
+
   @keyframes logoFloat {
     0%, 100% { 
       transform: translateY(0px) rotateY(0deg); 
