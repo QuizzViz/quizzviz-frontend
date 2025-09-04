@@ -134,8 +134,8 @@ export function Navbar() {
                 <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground">Partnership</button>
               </div>
               <div className="flex flex-col py-2">
-                <Button onClick={() => scrollToSection("demo")} className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium" data-testid="mobile-button-demo">
-                  Book a Demo <span aria-hidden className="ml-2">→</span>
+                <Button onClick={() => scrollToSection("demo")} className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium hover:translate-x-2 duration-150" data-testid="mobile-button-demo">
+                  Book a Demo <ArrowRight className="ml-2" />
                 </Button>
                 <div className="flex items-center justify-between px-4 pt-2">
                   <button onClick={() => scrollToSection("login")} className="text-muted-foreground hover:text-foreground" data-testid="mobile-link-login">Login</button>
