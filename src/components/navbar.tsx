@@ -1,3 +1,4 @@
+"use client"
 import { useState, useEffect } from "react";
 import { Logo } from "./logo";
 import { Button } from "@/components/ui/button";
@@ -47,37 +48,37 @@ export function Navbar() {
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center text-sm whitespace-nowrap">
-            <div className="flex items-center gap-4 md:gap-6 lg:gap-10">
+            <div className="flex items-center gap-6 lg:gap-8 xl:gap-10">
               <button 
                 onClick={() => scrollToSection("about")}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 About
               </button>
               <button 
                 onClick={() => scrollToSection("about")}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Pricing
               </button>
               <button 
                 onClick={() => scrollToSection("about")}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Contact Us
               </button>
               <button 
                 onClick={() => scrollToSection("about")}
-                className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Partnership
               </button>
             </div>
-            <div className="hidden md:flex items-center gap-4 lg:gap-6 ml-6 md:ml-8 lg:ml-16 xl:ml-20">
+            <div className="hidden md:flex items-center gap-6 lg:gap-8 ml-6 md:ml-10 lg:ml-16 xl:ml-24">
               <Button 
                 className="bg-white text-black hover:bg-gray-200 hover:translate-x-1 transition-all duration-150 font-medium"
                 data-testid="button-demo"
@@ -88,14 +89,14 @@ export function Navbar() {
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => scrollToSection("login")}
-                  className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                   data-testid="link-login"
                 >
                   Login
                 </button>
                 <button 
                   onClick={() => scrollToSection("signup")}
-                  className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                  className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                   data-testid="link-signup"
                 >
                   Sign up

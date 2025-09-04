@@ -44,10 +44,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
-      
-      {/* Hero Section (Left-Right layout) */}
+      <div className="min-h-screen mt-24 md:mt-0"> {/* Hero Section (Left-Right layout) */}
+
       <section 
         id="hero" 
         className="min-h-screen relative overflow-hidden pt-10 sm:pt-14 md:pt-24 pb-4 scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32"
@@ -446,8 +444,5 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
-      <Footer />
-    </div>
-  );
+      </section> </div> );
 }
