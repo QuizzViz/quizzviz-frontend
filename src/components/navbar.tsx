@@ -1,6 +1,5 @@
 "use client"
 import { useState, useEffect } from "react";
-import { Logo } from "./logo";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Menu, X } from "lucide-react";
 
@@ -129,18 +128,18 @@ export function Navbar() {
           <div id="mobile-menu" className="md:hidden glassmorphism rounded-lg mt-2 py-3" data-testid="mobile-menu">
             <div className="flex flex-col divide-y divide-border/50">
               <div className="flex flex-col py-2">
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground" data-testid="mobile-link-about">About</button>
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground">Pricing</button>
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground">Contact Us</button>
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-muted-foreground hover:text-foreground">Partnership</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200" data-testid="mobile-link-about">About</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Pricing</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Contact Us</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Partnership</button>
               </div>
               <div className="flex flex-col py-2">
                 <Button onClick={() => scrollToSection("demo")} className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium hover:translate-x-2 duration-150" data-testid="mobile-button-demo">
                   Book a Demo <ArrowRight className="ml-2" />
                 </Button>
                 <div className="flex items-center justify-between px-4 pt-2">
-                  <button onClick={() => scrollToSection("login")} className="text-muted-foreground hover:text-foreground" data-testid="mobile-link-login">Login</button>
-                  <button onClick={() => scrollToSection("signup")} className="text-muted-foreground hover:text-foreground" data-testid="mobile-link-signup">Sign up</button>
+                  <button onClick={() => scrollToSection("login")} className="text-white hover:text-gray-200" data-testid="mobile-link-login">Login</button>
+                  <button onClick={() => scrollToSection("signup")} className="text-white hover:text-gray-200" data-testid="mobile-link-signup">Sign up</button>
                 </div>
               </div>
             </div>
