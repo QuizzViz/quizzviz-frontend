@@ -43,7 +43,7 @@ export function Navbar() {
             data-testid="logo-brand"
           >
             {/* <Logo size="md" animate={true} /> */}
-            <span className="inline-block text-xl sm:text-2xl font-semibold text-foreground">QuizzViz</span>
+           <Link href="/"> <span className="inline-block text-xl sm:text-2xl font-semibold text-foreground">QuizzViz</span></Link>
           </div>
           
           {/* Desktop Navigation */}
@@ -137,8 +137,8 @@ export function Navbar() {
                   Book a Demo <ArrowRight className="ml-2" />
                 </Button>
                 <div className="flex items-center justify-between px-4 pt-2">
-                  <button onClick={() => scrollToSection("login")} className="text-white hover:text-gray-200" data-testid="mobile-link-login">Login</button>
-                  <button onClick={() => scrollToSection("signup")} className="text-white hover:text-gray-200" data-testid="mobile-link-signup">Sign up</button>
+                  <Link href="/signin"><button  className="text-white hover:text-gray-200" data-testid="mobile-link-login">Login</button></Link>
+                  <Link href="/signup"><button  className="text-white hover:text-gray-200" data-testid="mobile-link-signup">Sign up</button></Link>
                 </div>
               </div>
             </div>
