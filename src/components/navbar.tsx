@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Menu, X } from "lucide-react";
+import Link from "next/link";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -86,20 +87,18 @@ export function Navbar() {
                 Book a Demo <ArrowRight className=" w-9 h-5" />
               </Button>
               <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => scrollToSection("login")}
+                <Link href="/signin"><button 
                   className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                   data-testid="link-login"
                 >
                   Login
-                </button>
-                <button 
-                  onClick={() => scrollToSection("signup")}
+                </button></Link>
+                <Link href="/signup"><button 
                   className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                   data-testid="link-signup"
                 >
                   Sign up
-                </button>
+                </button></Link>
               </div>
             </div>
           </div>
