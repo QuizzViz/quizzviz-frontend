@@ -5,7 +5,7 @@ export default function Dashboard() {
   const { user } = useUser();
 
   return (
-    <div>
+    <div className="flex items-center justify-center h-screen mt-28">
       <SignedIn>
         <h1>Welcome, {user?.firstName || "User"}!</h1>
         <LogoutButton />

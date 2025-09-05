@@ -6,6 +6,7 @@ vite.config.ts.*
 .next/
 .local/
 .env
+.env.local
 .env.*
 !.env.example
 coverage/
