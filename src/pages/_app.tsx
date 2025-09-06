@@ -5,7 +5,7 @@ import { Navbar } from '@/components/navbar';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <ClerkProvider {...pageProps}>
+    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} {...pageProps}>
       <Navbar />
       <Component {...pageProps} />
     </ClerkProvider>

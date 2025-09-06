@@ -1,13 +1,14 @@
 import { useEffect, useRef } from "react";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
+import {useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckCircle, Zap, BarChart3, ArrowRight } from "lucide-react";
 import { HeroLogoSVG } from "@/components/HeroLogoSVG";
+import Link from "next/link";
 
 export default function Home() {
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const { user } = useUser();
 
   useEffect(() => {
     // Set up intersection observer for scroll animations
@@ -91,7 +92,8 @@ export default function Home() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3 mb-3">
-                  <Button
+                {user ? (
+                  <Link href="/app"><Button
                     aria-label="Get Started"
                     className="inline-flex items-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-white text-black 
                                shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/90 
@@ -100,8 +102,18 @@ export default function Home() {
                   >
                     Get Started
                     <ArrowRight className="ml-2 w-6 h-6" />
-                  </Button>
-                  <Button 
+                  </Button></Link> ) : (
+                    <Link href="/signup"><Button
+                    aria-label="Get Started"
+                    className="inline-flex items-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-white text-black 
+                               shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/90 
+                               text-base md:text-sm ring-1 ring-black/10 hover:ring-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:translate-x-2 duration-150"
+                    data-testid="button-get-started"
+                  >
+                    Get Started
+                    <ArrowRight className="ml-2 w-6 h-6" />
+                  </Button></Link>)}
+                    <Button 
                     variant="outline"
                     aria-label="Book a demo"
                     className="md:ml-2 inline-flex items-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-transparent border border-white/70 text-white 
