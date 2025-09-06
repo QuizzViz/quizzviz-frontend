@@ -6,8 +6,8 @@ export const metadata = {
 import "./globals.css";
 import Providers from "./providers";
 import React from "react";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
+import { Navbar } from "@/components/NavBar";
+import { Footer } from "@/components/Footer";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

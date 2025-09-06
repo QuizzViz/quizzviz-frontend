@@ -1,6 +1,7 @@
 "use client";
 
-import Home from "@/pages/home";
+import Home from "@/pages/landingPage";
+
 
 export default function Page() {
   return (

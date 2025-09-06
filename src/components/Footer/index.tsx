@@ -1,6 +1,7 @@
 "use client"
-import { Logo } from "./logo";
+import { Logo } from "../logo";
 import Link from "next/link";
+
 export function Footer() {
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
