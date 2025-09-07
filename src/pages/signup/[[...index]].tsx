@@ -31,7 +31,7 @@ export default function SignUpPage() {
         await signUp.authenticateWithRedirect({
           strategy,
           redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
+          redirectUrlComplete: "/dashboard",
         });
       } catch (err) {
         console.error("OAuth sign-up error:", err);
