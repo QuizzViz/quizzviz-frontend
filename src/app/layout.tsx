@@ -11,17 +11,18 @@ export const metadata: Metadata = {
   description:
     "QuizzViz helps companies create high-quality, real-world coding quizzes in under 3 minutes. Fast, reliable, and built for professionals.",
   icons: {
-    icon: "/favicon.ico", 
+    icon: "/favicon.ico"
   },
   openGraph: {
     title: "QuizzViz – Create Professional Coding Quizzes in Minutes",
     description:
       "Build enterprise-grade coding quizzes in minutes with QuizzViz. Intelligent, fast, and professional quiz generation.",
-    url: "https://www.quizzviz.com ",
+    url: "https://www.quizzviz.com",
     siteName: "QuizzViz",
     images: [
       {
-        url: "/QuizzViz-logo.png", 
+        url: "https://www.quizzviz.com/QuizzViz-logo.png",
+        width: 1200,
         height: 630,
         alt: "QuizzViz Logo",
       },
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
     type: "website",
   },
 };
+
 
 export default function RootLayout({
   children,
