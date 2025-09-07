@@ -1,3 +1,4 @@
+
 // layout.tsx
 import "./globals.css";
 import Providers from "./providers";
@@ -6,7 +7,10 @@ import { Navbar } from "@/components/NavBar";
 import { Footer } from "@/components/Footer";
 import type { Metadata } from "next";
 
+// import ConditionalNavbar from "@/components/ConditionalNavbar";
+
 const siteUrl = "https://www.quizzviz.com";
+
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -106,7 +110,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+
   return (
+
+    
     <html lang="en">
       <head>
         {/* JSON-LD Structured Data for WebSite */}
@@ -143,7 +150,7 @@ export default function RootLayout({
       <body>
         <Providers>
           <div className="min-h-screen bg-background text-foreground">
-            <Navbar />
+             
             {children}
             <Footer />
           </div>
