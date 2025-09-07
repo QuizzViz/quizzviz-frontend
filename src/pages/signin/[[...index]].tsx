@@ -30,7 +30,7 @@ export default function SignInPage() {
         await signIn.authenticateWithRedirect({
           strategy,
           redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
+          redirectUrlComplete: "/dashboard",
         });
       } catch (err) {
         console.error("OAuth sign-in error:", err);

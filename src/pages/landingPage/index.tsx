@@ -93,7 +93,7 @@ export default function Home() {
 
                 <div className="flex flex-col sm:flex-row gap-3 mb-3">
                 {user ? (
-                  <Link href="/app"><Button
+                  <Link href="/dashboard"><Button
                     aria-label="Get Started"
                     className="inline-flex items-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-white text-black 
                                shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/90 
