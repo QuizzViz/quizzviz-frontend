@@ -1,4 +1,9 @@
 "use client"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
 
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import LogoutButton from "@/components/auth/LogoutButton";
@@ -25,7 +30,9 @@ import {
   Sparkles,
   Zap,
   Target,
+  Sidebar,
 } from "lucide-react";
+import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 
 const sidebarItems = [
   { id: 1, label: "Dashboard", icon: Home, link: "/dashboard", active: true },
@@ -96,51 +103,33 @@ export default function Dashboard() {
     <div className="min-h-screen">
       <SignedIn>
         <div className="flex min-h-screen bg-background dark">
-          {/* Sidebar */}
-          <div className="w-64 bg-card border-r border-border flex flex-col">
-            <div className="p-6 border-b border-border flex items-center space-x-2">
-              <div className="bg-foreground p-2 rounded-lg">
-                <Brain className="h-6 w-6 text-background" />
-              </div>
-              <h1 className="text-xl font-bold text-foreground">QuizGen AI</h1>
-            </div>
-            <ScrollArea className="flex-1 p-4">
-              <nav className="space-y-2">
-                {sidebarItems.map((item, index) => (
-                  <Button
-                    key={index}
-                    variant={item.active ? "default" : "ghost"}
-                    className={`w-full justify-start transition-all duration-200 ${
-                      item.active ? "bg-foreground text-background shadow-lg" : "hover:bg-muted/50 hover:text-foreground"
-                    }`}
-                  >
-                    <item.icon className="h-4 w-4 mr-3" />
-                    {item.label}
-                  </Button>
-                ))}
-              </nav>
-            </ScrollArea>
-          </div>
-
+          <DashboardSideBar/>
           {/* Main content */}
           <div className="flex-1 flex flex-col">
             {/* Header */}
             <div className="p-6 border-b border-border bg-card/30 backdrop-blur-sm flex items-center justify-between">
               <div>
                 <h1 className="text-4xl font-bold text-foreground">
-                  <span className="text-muted-foreground">Intelligent</span>{" "}
-                  <span className="text-foreground">Quiz Generation</span>
+                  {/* <span className="text-muted-foreground">Intelligent</span>{" "} */}
+                  <span className="text-foreground">Intelligent Quiz Generation</span>
                 </h1>
                 <p className="text-muted-foreground mt-2 text-lg">
-                  Transform learning with AI-powered assessments in seconds
+                  Transform hiring with AI-powered assessments in seconds
                 </p>
               </div>
               <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm" className="border-border hover:border-foreground bg-transparent">
+                {/* <Button variant="outline" size="sm" className="border-border hover:border-foreground bg-transparent">
                   <Search className="h-4 w-4 mr-2" />
                   Search
-                </Button>
-                <span className="ml-4">Welcome, {user?.firstName || "User"}!</span>
+                </Button> */}
+                {/* <span className="ml-4">Welcome, {user?.firstName || "User"}!</span> */}
+                <div className="flex flex-row flex-wrap items-center gap-12">
+      <Avatar>
+        <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+        <AvatarFallback>CN</AvatarFallback>
+      </Avatar>
+      
+      </div>
                 <LogoutButton />
               </div>
             </div>
