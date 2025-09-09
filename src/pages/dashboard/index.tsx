@@ -33,65 +33,64 @@ import {
   Sidebar,
 } from "lucide-react";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
+import UserAvatarDropdown from "@/components/UserAvatarDropdown";
 
-const sidebarItems = [
-  { id: 1, label: "Dashboard", icon: Home, link: "/dashboard", active: true },
-  { id: 2, label: "Quizzes", icon: BookOpen, link: "/quizzes", active: false },
-  { id: 3, label: "Results", icon: BarChart3, link: "/results", active: false },
-  { id: 4, label: "Profile", icon: Users, link: "/profile", active: false },
-  { id: 5, label: "Settings", icon: Settings, link: "/settings", active: false },
-];
+
+
 // Queued quizzes with status & progress for the progress bar
+
+
 const queuedQuizzes = [
-  { id: 1, title: "Geography Quiz", scheduled: "2025-09-10", status: "generating", progress: 60 },
-  { id: 2, title: "Physics Challenge", scheduled: "2025-09-12", status: "queued", progress: 0 },
-  { id: 3, title: "English Grammar", scheduled: "2025-09-15", status: "queued", progress: 0 },
+  { id: 1, title: "Data Structures Quiz", scheduled: "2025-09-10", status: "generating", progress: 60 },
+  { id: 2, title: "Algorithms Challenge", scheduled: "2025-09-12", status: "queued", progress: 0 },
+  { id: 3, title: "Python Programming", scheduled: "2025-09-15", status: "queued", progress: 0 },
 ];
+
 // Previous quizzes with all fields used in your cards
 const previousQuizzes = [
   {
     id: 1,
-    title: "Math Basics",
+    title: "JavaScript Fundamentals",
     questions: 15,
     completed: 120,
     rating: 4.5,
-    subject: "Mathematics",
+    subject: "JavaScript",
     difficulty: "Easy",
   },
   {
     id: 2,
-    title: "Science Quiz",
+    title: "Python for Data Science",
     questions: 20,
     completed: 95,
     rating: 4.8,
-    subject: "Science",
+    subject: "Python",
     difficulty: "Medium",
   },
   {
     id: 3,
-    title: "History Test",
+    title: "Algorithms and Data Structures",
     questions: 10,
     completed: 80,
     rating: 4.2,
-    subject: "History",
+    subject: "Computer Science",
     difficulty: "Hard",
   },
   {
     id: 4,
-    title: "React Hooks",
+    title: "React Hooks & State Management",
     questions: 12,
     completed: 50,
     rating: 4.7,
-    subject: "Programming",
+    subject: "React",
     difficulty: "Medium",
   },
   {
     id: 5,
-    title: "World Geography",
+    title: "Node.js & Express Basics",
     questions: 18,
     completed: 60,
     rating: 4.4,
-    subject: "Geography",
+    subject: "Node.js",
     difficulty: "Medium",
   },
 ];
@@ -124,13 +123,10 @@ export default function Dashboard() {
                 </Button> */}
                 {/* <span className="ml-4">Welcome, {user?.firstName || "User"}!</span> */}
                 <div className="flex flex-row flex-wrap items-center gap-12">
-      <Avatar>
-        <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-        <AvatarFallback>CN</AvatarFallback>
-      </Avatar>
+      <UserAvatarDropdown userName={"Muhammad Haider"}/>
       
       </div>
-                <LogoutButton />
+          
               </div>
             </div>
 
