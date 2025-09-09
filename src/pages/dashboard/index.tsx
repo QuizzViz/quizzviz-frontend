@@ -120,22 +120,27 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background dark">
       <SignedIn>
-        <div className="flex min-h-screen bg-background dark">
-          <DashboardSideBar/>
+        <div className="flex min-h-screen">
+          <div className="border-r border-slate-800">
+            <DashboardSideBar/>
+          </div>
           {/* Main content */}
           <div className="flex-1 flex flex-col">
             {/* Header */}
-            <div className="p-4 md:p-6 border-b border-border bg-card/30 backdrop-blur-sm flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm flex items-center justify-between">
               {/* Left side - Logo and App Name */}
               <div className="flex items-center">
-                <LogoWithText className="mr-4" />
+                <LogoWithText className="h-8" />
               </div>
               
               {/* Right side - User Avatar */}
               <div className="flex items-center">
-                <UserAvatarDropdown userName={user?.firstName as string} />
+                <UserAvatarDropdown 
+                  userName={user?.fullName || user?.firstName || 'User'} 
+                  userEmail={user?.emailAddresses?.[0]?.emailAddress}
+                />
               </div>
             </div>
 
