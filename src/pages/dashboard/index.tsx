@@ -6,6 +6,8 @@ import {
 } from "@/components/ui/avatar"
 
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 import LogoutButton from "@/components/auth/LogoutButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -96,10 +98,29 @@ const previousQuizzes = [
 ];
 
 export default function Dashboard() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push('/signin');
+    } else if (isLoaded) {
+      setIsLoading(false);
+    }
+  }, [isLoaded, user, router]);
+
+  if (isLoading || !isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
+      {/* <button>Hello</button> */}
       <SignedIn>
         <div className="flex min-h-screen bg-background dark">
           <DashboardSideBar/>
@@ -123,7 +144,7 @@ export default function Dashboard() {
                 </Button> */}
                 {/* <span className="ml-4">Welcome, {user?.firstName || "User"}!</span> */}
                 <div className="flex flex-row flex-wrap items-center gap-12">
-      <UserAvatarDropdown userName={"Muhammad Haider"}/>
+      <UserAvatarDropdown userName={user?.firstName as string}/>
       
       </div>
           
@@ -269,9 +290,13 @@ export default function Dashboard() {
         </div>
       </SignedIn>
 
+{/* We have to Add Button to Sign Up and Login Page Here */}
       <SignedOut>
         <div className="flex items-center justify-center h-screen">
-          <p>You are signed out. Please sign in first.</p>
+          <div className="text-center">
+            <h1 className="text-lg md:text-xl lg:text-2xl font-semibold mb-4">Redirecting to sign in...</h1>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          </div>
         </div>
       </SignedOut>
     </div>

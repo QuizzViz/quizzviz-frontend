@@ -8,7 +8,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
   // 👇 Add the route(s) where you DON'T want the navbar
-  const noNavbarRoutes = ["/dashboard"]; // e.g. hide navbar on /signin
+  const noNavbarRoutes = ["/dashboard"]; // e.g. hide navbar on /dashboard
 
   const hideNavbar = noNavbarRoutes.includes(router.pathname);
 
@@ -17,7 +17,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       {...pageProps}
     >
-      {!hideNavbar && <Navbar />} {/* Navbar hidden only on /signin */}
+      {!hideNavbar && <Navbar />} {/* Navbar hidden only on /dashboard */}
       <Component {...pageProps} />
     </ClerkProvider>
   );
