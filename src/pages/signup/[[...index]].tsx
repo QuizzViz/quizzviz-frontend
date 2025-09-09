@@ -231,10 +231,10 @@ export default function SignUpPage() {
                 </p>
                 <div className="grid grid-cols-1 gap-2">
                   <button
-                    onClick={() => router.push('/')}
+                    onClick={() => router.push('/dashboard')}
                     className="inline-flex h-10 w-full items-center justify-center rounded-lg px-4 bg-primary text-primary-foreground hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ring font-medium"
                   >
-                    Go to Home
+                    Go to Dashboard
                   </button>
                   <button
                     onClick={async () => {

@@ -6,6 +6,9 @@ import {
 } from "@/components/ui/avatar"
 
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import { LogoWithText } from "@/components/LogoWithText";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -96,37 +99,48 @@ const previousQuizzes = [
 ];
 
 export default function Dashboard() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push('/signin');
+    } else if (isLoaded) {
+      setIsLoading(false);
+    }
+  }, [isLoaded, user, router]);
+
+  if (isLoading || !isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background dark">
       <SignedIn>
-        <div className="flex min-h-screen bg-background dark">
-          <DashboardSideBar/>
+        <div className="flex min-h-screen">
+          <div className="border-r border-slate-800">
+            <DashboardSideBar/>
+          </div>
           {/* Main content */}
           <div className="flex-1 flex flex-col">
             {/* Header */}
-            <div className="p-6 border-b border-border bg-card/30 backdrop-blur-sm flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl font-bold text-foreground">
-                  {/* <span className="text-muted-foreground">Intelligent</span>{" "} */}
-                  <span className="text-foreground">Intelligent Quiz Generation</span>
-                </h1>
-                <p className="text-muted-foreground mt-2 text-lg">
-                  Transform hiring with AI-powered assessments in seconds
-                </p>
+            <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm flex items-center justify-between">
+              {/* Left side - Logo and App Name */}
+              <div className="flex items-center">
+                <LogoWithText className="h-8" />
               </div>
-              <div className="flex items-center space-x-2">
-                {/* <Button variant="outline" size="sm" className="border-border hover:border-foreground bg-transparent">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button> */}
-                {/* <span className="ml-4">Welcome, {user?.firstName || "User"}!</span> */}
-                <div className="flex flex-row flex-wrap items-center gap-12">
-      <UserAvatarDropdown userName={"Muhammad Haider"}/>
-      
-      </div>
-          
+              
+              {/* Right side - User Avatar */}
+              <div className="flex items-center">
+                <UserAvatarDropdown 
+                  userName={user?.fullName || user?.firstName || 'User'} 
+                  userEmail={user?.emailAddresses?.[0]?.emailAddress}
+                />
               </div>
             </div>
 
@@ -269,9 +283,13 @@ export default function Dashboard() {
         </div>
       </SignedIn>
 
+{/* We have to Add Button to Sign Up and Login Page Here */}
       <SignedOut>
         <div className="flex items-center justify-center h-screen">
-          <p>You are signed out. Please sign in first.</p>
+          <div className="text-center">
+            <h1 className="text-lg md:text-xl lg:text-2xl font-semibold mb-4">Redirecting to sign in...</h1>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          </div>
         </div>
       </SignedOut>
     </div>
