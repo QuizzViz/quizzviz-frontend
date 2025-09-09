@@ -8,6 +8,7 @@ import {
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { LogoWithText } from "@/components/LogoWithText";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -120,34 +121,21 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen">
-      {/* <button>Hello</button> */}
       <SignedIn>
         <div className="flex min-h-screen bg-background dark">
           <DashboardSideBar/>
           {/* Main content */}
           <div className="flex-1 flex flex-col">
             {/* Header */}
-            <div className="p-6 border-b border-border bg-card/30 backdrop-blur-sm flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl font-bold text-foreground">
-                  {/* <span className="text-muted-foreground">Intelligent</span>{" "} */}
-                  <span className="text-foreground">Intelligent Quiz Generation</span>
-                </h1>
-                <p className="text-muted-foreground mt-2 text-lg">
-                  Transform hiring with AI-powered assessments in seconds
-                </p>
+            <div className="p-4 md:p-6 border-b border-border bg-card/30 backdrop-blur-sm flex items-center justify-between">
+              {/* Left side - Logo and App Name */}
+              <div className="flex items-center">
+                <LogoWithText className="mr-4" />
               </div>
-              <div className="flex items-center space-x-2">
-                {/* <Button variant="outline" size="sm" className="border-border hover:border-foreground bg-transparent">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button> */}
-                {/* <span className="ml-4">Welcome, {user?.firstName || "User"}!</span> */}
-                <div className="flex flex-row flex-wrap items-center gap-12">
-      <UserAvatarDropdown userName={user?.firstName as string}/>
-      
-      </div>
-          
+              
+              {/* Right side - User Avatar */}
+              <div className="flex items-center">
+                <UserAvatarDropdown userName={user?.firstName as string} />
               </div>
             </div>
 
