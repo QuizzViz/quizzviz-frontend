@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | QuizzViz",
   },
   description:
-    "QuizzViz helps companies create high-quality, real-world coding quizzes in under 3 minutes. Fast, reliable, and built for professionals.",
+    "QuizzViz helps companies create high-quality, real-world coding quizzes in minutes. Fast, reliable, and built for professionals.",
   applicationName: "QuizzViz",
   generator: "Next.js",
   keywords: [
@@ -129,7 +129,7 @@ export default function RootLayout({
       logo: "https://www.quizzviz.com/QuizzViz-logo.png",
       image: "https://www.quizzviz.com/QuizzViz-logo.png",
       description:
-        "QuizzViz is an AI-powered coding quiz generator that helps companies create professional, real-world coding quizzes in under 3 minutes.",
+        "QuizzViz is an AI-powered coding quiz generator that helps companies create professional, real-world coding quizzes in minutes.",
       brand: {
         "@type": "Brand",
         name: "QuizzViz",
