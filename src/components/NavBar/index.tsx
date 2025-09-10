@@ -57,25 +57,22 @@ export function Navbar() {
                 About
               </button>
               <button 
-                onClick={() => scrollToSection("about")}
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Pricing
               </button>
               <button 
-                onClick={() => scrollToSection("about")}
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
-                Contact Us
+                Contact
               </button>
               <button 
-                onClick={() => scrollToSection("about")}
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
-                Partnership
+                Dashboard
               </button>
             </div>
             <div className="hidden md:flex items-center gap-6 lg:gap-8 ml-6 md:ml-10 lg:ml-16 xl:ml-24">
@@ -130,7 +127,7 @@ export function Navbar() {
                 <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200" data-testid="mobile-link-about">About</button>
                 <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Pricing</button>
                 <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Contact Us</button>
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Partnership</button>
+                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Dashboard</button>
               </div>
               <div className="flex flex-col py-2">
                 <Button onClick={() => scrollToSection("demo")} className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium hover:translate-x-2 duration-150" data-testid="mobile-button-demo">
