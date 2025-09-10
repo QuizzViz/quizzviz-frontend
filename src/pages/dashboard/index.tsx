@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import UserAvatarDropdown from "@/components/UserAvatarDropdown";
+import CreateQuizCard from "@/components/CreateQuizCard";
 
 
 
@@ -146,37 +147,8 @@ export default function Dashboard() {
 
             <div className="flex-1 p-6 space-y-8">
               {/* Create Quiz Card */}
-              <Card className="bg-card border-border">
-                <CardContent className="p-8">
-                  <div className="text-center mb-6">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-foreground rounded-full mb-4">
-                      <Sparkles className="h-8 w-8 text-background" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-foreground mb-2">Create Your Next Quiz</h2>
-                    <p className="text-muted-foreground">
-                      Describe your vision and watch AI bring it to life
-                    </p>
-                  </div>
-                  <div className="flex space-x-3">
-                    <div className="relative flex-1">
-                      <Input
-                        placeholder="e.g., 'Create a 15-question React hooks quiz...' "
-                        className="bg-background border-border text-foreground placeholder:text-muted-foreground/70 pr-12 py-6 text-lg focus:border-foreground"
-                      />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Zap className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    </div>
-                    <Button
-                      size="lg"
-                      className="bg-foreground hover:bg-muted-foreground text-background transition-all duration-200 px-8"
-                    >
-                      <Send className="h-5 w-5 mr-2" />
-                      Generate
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <CreateQuizCard/>
+              
 
               {/* Queue */}
               <Card className="bg-card border-border">
