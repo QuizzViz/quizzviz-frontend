@@ -31,6 +31,9 @@ export default  function CreateQuizCard() {
 
   // reasoning state
   const [isReasoning, setIsReasoning] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [quizData, setQuizData] = useState<any>(null);
   const steps = [
     "🔍 Parsing and understanding the topic semantics...",
     "⚖️ Balancing code-analysis and theoretical coverage...",
@@ -49,14 +52,86 @@ export default  function CreateQuizCard() {
   const HOLD_AFTER_TYPING = 900; // ms before next step
   const FINISH_HOLD = 600; // ms after final step before closing
 
-  // start reasoning
-  const handleGenerate = () => {
-    if (isReasoning) return;
+  // map UI difficulty to API expected values
+  const difficultyToApi = (val: string) => {
+    switch (val) {
+      case "High School":
+        return "High School Level";
+      case "Bachelors":
+        return "Bachelors Level";
+      case "Masters":
+        return "Masters Level";
+      case "PhD":
+        return "PhD Level";
+      default:
+        return "Bachelors Level";
+    }
+  };
+
+  // start reasoning and fire API
+  const handleGenerate = async () => {
+    if (isReasoning || isFetching) return;
+
+    // validate required fields
+    const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
+    if (!topic.trim()) {
+      setError("Topic is required");
+      return;
+    }
+    if (!difficulty) {
+      setError("Difficulty is required");
+      return;
+    }
+    if (!numQuestions) {
+      setError("Number of questions is required");
+      return;
+    }
+
+    setError(null);
+    setQuizData(null);
     setIsReasoning(true);
+    setIsFetching(true);
     setStepIndex(0);
     setCharIndex(0);
     setTypedText("");
     setProgress(0);
+
+    // prepare payload mapping slider balance (Code%) to theory/code split
+    const codePct = Math.max(0, Math.min(100, balance[0] ?? 50));
+    const payload = {
+      topic: topic.trim(),
+      difficulty_level: difficultyToApi(difficulty),
+      num_questions: numQuestions,
+      theory_questions_percentage: 100 - codePct,
+      code_analysis_questions_percentage: codePct,
+    };
+
+    try {
+      const resp = await fetch(
+        "/api/quiz",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        const msg = text || `Request failed with status ${resp.status}`;
+        throw new Error(msg);
+      }
+      const data = await resp.json();
+      setQuizData(data);
+    } catch (e: any) {
+      console.error("Error generating quiz:", e);
+      setError(e?.message || "Failed to generate quiz. Please try again.");
+    } finally {
+      setIsFetching(false);
+      // allow the animation loop to conclude before hiding panel
+      setTimeout(() => {
+        setIsReasoning(false);
+      }, 400);
+    }
   };
 
   // typing & progress effect
@@ -68,15 +143,24 @@ export default  function CreateQuizCard() {
 
     // finished all steps
     if (stepIndex >= steps.length) {
-      // show full progress then stop
-      setProgress(100);
-      holdTimer = setTimeout(() => {
-        setIsReasoning(false);
-        setStepIndex(0);
-        setTypedText("");
-        setCharIndex(0);
-        setProgress(0);
-      }, FINISH_HOLD);
+      // if still fetching, loop steps to keep animation going
+      if (isFetching) {
+        holdTimer = setTimeout(() => {
+          setStepIndex(0);
+          setTypedText("");
+          setCharIndex(0);
+        }, HOLD_AFTER_TYPING);
+      } else {
+        // show full progress then stop
+        setProgress(100);
+        holdTimer = setTimeout(() => {
+          setIsReasoning(false);
+          setStepIndex(0);
+          setTypedText("");
+          setCharIndex(0);
+          setProgress(0);
+        }, FINISH_HOLD);
+      }
       return () => {
         if (typingTimer) clearInterval(typingTimer);
         if (holdTimer) clearTimeout(holdTimer);
@@ -117,7 +201,77 @@ export default  function CreateQuizCard() {
       if (typingTimer) clearInterval(typingTimer);
       if (holdTimer) clearTimeout(holdTimer);
     };
-  }, [isReasoning, stepIndex]); // re-run when stepIndex changes or reasoning stops
+  }, [isReasoning, stepIndex, isFetching]); // re-run when stepIndex changes or reasoning stops
+
+  // Quiz rendering (page-like) after response
+  if (quizData) {
+    return (
+      <Card className="bg-card border-border">
+        <CardContent className="p-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-foreground">Quiz</h2>
+            <Button
+              variant="outline"
+              className="border-border"
+              onClick={() => {
+                setQuizData(null);
+                setError(null);
+              }}
+            >
+              Back
+            </Button>
+          </div>
+
+          {error && (
+            <div className="text-sm text-red-500">{error}</div>
+          )}
+
+          <div className="space-y-6">
+            {Array.isArray(quizData.quiz) && quizData.quiz.map((q: any, idx: number) => (
+              <div key={q.id ?? idx} className="border border-border rounded-xl p-4 bg-background">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-foreground/10 text-foreground flex items-center justify-center flex-shrink-0">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <div className="text-foreground font-medium">{q.question}</div>
+                    {q.type === 'code_analysis' && q.code_snippet && (
+                      <div className="rounded-md overflow-hidden border border-border">
+                        <div className="bg-[#0b0b0b] text-gray-200 font-mono text-sm p-4 overflow-x-auto">
+                          <pre className="whitespace-pre leading-6">
+{`$ python
+${q.code_snippet}`}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {Object.entries(q.options || {}).map(([key, value]) => (
+                        <label
+                          key={key}
+                          className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:border-foreground/30"
+                        >
+                          <input type="radio" name={`q-${idx}`} value={key} className="accent-foreground" required />
+                          <span className="font-semibold">{key}.</span>
+                          <span className="text-foreground/90">{String(value)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end">
+            <Button className="bg-foreground text-background" onClick={() => { /* placeholder submit */ }}>
+              Submit
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-card border-border">
@@ -147,6 +301,7 @@ export default  function CreateQuizCard() {
               onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g. Quantum Mechanics"
               className="bg-background border-border text-foreground placeholder:text-muted-foreground/70 pr-12 py-6 text-lg focus:border-foreground"
+              required
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
               <Zap className="h-5 w-5 text-muted-foreground" />
@@ -178,6 +333,8 @@ export default  function CreateQuizCard() {
               value={count}
               onChange={(e) => setCount(parseInt(e.target.value || "0"))}
               className="bg-background border-border text-foreground focus:border-foreground"
+              min={1}
+              required
             />
           </div>
         </div>
@@ -204,19 +361,23 @@ export default  function CreateQuizCard() {
             <Button
               onClick={handleGenerate}
               className="bg-foreground hover:bg-muted-foreground text-background transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center"
-              disabled={isReasoning}
-              aria-disabled={isReasoning}
-              aria-busy={isReasoning}
+              disabled={isReasoning || isFetching}
+              aria-disabled={isReasoning || isFetching}
+              aria-busy={isReasoning || isFetching}
             >
-              {isReasoning ? (
+              {isReasoning || isFetching ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Send className="h-4 w-4 mr-2" />
               )}
-              {isReasoning ? "Thinking..." : "Generate"}
+              {isReasoning || isFetching ? "Thinking..." : "Generate"}
             </Button>
           </motion.div>
         </div>
+
+        {error && (
+          <div className="text-sm text-red-500">{error}</div>
+        )}
 
         {/* World-class Reasoning Panel */}
         <AnimatePresence>
