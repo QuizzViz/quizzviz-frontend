@@ -278,19 +278,17 @@ ${q.code_snippet}`}
       <CardContent className="p-8 space-y-6">
         {/* Header */}
         <div className="text-center mb-2">
-          <div
-            className="inline-flex items-center justify-center w-16 h-16 bg-foreground rounded-full mb-3 shadow-lg"
-            aria-hidden
-          >
-            <Sparkles className="h-8 w-8 text-background" />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground mb-1">
-            Create Your Next Quiz
-          </h2>
-          <p className="text-muted-foreground">
-            Describe your vision and watch AI bring it to life
-          </p>
-        </div>
+          {/* Animated "Create your quiz" instead of dot/star */}
+
+
+  <h2 className="text-3xl font-semibold tracking-tight text-foreground mb-2">
+    Create Your Quiz
+  </h2>
+  <p className="text-base text-muted-foreground leading-relaxed">
+    From Idea to Quiz
+  </p>
+</div>
+
 
         {/* Topic Input */}
         <div className="space-y-2">
@@ -299,7 +297,7 @@ ${q.code_snippet}`}
             <Input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g. Quantum Mechanics"
+              placeholder="e.g. MERN Stack"
               className="bg-background border-border text-foreground placeholder:text-muted-foreground/70 pr-12 py-6 text-lg focus:border-foreground"
               required
             />
@@ -318,10 +316,10 @@ ${q.code_snippet}`}
                 <SelectValue placeholder="Select difficulty" />
               </SelectTrigger>
               <SelectContent className="bg-background border-border text-foreground">
-                <SelectItem value="High School">High School</SelectItem>
-                <SelectItem value="Bachelors">Bachelors</SelectItem>
-                <SelectItem value="Masters">Masters</SelectItem>
-                <SelectItem value="PhD">PhD</SelectItem>
+                <SelectItem value="High School">High School level</SelectItem>
+                <SelectItem value="Bachelors">Bachelors level</SelectItem>
+                <SelectItem value="Masters">Masters level</SelectItem>
+                <SelectItem value="PhD">PhD level</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -343,8 +341,8 @@ ${q.code_snippet}`}
         <div className="space-y-3">
           <Label className="text-foreground">
             Code vs Theory:{" "}
-            <span className="text-blue-500">{balance[0]}% Code</span>,{" "}
-            <span className="text-purple-500">{100 - balance[0]}% Theory</span>
+            <span className="text-white">{balance[0]}% Code</span>,{" "}
+            <span className="text-white">{100 - balance[0]}% Theory</span>
           </Label>
           <Slider
             value={balance}
