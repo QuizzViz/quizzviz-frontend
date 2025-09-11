@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "QuizzViz – Create Professional Coding Quizzes in Minutes",
+    title: "QuizzViz – AI Powered Coding Quiz Generator",
     description:
       "Build enterprise-grade coding quizzes in minutes with QuizzViz. Intelligent, fast, and professional quiz generation.",
     url: siteUrl,
@@ -122,7 +122,7 @@ export default function RootLayout({
   dangerouslySetInnerHTML={{
     __html: JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "Product",
+      "@type": "Organization",
       name: "QuizzViz",
       alternateName: "Quizz Viz",
       url: "https://www.quizzviz.com",
@@ -130,26 +130,10 @@ export default function RootLayout({
       image: "https://www.quizzviz.com/QuizzViz-logo.png",
       description:
         "QuizzViz is an AI-powered coding quiz generator that helps companies create professional, real-world coding quizzes in minutes.",
-      brand: {
-        "@type": "Brand",
-        name: "QuizzViz",
-        logo: "https://www.quizzviz.com/QuizzViz-logo.png"
-      },
-      offers: {
-        "@type": "Offer",
-        url: "https://www.quizzviz.com",
-        price: "0", // If you have pricing tiers, list them. Otherwise keep as 0 (free trial/demo).
-        priceCurrency: "USD",
-        availability: "https://schema.org/InStock"
-      },
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.9",
-        reviewCount: "57"
-      }
     }),
   }}
 />
+
       </head>
       <body>
         <Providers>
