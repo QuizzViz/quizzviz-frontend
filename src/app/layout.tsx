@@ -15,7 +15,7 @@ const siteUrl = "https://www.quizzviz.com";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "QuizzViz – Create Professional Coding Quizzes in Minutes",
+    default: "QuizzViz – AI Powered Coding Quiz Generator",
     template: "%s | QuizzViz",
   },
   description:
