@@ -1,6 +1,7 @@
 "use client"; 
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   FiMenu,
   FiChevronLeft,
@@ -26,12 +27,12 @@ export default function DashboardSidebar() {
   }, []);
 
   const menuItems = [
-    { name: "Dashboard", icon: <FiHome className="w-5 h-5" /> },
-    { name: "My Quizzes", icon: <FiBook className="w-5 h-5" /> },
-    { name: "Results", icon: <FiBarChart2 className="w-5 h-5" /> },
-    { name: "Billing", icon: <FiCreditCard className="w-5 h-5" /> },
-    { name: "Profile", icon: <FiUser className="w-5 h-5" /> },
-    { name: "Settings", icon: <FiSettings className="w-5 h-5" /> },
+    { name: "Dashboard", href: "/dashboard", icon: <FiHome className="w-5 h-5" /> },
+    { name: "My Quizzes", href: "/dashboard/my-quizzes", icon: <FiBook className="w-5 h-5" /> },
+    { name: "Results", href: "/dashboard/results", icon: <FiBarChart2 className="w-5 h-5" /> },
+    { name: "Billing", href: "/dashboard/billing", icon: <FiCreditCard className="w-5 h-5" /> },
+    { name: "Profile", href: "/dashboard/profile", icon: <FiUser className="w-5 h-5" /> },
+    { name: "Settings", href: "/dashboard/settings", icon: <FiSettings className="w-5 h-5" /> },
   ];
 
   return (
@@ -67,8 +68,8 @@ export default function DashboardSidebar() {
             <ul className="space-y-1">
               {menuItems.map((item) => (
                 <li key={item.name}>
-                  <a
-                    href="#"
+                  <Link
+                    href={item.href}
                     className={`flex items-center w-full p-2.5 rounded-md transition-all duration-200 ease-in-out ${
                       isOpen ? "px-3" : "justify-center"
                     } hover:bg-white/10 group relative text-white`}
@@ -84,7 +85,7 @@ export default function DashboardSidebar() {
                         {item.name}
                       </span>
                     )}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
