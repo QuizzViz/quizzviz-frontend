@@ -10,7 +10,7 @@ export const QuizLibrary: FC<{
   return (
     <section>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold text-gray-200">Your Quiz Library</h2>
+        <h2 className="text-3xl font-bold text-gray-200"> Quiz Library</h2>
         <div className="flex items-center space-x-2 text-sm text-gray-200">
           <span>{items.length} quizzes</span>
           <div className="w-1 h-1 bg-gray-200 rounded-full"></div>
