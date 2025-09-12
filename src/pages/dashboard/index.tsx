@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import Head from "next/head";
 
 // Layout pieces
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
@@ -32,6 +33,14 @@ export default function Dashboard() {
   }
 
   return (
+    <>
+    <Head>
+      <title>Dashboard | QuizzViz</title>
+      <meta
+        name="description"
+        content="Manage and generate AI-powered coding quizzes. Review generation queue and your quiz library."
+      />
+    </Head>
     <div className="min-h-screen bg-black text-white">
       <SignedIn>
         <div className="flex min-h-screen">
@@ -61,5 +70,6 @@ export default function Dashboard() {
         </div>
       </SignedOut>
     </div>
+    </>
   );
 }
