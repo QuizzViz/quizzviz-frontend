@@ -8,7 +8,7 @@ import Head from "next/head";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 
-export default function ResultsPage() {
+export default function ProfilePage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -29,10 +29,10 @@ export default function ResultsPage() {
   return (
     <>
       <Head>
-        <title>Results | QuizzViz</title>
+        <title>Profile | QuizzViz</title>
         <meta
           name="description"
-          content="Review your quiz results and performance analytics."
+          content="Manage your profile details and account information."
         />
       </Head>
       <div className="min-h-screen bg-black text-white">
@@ -49,9 +49,9 @@ export default function ResultsPage() {
                 userEmail={user?.emailAddresses?.[0]?.emailAddress}
               />
               <main className="flex-1 p-6 space-y-6">
-                <h1 className="text-2xl font-semibold">Results</h1>
-                <p className="text-white/70">Analyze your quiz outcomes and trends over time.</p>
-                <div className="border border-white/10 rounded-lg p-6">Results dashboard coming soon.</div>
+                <h1 className="text-2xl font-semibold">Profile</h1>
+                <p className="text-white/70">Update your personal information and preferences.</p>
+                <div className="border border-white/10 rounded-lg p-6">Profile settings coming soon.</div>
               </main>
             </div>
           </div>
