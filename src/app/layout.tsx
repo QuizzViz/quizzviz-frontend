@@ -3,7 +3,7 @@
 import "./globals.css";
 import Providers from "./providers";
 import React from "react";
-import { Navbar } from "@/components/NavBar";
+import ConditionalNavbar from "@/components/ConditionalNavbar";
 import { Footer } from "@/components/Footer";
 import type { Metadata } from "next";
 
@@ -136,7 +136,7 @@ export default function RootLayout({
       <body>
         <Providers>
           <div className="min-h-screen bg-background text-foreground">
-            <Navbar />
+            {/* <ConditionalNavbar /> */}
             {children}
             <Footer />
           </div>

@@ -7,17 +7,16 @@ import { useRouter } from "next/router";
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
-  // 👇 Add the route(s) where you DON'T want the navbar
-  const noNavbarPrefix = "/dashboard"; // hide navbar on /dashboard and nested routes
-
-  const hideNavbar = router.pathname.startsWith(noNavbarPrefix);
+  // Routes where we DO NOT want the global Navbar (dashboard shell handles its own nav)
+  const path = router.asPath || router.pathname;
+  const hideNavbar = path.startsWith("/dashboard") || path.startsWith("/quiz");
 
   return (
     <ClerkProvider
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       {...pageProps}
     >
-      {!hideNavbar && <Navbar />} {/* Navbar hidden only on /dashboard */}
+      {!hideNavbar && <Navbar />} {/* Hide on /dashboard and /quiz */}
       <Component {...pageProps} />
     </ClerkProvider>
   );
