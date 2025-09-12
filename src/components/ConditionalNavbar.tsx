@@ -19,9 +19,11 @@ export default function ConditionalNavbar() {
 
   const pathname = pathnameFromHook ?? pathnameFallback ?? null;
 
+  // Hide only on the dynamic quiz details page: /quiz/[id]
   const hideNavbar = useMemo(() => {
-    if (!pathname) return true; // Avoid showing Navbar before we know the path
-    return pathname.startsWith("/dashboard") || pathname.startsWith("/quiz");
+    if (!pathname) return true; // Avoid rendering until path is known to prevent SSR flicker
+    const isQuizDetail = /^\/quiz\/[^/]+$/.test(pathname);
+    return isQuizDetail;
   }, [pathname]);
 
   // Avoid SSR flicker: don't render Navbar until mounted and path resolved
