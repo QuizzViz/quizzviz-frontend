@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import Head from "next/head";
@@ -36,28 +37,23 @@ export default function MyQuizzesPage() {
     else if (isLoaded) setIsLoading(false);
   }, [isLoaded, user, router]);
 
-  // Fetch quizzes for the signed-in user
+  // React Query - cache quizzes per user
+  const { data: quizzesData, isLoading: rqLoading, isFetching: rqFetching, error: rqError } = useQuery<QuizSummary[]>({
+    queryKey: ["quizzes", user?.id],
+    enabled: Boolean(isLoaded && user?.id),
+    queryFn: async () => {
+      const res = await fetch(`/api/quizzes?userId=${encodeURIComponent(user!.id)}`);
+      if (!res.ok) throw new Error((await res.text()) || `Failed to fetch quizzes (${res.status})`);
+      return res.json();
+    },
+    staleTime: Infinity,
+  });
+
   useEffect(() => {
-    const load = async () => {
-      if (!isLoaded || !user) return;
-      setIsFetchingQuizzes(true);
-      setFetchError(null);
-      try {
-        const res = await fetch(`/api/quizzes?userId=${encodeURIComponent(user.id)}`);
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || `Failed to fetch quizzes (${res.status})`);
-        }
-        const data: QuizSummary[] = await res.json();
-        setQuizzes(data);
-      } catch (e: any) {
-        setFetchError(e?.message || "Failed to load quizzes");
-      } finally {
-        setIsFetchingQuizzes(false);
-      }
-    };
-    load();
-  }, [isLoaded, user]);
+    if (quizzesData) setQuizzes(quizzesData);
+    setIsFetchingQuizzes(rqFetching);
+    setFetchError(rqError ? (rqError as Error).message : null);
+  }, [quizzesData, rqFetching, rqError]);
 
   if (isLoading || !isLoaded) {
     return (
@@ -101,7 +97,9 @@ export default function MyQuizzesPage() {
                     {fetchError}
                   </div>
                 ) : isFetchingQuizzes && !quizzes ? (
-                  <div className="text-white/70">Loading quizzes...</div>
+                  <div className="flex items-center justify-center py-10">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                  </div>
                 ) : !quizzes || quizzes.length === 0 ? (
                   <div className="border border-white/10 rounded-lg p-6">No quizzes to show yet.</div>
                 ) : (

@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
@@ -35,35 +36,23 @@ export default function QuizDetailsPage() {
 
   const { user, isLoaded } = useUser();
   const [quizzes, setQuizzes] = useState<QuizSummary[] | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { data: quizzesData, isLoading: rqLoading, isFetching: rqFetching, error: rqError } = useQuery<QuizSummary[]>({
+    queryKey: ["quizzes", user?.id],
+    enabled: Boolean(isLoaded && user?.id),
+    queryFn: async () => {
+      const res = await fetch(`/api/quizzes?userId=${encodeURIComponent(user!.id)}`);
+      if (!res.ok) throw new Error((await res.text()) || `Failed to fetch quizzes (${res.status})`);
+      return res.json();
+    },
+    staleTime: Infinity,
+  });
+
   useEffect(() => {
-    const load = async () => {
-      if (!isLoaded) return;
-      if (!user) {
-        setLoading(false);
-        setError("Please sign in to view this quiz.");
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(`/api/quizzes?userId=${encodeURIComponent(user.id)}`);
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || `Failed to fetch quizzes (${res.status})`);
-        }
-        const data: QuizSummary[] = await res.json();
-        setQuizzes(data);
-      } catch (e: any) {
-        setError(e?.message || "Failed to load quiz.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [isLoaded, user]);
+    if (quizzesData) setQuizzes(quizzesData);
+    setError(rqError ? (rqError as Error).message : null);
+  }, [quizzesData, rqError]);
 
   const quiz = useMemo(() => {
     if (!quizzes || !quizId) return undefined;
@@ -97,8 +86,10 @@ export default function QuizDetailsPage() {
               userEmail={user?.emailAddresses?.[0]?.emailAddress}
             />
             <main className="flex-1 p-6 pt-14">
-              {!isLoaded || loading ? (
-                <div className="text-white/70">Loading quiz...</div>
+              {!isLoaded || rqLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
               ) : error ? (
                 <div className="border border-red-500/40 text-red-300 rounded-lg p-4">{error}</div>
               ) : !quiz ? (
