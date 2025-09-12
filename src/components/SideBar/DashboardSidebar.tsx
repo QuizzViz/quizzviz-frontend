@@ -27,7 +27,7 @@ export default function DashboardSidebar() {
 
   const menuItems = [
     { name: "Dashboard", icon: <FiHome className="w-5 h-5" /> },
-    { name: "Quizzes", icon: <FiBook className="w-5 h-5" /> },
+    { name: "My Quizzes", icon: <FiBook className="w-5 h-5" /> },
     { name: "Results", icon: <FiBarChart2 className="w-5 h-5" /> },
     { name: "Billing", icon: <FiCreditCard className="w-5 h-5" /> },
     { name: "Profile", icon: <FiUser className="w-5 h-5" /> },
