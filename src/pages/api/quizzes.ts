@@ -1,42 +1,69 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-// GET /api/quizzes?userId=... -> proxies to backend: /user/{userId}/quizzes
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+const BACKEND_BASE_URL = 'https://quizzviz-backend-production.up.railway.app';
 
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { userId } = req.query;
+  
   if (!userId || typeof userId !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid userId' });
   }
 
   try {
-    const backendUrl = `https://quizzviz-backend-production.up.railway.app/user/${encodeURIComponent(
-      userId
-    )}/quizzes`;
-
-    const upstreamResp = await fetch(backendUrl, { method: 'GET' });
-
-    const contentType = upstreamResp.headers.get('content-type') || '';
-
-    if (!upstreamResp.ok) {
-      const text = await upstreamResp.text().catch(() => '');
-      return res
-        .status(upstreamResp.status)
-        .send(text || `Upstream error with status ${upstreamResp.status}`);
-    }
-
-    if (contentType.includes('application/json')) {
-      const data = await upstreamResp.json();
-      return res.status(200).json(data);
-    } else {
-      const text = await upstreamResp.text();
-      return res.status(200).send(text);
+    switch (req.method) {
+      case 'GET':
+        return handleGet();
+      case 'POST':
+        return handlePost();
+      default:
+        res.setHeader('Allow', ['GET', 'POST']);
+        return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
   } catch (err: any) {
-    console.error('API proxy error /api/quizzes:', err);
-    return res.status(500).json({ error: err?.message || 'Internal Server Error' });
+    console.error(`API error in /api/quizzes (${req.method}):`, err);
+    return res.status(500).json({ 
+      error: err?.message || 'Internal Server Error',
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+  }
+
+  async function handleGet() {
+    const userIdStr = Array.isArray(userId) ? userId[0] : userId || '';
+    const response = await fetch(
+      `${BACKEND_BASE_URL}/user/${encodeURIComponent(userIdStr)}/quizzes`,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    if (!response.ok) {
+      const error = await response.text().catch(() => 'Failed to fetch quizzes');
+      return res.status(response.status).json({ error });
+    }
+
+    const data = await response.json();
+    return res.status(200).json(data);
+  }
+
+  async function handlePost() {
+    if (!req.body) {
+      return res.status(400).json({ error: 'Request body is required' });
+    }
+
+    const userIdStr = Array.isArray(userId) ? userId[0] : userId || '';
+    const response = await fetch(
+      `${BACKEND_BASE_URL}/user/${encodeURIComponent(userIdStr)}/quizz`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req.body),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text().catch(() => 'Failed to create quiz');
+      return res.status(response.status).json({ error });
+    }
+
+    const data = await response.json();
+    return res.status(201).json(data);
   }
 }
