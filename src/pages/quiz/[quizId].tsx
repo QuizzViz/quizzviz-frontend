@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface QuizSummary {
   quiz_id: string;
@@ -84,6 +85,9 @@ export default function QuizDetailsPage() {
 
   // Modal state for add/edit
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteQuestionDialogOpen, setIsDeleteQuestionDialogOpen] = useState(false);
+  const [questionIndexToDelete, setQuestionIndexToDelete] = useState<number | null>(null);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [form, setForm] = useState<{
     id?: number | string;
@@ -259,7 +263,34 @@ export default function QuizDetailsPage() {
         description: e?.message || "Unable to delete quiz",
         className: "border-red-500/40 bg-red-600/20 text-red-100",
       });
+    } finally {
+      setIsDeleteDialogOpen(false);
     }
+  };
+
+  const confirmDeleteQuiz = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Open confirm for deleting a specific question
+  const confirmDeleteQuestion = (index: number) => {
+    setQuestionIndexToDelete(index);
+    setIsDeleteQuestionDialogOpen(true);
+  };
+
+  // Delete a specific question then persist via PUT
+  const handleDeleteQuestion = async () => {
+    if (questionIndexToDelete === null) return;
+    const updated = localQuestions.filter((_, i) => i !== questionIndexToDelete);
+    setLocalQuestions(updated);
+    setIsDeleteQuestionDialogOpen(false);
+    setQuestionIndexToDelete(null);
+    await persistQuiz(updated);
+    toast({
+      title: "Question removed",
+      description: "The question has been deleted from the quiz.",
+      className: "border-emerald-500/40 bg-emerald-600/20 text-emerald-100",
+    });
   };
 
   const userName = user?.fullName || user?.username || user?.emailAddresses?.[0]?.emailAddress || "User";
@@ -275,82 +306,82 @@ export default function QuizDetailsPage() {
           <div className="bg-white border-r border-white">
             <DashboardSideBar />
           </div>
-    {/* Edit/Add Question Modal */}
-    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-      <DialogContent className="bg-zinc-950 border-white/10 text-white max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{editIndex === null ? "Add Question" : "Update Question"}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm mb-1">Question</label>
-            <textarea
-              value={form.question}
-              onChange={(e) => handleFormChange("question", e.target.value)}
-              className="w-full rounded-md bg-zinc-900 border border-white/10 p-3 min-h-[100px]"
-            />
-          </div>
-          {form.type === "code_analysis" && (
-            <div>
-              <label className="block text-sm mb-1">Code Snippet</label>
-              <textarea
-                value={form.code_snippet || ""}
-                onChange={(e) => handleFormChange("code_snippet", e.target.value)}
-                className="w-full rounded-md bg-zinc-900 border border-white/10 p-3 font-mono min-h-[120px]"
-              />
-            </div>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm mb-1">Question Type</label>
-              <select
-                value={form.type}
-                onChange={(e) => handleFormChange("type", e.target.value)}
-                className="w-full rounded-md bg-zinc-900 border border-white/10 p-2"
-              >
-                <option value="theory">theory</option>
-                <option value="code_analysis">code_analysis</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm mb-1">Correct Answer</label>
-              <select
-                value={form.correct_answer}
-                onChange={(e) => handleFormChange("correct_answer", e.target.value as any)}
-                className="w-full rounded-md bg-zinc-900 border border-white/10 p-2"
-              >
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm mb-1">Option A</label>
-              <input value={form.options.A} onChange={(e) => handleOptionChange("A", e.target.value)} className="w-full rounded-md bg-zinc-900 border border-white/10 p-2" />
-            </div>
-            <div>
-              <label className="block text-sm mb-1">Option B</label>
-              <input value={form.options.B} onChange={(e) => handleOptionChange("B", e.target.value)} className="w-full rounded-md bg-zinc-900 border border-white/10 p-2" />
-            </div>
-            <div>
-              <label className="block text-sm mb-1">Option C</label>
-              <input value={form.options.C} onChange={(e) => handleOptionChange("C", e.target.value)} className="w-full rounded-md bg-zinc-900 border border-white/10 p-2" />
-            </div>
-            <div>
-              <label className="block text-sm mb-1">Option D</label>
-              <input value={form.options.D} onChange={(e) => handleOptionChange("D", e.target.value)} className="w-full rounded-md bg-zinc-900 border border-white/10 p-2" />
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-          <Button onClick={handleSaveQuestion}>Save</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          {/* Edit/Add Question Modal */}
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogContent className="bg-zinc-950 border-white/10 text-white max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{editIndex === null ? "Add Question" : "Update Question"}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm mb-1">Question</label>
+                  <textarea
+                    value={form.question}
+                    onChange={(e) => handleFormChange("question", e.target.value)}
+                    className="w-full rounded-md bg-zinc-900 border border-white/10 p-3 min-h-[100px]"
+                  />
+                </div>
+                {form.type === "code_analysis" && (
+                  <div>
+                    <label className="block text-sm mb-1">Code Snippet</label>
+                    <textarea
+                      value={form.code_snippet || ""}
+                      onChange={(e) => handleFormChange("code_snippet", e.target.value)}
+                      className="w-full rounded-md bg-zinc-900 border border-white/10 p-3 font-mono min-h-[120px]"
+                    />
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm mb-1">Question Type</label>
+                    <select
+                      value={form.type}
+                      onChange={(e) => handleFormChange("type", e.target.value)}
+                      className="w-full rounded-md bg-zinc-900 border border-white/10 p-2"
+                    >
+                      <option value="theory">theory</option>
+                      <option value="code_analysis">code_analysis</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">Correct Answer</label>
+                    <select
+                      value={form.correct_answer}
+                      onChange={(e) => handleFormChange("correct_answer", e.target.value as any)}
+                      className="w-full rounded-md bg-zinc-900 border border-white/10 p-2"
+                    >
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                      <option value="D">D</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm mb-1">Option A</label>
+                    <input value={form.options.A} onChange={(e) => handleOptionChange("A", e.target.value)} className="w-full rounded-md bg-zinc-900 border border-white/10 p-2" />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">Option B</label>
+                    <input value={form.options.B} onChange={(e) => handleOptionChange("B", e.target.value)} className="w-full rounded-md bg-zinc-900 border border-white/10 p-2" />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">Option C</label>
+                    <input value={form.options.C} onChange={(e) => handleOptionChange("C", e.target.value)} className="w-full rounded-md bg-zinc-900 border border-white/10 p-2" />
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1">Option D</label>
+                    <input value={form.options.D} onChange={(e) => handleOptionChange("D", e.target.value)} className="w-full rounded-md bg-zinc-900 border border-white/10 p-2" />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                <Button onClick={handleSaveQuestion}>Save</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           {/* Main content */}
           <div className="flex-1 flex flex-col">
             <DashboardHeader
@@ -367,11 +398,11 @@ export default function QuizDetailsPage() {
               ) : !quiz ? (
                 <div className="text-white/70">Quiz not found.</div>
               ) : (
-                <div className="mx-auto max-w-5xl space-y-8">
+                <div className="mx-auto max-w-5xl space-y-8 px-3 sm:px-4">
                   <header className="space-y-2">
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
                       <div>
-                        <h1 className="text-3xl font-bold text-white">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-white">
                           {quiz.topic} Quiz
                         </h1>
                         <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-white/70">
@@ -381,9 +412,9 @@ export default function QuizDetailsPage() {
                           <span>• Code {quiz.code_analysis_questions_percentage}%</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={openAddModal}>Add Question</Button>
-                        <Button variant="destructive" onClick={handleDeleteQuiz}>Delete Quiz</Button>
+                      <div className="flex items-center gap-2 flex-wrap relative z-50 pointer-events-auto">
+                        <Button variant="outline" className="pointer-events-auto" onClick={openAddModal}>Add Question</Button>
+                        <Button variant="destructive" className="pointer-events-auto" onClick={confirmDeleteQuiz}>Delete Quiz</Button>
                       </div>
                     </div>
                   </header>
@@ -393,13 +424,14 @@ export default function QuizDetailsPage() {
                       localQuestions.map((q, idx) => (
                         <Card key={q.id ?? idx} className="bg-zinc-950 border-white/10">
                           <CardHeader>
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
                               <div className="flex items-center gap-3">
                                 <CardTitle className="text-xl text-white">Question {idx + 1}</CardTitle>
                                 <Badge>{q.type.replace(/_/g, " ")}</Badge>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Button size="sm" onClick={() => openEditModal(idx)}>Update</Button>
+                              <div className="flex items-center gap-2 flex-wrap relative z-50 pointer-events-auto">
+                                <Button size="sm" className="pointer-events-auto" onClick={() => openEditModal(idx)}>Update</Button>
+                                <Button size="sm" className="pointer-events-auto" variant="destructive" onClick={() => confirmDeleteQuestion(idx)}>Delete</Button>
                               </div>
                             </div>
                           </CardHeader>
@@ -438,6 +470,28 @@ export default function QuizDetailsPage() {
           </div>
         </div>
       </SignedIn>
+
+      {/* Global confirmation dialogs */}
+      <ConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteQuiz}
+        title="Delete Quiz"
+        description="Are you sure you want to delete this quiz? This action cannot be undone."
+        confirmText="Delete Quiz"
+        variant="destructive"
+      />
+
+      <ConfirmationDialog
+        isOpen={isDeleteQuestionDialogOpen}
+        onClose={() => setIsDeleteQuestionDialogOpen(false)}
+        onConfirm={handleDeleteQuestion}
+        title="Delete Question"
+        description="Are you sure you want to delete this question from the quiz?"
+        confirmText="Delete Question"
+        variant="destructive"
+      />
+
       <SignedOut>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
