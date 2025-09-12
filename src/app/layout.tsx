@@ -112,8 +112,6 @@ export default function RootLayout({
 }) {
 
   return (
-
-    
     <html lang="en">
       <head>
         {/* JSON-LD Structured Data for WebSite */}

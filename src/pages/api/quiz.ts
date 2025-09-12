@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const backendUrl = 'https://quizzviz-backend-production.up.railway.app/quiz';
+    const backendUrl = 'https://quizzviz-backend-production.up.railway.app/quizz';
 
     const backendResp = await fetch(backendUrl, {
       method: 'POST',
