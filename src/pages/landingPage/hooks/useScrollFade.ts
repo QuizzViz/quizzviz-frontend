@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 // Sets up an IntersectionObserver to toggle `.visible` on elements with `.scroll-fade`
-export function useScrollFade() {
+function useScrollFade() {
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
@@ -17,3 +17,5 @@ export function useScrollFade() {
     return () => observerRef.current?.disconnect();
   }, []);
 }
+
+export default useScrollFade
