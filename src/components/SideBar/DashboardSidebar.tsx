@@ -39,7 +39,7 @@ export default function DashboardSidebar() {
     <div
       className={`sticky top-0 h-screen flex flex-col transition-all duration-300 ease-in-out ${
         isOpen ? "w-64" : "w-16"
-      } bg-black text-white border-r border-black`}
+      } bg-black text-white border-r border-white`}
     >
       <div className="flex flex-col h-full">
         {/* Header */}

@@ -38,20 +38,51 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-black text-white">
         <SignedIn>
           <div className="flex min-h-screen">
-            {/* Sidebar */}
-            <div className="bg-white border-r border-white">
+            {/* Sidebar - no border here since sidebar handles its own border */}
+            <div className="bg-white">
               <DashboardSideBar />
             </div>
+
             {/* Main content */}
             <div className="flex-1 flex flex-col">
               <DashboardHeader
                 userName={user?.fullName || user?.firstName || "User"}
                 userEmail={user?.emailAddresses?.[0]?.emailAddress}
               />
+
               <main className="flex-1 p-6 space-y-6">
                 <h1 className="text-2xl font-semibold">Profile</h1>
-                <p className="text-white/70">Update your personal information and preferences.</p>
-                <div className="border border-white/10 rounded-lg p-6">Profile settings coming soon.</div>
+
+                {/* Profile Card */}
+                <div className="bg-gray-900 border border-white/10 rounded-lg p-6 max-w-md mx-auto flex flex-col items-center space-y-4">
+                  <img
+                    src={"https://github.com/shadcn.png"}
+                    alt="Profile"
+                    className="w-28 h-28 rounded-full border-2 border-white object-cover"
+                  />
+                  <h2 className="text-xl font-semibold">
+                    {user?.fullName || user?.firstName || "User"}
+                  </h2>
+                  <p className="text-white/70">
+                    {user?.emailAddresses?.[0]?.emailAddress}
+                  </p>
+
+                  {/* Additional Info */}
+                  <div className="w-full mt-4 space-y-2">
+                    <div className="flex justify-between border-b border-white/20 pb-2">
+                      <span className="text-white/50">Username:</span>
+                      <span>{user?.username || "Not set"}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-white/20 pb-2">
+                      <span className="text-white/50">Joined:</span>
+                      <span>
+                        {new Date(
+                          user?.createdAt || Date.now()
+                        ).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </main>
             </div>
           </div>
@@ -60,7 +91,9 @@ export default function ProfilePage() {
         <SignedOut>
           <div className="flex items-center justify-center h-screen">
             <div className="text-center">
-              <h1 className="text-lg md:text-xl lg:text-2xl font-semibold mb-4 text-white">Redirecting to sign in...</h1>
+              <h1 className="text-lg md:text-xl lg:text-2xl font-semibold mb-4 text-white">
+                Redirecting to sign in...
+              </h1>
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
             </div>
           </div>

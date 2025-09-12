@@ -10,7 +10,7 @@ const CodeTheorySlider: FC<{
   return (
     <div className="space-y-3">
       <Label className="text-foreground">
-        Code vs Theory: <span className="text-white">{balance[0]}% Code</span>,
+        Move the slider to choose how much is Code and how much is Theory <span className="text-white">{balance[0]}% Code</span>,
         <span className="text-white"> {100 - balance[0]}% Theory</span>
       </Label>
       <Slider value={balance} onValueChange={(v) => setBalance(v)} max={100} step={5} className="w-full" />
