@@ -1,7 +1,7 @@
 import { FC } from "react";
 
 // Renders the title and subtitle for the quiz creation form
-export const QuizHeader: FC = () => {
+const QuizHeader: FC = () => {
   return (
     <div className="text-center mb-2">
       <h2 className="text-3xl font-semibold tracking-tight text-foreground mb-2">
@@ -11,3 +11,5 @@ export const QuizHeader: FC = () => {
     </div>
   );
 };
+
+export default QuizHeader

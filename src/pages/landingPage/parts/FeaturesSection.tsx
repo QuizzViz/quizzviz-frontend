@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Zap, CheckCircle, BarChart3 } from "lucide-react";
 
 // Features grid highlighting key benefits
-export const FeaturesSection: FC = () => (
+const FeaturesSection: FC = () => (
   <section id="features" className="py-24 bg-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32">
     <div className="absolute inset-0 opacity-10">
       <div
@@ -57,3 +57,5 @@ export const FeaturesSection: FC = () => (
     </div>
   </section>
 );
+
+export default FeaturesSection;

@@ -6,7 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import HeroLogoSVG from "@/components/HeroLogoSVG";
 
 // Top hero section: headline, CTA, animated logo
-export const HeroSection: FC = () => {
+const HeroSection: FC = () => {
   const { user } = useUser();
   return (
     <section id="hero" className="min-h-screen relative overflow-hidden pt-10 sm:pt-14 md:pt-24 pb-4 scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32">
@@ -57,3 +57,5 @@ export const HeroSection: FC = () => {
     </section>
   );
 };
+
+export default HeroSection;

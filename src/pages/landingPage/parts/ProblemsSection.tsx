@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckCircle, Zap } from "lucide-react";
 
 // Three-card section describing core problems solved
-export const ProblemsSection: FC = () => (
+const ProblemsSection: FC = () => (
   <section id="problems" className="py-24 bg-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-16 scroll-fade visible">
@@ -42,3 +42,6 @@ export const ProblemsSection: FC = () => (
     </div>
   </section>
 );
+
+
+export default ProblemsSection

@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 
 // Primary CTA button used to trigger quiz generation
-export const GenerateButton: FC<{
+const GenerateButton: FC<{
   isBusy: boolean;
   onClick: () => void;
   labelBusy: string;
@@ -29,3 +29,5 @@ export const GenerateButton: FC<{
     </div>
   );
 };
+
+export default GenerateButton

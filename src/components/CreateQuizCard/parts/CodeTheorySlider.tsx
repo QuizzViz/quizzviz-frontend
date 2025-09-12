@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
 // Two-way slider to balance code vs theory question percentages
-export const CodeTheorySlider: FC<{
+const CodeTheorySlider: FC<{
   balance: number[];
   setBalance: (v: number[]) => void;
 }> = ({ balance, setBalance }) => {
@@ -17,3 +17,5 @@ export const CodeTheorySlider: FC<{
     </div>
   );
 };
+
+export default CodeTheorySlider

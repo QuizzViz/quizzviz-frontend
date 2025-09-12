@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { Cpu } from "lucide-react";
 
 // Animated reasoning panel that shows step timeline, typing text, and progress
-export const ReasoningPanel: FC<{
+const ReasoningPanel: FC<{
   visible: boolean;
   steps: string[];
   stepIcons: LucideIcon[];
@@ -114,3 +114,5 @@ export const ReasoningPanel: FC<{
     </AnimatePresence>
   );
 };
+
+export default ReasoningPanel

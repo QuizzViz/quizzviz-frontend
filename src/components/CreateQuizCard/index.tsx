@@ -1,13 +1,13 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Send, Zap } from "lucide-react";
-import { QuizHeader } from "./parts/QuizHeader";
-import { TopicInput } from "./parts/TopicInput";
-import { DifficultyCountRow } from "./parts/DifficultyCountRow";
-import { CodeTheorySlider } from "./parts/CodeTheorySlider";
-import { GenerateButton } from "./parts/GenerateButton";
-import { ReasoningPanel } from "./parts/ReasoningPanel";
-import { QuizView } from "./parts/QuizView";
-import { useCreateQuiz } from "./hooks/useCreateQuiz";
+import { Card, CardContent }  from "@/components/ui/card";
+import  {Loader2, Send, Zap}  from "lucide-react";
+import QuizHeader from "./parts/QuizHeader";
+import  TopicInput  from "./parts/TopicInput";
+import  DifficultyCountRow  from "./parts/DifficultyCountRow";
+import  CodeTheorySlider  from "./parts/CodeTheorySlider";
+import GenerateButton from "./parts/GenerateButton";
+import ReasoningPanel  from "./parts/ReasoningPanel";
+import  QuizView  from "./parts/QuizView";
+import  {useCreateQuiz}  from "./hooks/useCreateQuiz";
 
 // Main container composing all sub-parts and business logic via a hook
 export default function CreateQuizCard() {

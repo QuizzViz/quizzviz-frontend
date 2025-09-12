@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import type { LucideIcon } from "lucide-react";
 
 // Controlled input for quiz topic with a right-side icon
-export const TopicInput: FC<{
+const TopicInput: FC<{
   topic: string;
   setTopic: (v: string) => void;
   icon: LucideIcon;
@@ -27,3 +27,5 @@ export const TopicInput: FC<{
     </div>
   );
 };
+
+export default TopicInput

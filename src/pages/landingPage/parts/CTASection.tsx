@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
 // Final call-to-action with two buttons (start trial / book demo)
-export const CTASection: FC = () => {
+ const CTASection: FC = () => {
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -33,3 +33,5 @@ export const CTASection: FC = () => {
     </section>
   );
 };
+
+export default CTASection

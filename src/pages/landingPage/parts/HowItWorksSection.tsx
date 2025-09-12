@@ -1,7 +1,7 @@
 import { FC } from "react";
 
 // Three-step "How it works" walkthrough
-export const HowItWorksSection: FC = () => (
+const HowItWorksSection: FC = () => (
   <section id="how-it-works" className="py-24 bg-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32">
     <div className="absolute inset-0 opacity-5">
       <div
@@ -34,3 +34,5 @@ export const HowItWorksSection: FC = () => (
     </div>
   </section>
 );
+
+export default HowItWorksSection

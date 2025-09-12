@@ -4,7 +4,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Input } from "@/components/ui/input";
 
 // Renders difficulty select and number-of-questions input side-by-side
-export const DifficultyCountRow: FC<{
+ const DifficultyCountRow: FC<{
   difficulty: string;
   setDifficulty: (v: string) => void;
   count: number;
@@ -40,3 +40,5 @@ export const DifficultyCountRow: FC<{
     </div>
   );
 };
+
+export default DifficultyCountRow

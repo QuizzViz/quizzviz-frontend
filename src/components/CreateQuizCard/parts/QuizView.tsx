@@ -2,7 +2,7 @@ import { FC } from "react";
 import { Button } from "@/components/ui/button";
 
 // Renders the generated quiz list with a back action
-export const QuizView: FC<{
+const QuizView: FC<{
   data: any;
   onBack: () => void;
 }> = ({ data, onBack }) => {
@@ -62,3 +62,5 @@ export const QuizView: FC<{
     </div>
   );
 };
+
+export default QuizView
