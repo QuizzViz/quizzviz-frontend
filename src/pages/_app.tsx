@@ -8,9 +8,9 @@ function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
   // 👇 Add the route(s) where you DON'T want the navbar
-  const noNavbarRoutes = ["/dashboard"]; // e.g. hide navbar on /dashboard
+  const noNavbarPrefix = "/dashboard"; // hide navbar on /dashboard and nested routes
 
-  const hideNavbar = noNavbarRoutes.includes(router.pathname);
+  const hideNavbar = router.pathname.startsWith(noNavbarPrefix);
 
   return (
     <ClerkProvider

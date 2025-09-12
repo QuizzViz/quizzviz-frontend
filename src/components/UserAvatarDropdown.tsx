@@ -84,7 +84,7 @@ export default function UserAvatarDropdown({
         {/* Menu items */}
         <DropdownMenuItem
           className="px-3 py-2 text-sm text-white rounded-md hover:bg-white/10 focus:bg-white/10 cursor-pointer transition-colors"
-          onClick={() => (window.location.href = "/profile")}
+          onClick={() => (window.location.href = "/dashboard/profile")}
         >
           <User className="mr-2 h-4 w-4 text-white/70" />
           <span>Profile</span>
@@ -92,7 +92,7 @@ export default function UserAvatarDropdown({
 
         <DropdownMenuItem
           className="px-3 py-2 text-sm text-white rounded-md hover:bg-white/10 focus:bg-white/10 cursor-pointer transition-colors"
-          onClick={() => (window.location.href = "/settings")}
+          onClick={() => (window.location.href = "/dashboard/settings")}
         >
           <Settings className="mr-2 h-4 w-4 text-white/70" />
           <span>Settings</span>
