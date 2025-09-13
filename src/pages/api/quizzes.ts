@@ -99,11 +99,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         responseData = await quizResponse.json();
         console.log('Received quiz response:', responseData);
-      } catch (parseError) {
-        console.error('Failed to parse quiz response:', parseError);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Failed to parse quiz response:', errorMessage);
         return res.status(500).json({
           error: 'Invalid response format from quiz generation service',
-          details: parseError.message
+          details: errorMessage
         });
       }
 
