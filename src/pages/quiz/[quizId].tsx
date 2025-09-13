@@ -74,7 +74,7 @@ export default function QuizDetailsPage() {
     
     try {
       // Handle different possible formats of quiz data
-      let questionsData = [];
+      let questionsData: any[] = [];
       
       // Case 1: quiz.quiz is already an array
       if (Array.isArray(quiz.quiz)) {
@@ -82,16 +82,16 @@ export default function QuizDetailsPage() {
       } 
       // Case 2: quiz.quiz is a JSON string
       else if (typeof quiz.quiz === 'string') {
-        const parsed = JSON.parse(quiz.quiz);
-        questionsData = Array.isArray(parsed) ? parsed : [];
-      }
-      // Case 3: quiz has a questions array directly
-      else if (quiz.questions && Array.isArray(quiz.questions)) {
-        questionsData = quiz.questions;
+        try {
+          const parsed = JSON.parse(quiz.quiz);
+          questionsData = Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          console.error('Failed to parse quiz string:', e);
+        }
       }
       
       // Ensure each question has required fields
-      return questionsData.map((q: any, index: number) => ({
+      return questionsData.map((q, index) => ({
         id: q.id || `q-${index}`,
         type: q.type || 'theory',
         question: q.question || 'No question text',

@@ -108,13 +108,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      // Validate the response contains questions
+      // Validate the response contains questions array (can be empty)
       if (!responseData.questions || !Array.isArray(responseData.questions)) {
         console.error('Invalid quiz format from backend:', responseData);
         return res.status(500).json({
-          error: 'Generated quiz is missing questions',
-          details: responseData
+          error: 'Generated quiz has invalid format',
+          details: 'Expected questions array in the response',
+          response: responseData
         });
+      }
+      
+      // If questions array is empty, log a warning but don't fail
+      if (responseData.questions.length === 0) {
+        console.warn('Received empty questions array from backend');
+        // Continue with empty questions rather than failing
       }
 
       // Return the generated quiz data
