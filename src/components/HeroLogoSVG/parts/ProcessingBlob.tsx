@@ -7,7 +7,7 @@ export const ProcessingBlob = forwardRef<SVGPathElement, {}>(function Processing
       ref={ref}
       id="processing-blob"
       fill="url(#lux-grad)"
-      opacity="0.9"
+      opacity="0"
       d="M256,96c64,0,152,32,152,104s-88,120-152,120S96,272,96,200,192,96,256,96Z"
     />
   );

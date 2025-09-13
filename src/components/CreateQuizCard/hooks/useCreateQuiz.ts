@@ -73,7 +73,7 @@ export function useCreateQuiz() {
     const codePct = Math.max(0, Math.min(100, balance[0] ?? 50));
     const payload = {
       topic: topic.trim(),
-      difficulty_level: difficultyToApi(difficulty),
+      difficulty: difficultyToApi(difficulty),
       num_questions: numQuestions,
       theory_questions_percentage: 100 - codePct,
       code_analysis_questions_percentage: codePct,
