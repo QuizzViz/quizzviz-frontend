@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Cpu, Code, Sparkles, CheckCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
+import { useQuizGeneration } from "@/contexts/QuizGenerationContext";
 
 // Encapsulates all state and behavior for CreateQuiz workflow
 export function useCreateQuiz() {
@@ -52,8 +53,10 @@ export function useCreateQuiz() {
     }
   };
 
+  const { startGeneration, completeGeneration } = useQuizGeneration();
+
   // API call + animation toggles
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async (): Promise<any> => {
     if (isReasoning || isFetching) return;
 
     const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
@@ -61,6 +64,10 @@ export function useCreateQuiz() {
     if (!difficulty) return setError("Difficulty is required");
     if (!numQuestions) return setError("Number of questions is required");
 
+    // Start the global loading state
+    startGeneration(topic.trim());
+    
+    // Reset local state
     setError(null);
     setQuizData(null);
     setIsReasoning(true);
@@ -77,26 +84,51 @@ export function useCreateQuiz() {
       num_questions: numQuestions,
       theory_questions_percentage: 100 - codePct,
       code_analysis_questions_percentage: codePct,
-      user_id: user?.id
+      user_id: user?.id,
+      timestamp: Date.now()
     };
 
     try {
-      const resp = await fetch("/api/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      // Make a single API call to generate and save the quiz
+      const response = await fetch(`/api/quizzes?userId=${encodeURIComponent(user?.id || '')}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!resp.ok) throw new Error((await resp.text()) || `Request failed with status ${resp.status}`);
-      const data = await resp.json();
-      setQuizData(data);
+
+      if (!response.ok) {
+        let errorText = 'Failed to generate quiz';
+        try {
+          const errorData = await response.json();
+          errorText = errorData.error || errorData.message || errorText;
+        } catch (e) {
+          const text = await response.text();
+          errorText = text || errorText;
+        }
+        throw new Error(errorText);
+      }
+      
+      const savedQuiz = await response.json();
+      
+      // Ensure the quiz has the expected structure
+      if (!savedQuiz.quiz_id && savedQuiz.id) {
+        savedQuiz.quiz_id = savedQuiz.id;
+      }
+      
+      setQuizData(savedQuiz);
+      completeGeneration(true, savedQuiz);
+      return savedQuiz;
     } catch (e: any) {
       console.error("Error generating quiz:", e);
-      setError(e?.message || "Failed to generate quiz. Please try again.");
+      const errorMessage = e?.message || "Failed to generate quiz. Please try again.";
+      setError(errorMessage);
+      completeGeneration(false);
+      throw e;
     } finally {
       setIsFetching(false);
       setTimeout(() => setIsReasoning(false), 400);
     }
-  };
+  }, [isReasoning, isFetching, count, topic, difficulty, balance, startGeneration, completeGeneration, user?.id]);
 
   // Typewriter effect and progress
   useEffect(() => {
@@ -158,6 +190,17 @@ export function useCreateQuiz() {
       if (holdTimer) clearTimeout(holdTimer);
     };
   }, [isReasoning, stepIndex, isFetching]);
+
+  // Get the setGenerationProgress function from context
+  const { setGenerationProgress } = useQuizGeneration();
+  
+  // Update global progress when local progress changes
+  useEffect(() => {
+    if (isReasoning) {
+      const progressValue = Math.min(99, Math.max(0, progress)); // Cap at 99% until complete
+      setGenerationProgress(progressValue);
+    }
+  }, [progress, isReasoning, setGenerationProgress]);
 
   return {
     // state

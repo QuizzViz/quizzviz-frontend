@@ -70,11 +70,39 @@ export default function QuizDetailsPage() {
   }, [quizzes, quizId]);
 
   const questions: QuizQuestion[] | undefined = useMemo(() => {
-    if (!quiz?.quiz) return undefined;
+    if (!quiz) return undefined;
+    
     try {
-      const parsed = JSON.parse(quiz.quiz);
-      return Array.isArray(parsed) ? parsed : [];
+      // Handle different possible formats of quiz data
+      let questionsData = [];
+      
+      // Case 1: quiz.quiz is already an array
+      if (Array.isArray(quiz.quiz)) {
+        questionsData = quiz.quiz;
+      } 
+      // Case 2: quiz.quiz is a JSON string
+      else if (typeof quiz.quiz === 'string') {
+        const parsed = JSON.parse(quiz.quiz);
+        questionsData = Array.isArray(parsed) ? parsed : [];
+      }
+      // Case 3: quiz has a questions array directly
+      else if (quiz.questions && Array.isArray(quiz.questions)) {
+        questionsData = quiz.questions;
+      }
+      
+      // Ensure each question has required fields
+      return questionsData.map((q: any, index: number) => ({
+        id: q.id || `q-${index}`,
+        type: q.type || 'theory',
+        question: q.question || 'No question text',
+        code_snippet: q.code_snippet || null,
+        options: q.options || { A: '', B: '', C: '', D: '' },
+        correct_answer: q.correct_answer || 'A',
+        ...q // Spread any additional fields
+      }));
+      
     } catch (e) {
+      console.error('Error parsing quiz questions:', e);
       return [];
     }
   }, [quiz]);
