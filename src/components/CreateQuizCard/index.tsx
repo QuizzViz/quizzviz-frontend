@@ -1,5 +1,8 @@
 import { Card, CardContent }  from "@/components/ui/card";
 import { Loader2, Send, Zap }  from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import QuizHeader from "./parts/QuizHeader";
 import  TopicInput  from "./parts/TopicInput";
 import  DifficultyCountRow  from "./parts/DifficultyCountRow";
@@ -82,7 +85,44 @@ export default function CreateQuizCard() {
       <CardContent className="p-8 space-y-6">
         <QuizHeader />
         <TopicInput topic={topic} setTopic={setTopic} icon={Zap} />
-        <DifficultyCountRow difficulty={difficulty} setDifficulty={setDifficulty} count={count} setCount={setCount} />
+        
+        {/* Mobile: Stack difficulty and count separately, Desktop: Use DifficultyCountRow */}
+        <div className="block sm:hidden space-y-4">
+          {/* Difficulty - Mobile Only */}
+          <div className="space-y-2">
+            <Label className="text-foreground">Difficulty</Label>
+            <Select value={difficulty} onValueChange={setDifficulty}>
+              <SelectTrigger className="bg-background border-border text-foreground">
+                <SelectValue placeholder="Select difficulty" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border-border text-foreground">
+                <SelectItem value="High School">High School level</SelectItem>
+                <SelectItem value="Bachelors">Bachelors level</SelectItem>
+                <SelectItem value="Masters">Masters level</SelectItem>
+                <SelectItem value="PhD">PhD level</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Number of Questions - Mobile Only */}
+          <div className="space-y-2">
+            <Label className="text-foreground">Number of Questions</Label>
+            <Input
+              type="number"
+              value={count}
+              onChange={(e) => setCount(parseInt(e.target.value || "0"))}
+              className="bg-background border-border text-foreground focus:border-foreground"
+              min={1}
+              required
+            />
+          </div>
+        </div>
+        
+        {/* Desktop: Use the original DifficultyCountRow component */}
+        <div className="hidden sm:block">
+          <DifficultyCountRow difficulty={difficulty} setDifficulty={setDifficulty} count={count} setCount={setCount} />
+        </div>
+        
         <CodeTheorySlider balance={balance} setBalance={setBalance} />
         <GenerateButton
           isBusy={isReasoning || isFetching}
