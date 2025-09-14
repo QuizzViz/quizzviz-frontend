@@ -109,7 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Handle both 'quiz' and 'questions' array in the response
-      const questions = responseData.questions || responseData.quiz || [];
+      const questions =responseData.quiz || [];
       
       if (!Array.isArray(questions)) {
         console.error('Invalid quiz format from backend:', responseData);
