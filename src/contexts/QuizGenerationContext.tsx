@@ -70,7 +70,7 @@ export function QuizGenerationProvider({ children }: { children: ReactNode }) {
             title: data.error || 'Invalid Topic',
             description: (
               <div className="space-y-2">
-                <p>{data.message}</p>
+                <p>{data.message} Please try a topic related to software development, programming, or computer science.</p>
                 {data.suggestions && data.suggestions.length > 0 && (
                   <div className="mt-2">
                     <p className="text-sm font-medium mb-1">Suggested topics:</p>
@@ -91,9 +91,10 @@ export function QuizGenerationProvider({ children }: { children: ReactNode }) {
           // For other errors
           toast({
             title: 'Error Generating Quiz',
-            description: `${data?.message || 'Failed to generate quiz.'} Please try a topic from the software industry.`,
+            description: `${data?.message || 'Failed to generate quiz.'} Please try a topic related to software industry`,
             variant: 'destructive',
             duration: 10000,
+            className: 'max-w-md'
           });
         }
         return;
