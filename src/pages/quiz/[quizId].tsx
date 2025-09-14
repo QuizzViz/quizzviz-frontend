@@ -189,7 +189,7 @@ export default function QuizDetailsPage() {
       toast({
         title: "Saved",
         description: "Quiz updated successfully",
-        className: "border-emerald-500/40 bg-emerald-600/20 text-emerald-100",
+        className: "border-blue-500/40 bg-blue-700 text-blue-100",
       });
 
       // Invalidate the quizzes query to refetch the updated data
@@ -279,7 +279,7 @@ export default function QuizDetailsPage() {
       toast({
         title: "Deleted",
         description: "Quiz has been deleted",
-        className: "border-emerald-500/40 bg-emerald-600/20 text-emerald-100",
+        className: "border-red-500/40 bg-red-600 text-red-100",
       });
 
       // Navigate back to the quizzes list
@@ -317,7 +317,7 @@ export default function QuizDetailsPage() {
     toast({
       title: "Question removed",
       description: "The question has been deleted from the quiz.",
-      className: "border-emerald-500/40 bg-emerald-600/20 text-emerald-100",
+      className: "border-red-500/40 bg-red-600 text-red-100",
     });
   };
 
@@ -442,7 +442,7 @@ export default function QuizDetailsPage() {
                       </div>
                       <div className="flex items-center gap-2 flex-wrap relative z-50 pointer-events-auto">
                         <Button variant="outline" className="pointer-events-auto" onClick={openAddModal}>Add Question</Button>
-                        <Button variant="destructive" className="pointer-events-auto" onClick={confirmDeleteQuiz}>Delete Quiz</Button>
+                        <Button variant="destructive" className="pointer-events-auto hover:bg-red-700" onClick={confirmDeleteQuiz}>Delete Quiz</Button>
                       </div>
                     </div>
                   </header>
@@ -458,8 +458,8 @@ export default function QuizDetailsPage() {
                                 <Badge>{q.type.replace(/_/g, " ")}</Badge>
                               </div>
                               <div className="flex items-center gap-2 flex-wrap relative z-50 pointer-events-auto">
-                                <Button size="sm" className="pointer-events-auto" onClick={() => openEditModal(idx)}>Update</Button>
-                                <Button size="sm" className="pointer-events-auto" variant="destructive" onClick={() => confirmDeleteQuestion(idx)}>Delete</Button>
+                                <Button size="sm" className="pointer-events-auto hover:bg-blue-700" onClick={() => openEditModal(idx)}>Update</Button>
+                                <Button size="sm" className="pointer-events-auto hover:bg-red-700" variant="destructive" onClick={() => confirmDeleteQuestion(idx)}>Delete</Button>
                               </div>
                             </div>
                           </CardHeader>
