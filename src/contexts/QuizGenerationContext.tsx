@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -44,7 +44,7 @@ export function QuizGenerationProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const startGeneration = (topic: string) => {
+  const startGeneration = useCallback((topic: string) => {
     setIsGenerating(true);
     setCurrentTopic(topic);
     setGenerationProgress(0);
@@ -52,56 +52,78 @@ export function QuizGenerationProvider({ children }: { children: ReactNode }) {
       isGenerating: true,
       topic,
       timestamp: Date.now()
-    }));
-  };
+    }));    
+  }, []);
 
-  const completeGeneration = (success: boolean, quizData?: any) => {
-    setIsGenerating(false);
-    setGenerationProgress(0);
-    localStorage.removeItem('quizGenerationState');
+  const completeGeneration = useCallback(async (success: boolean, data?: any) => {
+    try {
+      setIsGenerating(false);
+      setCurrentTopic(null);
+      setGenerationProgress(0);
+      localStorage.removeItem('quizGenerationState');
 
-    if (success && quizData) {
-      // Invalidate cached quizzes so My Quizzes updates instantly
-      queryClient.invalidateQueries({ queryKey: ["quizzes"] });
+      // Only handle errors here, no success notifications
+      if (!success) {
+        // For topic-related errors, show a more detailed message
+        if (data?.isTopicError) {
+          toast({
+            title: data.error || 'Invalid Topic',
+            description: (
+              <div className="space-y-2">
+                <p>{data.message}</p>
+                {data.suggestions && data.suggestions.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm font-medium mb-1">Suggested topics:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {data.suggestions.map((suggestion: string, index: number) => (
+                        <li key={index} className="text-sm">{suggestion}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ),
+            variant: 'destructive',
+            duration: 15000,
+            className: 'text-left max-w-lg',
+          });
+        } else {
+          // For other errors
+          toast({
+            title: 'Error Generating Quiz',
+            description: `${data?.message || 'Failed to generate quiz.'} Please try a topic from the software industry.`,
+            variant: 'destructive',
+            duration: 10000,
+          });
+        }
+        return;
+      }
 
-      const go = () => router.push("/dashboard/my-quizzes");
+      // If successful, just invalidate the queries
+      if (data?.quiz_id) {
+        await queryClient.invalidateQueries({ queryKey: ['quizzes'] });
+      }
+    } catch (error) {
+      console.error('Error in completeGeneration:', error);
       toast({
-        title: "Quiz generated",
-        description: `${quizData?.topic || currentTopic || 'Your quiz'} is ready. Click to view in My Quizzes.`,
-        duration: 15000,
-        onClick: go,
-        className: "cursor-pointer border-blue-600/60 bg-blue-700/30 text-blue-100 shadow-lg shadow-blue-600/30",
-        action: (
-          <button
-            onClick={go}
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-blue-500/60 bg-transparent hover:bg-blue-600/25 h-10 px-4 py-2 text-blue-100"
-          >
-            View
-          </button>
-        ),
-      });
-    } else if (!success) {
-      toast({
-        title: "Quiz generation failed",
-        description: "There was an error generating your quiz. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive',
       });
     }
-    
-    setCurrentTopic(null);
-  };
+  }, [queryClient, router, toast]);
+
+  const contextValue = useMemo(() => ({
+    isGenerating,
+    generationProgress,
+    setGenerationProgress,
+    startGeneration,
+    completeGeneration,
+    currentTopic,
+  }), [isGenerating, generationProgress, startGeneration, completeGeneration, currentTopic]);
 
   return (
-    <QuizGenerationContext.Provider
-      value={{
-        isGenerating,
-        generationProgress,
-        setGenerationProgress,
-        startGeneration,
-        completeGeneration,
-        currentTopic,
-      }}
-    >
+    <QuizGenerationContext.Provider value={contextValue}>
       {children}
     </QuizGenerationContext.Provider>
   );
