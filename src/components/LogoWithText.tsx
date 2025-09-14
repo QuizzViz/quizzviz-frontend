@@ -67,7 +67,7 @@ export function LogoWithText({ className = '' }: LogoWithTextProps) {
             priority
           />
         </div>
-        <span className="ml-3 text-2xl font-bold tracking-tight text-foreground">
+        <span className="text-2xl font-bold tracking-tight text-foreground">
           QuizzViz
         </span>
       </Link>
