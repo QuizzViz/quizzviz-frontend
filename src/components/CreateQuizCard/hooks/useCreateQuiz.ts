@@ -88,6 +88,7 @@ export function useCreateQuiz() {
       timestamp: Date.now()
     };
 
+    console.log('Sending quiz generation request:', payload);
     try {
       // Make a single API call to generate and save the quiz
       const response = await fetch(`/api/quizzes?userId=${encodeURIComponent(user?.id || '')}`, {
@@ -96,28 +97,53 @@ export function useCreateQuiz() {
         body: JSON.stringify(payload),
       });
 
+      const responseText = await response.text();
+      console.log('Raw API response:', responseText);
+      
       if (!response.ok) {
         let errorText = 'Failed to generate quiz';
         try {
-          const errorData = await response.json();
+          const errorData = JSON.parse(responseText);
           errorText = errorData.error || errorData.message || errorText;
+          if (errorData.details) {
+            errorText += ` (${errorData.details})`;
+          }
+          console.error('API Error:', errorData);
         } catch (e) {
-          const text = await response.text();
-          errorText = text || errorText;
+          errorText = responseText || errorText;
+          console.error('Failed to parse error response:', e);
         }
         throw new Error(errorText);
       }
       
-      const savedQuiz = await response.json();
+      let savedQuiz;
+      try {
+        savedQuiz = JSON.parse(responseText);
+        console.log('Parsed quiz response:', savedQuiz);
+      } catch (e) {
+        console.error('Failed to parse quiz response:', e);
+        throw new Error('Invalid response format from server');
+      }
       
       // Ensure the quiz has the expected structure
       if (!savedQuiz.quiz_id && savedQuiz.id) {
         savedQuiz.quiz_id = savedQuiz.id;
       }
       
-      setQuizData(savedQuiz);
-      completeGeneration(true, savedQuiz);
-      return savedQuiz;
+      // Transform the response to match the expected format
+      const formattedQuiz = {
+        ...savedQuiz,
+        questions: savedQuiz.quiz || savedQuiz.questions || []
+      };
+      
+      if (!formattedQuiz.questions || !Array.isArray(formattedQuiz.questions)) {
+        console.error('Invalid questions format in response:', formattedQuiz);
+        throw new Error('Quiz data does not contain valid questions');
+      }
+      
+      setQuizData(formattedQuiz);
+      completeGeneration(true, formattedQuiz);
+      return formattedQuiz;
     } catch (e: any) {
       console.error("Error generating quiz:", e);
       const errorMessage = e?.message || "Failed to generate quiz. Please try again.";

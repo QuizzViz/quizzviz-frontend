@@ -108,26 +108,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      // Validate the response contains questions array (can be empty)
-      if (!responseData.questions || !Array.isArray(responseData.questions)) {
+      // Handle both 'quiz' and 'questions' array in the response
+      const questions = responseData.questions || responseData.quiz || [];
+      
+      if (!Array.isArray(questions)) {
         console.error('Invalid quiz format from backend:', responseData);
         return res.status(500).json({
           error: 'Generated quiz has invalid format',
-          details: 'Expected questions array in the response',
+          details: 'Expected quiz or questions array in the response',
           response: responseData
         });
       }
       
       // If questions array is empty, log a warning but don't fail
-      if (responseData.questions.length === 0) {
+      if (questions.length === 0) {
         console.warn('Received empty questions array from backend');
-        // Continue with empty questions rather than failing
       }
 
       // Return the generated quiz data
       return res.status(201).json({
         ...responseData,
-        quiz: responseData.questions, // Ensure questions are in the 'quiz' field
+        questions, // Ensure questions are in the 'questions' field
+        quiz: questions, // Also include 'quiz' for backward compatibility
         user_id: userIdStr
       });
       
