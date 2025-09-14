@@ -53,7 +53,7 @@ export default function Dashboard() {
             <DashboardHeader userName={user?.fullName || user?.firstName || "User"} userEmail={user?.emailAddresses?.[0]?.emailAddress} />
             <main className="flex-1 p-6 space-y-8">
               <CreateQuizCard />
-              <GenerationQueue items={queuedQuizzes} />
+              {/* <GenerationQueue items={queuedQuizzes} /> */}
               <QuizLibrary items={previousQuizzes} />
             </main>
           </div>
