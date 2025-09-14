@@ -86,11 +86,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Handle non-OK responses
       if (!quizResponse.ok) {
-        const errorText = await quizResponse.text().catch(() => 'Failed to create quiz');
-        console.error('Backend error:', errorText);
+        let errorData;
+        try {
+          errorData = await quizResponse.json();
+        } catch (e) {
+          const errorText = await quizResponse.text().catch(() => 'Failed to create quiz');
+          console.error('Backend error:', errorText);
+          return res.status(quizResponse.status).json({ 
+            error: 'Failed to generate quiz',
+            details: errorText
+          });
+        }
+
+        // Handle non-software related topic error specifically
+        if (errorData?.error?.includes('not related to software')) {
+          return res.status(400).json({
+            error: 'Topic Not Software-Related',
+            message: 'The topic you entered is not related to software development. Please choose a software-related topic such as:',
+            suggestions: [
+              'Programming languages (e.g., Python, JavaScript, Java)',
+              'Web development (e.g., React, Node.js, CSS)', 
+              'Databases (e.g., SQL, MongoDB, PostgreSQL)',
+              'Software development concepts (e.g., OOP, Algorithms, Design Patterns)',
+              'DevOps (e.g., Docker, Kubernetes, CI/CD)',
+              'Cloud computing (e.g., AWS, Azure, GCP)'
+            ],
+            isTopicError: true
+          });
+        }
+
+        console.error('Backend error:', errorData);
         return res.status(quizResponse.status).json({ 
           error: 'Failed to generate quiz',
-          details: errorText
+          details: errorData.error || 'Unknown error occurred'
         });
       }
 
@@ -99,6 +127,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       try {
         responseData = await quizResponse.json();
         console.log('Received quiz response:', responseData);
+        
+        // Check if the response contains an error field (even with 200 status)
+        if (responseData.error) {
+          // Handle non-software related topic error specifically
+          if (responseData.error.includes('not related to software')) {
+            return res.status(400).json({
+              error: 'Topic Not Software-Related',
+              message: responseData.error,
+              suggestions: [
+                'Programming languages (e.g., Python, JavaScript, Java)',
+                'Web development (e.g., React, Node.js, CSS)',
+                'Databases (e.g., SQL, MongoDB, PostgreSQL)',
+                'Software development concepts (e.g., OOP, Algorithms, Design Patterns)',
+                'DevOps (e.g., Docker, Kubernetes, CI/CD)',
+                'Cloud computing (e.g., AWS, Azure, GCP)'
+              ],
+              isTopicError: true
+            });
+          }
+          
+          // For other errors in the response
+          return res.status(400).json({
+            error: 'Quiz Generation Failed',
+            message: responseData.error,
+            isTopicError: false
+          });
+        }
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Failed to parse quiz response:', errorMessage);
@@ -109,7 +164,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Handle both 'quiz' and 'questions' array in the response
-      const questions =responseData.quiz || [];
+      const questions = responseData.quiz || [];
       
       if (!Array.isArray(questions)) {
         console.error('Invalid quiz format from backend:', responseData);

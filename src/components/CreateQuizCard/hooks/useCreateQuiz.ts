@@ -1,10 +1,48 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, ReactNode } from "react";
 import { Cpu, Code, Sparkles, CheckCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useQuizGeneration } from "@/contexts/QuizGenerationContext";
 
+interface TopicError {
+  error: string;
+  message: string;
+  suggestions?: string[];
+  isTopicError?: boolean;
+  details?: string;
+}
+
+interface UseCreateQuizReturn {
+  // Form state
+  topic: string;
+  setTopic: (topic: string) => void;
+  difficulty: string;
+  setDifficulty: (difficulty: string) => void;
+  count: number;
+  setCount: (count: number) => void;
+  balance: number[];
+  setBalance: (balance: number[]) => void;
+  
+  // Request state
+  isReasoning: boolean;
+  isFetching: boolean;
+  error: string | ReactNode | null;
+  setError: (error: string | ReactNode | null) => void;
+  quizData: any;
+  setQuizData: (data: any) => void;
+  
+  // Progress state
+  steps: string[];
+  stepIcons: any[];
+  stepIndex: number;
+  typedText: string;
+  progress: number;
+  
+  // Actions
+  handleGenerate: () => Promise<void>;
+}
+
 // Encapsulates all state and behavior for CreateQuiz workflow
-export function useCreateQuiz() {
+export function useCreateQuiz(): UseCreateQuizReturn {
   // form state
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("Bachelors");
@@ -14,7 +52,7 @@ export function useCreateQuiz() {
   // request and UX state
   const [isReasoning, setIsReasoning] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | ReactNode | null>(null);
   const [quizData, setQuizData] = useState<any>(null);
 
   // typing steps
@@ -53,43 +91,61 @@ export function useCreateQuiz() {
     }
   };
 
-  const { startGeneration, completeGeneration } = useQuizGeneration();
+  const quizGeneration = useQuizGeneration();
+  
+  // Memoize the completeGeneration function to prevent unnecessary re-renders
+  const safeCompleteGeneration = useCallback((success: boolean, data?: any) => {
+    if (quizGeneration?.completeGeneration) {
+      quizGeneration.completeGeneration(success, data);
+    } else {
+      console.warn('completeGeneration function is not available');
+    }
+  }, [quizGeneration]);
 
   // API call + animation toggles
-  const handleGenerate = useCallback(async (): Promise<any> => {
+  const handleGenerate = useCallback(async (): Promise<void> => {
     if (isReasoning || isFetching) return;
 
     const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
-    if (!topic.trim()) return setError("Topic is required");
-    if (!difficulty) return setError("Difficulty is required");
-    if (!numQuestions) return setError("Number of questions is required");
+    if (!topic.trim()) {
+      setError("Topic is required");
+      return;
+    }
+    if (!difficulty) {
+      setError("Difficulty is required");
+      return;
+    }
+    if (!numQuestions) {
+      setError("Number of questions is required");
+      return;
+    }
 
-    // Start the global loading state
-    startGeneration(topic.trim());
-    
-    // Reset local state
+    // Start the generation process
+    setIsFetching(true);
+    setIsReasoning(true);
     setError(null);
     setQuizData(null);
-    setIsReasoning(true);
-    setIsFetching(true);
-    setStepIndex(0);
-    setCharIndex(0);
-    setTypedText("");
-    setProgress(0);
+    
+    // Notify other tabs that generation has started
+    if (quizGeneration?.startGeneration) {
+      quizGeneration.startGeneration(topic.trim());
+    }
 
-    const codePct = Math.max(0, Math.min(100, balance[0] ?? 50));
-    const payload = {
-      topic: topic.trim(),
-      difficulty: difficultyToApi(difficulty),
-      num_questions: numQuestions,
-      theory_questions_percentage: 100 - codePct,
-      code_analysis_questions_percentage: codePct,
-      user_id: user?.id,
-      timestamp: Date.now()
-    };
-
-    console.log('Sending quiz generation request:', payload);
     try {
+      // Prepare the payload
+      const codePct = Math.max(0, Math.min(100, balance[0] ?? 50));
+      const payload = {
+        topic: topic.trim(),
+        difficulty: difficultyToApi(difficulty),
+        num_questions: numQuestions,
+        theory_questions_percentage: 100 - codePct,
+        code_analysis_questions_percentage: codePct,
+        user_id: user?.id,
+        timestamp: Date.now()
+      };
+
+      console.log('Sending quiz generation request:', payload);
+      
       // Make a single API call to generate and save the quiz
       const response = await fetch(`/api/quizzes?userId=${encodeURIComponent(user?.id || '')}`, {
         method: 'POST',
@@ -100,61 +156,63 @@ export function useCreateQuiz() {
       const responseText = await response.text();
       console.log('Raw API response:', responseText);
       
-      if (!response.ok) {
-        let errorText = 'Failed to generate quiz';
-        try {
-          const errorData = JSON.parse(responseText);
-          errorText = errorData.error || errorData.message || errorText;
-          if (errorData.details) {
-            errorText += ` (${errorData.details})`;
-          }
-          console.error('API Error:', errorData);
-        } catch (e) {
-          errorText = responseText || errorText;
-          console.error('Failed to parse error response:', e);
-        }
-        throw new Error(errorText);
-      }
-      
-      let savedQuiz;
+      let responseData;
       try {
-        savedQuiz = JSON.parse(responseText);
-        console.log('Parsed quiz response:', savedQuiz);
+        responseData = JSON.parse(responseText);
+        console.log('Parsed quiz response:', responseData);
       } catch (e) {
         console.error('Failed to parse quiz response:', e);
         throw new Error('Invalid response format from server');
       }
+
+      // Check for error in successful response (200 but with error field)
+      if (responseData.error) {
+        // Handle topic-related errors
+        if (responseData.error.includes('not related to software')) {
+          const topicError: TopicError = {
+            error: responseData.error || 'Invalid Topic',
+            message: responseData.message || 'The topic is not related to software development.',
+            suggestions: [
+              'Programming languages (e.g., Python, JavaScript, Java)',
+              'Web development (e.g., React, Node.js, CSS)',
+              'Databases (e.g., SQL, MongoDB, PostgreSQL)'
+            ],
+            isTopicError: true
+          };
+          
+          setError(topicError.message);
+          safeCompleteGeneration(false, topicError);
+          return;
+        }
+        
+        // Handle other errors in successful response
+        const errorMessage = responseData.message || responseData.error || 'Failed to generate quiz';
+        setError(errorMessage);
+        safeCompleteGeneration(false, { error: 'Error', message: errorMessage });
+        return;
+      }
       
       // Ensure the quiz has the expected structure
-      if (!savedQuiz.quiz_id && savedQuiz.id) {
-        savedQuiz.quiz_id = savedQuiz.id;
+      if (!responseData.quiz_id && responseData.id) {
+        responseData.quiz_id = responseData.id;
       }
+
+      // If we get here, the response was successful and contains quiz data
+      setQuizData(responseData);
       
-      // Transform the response to match the expected format
-      const formattedQuiz = {
-        ...savedQuiz,
-        questions: savedQuiz.quiz || savedQuiz.questions || []
-      };
+      // Complete generation - this will show the success notification
+      safeCompleteGeneration(true, responseData);
       
-      if (!formattedQuiz.questions || !Array.isArray(formattedQuiz.questions)) {
-        console.error('Invalid questions format in response:', formattedQuiz);
-        throw new Error('Quiz data does not contain valid questions');
-      }
-      
-      setQuizData(formattedQuiz);
-      completeGeneration(true, formattedQuiz);
-      return formattedQuiz;
-    } catch (e: any) {
-      console.error("Error generating quiz:", e);
-      const errorMessage = e?.message || "Failed to generate quiz. Please try again.";
+    } catch (error) {
+      console.error('Error generating quiz:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate quiz';
       setError(errorMessage);
-      completeGeneration(false);
-      throw e;
+      safeCompleteGeneration(false, { error: 'Error', message: errorMessage });
     } finally {
       setIsFetching(false);
       setTimeout(() => setIsReasoning(false), 400);
     }
-  }, [isReasoning, isFetching, count, topic, difficulty, balance, startGeneration, completeGeneration, user?.id]);
+  }, [isReasoning, isFetching, count, topic, difficulty, balance, quizGeneration, user?.id, safeCompleteGeneration]);
 
   // Typewriter effect and progress
   useEffect(() => {
@@ -218,18 +276,18 @@ export function useCreateQuiz() {
   }, [isReasoning, stepIndex, isFetching]);
 
   // Get the setGenerationProgress function from context
-  const { setGenerationProgress } = useQuizGeneration();
+  const quizGenContext = useQuizGeneration();
   
   // Update global progress when local progress changes
   useEffect(() => {
-    if (isReasoning) {
+    if (isReasoning && quizGenContext?.setGenerationProgress) {
       const progressValue = Math.min(99, Math.max(0, progress)); // Cap at 99% until complete
-      setGenerationProgress(progressValue);
+      quizGenContext.setGenerationProgress(progressValue);
     }
-  }, [progress, isReasoning, setGenerationProgress]);
+  }, [progress, isReasoning, quizGenContext]);
 
   return {
-    // state
+    // form state
     topic,
     setTopic,
     difficulty,
@@ -238,19 +296,23 @@ export function useCreateQuiz() {
     setCount,
     balance,
     setBalance,
+    
+    // request state
     isReasoning,
     isFetching,
     error,
     setError,
     quizData,
     setQuizData,
-    // progress
+    
+    // progress state
     steps,
     stepIcons,
     stepIndex,
     typedText,
     progress,
+    
     // actions
     handleGenerate,
-  };
+  } as UseCreateQuizReturn;
 }

@@ -132,7 +132,11 @@ export default function CreateQuizCard() {
           leftIconBusy={Loader2}
           leftIconIdle={Send}
         />
-        {error && <div className="text-sm text-red-500">{error}</div>}
+        {error && (
+          <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-sm">
+            {typeof error === 'string' ? error : error}
+          </div>
+        )}
         <ReasoningPanel visible={isReasoning} steps={steps} stepIcons={stepIcons} stepIndex={stepIndex} typedText={typedText} progress={progress} />
       </CardContent>
     </Card>
