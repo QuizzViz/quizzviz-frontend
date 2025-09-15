@@ -1,4 +1,5 @@
-import { FC } from "react";
+import { FC, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 // Email/password sign-up form (controlled externally)
 export const EmailPasswordSignUpForm: FC<{
@@ -9,7 +10,10 @@ export const EmailPasswordSignUpForm: FC<{
   error?: string | null;
   loading?: boolean;
   onSubmit: (e: React.FormEvent) => void;
-}> = ({ email, setEmail, password, setPassword, error, loading, onSubmit }) => (
+}> = ({ email, setEmail, password, setPassword, error, loading, onSubmit }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  
+  return (
   <form onSubmit={onSubmit} className="space-y-2">
     {error && (
       <div className="text-red-400 text-xs bg-destructive/10 border border-destructive/40 rounded-md px-3 py-2">
@@ -30,15 +34,29 @@ export const EmailPasswordSignUpForm: FC<{
     </div>
     <div className="space-y-1">
       <label htmlFor="password" className="text-xs font-medium text-foreground/90">Password</label>
-      <input
-        id="password"
-        type="password"
-        required
-        className="h-10 w-full rounded-lg bg-input text-foreground placeholder:text-muted-foreground/70 border border-border px-3 outline-none focus:ring-2 focus:ring-ring"
-        placeholder="Create a password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      <div className="relative">
+        <input
+          id="password"
+          type={showPassword ? "text" : "password"}
+          required
+          className="h-10 w-full rounded-lg bg-input text-foreground placeholder:text-muted-foreground/70 border border-border px-3 pr-10 outline-none focus:ring-2 focus:ring-ring"
+          placeholder="Create a password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          tabIndex={-1}
+        >
+          {showPassword ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
+        </button>
+      </div>
     </div>
     <button
       type="submit"
@@ -49,3 +67,4 @@ export const EmailPasswordSignUpForm: FC<{
     </button>
   </form>
 );
+}

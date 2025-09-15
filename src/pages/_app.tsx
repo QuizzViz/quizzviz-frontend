@@ -18,7 +18,20 @@ function MyApp({ Component, pageProps }: AppProps) {
   const hideNavbar = path.startsWith("/dashboard") || path.startsWith("/quiz");
 
   return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} {...pageProps}>
+    <ClerkProvider 
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      {...pageProps}
+      appearance={{
+        elements: {
+          formButtonPrimary: 'bg-primary hover:bg-primary/90',
+          footerActionLink: 'text-primary hover:text-primary/80',
+        },
+      }}
+      signInUrl="/signin"
+      signUpUrl="/signup"
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
+    >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           {!hideNavbar && <Navbar />} {/* Hide on /dashboard and /quiz */}
