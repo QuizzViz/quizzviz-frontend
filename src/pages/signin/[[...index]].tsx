@@ -3,13 +3,30 @@ import { LogoHeader } from "@/components/auth/LogoHeader";
 import { OAuthProviderButton } from "@/components/auth/OAuthProviderButton";
 import { EmailPasswordSignInForm } from "@/components/auth/EmailPasswordSignInForm";
 import { useSignInController } from "@/components/auth/hooks/useSignInController";
+import { useEffect, useState } from "react";
 
 export default function SignInPage() {
   const {
-    email, setEmail, password, setPassword,
-    loading, oauthLoading, error, setError,
+    email, setEmail, password, setPassword, loading, oauthLoading, error,
     isLoaded, user, handleOAuth, onSubmit, signOut, router
   } = useSignInController();
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setIsRedirecting(true);
+      router.push("/dashboard");
+    }
+  }, [user, router]);
+
+  if (isRedirecting || (isLoaded && user)) {
+    return (
+      <div className="min-h-screen w-full bg-background text-foreground flex flex-col items-center justify-center gap-4 p-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <p className="text-foreground/80">Redirecting to dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground flex items-center justify-center p-4 pt-20">
