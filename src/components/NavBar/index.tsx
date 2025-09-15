@@ -49,31 +49,31 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center text-sm whitespace-nowrap">
             <div className="flex items-center gap-6 lg:gap-8 xl:gap-10">
-              <button 
+              <Link href="/about"><button 
                 onClick={() => scrollToSection("about")}
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 About
-              </button>
-              <button 
+              </button></Link>
+              <Link href="/pricing"><button 
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Pricing
-              </button>
-              <button 
+              </button></Link>
+              <Link href="/contact"><button 
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Contact
-              </button>
-              <button 
+              </button></Link>
+              <Link href="/dashboard"><button 
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Dashboard
-              </button>
+              </button></Link>
             </div>
             <div className="hidden md:flex items-center gap-6 lg:gap-8 ml-6 md:ml-10 lg:ml-16 xl:ml-24">
               <Button 
