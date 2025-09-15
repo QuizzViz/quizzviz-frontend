@@ -123,7 +123,7 @@ export default function CreateQuizCard() {
           <DifficultyCountRow difficulty={difficulty} setDifficulty={setDifficulty} count={count} setCount={setCount} />
         </div>
         
-        <CodeTheorySlider balance={balance} setBalance={setBalance} />
+        <CodeTheorySlider />
         <GenerateButton
           isBusy={isReasoning || isFetching}
           onClick={handleGenerate}
