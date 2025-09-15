@@ -48,37 +48,6 @@ export default function CreateQuizCard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // On successful generation: show toast, invalidate cache, and clear local quizData
-  useEffect(() => {
-    if (!quizData) return;
-    // Invalidate cached quizzes so My Quizzes updates instantly
-    queryClient.invalidateQueries({ queryKey: ["quizzes"] });
-
-    const go = () => router.push("/dashboard/my-quizzes");
-    const t = toast({
-      title: "Quiz generated",
-      description: `${quizData?.topic ?? "Your quiz"} is ready. Click to view in My Quizzes.`,
-      duration: 15000,
-      // Make the whole toast clickable and style it blue
-      onClick: go,
-      className: "cursor-pointer border-blue-600/60 bg-blue-700/30 text-blue-100 shadow-lg shadow-blue-600/30",
-      action: (
-        <ToastAction
-          altText="View"
-          onClick={go}
-          className="border-blue-500/60 text-blue-100 hover:bg-blue-600/25"
-        >
-          View
-        </ToastAction>
-      ),
-    });
-
-    // clear local state so modal never renders
-    setQuizData(null);
-    // also clear any prior error
-    setError(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quizData]);
 
   return (
     <Card className="bg-card border-border">
