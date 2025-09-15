@@ -11,6 +11,8 @@ export default function SignUpPage() {
     loading, oauthLoading, error, isLoaded, user, handleOAuth, submitSignUp, verifyCode, signOut, router
   } = useSignUpController();
 
+  
+  
   return (
     <div className="min-h-screen w-full bg-background text-foreground flex items-center justify-center p-4 pt-20">
       <div className="w-full max-w-sm animate-fade-in-smooth">
@@ -67,7 +69,7 @@ export default function SignUpPage() {
                   You are already signed in as <span className="text-foreground">{user?.primaryEmailAddress?.emailAddress || user?.fullName || "current user"}</span>.
                 </p>
                 <div className="grid grid-cols-1 gap-2">
-                  <button onClick={() => router.push('/dashboard')} className="inline-flex h-10 w-full items-center justify-center rounded-lg px-4 bg-primary text-primary-foreground hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ring font-medium">Go to Dashboard</button>
+                  <button onClick={() => router.push('/signup')} className="inline-flex h-10 w-full items-center justify-center rounded-lg px-4 bg-primary text-primary-foreground hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ring font-medium">Go to Dashboard</button>
                   <button onClick={async () => { try { await signOut(); router.push('/signup'); } catch {} }} className="inline-flex h-10 w-full items-center justify-center rounded-lg px-4 bg-secondary text-secondary-foreground hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ring font-medium">Switch account (sign out first)</button>
                 </div>
               </div>
