@@ -12,6 +12,15 @@ import type { Metadata } from "next";
 const siteUrl = "https://www.quizzviz.com";
 
 
+// Viewport configuration should be exported separately
+export const viewport = {
+  themeColor: '#ffffff', // Or your brand color
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {

@@ -1,200 +1,194 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { getAuth } from "@clerk/nextjs/server";
 
 const BACKEND_BASE_URL = 'https://quizzviz-backend-production.up.railway.app';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { userId } = req.query;
+// Helper function to handle API errors
+const handleApiError = (error: any, res: NextApiResponse) => {
+  console.error('API Error:', error);
+  return res.status(500).json({ 
+    error: error?.message || 'Internal Server Error',
+    details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+  });
+};
+
+async function handleGet(userId: string, token: string) {
+  const userIdStr = Array.isArray(userId) ? userId[0] : userId || '';
+  const url = `${BACKEND_BASE_URL}/user/${encodeURIComponent(userIdStr)}/quizzes`;
   
-  if (!userId || typeof userId !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid userId' });
-  }
+  // Log the request for debugging
+  console.log('Sending request to backend:', {
+    url,
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  });
 
   try {
-    switch (req.method) {
-      case 'GET':
-        return handleGet();
-      case 'POST':
-        return handlePost();
-      default:
-        res.setHeader('Allow', ['GET', 'POST']);
-        return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
-    }
-  } catch (err: any) {
-    console.error(`API error in /api/quizzes (${req.method}):`, err);
-    return res.status(500).json({ 
-      error: err?.message || 'Internal Server Error',
-      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    const response = await fetch(url, { 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     });
-  }
-
-  async function handleGet() {
-    const userIdStr = Array.isArray(userId) ? userId[0] : userId || '';
-    const response = await fetch(
-      `${BACKEND_BASE_URL}/user/${encodeURIComponent(userIdStr)}/quizzes`,
-      { headers: { 'Content-Type': 'application/json' } }
-    );
 
     if (!response.ok) {
-      const error = await response.text().catch(() => 'Failed to fetch quizzes');
-      return res.status(response.status).json({ error });
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Backend error:', errorData);
+      return { 
+        status: response.status, 
+        data: { 
+          error: errorData.detail || errorData.message || 'Failed to fetch quizzes',
+          code: errorData.code
+        } 
+      };
     }
 
     const data = await response.json();
-    return res.status(200).json(data);
+    return { status: response.status, data };
+  } catch (error: any) {
+    console.error('Error fetching quizzes:', error);
+    return { 
+      status: 500, 
+      data: { 
+        error: error?.message || 'Failed to fetch quizzes',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      } 
+    };
+  }
+}
+
+async function handlePost(userId: string, token: string, body: any) {
+  if (!body) {
+    return { status: 400, data: { error: 'Request body is required' }};
   }
 
-  async function handlePost() {
-    if (!req.body) {
-      return res.status(400).json({ error: 'Request body is required' });
-    }
-
+  try {
     const userIdStr = Array.isArray(userId) ? userId[0] : userId || '';
-    if (!userIdStr) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
+    
+    // Prepare the request payload according to backend's QuizRequest model
+    const payload = {
+      topic: body.topic,
+      difficulty: body.difficulty || 'Bachelors Level',
+      num_questions: body.num_questions || 25,
+      theory_questions_percentage: body.theory_questions_percentage || 50,
+      code_analysis_questions_percentage: body.code_analysis_questions_percentage || 50,
+      user_id: userIdStr
+    };
+    
+    // Log the outgoing request for debugging
+    console.log('Sending quiz generation request:', {
+      url: `${BACKEND_BASE_URL}/quizz`,
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: payload
+    });
 
-    try {
-      // Prepare the quiz data for the backend
-      const { user_id, ...quizData } = req.body;
-      
-      // Log the request for debugging
-      console.log('Sending quiz generation request:', {
-        url: `${BACKEND_BASE_URL}/quizz`,
+    const response = await fetch(
+      `${BACKEND_BASE_URL}/quizz`,
+      {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: {
-          ...quizData,
-          user_id: userIdStr
-        }
-      });
-
-      // Make request to generate the quiz
-      const quizResponse = await fetch(
-        `${BACKEND_BASE_URL}/quizz`,
-        {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'x-user-id': userIdStr
-          },
-          body: JSON.stringify({
-            ...quizData,
-            user_id: userIdStr
-          })
-        }
-      );
-
-      // Handle non-OK responses
-      if (!quizResponse.ok) {
-        let errorData;
-        try {
-          errorData = await quizResponse.json();
-        } catch (e) {
-          const errorText = await quizResponse.text().catch(() => 'Failed to create quiz');
-          console.error('Backend error:', errorText);
-          return res.status(quizResponse.status).json({ 
-            error: 'Failed to generate quiz',
-            details: errorText
-          });
-        }
-
-        // Handle non-software related topic error specifically
-        if (errorData?.error?.includes('not related to software')) {
-          return res.status(400).json({
-            error: 'Topic Not Software-Related',
-            message: 'The topic you entered is not related to software development. Please choose a software-related topic such as:',
-            suggestions: [
-              'Programming languages (e.g., Python, JavaScript, Java)',
-              'Web development (e.g., React, Node.js, CSS)', 
-              'Databases (e.g., SQL, MongoDB, PostgreSQL)',
-              'Software development concepts (e.g., OOP, Algorithms, Design Patterns)',
-              'DevOps (e.g., Docker, Kubernetes, CI/CD)',
-              'Cloud computing (e.g., AWS, Azure, GCP)'
-            ],
-            isTopicError: true
-          });
-        }
-
-        console.error('Backend error:', errorData);
-        return res.status(quizResponse.status).json({ 
-          error: 'Failed to generate quiz',
-          details: errorData.error || 'Unknown error occurred'
-        });
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
       }
+    );
 
-      // Parse the response
-      let responseData;
-      try {
-        responseData = await quizResponse.json();
-        console.log('Received quiz response:', responseData);
-        
-        // Check if the response contains an error field (even with 200 status)
-        if (responseData.error) {
-          // Handle non-software related topic error specifically
-          if (responseData.error.includes('not related to software')) {
-            return res.status(400).json({
-              error: 'Topic Not Software-Related',
-              message: responseData.error,
-              suggestions: [
-                'Programming languages (e.g., Python, JavaScript, Java)',
-                'Web development (e.g., React, Node.js, CSS)',
-                'Databases (e.g., SQL, MongoDB, PostgreSQL)',
-                'Software development concepts (e.g., OOP, Algorithms, Design Patterns)',
-                'DevOps (e.g., Docker, Kubernetes, CI/CD)',
-                'Cloud computing (e.g., AWS, Azure, GCP)'
-              ],
-              isTopicError: true
-            });
-          }
-          
-          // For other errors in the response
-          return res.status(400).json({
-            error: 'Quiz Generation Failed',
-            message: responseData.error,
-            isTopicError: false
-          });
-        }
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Failed to parse quiz response:', errorMessage);
-        return res.status(500).json({
-          error: 'Invalid response format from quiz generation service',
-          details: errorMessage
-        });
-      }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Backend error:', errorData);
+      return { 
+        status: response.status, 
+        data: { 
+          error: errorData.detail || errorData.message || 'Failed to create quiz',
+          code: errorData.code
+        } 
+      };
+    }
 
-      // Handle both 'quiz' and 'questions' array in the response
-      const questions = responseData.quiz || [];
-      
-      if (!Array.isArray(questions)) {
-        console.error('Invalid quiz format from backend:', responseData);
-        return res.status(500).json({
-          error: 'Generated quiz has invalid format',
-          details: 'Expected quiz or questions array in the response',
-          response: responseData
-        });
-      }
-      
-      // If questions array is empty, log a warning but don't fail
-      if (questions.length === 0) {
-        console.warn('Received empty questions array from backend');
-      }
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error: any) {
+    console.error('Error creating quiz:', error);
+    return { 
+      status: 500, 
+      data: { 
+        error: error?.message || 'Failed to create quiz',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      } 
+    };
+  }
+}
 
-      // Return the generated quiz data
-      return res.status(201).json({
-        ...responseData,
-        questions, // Ensure questions are in the 'questions' field
-        quiz: questions, // Also include 'quiz' for backward compatibility
-        user_id: userIdStr
-      });
-      
-    } catch (error: any) {
-      console.error('Error in quiz creation:', error);
-      const errorMessage = error?.message || 'An unknown error occurred';
-      return res.status(500).json({ 
-        error: 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  try {
+    // Get authentication details from Clerk
+    const auth = getAuth(req);
+    const { userId: authUserId } = auth;
+    
+    // Get user ID from query parameters as fallback
+    const queryUserId = req.query.userId as string | undefined;
+    const effectiveUserId = authUserId || queryUserId;
+    
+    if (!effectiveUserId) {
+      return res.status(401).json({ 
+        error: 'Unauthorized',
+        details: 'No user ID found in session or query parameters'
       });
     }
+
+    // Parse cookies from the request
+    const cookieHeader = req.headers.cookie || '';
+    const cookies = Object.fromEntries(
+      cookieHeader.split(';').map(c => {
+        const [key, ...vals] = c.trim().split('=');
+        return [key, vals.join('=')];
+      })
+    );
+    
+    // Get the session token from Clerk cookies
+    const sessionToken = cookies.__session || '';
+    
+    if (!sessionToken) {
+      return res.status(401).json({ 
+        error: 'Unauthorized',
+        details: 'No authentication token provided in headers or cookies'
+      });
+    }
+
+    // Log the incoming request for debugging
+    console.log(`[${req.method}] /api/quizzes`, {
+      authUserId,
+      queryUserId,
+      usingUserId: effectiveUserId,
+      method: req.method,
+      hasBody: !!req.body,
+      hasToken: !!sessionToken
+    });
+
+    // Route the request based on the HTTP method
+    if (req.method === 'GET') {
+      const result = await handleGet(effectiveUserId, sessionToken);
+      return res.status(result.status).json(result.data);
+    } else if (req.method === 'POST') {
+      const result = await handlePost(effectiveUserId, sessionToken, req.body);
+      return res.status(result.status).json(result.data);
+    } else {
+      res.setHeader('Allow', ['GET', 'POST']);
+      return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+    }
+  } catch (error) {
+    console.error('API Error in /api/quizzes:', error);
+    return handleApiError(error, res);
   }
 }
