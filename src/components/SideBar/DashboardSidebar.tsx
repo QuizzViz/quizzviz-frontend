@@ -14,7 +14,21 @@ import {
   FiX,
 } from "react-icons/fi";
 
-export default function DashboardSidebar() {
+type DashboardSidebarProps = {
+  mobileWidthClass?: string; // Tailwind classes for mobile drawer width
+  menuIconSizeClass?: string; // Tailwind size for FiMenu/FiX icons, e.g., "w-6 h-6"
+  navIconSizeClass?: string; // Tailwind size for nav icons
+  navTextSizeClass?: string; // Tailwind text size for nav labels
+  itemPaddingClass?: string; // Tailwind padding for nav items
+};
+
+export default function DashboardSidebar({
+  mobileWidthClass = "w-4/5 max-w-sm",
+  menuIconSizeClass = "w-6 h-6",
+  navIconSizeClass = "w-5 h-5",
+  navTextSizeClass = "text-sm",
+  itemPaddingClass = "p-2.5",
+}: DashboardSidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -91,13 +105,13 @@ export default function DashboardSidebar() {
     };
   }, [isMobile, isOpen]);
 
-  const menuItems = [
-    { name: "Dashboard", href: "/dashboard", icon: <FiHome className="w-5 h-5" /> },
-    { name: "My Quizzes", href: "/dashboard/my-quizzes", icon: <FiBook className="w-5 h-5" /> },
-    { name: "Results", href: "/dashboard/results", icon: <FiBarChart2 className="w-5 h-5" /> },
-    { name: "Billing", href: "/dashboard/billing", icon: <FiCreditCard className="w-5 h-5" /> },
-    { name: "Profile", href: "/dashboard/profile", icon: <FiUser className="w-5 h-5" /> },
-    { name: "Settings", href: "/dashboard/settings", icon: <FiSettings className="w-5 h-5" /> },
+  const menuItems: { name: string; href: string; Icon: (props: { className?: string }) => JSX.Element }[] = [
+    { name: "Dashboard", href: "/dashboard", Icon: (props) => <FiHome {...props} /> },
+    { name: "My Quizzes", href: "/dashboard/my-quizzes", Icon: (props) => <FiBook {...props} /> },
+    { name: "Results", href: "/dashboard/results", Icon: (props) => <FiBarChart2 {...props} /> },
+    { name: "Billing", href: "/dashboard/billing", Icon: (props) => <FiCreditCard {...props} /> },
+    { name: "Profile", href: "/dashboard/profile", Icon: (props) => <FiUser {...props} /> },
+    { name: "Settings", href: "/dashboard/settings", Icon: (props) => <FiSettings {...props} /> },
   ];
 
   const handleMenuItemClick = () => {
@@ -129,9 +143,9 @@ export default function DashboardSidebar() {
         aria-expanded={isOpen}
       >
         {isOpen ? (
-          <FiX className="w-5 h-5 text-white" />
+          <FiX className={`${menuIconSizeClass} text-white`} />
         ) : (
-          <FiMenu className="w-5 h-5 text-white" />
+          <FiMenu className={`${menuIconSizeClass} text-white`} />
         )}
       </button>
 
@@ -141,7 +155,7 @@ export default function DashboardSidebar() {
         className={`
           ${isMobile ? "fixed left-0 right-0 top-0 bottom-0" : "sticky top-0 h-screen"} flex flex-col transition-transform duration-300 ease-in-out z-50
           ${isMobile && !isOpen ? "-translate-x-full" : "translate-x-0"}
-          ${isMobile ? "w-4/5 max-w-sm" : isOpen ? "w-64" : "w-16"}
+          ${isMobile ? mobileWidthClass : isOpen ? "w-64" : "w-16"}
           bg-black text-white border-r border-white
           ${isMobile ? "shadow-2xl" : ""}
         `}
@@ -188,13 +202,15 @@ export default function DashboardSidebar() {
                     <Link
                       href={item.href}
                       onClick={handleMenuItemClick}
-                      className={`flex items-center w-full p-2.5 rounded-md transition-all duration-200 ease-in-out ${
+                      className={`flex items-center w-full ${itemPaddingClass} rounded-md transition-all duration-200 ease-in-out ${
                         (isOpen || isMobile) ? "px-3" : "justify-center"
                       } hover:bg-white/10 group relative text-white active:bg-white/20`}
                     >
-                      <span className="text-white">{item.icon}</span>
+                      <span className="text-white">
+                        <item.Icon className={`${navIconSizeClass}`} />
+                      </span>
                       {(isOpen || isMobile) && (
-                        <span className="ml-3 text-sm font-medium text-white">
+                        <span className={`ml-3 font-medium text-white ${navTextSizeClass}`}>
                           {item.name}
                         </span>
                       )}
