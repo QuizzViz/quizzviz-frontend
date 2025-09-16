@@ -202,15 +202,15 @@ export default function DashboardSidebar({
                     <Link
                       href={item.href}
                       onClick={handleMenuItemClick}
-                      className={`flex items-center w-full ${itemPaddingClass} rounded-md transition-all duration-200 ease-in-out ${
+                      className={`flex items-center w-full ${isMobile ? itemPaddingClass : "p-2.5"} rounded-md transition-all duration-200 ease-in-out ${
                         (isOpen || isMobile) ? "px-3" : "justify-center"
                       } hover:bg-white/10 group relative text-white active:bg-white/20`}
                     >
                       <span className="text-white">
-                        <item.Icon className={`${navIconSizeClass}`} />
+                        <item.Icon className={`${isMobile ? navIconSizeClass : "w-5 h-5"}`} />
                       </span>
                       {(isOpen || isMobile) && (
-                        <span className={`ml-3 font-medium text-white ${navTextSizeClass}`}>
+                        <span className={`ml-3 font-medium text-white ${isMobile ? navTextSizeClass : "text-sm"}`}>
                           {item.name}
                         </span>
                       )}
