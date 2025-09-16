@@ -332,7 +332,13 @@ export default function QuizDetailsPage() {
       <SignedIn>
         <div className="flex min-h-screen">
           {/* Sidebar */}
-          <DashboardSideBar />
+          <DashboardSideBar
+            mobileWidthClass="w-11/12 max-w-xl"
+            menuIconSizeClass="w-10 h-10"
+            navIconSizeClass="w-6 h-6"
+            navTextSizeClass="text-base"
+            itemPaddingClass="p-3.5"
+          />
           
           {/* Edit/Add Question Modal */}
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
