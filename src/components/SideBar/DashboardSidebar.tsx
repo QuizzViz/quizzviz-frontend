@@ -111,7 +111,10 @@ export default function DashboardSidebar() {
     <>
       {/* Mobile Overlay */}
       {isMobile && isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden" />
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+          aria-hidden="true"
+        />
       )}
 
       {/* Mobile Menu Button - Only visible on mobile */}
@@ -122,6 +125,8 @@ export default function DashboardSidebar() {
           isOpen ? "bg-white/10" : ""
         }`}
         aria-label={isOpen ? "Close menu" : "Open menu"}
+        aria-controls="mobile-sidebar"
+        aria-expanded={isOpen}
       >
         {isOpen ? (
           <FiX className="w-5 h-5 text-white" />
@@ -134,14 +139,18 @@ export default function DashboardSidebar() {
       <div
         id="mobile-sidebar"
         className={`
-          ${isMobile ? "fixed" : "sticky"} top-0 h-screen flex flex-col transition-all duration-300 ease-in-out z-50
+          ${isMobile ? "fixed left-0 right-0 top-0 bottom-0" : "sticky top-0 h-screen"} flex flex-col transition-transform duration-300 ease-in-out z-50
           ${isMobile && !isOpen ? "-translate-x-full" : "translate-x-0"}
-          ${isMobile ? "w-64" : isOpen ? "w-64" : "w-16"}
+          ${isMobile ? "w-4/5 max-w-sm" : isOpen ? "w-64" : "w-16"}
           bg-black text-white border-r border-white
           ${isMobile ? "shadow-2xl" : ""}
         `}
+        role={isMobile ? "dialog" : undefined}
+        aria-modal={isMobile ? true : undefined}
+        aria-label={isMobile ? "Navigation menu" : undefined}
       >
         <div className="flex flex-col h-full">
+
           {/* Header */}
           <div
             className={`sticky top-0 z-10 flex-shrink-0 flex items-center justify-between p-4 border-b border-white/20 bg-black ${
