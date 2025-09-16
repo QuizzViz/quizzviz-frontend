@@ -11,7 +11,7 @@ interface TopicError {
   details?: string;
 }
 
-interface UseCreateQuizReturn {
+interface UseCreateQuizReturnV2 {
   // Form state
   topic: string;
   setTopic: (topic: string) => void;
@@ -19,8 +19,6 @@ interface UseCreateQuizReturn {
   setDifficulty: (difficulty: string) => void;
   count: number;
   setCount: (count: number) => void;
-  balance: number[];
-  setBalance: (balance: number[]) => void;
   
   // Request state
   isReasoning: boolean;
@@ -38,18 +36,16 @@ interface UseCreateQuizReturn {
   progress: number;
   
   // Actions
-  handleGenerate: () => Promise<void>;
+  handleGenerate: (codePercentage: number) => Promise<void>;
 }
 
-// Encapsulates all state and behavior for CreateQuiz workflow
-export function useCreateQuiz(): UseCreateQuizReturn {
+// Updated version of useCreateQuiz that properly handles codePercentage
+export function useCreateQuizV2(): UseCreateQuizReturnV2 {
   // form state
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("Bachelors");
   const [count, setCount] = useState(5);
-  // We'll keep balance for backward compatibility but use codePercentage from props in the component
-  const [balance, setBalance] = useState<number[]>([50]);
-
+  
   // request and UX state
   const [isReasoning, setIsReasoning] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -63,8 +59,8 @@ export function useCreateQuiz(): UseCreateQuizReturn {
     "🧩 Generating question templates & code scaffolds...",
     "✅ Validating difficulty and finalizing the quiz...",
   ];
+  
   const stepIcons = [Cpu, Code, Sparkles, CheckCircle];
-
   const [stepIndex, setStepIndex] = useState(0);
   const [typedText, setTypedText] = useState("");
   const [charIndex, setCharIndex] = useState(0);
@@ -76,6 +72,7 @@ export function useCreateQuiz(): UseCreateQuizReturn {
 
   // auth (must be called at hook top-level, not inside callbacks)
   const { user } = useUser();
+  const quizGeneration = useQuizGeneration();
 
   const difficultyToApi = (val: string) => {
     switch (val) {
@@ -92,8 +89,6 @@ export function useCreateQuiz(): UseCreateQuizReturn {
     }
   };
 
-  const quizGeneration = useQuizGeneration();
-  
   // Memoize the completeGeneration function to prevent unnecessary re-renders
   const safeCompleteGeneration = useCallback((success: boolean, data?: any) => {
     if (quizGeneration?.completeGeneration) {
@@ -104,10 +99,20 @@ export function useCreateQuiz(): UseCreateQuizReturn {
   }, [quizGeneration]);
 
   // API call + animation toggles
-  const handleGenerate = useCallback(async (codePercentage: number = 50): Promise<void> => {
+  const handleGenerate = useCallback(async (codePercentage: number): Promise<void> => {
     if (isReasoning || isFetching) return;
 
     const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
+    
+    // Ensure codePercentage is a valid number between 0 and 100
+    const validatedCodePercentage = Math.max(0, Math.min(100, Number(codePercentage) || 50));
+    const validatedTheoryPercentage = 100 - validatedCodePercentage;
+    
+    console.log('Generating quiz with:', {
+      codePercentage: validatedCodePercentage,
+      theoryPercentage: validatedTheoryPercentage,
+      totalQuestions: numQuestions
+    });
     if (!topic.trim()) {
       setError("Topic is required");
       return;
@@ -120,9 +125,6 @@ export function useCreateQuiz(): UseCreateQuizReturn {
       setError("Number of questions is required");
       return;
     }
-    
-    // Update the balance state with the current code percentage
-    setBalance([codePercentage]);
 
     // Start the generation process
     setIsFetching(true);
@@ -136,17 +138,29 @@ export function useCreateQuiz(): UseCreateQuizReturn {
     }
 
     try {
-      // Prepare the payload with the provided code percentage
-      const codePct = Math.max(0, Math.min(100, codePercentage));
+      // Log the values being sent to the API
+      console.log('Sending to API:', {
+        codePercentage: validatedCodePercentage,
+        theoryPercentage: validatedTheoryPercentage,
+        totalQuestions: numQuestions
+      });
+
+      // Prepare the payload with the validated percentages
       const payload = {
         topic: topic.trim(),
         difficulty: difficultyToApi(difficulty),
         num_questions: numQuestions,
-        theory_questions_percentage: 100 - codePct,
-        code_analysis_questions_percentage: codePct,
+        theory_questions_percentage: 100 - validatedCodePercentage, // Ensure they sum to 100
+        code_analysis_questions_percentage: validatedCodePercentage,
         user_id: user?.id,
         timestamp: Date.now()
       };
+      
+      console.log('Quiz generation payload with percentages:', {
+        codePercentage: validatedCodePercentage,
+        theoryPercentage: validatedTheoryPercentage,
+        totalQuestions: numQuestions
+      });
 
       console.log('Sending quiz generation request:', payload);
       
@@ -203,8 +217,6 @@ export function useCreateQuiz(): UseCreateQuizReturn {
 
       // If we get here, the response was successful and contains quiz data
       setQuizData(responseData);
-      
-      // Complete generation - this will show the success notification
       safeCompleteGeneration(true, responseData);
       
     } catch (error) {
@@ -214,94 +226,64 @@ export function useCreateQuiz(): UseCreateQuizReturn {
       safeCompleteGeneration(false, { error: 'Error', message: errorMessage });
     } finally {
       setIsFetching(false);
-      setTimeout(() => setIsReasoning(false), 400);
+      setIsReasoning(false);
     }
-  }, [isReasoning, isFetching, count, topic, difficulty, balance, quizGeneration, user?.id, safeCompleteGeneration]);
+  }, [topic, difficulty, count, user?.id, isReasoning, isFetching, quizGeneration, safeCompleteGeneration]);
 
-  // Typewriter effect and progress
+  // Simulate typing effect for the reasoning panel
   useEffect(() => {
-    if (!isReasoning) return;
-
-    let typingTimer: ReturnType<typeof setInterval> | null = null;
-    let holdTimer: ReturnType<typeof setTimeout> | null = null;
-
-    if (stepIndex >= steps.length) {
-      if (isFetching) {
-        holdTimer = setTimeout(() => {
-          setStepIndex(0);
-          setTypedText("");
-          setCharIndex(0);
-        }, HOLD_AFTER_TYPING);
-      } else {
-        setProgress(100);
-        holdTimer = setTimeout(() => {
-          setIsReasoning(false);
-          setStepIndex(0);
-          setTypedText("");
-          setCharIndex(0);
-          setProgress(0);
-        }, FINISH_HOLD);
-      }
-      return () => {
-        if (typingTimer) clearInterval(typingTimer);
-        if (holdTimer) clearTimeout(holdTimer);
-      };
+    if (!isReasoning) {
+      setTypedText("");
+      setCharIndex(0);
+      setStepIndex(0);
+      setProgress(0);
+      return;
     }
 
-    const current = steps[stepIndex];
-    setTypedText("");
-    setCharIndex(0);
+    const currentStep = steps[stepIndex];
+    if (!currentStep) return;
 
-    typingTimer = setInterval(() => {
-      setCharIndex((prev) => {
-        const next = prev + 1;
-        if (next <= current.length) {
-          const slice = current.slice(0, next);
-          setTypedText(slice);
-          const fraction = next / Math.max(1, current.length);
-          const overall = ((stepIndex + fraction) / steps.length) * 100;
-          setProgress(Math.min(100, Math.round(overall)));
-          return next;
-        } else {
-          if (typingTimer) {
-            clearInterval(typingTimer);
-            typingTimer = null;
-          }
-          holdTimer = setTimeout(() => setStepIndex((s) => s + 1), HOLD_AFTER_TYPING);
-          return prev;
-        }
-      });
-    }, TYPING_SPEED);
+    if (charIndex < currentStep.length) {
+      const timeout = setTimeout(() => {
+        setTypedText(currentStep.substring(0, charIndex + 1));
+        setCharIndex(charIndex + 1);
+        
+        // Update progress based on current step and characters typed
+        const stepProgress = ((charIndex + 1) / currentStep.length) * (100 / steps.length);
+        const totalProgress = (stepIndex * (100 / steps.length)) + stepProgress;
+        setProgress(totalProgress);
+      }, TYPING_SPEED);
 
-    return () => {
-      if (typingTimer) clearInterval(typingTimer);
-      if (holdTimer) clearTimeout(holdTimer);
-    };
-  }, [isReasoning, stepIndex, isFetching]);
+      return () => clearTimeout(timeout);
+    } else if (stepIndex < steps.length - 1) {
+      const timeout = setTimeout(() => {
+        setStepIndex(stepIndex + 1);
+        setCharIndex(0);
+      }, HOLD_AFTER_TYPING);
 
-  // Get the setGenerationProgress function from context
-  const quizGenContext = useQuizGeneration();
-  
-  // Update global progress when local progress changes
-  useEffect(() => {
-    if (isReasoning && quizGenContext?.setGenerationProgress) {
-      const progressValue = Math.min(99, Math.max(0, progress)); // Cap at 99% until complete
-      quizGenContext.setGenerationProgress(progressValue);
+      return () => clearTimeout(timeout);
+    } else if (!isFetching) {
+      // If we're done with all steps and not fetching anymore, hold briefly before clearing
+      const timeout = setTimeout(() => {
+        setTypedText("");
+        setCharIndex(0);
+        setStepIndex(0);
+      }, FINISH_HOLD);
+
+      return () => clearTimeout(timeout);
     }
-  }, [progress, isReasoning, quizGenContext]);
+  }, [isReasoning, stepIndex, charIndex, isFetching, steps]);
 
   return {
-    // form state
+    // Form state
     topic,
     setTopic,
     difficulty,
     setDifficulty,
     count,
     setCount,
-    balance,
-    setBalance,
     
-    // request state
+    // Request state
     isReasoning,
     isFetching,
     error,
@@ -309,14 +291,14 @@ export function useCreateQuiz(): UseCreateQuizReturn {
     quizData,
     setQuizData,
     
-    // progress state
+    // Progress state
     steps,
     stepIcons,
     stepIndex,
     typedText,
     progress,
     
-    // actions
+    // Actions
     handleGenerate,
-  } as UseCreateQuizReturn;
+  };
 }

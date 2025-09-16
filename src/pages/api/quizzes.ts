@@ -68,13 +68,30 @@ async function handlePost(userId: string, token: string, body: any) {
   try {
     const userIdStr = Array.isArray(userId) ? userId[0] : userId || '';
     
+    // Get the exact percentages from the request
+    let codePercentage = 50;
+    let theoryPercentage = 50;
+    
+    // If code percentage is provided, use it and calculate theory percentage
+    if (body.code_analysis_questions_percentage !== undefined) {
+      codePercentage = Math.max(0, Math.min(100, Number(body.code_analysis_questions_percentage)));
+      theoryPercentage = 100 - codePercentage;
+    }
+    // If theory percentage is provided, use it and calculate code percentage
+    else if (body.theory_questions_percentage !== undefined) {
+      theoryPercentage = Math.max(0, Math.min(100, Number(body.theory_questions_percentage)));
+      codePercentage = 100 - theoryPercentage;
+    }
+    
+    console.log('Using percentages - Code:', codePercentage, 'Theory:', theoryPercentage);
+    
     // Prepare the request payload according to backend's QuizRequest model
     const payload = {
       topic: body.topic,
       difficulty: body.difficulty || 'Bachelors Level',
       num_questions: body.num_questions || 25,
-      theory_questions_percentage: body.theory_questions_percentage || 50,
-      code_analysis_questions_percentage: body.code_analysis_questions_percentage || 50,
+      theory_questions_percentage: theoryPercentage,
+      code_analysis_questions_percentage: codePercentage,
       user_id: userIdStr
     };
     
