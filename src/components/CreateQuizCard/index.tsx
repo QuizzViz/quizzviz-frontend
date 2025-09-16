@@ -28,8 +28,6 @@ export default function CreateQuizCard() {
     setDifficulty,
     count,
     setCount,
-    balance,
-    setBalance,
     // request
     isReasoning,
     isFetching,
