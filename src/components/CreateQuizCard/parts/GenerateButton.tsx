@@ -11,9 +11,10 @@ const GenerateButton: FC<{
   labelIdle: string;
   leftIconBusy: LucideIcon;
   leftIconIdle: LucideIcon;
-}> = ({ isBusy, onClick, labelBusy, labelIdle, leftIconBusy: BusyIcon, leftIconIdle: IdleIcon }) => {
+  className?: string;
+}> = ({ isBusy, onClick, labelBusy, labelIdle, leftIconBusy: BusyIcon, leftIconIdle: IdleIcon, className = '' }) => {
   return (
-    <div className="flex justify-end">
+    <div className={`flex ${className}`}>
       <motion.div whileHover={{ scale: isBusy ? 1 : 1.04 }} whileTap={{ scale: 0.97 }}>
         <Button
           onClick={onClick}
