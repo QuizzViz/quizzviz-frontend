@@ -322,18 +322,18 @@ export default function QuizDetailsPage() {
   };
 
   const userName = user?.fullName || user?.username || user?.emailAddresses?.[0]?.emailAddress || "User";
-
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   return (
     <div className="min-h-screen bg-black text-white">
+       
       <Head>
         <title>{quiz ? `${quiz.topic} Quiz` : "Quiz"} | QuizzViz</title>
       </Head>
       <SignedIn>
         <div className="flex min-h-screen">
           {/* Sidebar */}
-          <div className="bg-white border-r border-white">
-            <DashboardSideBar />
-          </div>
+          <DashboardSideBar />
+          
           {/* Edit/Add Question Modal */}
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogContent className="bg-zinc-950 border-white/10 text-white max-w-2xl">
@@ -411,12 +411,12 @@ export default function QuizDetailsPage() {
             </DialogContent>
           </Dialog>
           {/* Main content */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col relative z-10">
             <DashboardHeader
               userName={user?.fullName || user?.firstName || "User"}
               userEmail={user?.emailAddresses?.[0]?.emailAddress}
             />
-            <main className="flex-1 p-6 pt-14">
+            <main className="flex-1 p-6 pt-14 relative">
               {!isLoaded || rqLoading ? (
                 <div className="flex items-center justify-center py-10">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -440,7 +440,7 @@ export default function QuizDetailsPage() {
                           <span>• Code {quiz.code_analysis_questions_percentage}%</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap relative z-50 pointer-events-auto">
+                      <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
                         <Button variant="outline" className="pointer-events-auto" onClick={openAddModal}>Add Question</Button>
                         <Button variant="destructive" className="pointer-events-auto hover:bg-red-700" onClick={confirmDeleteQuiz}>Delete Quiz</Button>
                       </div>
@@ -457,7 +457,7 @@ export default function QuizDetailsPage() {
                                 <CardTitle className="text-xl text-white">Question {idx + 1}</CardTitle>
                                 <Badge>{q.type.replace(/_/g, " ")}</Badge>
                               </div>
-                              <div className="flex items-center gap-2 flex-wrap relative z-50 pointer-events-auto">
+                              <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
                                 <Button size="sm" className="pointer-events-auto hover:bg-blue-700" onClick={() => openEditModal(idx)}>Update</Button>
                                 <Button size="sm" className="pointer-events-auto hover:bg-red-700" variant="destructive" onClick={() => confirmDeleteQuestion(idx)}>Delete</Button>
                               </div>
