@@ -1,18 +1,69 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PublishQuizModal } from "./PublishQuizModal";
+import { useToast } from "@/hooks/use-toast";
 
 // Renders the generated quiz list with a back action
 const QuizView: FC<{
   data: any;
   onBack: () => void;
 }> = ({ data, onBack }) => {
+  const { toast } = useToast();
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const handlePublish = async (settings: {
+    secretKey: string;
+    timeLimit: number;
+    maxAttempts: number;
+    expirationDate: string;
+  }) => {
+    setIsPublishing(true);
+    try {
+      // TODO: Implement actual publish API call
+      console.log('Publishing quiz with settings:', settings);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Show success message
+      toast({
+        title: "Quiz Published!",
+        description: "Your quiz is now live and can be accessed with the shared link.",
+      });
+      
+      // Close the modal
+      setIsPublishModalOpen(false);
+    } catch (error) {
+      console.error('Error publishing quiz:', error);
+      toast({
+        title: "Error",
+        description: "Failed to publish quiz. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-foreground">Quiz</h2>
-        <Button variant="outline" className="border-border" onClick={onBack}>
-          Back
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button 
+            variant="outline" 
+            className="border-border" 
+            onClick={onBack}
+          >
+            Back
+          </Button>
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => setIsPublishModalOpen(true)}
+          >
+            Publish Quiz
+          </Button>
+        </div>
       </div>
 
       {Array.isArray(data?.quiz) && data.quiz.length === 0 && (
@@ -59,6 +110,14 @@ const QuizView: FC<{
           Submit
         </Button>
       </div>
+      
+      <PublishQuizModal
+        isOpen={isPublishModalOpen}
+        onClose={() => setIsPublishModalOpen(false)}
+        quizId={data?.id || 'new-quiz'}
+        onPublish={handlePublish}
+        isPublishing={isPublishing}
+      />
     </div>
   );
 };

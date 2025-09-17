@@ -14,6 +14,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Copy, Check } from "lucide-react";
 
 interface QuizSummary {
   quiz_id: string;
@@ -111,11 +115,28 @@ export default function QuizDetailsPage() {
     if (questions) setLocalQuestions(questions);
   }, [questions]);
 
+  // Set origin on client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
   // Modal state for add/edit
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleteQuestionDialogOpen, setIsDeleteQuestionDialogOpen] = useState(false);
   const [questionIndexToDelete, setQuestionIndexToDelete] = useState<number | null>(null);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [origin, setOrigin] = useState('');
+  const [publishSettings, setPublishSettings] = useState({
+    secretKey: "",
+    timeLimit: 30,
+    maxAttempts: 1,
+    expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    isSecretKeyRequired: true
+  });
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [form, setForm] = useState<{
     id?: number | string;
@@ -300,6 +321,47 @@ export default function QuizDetailsPage() {
     setIsDeleteDialogOpen(true);
   };
 
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+      // TODO: Implement actual publish API call
+      console.log('Publishing quiz with settings:', publishSettings);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Show success message
+      toast({
+        title: "Quiz Published!",
+        description: "Your quiz is now live and can be accessed with the shared link.",
+        className: "border-green-500/40 bg-green-600/20 text-green-100",
+      });
+      
+      // Close the modal
+      setIsPublishModalOpen(false);
+    } catch (error) {
+      console.error('Error publishing quiz:', error);
+      toast({
+        title: "Error",
+        description: "Failed to publish quiz. Please try again.",
+        className: "border-red-500/40 bg-red-600/20 text-red-100",
+      });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    const quizLink = `${origin}/quiz/take/${quiz?.quiz_id}`;
+    navigator.clipboard.writeText(quizLink);
+    
+    toast({
+      title: "Link copied to clipboard!",
+      description: "Share this link with your participants.",
+      className: "border-green-500/40 bg-green-600/20 text-green-100",
+    });
+  };
+
   // Open confirm for deleting a specific question
   const confirmDeleteQuestion = (index: number) => {
     setQuestionIndexToDelete(index);
@@ -327,7 +389,7 @@ export default function QuizDetailsPage() {
     <div className="min-h-screen bg-black text-white">
        
       <Head>
-        <title>{quiz ? `${quiz.topic} Quiz` : "Quiz"} | QuizzViz</title>
+        <title>{quiz ? `${quiz.topic} Quiz` : "Quiz"} | {`${userName}`}</title>
       </Head>
       <SignedIn>
         <div className="flex min-h-screen">
@@ -416,6 +478,136 @@ export default function QuizDetailsPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Publish Quiz Modal */}
+          <Dialog open={isPublishModalOpen} onOpenChange={setIsPublishModalOpen}>
+            <DialogContent className="sm:max-w-[500px] bg-zinc-900 border-white/10">
+              <DialogHeader>
+                <DialogTitle className="text-white">Publish Quiz</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-6 py-4">
+                <div>
+                  <Label htmlFor="quizLink" className="text-white">Quiz Link</Label>
+                  <div className="flex mt-1">
+                    <Input
+                      id="quizLink"
+                      readOnly
+                      value={origin ? `${origin}/quiz/take/${quiz?.quiz_id}` : 'Loading...'}
+                      className="rounded-r-none bg-zinc-800 border-white/10 text-white"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-l-none border-l-0 bg-zinc-800 hover:bg-zinc-700 text-white"
+                      onClick={handleCopyLink}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-white/50 mt-1">
+                    Share this link with participants to take the quiz
+                  </p>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="requireSecretKey" 
+                      checked={publishSettings.isSecretKeyRequired}
+                      onCheckedChange={(checked) => setPublishSettings(prev => ({...prev, isSecretKeyRequired: checked === true}))}
+                      className="border-white/30 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                    />
+                    <Label htmlFor="requireSecretKey" className="text-white font-normal">
+                      Require a secret key to access this quiz
+                    </Label>
+                  </div>
+                  
+                  {publishSettings.isSecretKeyRequired && (
+                    <div className="pl-6">
+                      <Label htmlFor="secretKey" className="text-white">Secret Key</Label>
+                      <Input
+                        id="secretKey"
+                        type="text"
+                        value={publishSettings.secretKey}
+                        onChange={(e) => setPublishSettings(prev => ({...prev, secretKey: e.target.value}))}
+                        placeholder="Enter a secret key"
+                        className="mt-1 bg-zinc-800 border-white/10 text-white"
+                      />
+                      <p className="text-xs text-white/50 mt-1">
+                        Participants will need to enter this key to access the quiz
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="timeLimit" className="text-white">Time Limit (minutes)</Label>
+                    <Input
+                      id="timeLimit"
+                      type="number"
+                      min="1"
+                      value={publishSettings.timeLimit}
+                      onChange={(e) => setPublishSettings(prev => ({...prev, timeLimit: Number(e.target.value) || 30}))}
+                      className="mt-1 bg-zinc-800 border-white/10 text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="maxAttempts" className="text-white">Max Attempts</Label>
+                    <Input
+                      id="maxAttempts"
+                      type="number"
+                      min="1"
+                      value={publishSettings.maxAttempts}
+                      onChange={(e) => setPublishSettings(prev => ({...prev, maxAttempts: Number(e.target.value) || 1}))}
+                      className="mt-1 bg-zinc-800 border-white/10 text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="expirationDate" className="text-white">Expiration Date</Label>
+                  <Input
+                    id="expirationDate"
+                    type="date"
+                    value={publishSettings.expirationDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setPublishSettings(prev => ({
+                      ...prev, 
+                      expirationDate: e.target.value || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                    }))}
+                    className="mt-1 bg-zinc-800 border-white/10 text-white"
+                  />
+                  <p className="text-xs text-white/50 mt-1">
+                    The quiz will be automatically closed after this date
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsPublishModalOpen(false)} 
+                  disabled={isPublishing}
+                  className="text-white border-white/20 hover:bg-zinc-800"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="button" 
+                  onClick={handlePublish} 
+                  disabled={isPublishing || (publishSettings.isSecretKeyRequired && !publishSettings.secretKey.trim())}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isPublishing ? "Publishing..." : "Publish Quiz"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {/* Main content */}
           <div className="flex-1 flex flex-col relative z-10">
             <DashboardHeader
@@ -448,6 +640,12 @@ export default function QuizDetailsPage() {
                       </div>
                       <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
                         <Button variant="outline" className="pointer-events-auto" onClick={openAddModal}>Add Question</Button>
+                        <Button 
+                          className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto"
+                          onClick={() => setIsPublishModalOpen(true)}
+                        >
+                          Publish Quiz
+                        </Button>
                         <Button variant="destructive" className="pointer-events-auto hover:bg-red-700" onClick={confirmDeleteQuiz}>Delete Quiz</Button>
                       </div>
                     </div>
