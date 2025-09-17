@@ -5,16 +5,41 @@ function useScrollFade() {
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
-    const options: IntersectionObserverInit = { threshold: 0.1, rootMargin: "0px 0px -50px 0px" };
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) entry.target.classList.add("visible");
-        else entry.target.classList.remove("visible");
-      });
-    }, options);
+    // Delay enabling fade-ins so they don't happen immediately on load
+    const enableDelayMs = 2000; // adjust as desired
 
-    document.querySelectorAll(".scroll-fade").forEach((el) => observerRef.current?.observe(el));
-    return () => observerRef.current?.disconnect();
+    const options: IntersectionObserverInit = {
+      threshold: 0.1,
+      rootMargin: "0px 0px -50px 0px",
+    };
+
+    const toUnregister = new Set<Element>();
+
+    const setupObserver = () => {
+      observerRef.current = new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !toUnregister.has(entry.target)) {
+            // Add visible once, then stop observing so it won't fade again
+            entry.target.classList.add("visible");
+            toUnregister.add(entry.target);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, options);
+
+      // Observe all fade targets after the delay
+      document
+        .querySelectorAll(".scroll-fade")
+        .forEach((el) => observerRef.current?.observe(el));
+    };
+
+    const timer = window.setTimeout(setupObserver, enableDelayMs);
+
+    return () => {
+      window.clearTimeout(timer);
+      observerRef.current?.disconnect();
+      toUnregister.clear();
+    };
   }, []);
 }
 
