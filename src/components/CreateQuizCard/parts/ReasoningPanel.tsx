@@ -20,13 +20,13 @@ const ReasoningPanel: FC<{
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 8 }}
           transition={{ type: "spring", stiffness: 140, damping: 20 }}
-          className="mt-4 bg-background border border-border rounded-xl p-4 shadow-xl"
+          className="mt-4 bg-background border border-border rounded-xl p-3 sm:p-4 shadow-xl"
           role="status"
           aria-live="polite"
         >
-          <div className="flex items-start space-x-4">
+          <div className="flex flex-col md:flex-row items-start gap-4">
             {/* Timeline */}
-            <div className="w-1/3">
+            <div className="w-full md:w-1/3">
               <div className="flex flex-col items-start space-y-3">
                 {steps.map((_, i) => {
                   const Icon = stepIcons[i] ?? Cpu;
@@ -42,11 +42,11 @@ const ReasoningPanel: FC<{
                             ? "0 6px 18px rgba(99,102,241,0.12)"
                             : "0 4px 10px rgba(2,6,23,0.06)",
                         }}
-                        className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                        className={`w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center ${
                           done ? "bg-foreground/10" : "bg-foreground/5"
                         } border border-border`}
                       >
-                        <Icon className={`h-5 w-5 ${active ? "text-foreground" : "text-muted-foreground"}`} />
+                        <Icon className={`h-4 w-4 md:h-5 md:w-5 ${active ? "text-foreground" : "text-muted-foreground"}`} />
                       </motion.div>
                       <div className="flex-1">
                         <div className="text-sm text-muted-foreground">
@@ -76,7 +76,7 @@ const ReasoningPanel: FC<{
             </div>
 
             {/* Typing / progress */}
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide">Reasoning</div>
@@ -84,7 +84,7 @@ const ReasoningPanel: FC<{
                 </div>
                 <div className="text-xs text-muted-foreground">{Math.min(100, progress)}%</div>
               </div>
-              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-3 bg-card/60 border border-border rounded-lg p-3 min-h-[72px] flex items-center">
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-3 bg-card/60 border border-border rounded-lg p-3 min-h-[56px] md:min-h-[72px] flex items-center">
                 <div className="prose max-w-none">
                   <motion.p key={stepIndex + "-" + typedText} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.28 }} className="text-foreground text-sm leading-6 break-words">
                     <span>{typedText}</span>
@@ -92,7 +92,7 @@ const ReasoningPanel: FC<{
                   </motion.p>
                 </div>
               </motion.div>
-              <div className="mt-3 flex items-center justify-between space-x-3">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-2">
                     <motion.span animate={{ y: [0, -6, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0 }} className="w-2 h-2 rounded-full bg-foreground/80" />
@@ -101,7 +101,7 @@ const ReasoningPanel: FC<{
                   </div>
                   <div className="text-xs text-muted-foreground ml-3">Streaming reasoning</div>
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-[140px]">
                   <div className="h-2 w-full rounded-full bg-foreground/6">
                     <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ type: "tween", duration: 0.45 }} className="h-2 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
                   </div>
