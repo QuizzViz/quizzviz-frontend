@@ -14,18 +14,18 @@ const HeroSection: FC = () => {
       <div aria-hidden className="absolute right-[-12%] top-10 w-[65vw] max-w-[980px] aspect-square rounded-[36%] bg-[radial-gradient(60%_60%_at_30%_30%,rgba(147,197,253,0.25),rgba(59,130,246,0.12)_45%,rgba(34,197,94,0.08)_75%,transparent_85%)] blur-3xl opacity-70" />
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-start md:items-center min-h-[calc(100vh-8rem)] py-1">
-          <div className="text-center md:text-left order-1 animate-fade-in-smooth">
+          <div className="text-center md:text-left order-1">
             <div className="max-w-2xl">
-              <h1 className="text-5xl md:text-6xl xl:text-7xl font-light tracking-[-0.02em] text-foreground mb-3 leading-[1.08] scroll-fade" style={{ transitionDelay: "0ms" }}>
+              <h1 className="text-5xl md:text-6xl xl:text-7xl font-light tracking-[-0.02em] text-foreground mb-3 leading-[1.08]">
                 Transform Hiring <span className="ml-3">with</span>
                 <br />
                 <span className="gradient-text font-medium ml-3">Intelligent Assessments</span>
               </h1>
-              <p className="text-lg md:text-xl text-muted-foreground/90 text-gray-200 mb-3 leading-relaxed scroll-fade" style={{ transitionDelay: "120ms" }}>
+              <p className="text-lg md:text-xl text-muted-foreground/90 text-gray-200 mb-3 leading-relaxed">
                 Hire Smarter, Faster.
               </p>
-              <p className="text-md text-muted-foreground/90 text-gray-200 mb-6 leading-relaxed scroll-fade" style={{ transitionDelay: "240ms" }}>
-                Create enterprise-grade skill quizzes in minutes and filter the right candidates instantly.
+              <p className="text-md text-muted-foreground/90 text-gray-200 mb-6 leading-relaxed">
+                Create enterprise-grade technical quizzes in minutes and filter the right candidates instantly.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 mb-3">
                 {user ? (
