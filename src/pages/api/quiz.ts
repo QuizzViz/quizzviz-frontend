@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAuth } from "@clerk/nextjs/server";
 
-const BACKEND_URL = 'https://quizzviz-backend-production.up.railway.app/quizz';
+const BACKEND_URL = 'https://quizzviz-quiz-generation.up.railway.app/quizz';
 
 // Helper function to handle API errors
 const handleApiError = (error: any, res: NextApiResponse) => {
