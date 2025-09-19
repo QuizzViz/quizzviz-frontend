@@ -130,6 +130,24 @@ export default function QuizDetailsPage() {
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [origin, setOrigin] = useState('');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const questionsPerPage = 10;
+  const totalQuestions = localQuestions.length;
+  const totalPages = Math.ceil(totalQuestions / questionsPerPage);
+  
+  // Get current questions
+  const currentQuestions = useMemo(() => {
+    const indexOfLastQuestion = currentPage * questionsPerPage;
+    const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
+    return localQuestions.slice(indexOfFirstQuestion, indexOfLastQuestion);
+  }, [localQuestions, currentPage]);
+  
+  // Reset to first page when questions change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [localQuestions.length]);
   const [publishSettings, setPublishSettings] = useState({
     secretKey: "",
     timeLimit: 30,
@@ -385,11 +403,11 @@ export default function QuizDetailsPage() {
 
   const userName = user?.fullName || user?.username || user?.emailAddresses?.[0]?.emailAddress || "User";
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
   return (
     <div className="min-h-screen bg-black text-white">
-       
       <Head>
-        <title>{quiz ? `${quiz.topic} Quiz` : "Quiz"} | {`${userName}`}</title>
+        <title>{quiz ? `${quiz.topic} Quiz` : "Quiz"} | {userName}</title>
       </Head>
       <SignedIn>
         <div className="flex min-h-screen">
@@ -652,13 +670,17 @@ export default function QuizDetailsPage() {
                   </header>
 
                   <section className="space-y-6">
-                    {localQuestions && localQuestions.length > 0 ? (
-                      localQuestions.map((q, idx) => (
-                        <Card key={q.id ?? idx} className="bg-zinc-950 border-white/10">
+                    {currentQuestions && currentQuestions.length > 0 ? (
+                      currentQuestions.map((q, idx) => {
+                        // Calculate global question number
+                        const globalQuestionNumber = (currentPage - 1) * questionsPerPage + idx + 1;
+                        
+                        return (
+                          <Card key={q.id ?? idx} className="bg-zinc-950 border-white/10">
                           <CardHeader>
                             <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
                               <div className="flex items-center gap-3">
-                                <CardTitle className="text-xl text-white">Question {idx + 1}</CardTitle>
+                                <CardTitle className="text-xl text-white">Question {globalQuestionNumber}</CardTitle>
                                 <Badge>{q.type.replace(/_/g, " ")}</Badge>
                               </div>
                               <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
@@ -690,10 +712,115 @@ export default function QuizDetailsPage() {
                               </div>
                             ) : null}
                           </CardContent>
-                        </Card>
-                      ))
+                          </Card>
+                        );
+                      })
                     ) : (
                       <div className="text-white/70">No questions available for this quiz.</div>
+                    )}
+                    
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div className="mt-8">
+                        {/* Desktop Pagination */}
+                        <div className="hidden sm:flex items-center justify-between">
+                          <div className="text-sm text-gray-300">
+                            Showing <span className="font-medium">
+                              {Math.min((currentPage - 1) * questionsPerPage + 1, totalQuestions)}
+                            </span> to{' '}
+                            <span className="font-medium">
+                              {Math.min(currentPage * questionsPerPage, totalQuestions)}
+                            </span>{' '}
+                            of <span className="font-medium">{totalQuestions}</span> questions
+                          </div>
+                          
+                          <nav className="flex items-center space-x-1">
+                            <button
+                              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                              disabled={currentPage === 1}
+                              className="p-2 rounded-md border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              aria-label="Previous"
+                            >
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                              </svg>
+                            </button>
+                            
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                              // Show first, last, and pages around current page
+                              if (
+                                pageNum === 1 || 
+                                pageNum === totalPages || 
+                                (pageNum >= currentPage - 1 && pageNum <= currentPage + 1) ||
+                                (currentPage <= 3 && pageNum <= 5) ||
+                                (currentPage >= totalPages - 2 && pageNum >= totalPages - 4)
+                              ) {
+                                return (
+                                  <button
+                                    key={pageNum}
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    className={`px-4 py-2 rounded-md text-sm font-medium ${
+                                      currentPage === pageNum
+                                        ? 'bg-blue-600 text-white'
+                                        : 'border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                    }`}
+                                  >
+                                    {pageNum}
+                                  </button>
+                                );
+                              }
+                              
+                              // Show ellipsis
+                              if (
+                                (pageNum === 2 && currentPage > 3) ||
+                                (pageNum === totalPages - 1 && currentPage < totalPages - 2)
+                              ) {
+                                return (
+                                  <span key={`ellipsis-${pageNum}`} className="px-2 py-2 text-gray-400">
+                                    ...
+                                  </span>
+                                );
+                              }
+                              
+                              return null;
+                            })}
+                            
+                            <button
+                              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                              disabled={currentPage === totalPages}
+                              className="p-2 rounded-md border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              aria-label="Next"
+                            >
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
+                          </nav>
+                        </div>
+                        
+                        {/* Mobile Pagination */}
+                        <div className="sm:hidden flex items-center justify-between mt-4">
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className="px-4 py-2 rounded-md border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                          >
+                            Previous
+                          </button>
+                          
+                          <span className="text-sm text-gray-300">
+                            Page {currentPage} of {totalPages}
+                          </span>
+                          
+                          <button
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            className="px-4 py-2 rounded-md border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                          >
+                            Next
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </section>
                 </div>
