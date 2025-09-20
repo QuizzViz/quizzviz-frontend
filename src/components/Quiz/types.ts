@@ -8,6 +8,8 @@ export interface QuizSummary {
   code_analysis_questions_percentage: number;
   quiz: string; // JSON string
   created_at?: string;
+  is_publish: boolean;
+  quiz_key: string;
 }
 
 export interface QuizQuestion {
@@ -49,6 +51,7 @@ export interface QuizHeaderProps {
   questionsCount: number;
   onAddQuestion: () => void;
   onPublish: () => void;
+  isPublished: boolean;
   onDelete: () => void;
 }
 

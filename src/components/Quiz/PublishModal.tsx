@@ -2,21 +2,23 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Share2 } from "lucide-react";
 import { PublishSettings } from "./types";
-import React from "react";
+import React, { useState } from "react";
 import { useUser } from "@clerk/nextjs";
+import { ShareQuizModal } from "./ShareQuizModal";
 
 interface PublishModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPublish: () => void;
+  onPublish: (secretKey: string) => void;
   quizId: string;
   settings: PublishSettings;
   onSettingsChange: (settings: PublishSettings) => void;
   isPublishing: boolean;
   origin: string;
   onCopyLink: () => void;
+  isPublished?: boolean;
 }
 
 export function PublishModal({
@@ -28,10 +30,12 @@ export function PublishModal({
   onSettingsChange,
   isPublishing,
   origin,
-  onCopyLink
+  onCopyLink,
+  isPublished = false
 }: PublishModalProps) {
-  const [isCopied, setIsCopied] = React.useState(false);
-  const [localSecretKey, setLocalSecretKey] = React.useState(settings.secretKey || '');
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const [localSecretKey, setLocalSecretKey] = useState(settings.secretKey || '');
 
   // Sync local state with props when settings change
   React.useEffect(() => {
@@ -42,6 +46,21 @@ export function PublishModal({
     onCopyLink();
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleShareClick = () => {
+    setIsShareModalOpen(true);
+  };
+
+  const handlePublish = () => {
+    // Ensure the secret key is properly set in settings before publishing
+    const updatedSettings = {
+      ...settings,
+      secretKey: localSecretKey.trim(),
+      isSecretKeyRequired: localSecretKey.trim().length > 0
+    };
+    onSettingsChange(updatedSettings);
+    onPublish(localSecretKey.trim());
   };
 
   const handleSettingChange = <K extends keyof PublishSettings>(
@@ -110,19 +129,18 @@ export function PublishModal({
                 className="flex-1 border-0 bg-transparent text-white text-xs h-9 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="h-9 px-3 text-white hover:bg-blue-700/50 border-l border-blue-600/60 rounded-none shrink-0"
-                onClick={handleCopy}
-                disabled={!origin || isPublishing}
-              >
-                {isCopied ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </Button>
+              type="button"
+              variant="outline"
+              onClick={handleCopy}
+              disabled={isCopied}
+              className="text-white border-blue-600 hover:bg-blue-800/50 hover:border-blue-500 h-9 text-sm"
+            >
+              {isCopied ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
             </div>
           </div>
 
@@ -202,33 +220,55 @@ export function PublishModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 pt-4 border-t border-blue-700/50 mt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onClose}
-            disabled={isPublishing}
-            className="text-white border-blue-600 hover:bg-blue-800/50 hover:border-blue-500 h-9 text-sm"
-          >
-            Cancel
-          </Button>
-          <Button 
-            type="button" 
-            onClick={onPublish}
-            disabled={isPublishing || !localSecretKey?.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white h-9 text-sm font-medium shadow-lg"
-          >
-            {isPublishing ? (
-              <>
-                <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/30 border-t-white mr-2"></div>
-                Publishing...
-              </>
-            ) : (
-              "Publish Quiz"
-            )}
-          </Button>
+        <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-2">
+          {isPublished ? (
+            <Button
+              type="button"
+              onClick={handleShareClick}
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share Quiz
+            </Button>
+          ) : (
+            <>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                disabled={isPublishing}
+                className="text-white border-blue-600 hover:bg-blue-800/50 hover:border-blue-500 h-9 text-sm"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                onClick={handlePublish}
+                disabled={isPublishing || (settings.isSecretKeyRequired && !localSecretKey.trim())}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isPublishing ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Publishing...
+                  </>
+                ) : 'Publish Quiz'}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
+      
+      {/* Share Quiz Modal */}
+      <ShareQuizModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        quizLink={`${origin}/quiz/${(user?.firstName as string)?.trim().replace(' ', '').toLowerCase()}/${quizId}`}
+        quizKey={localSecretKey}
+      />
     </Dialog>
   );
 }

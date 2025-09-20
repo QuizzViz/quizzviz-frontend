@@ -137,9 +137,11 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id">
+type Toast = Omit<ToasterToast, "id"> & {
+  variant?: 'default' | 'destructive' | 'success'
+}
 
-function toast({ ...props }: Toast) {
+function toast({ variant = 'default', ...props }: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -154,6 +156,7 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
+      variant,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss()
@@ -166,6 +169,14 @@ function toast({ ...props }: Toast) {
     dismiss,
     update,
   }
+}
+
+// Helper function for success toasts
+function successToast(props: Omit<Toast, 'variant'>) {
+  return toast({
+    ...props,
+    variant: 'success'
+  });
 }
 
 function useToast() {
@@ -188,4 +199,4 @@ function useToast() {
   }
 }
 
-export { useToast, toast }
+export { useToast, toast, successToast }

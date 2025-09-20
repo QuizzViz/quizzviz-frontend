@@ -92,7 +92,8 @@ async function handlePost(userId: string, token: string, body: any) {
       num_questions: body.num_questions || 25,
       theory_questions_percentage: theoryPercentage,
       code_analysis_questions_percentage: codePercentage,
-      user_id: userIdStr
+      user_id: userIdStr,
+      isPublished: false 
     };
     
     // Log the outgoing request for debugging

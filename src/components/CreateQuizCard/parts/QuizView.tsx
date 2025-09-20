@@ -1,7 +1,8 @@
-import { FC, useState } from "react";
+import { FC, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PublishQuizModal } from "./PublishQuizModal";
 import { useToast } from "@/hooks/use-toast";
+import { Share2, CheckCircle } from "lucide-react";
 
 // Renders the generated quiz list with a back action
 const QuizView: FC<{
@@ -17,13 +18,35 @@ const QuizView: FC<{
     timeLimit: number;
     maxAttempts: number;
     expirationDate: string;
+    publicLink: string;
   }) => {
     setIsPublishing(true);
     try {
-      // TODO: Implement actual publish API call
-      console.log('Publishing quiz with settings:', settings);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/quiz/publish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          quiz_id: data?.id || 'new-quiz',
+          settings: {
+            secretKey: settings.secretKey,
+            timeLimit: settings.timeLimit,
+            maxAttempts: settings.maxAttempts,
+            expirationDate: settings.expirationDate,
+          },
+          questions: data?.quiz || [],
+          publicLink: settings.publicLink,
+          topic: data?.topic || 'General Knowledge',
+          difficulty: data?.difficulty || 'Medium',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to publish quiz');
+      }
+      
+      const result = await response.json();
       
       // Show success message
       toast({
@@ -37,7 +60,7 @@ const QuizView: FC<{
       console.error('Error publishing quiz:', error);
       toast({
         title: "Error",
-        description: "Failed to publish quiz. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to publish quiz. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -45,24 +68,50 @@ const QuizView: FC<{
     }
   };
 
+  const handleCopyLink = () => {
+    if (!data?.public_link) return;
+    
+    navigator.clipboard.writeText(data.public_link);
+    toast({
+      title: "Link copied to clipboard!",
+      description: "Share this link with others to take the quiz.",
+    });
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold text-foreground">Quiz</h2>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button 
-            variant="outline" 
-            className="border-border" 
-            onClick={onBack}
-          >
-            Back
-          </Button>
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => setIsPublishModalOpen(true)}
-          >
-            Publish Quiz
-          </Button>
+    <div className="flex flex-col h-full">
+      <div className="flex justify-between items-center mb-4">
+        <Button 
+          variant="outline" 
+          onClick={onBack}
+          className="text-blue-600 border-blue-600 hover:bg-blue-50"
+        >
+          Back
+        </Button>
+        <div className="flex items-center gap-2">
+          {data?.is_publish ? (
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-800 flex items-center gap-2"
+                onClick={handleCopyLink}
+              >
+                <Share2 className="h-4 w-4" />
+                Share Quiz
+              </Button>
+              <div className="flex items-center gap-1 text-green-600 text-sm font-medium px-2 py-1 rounded-md bg-green-50 border border-green-100">
+                <CheckCircle className="h-4 w-4" />
+                <span>Published</span>
+              </div>
+            </div>
+          ) : (
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => setIsPublishModalOpen(true)}
+            >
+              Publish Quiz
+            </Button>
+          )}
         </div>
       </div>
 

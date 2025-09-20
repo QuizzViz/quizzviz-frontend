@@ -22,6 +22,9 @@ interface QuizSummary {
   code_analysis_questions_percentage: number;
   quiz: string; // JSON string of questions
   created_at?: string;
+  is_publish?: boolean;
+  isPublished?: boolean; // For backward compatibility
+  public_link?: string; // For sharing published quizzes
 }
 
 export default function MyQuizzesPage() {
@@ -123,13 +126,34 @@ export default function MyQuizzesPage() {
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
-                            <div className="flex flex-wrap gap-2 text-xs">
-                              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300">
-                                Theory {q.theory_questions_percentage}%
-                              </span>
-                              <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-indigo-300">
-                                Code {q.code_analysis_questions_percentage}%
-                              </span>
+                            <div className="flex flex-col gap-3">
+                              <div className="flex flex-wrap gap-2">
+                                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300 text-xs">
+                                  Theory {q.theory_questions_percentage}%
+                                </span>
+                                <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-indigo-300 text-xs">
+                                  Code {q.code_analysis_questions_percentage}%
+                                </span>
+                              </div>
+                              
+                              {/* Show Published/Unpublished status */}
+                              <div className="mt-1">
+                                {q.is_publish || q.isPublished ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-400 border border-green-500/20">
+                                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                    Published
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-400 border border-blue-500/20">
+                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                    </svg>
+                                    Not Published
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
