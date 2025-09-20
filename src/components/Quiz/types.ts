@@ -9,6 +9,7 @@ export interface QuizSummary {
   quiz: string; // JSON string
   created_at?: string;
   is_publish: boolean;
+  quiz_key: string;
 }
 
 export interface QuizQuestion {

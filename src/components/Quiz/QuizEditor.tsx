@@ -9,6 +9,7 @@ import { QuestionCard } from "./QuestionCard";
 import { Pagination } from "./Pagination";
 import { QuestionForm } from "./QuestionForm";
 import { PublishModal } from "./PublishModal";
+import { ShareQuizModal } from "./ShareQuizModal";
 import { 
   QuizSummary, 
   QuizQuestion, 
@@ -32,6 +33,7 @@ export function QuizEditor() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [publicUrl, setPublicUrl] = useState('');
@@ -122,6 +124,54 @@ export function QuizEditor() {
     return quizzesData.find(q => q.quiz_id === quizId);
   }, [quizzesData, quizId]);
 
+  // Fetch published quiz data if the quiz is published
+  const { data: publishedQuiz, isLoading: isLoadingPublished } = useQuery({
+    queryKey: ['publishedQuiz', quizId],
+    queryFn: async () => {
+      if (!quiz?.is_publish || !quizId || !user?.id) return null;
+      
+      try {
+        console.log('Fetching published quiz data...');
+        const response = await fetch(`/api/publish/${user.id}/${quizId}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Failed to fetch published quiz data:', response.status, errorText);
+          throw new Error('Failed to fetch published quiz data');
+        }
+        const result = await response.json();
+        console.log('Published quiz API response:', JSON.stringify(result, null, 2));
+        return result.data;
+      } catch (error) {
+        console.error('Error fetching published quiz:', error);
+        return null;
+      }
+    },
+    enabled: !!quiz?.is_publish && !!quizId && !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Update local questions and publish settings when published quiz data is loaded
+  useEffect(() => {
+    if (publishedQuiz) {
+      console.log('Updating local state with published quiz data:', publishedQuiz);
+      
+      // Update questions if available
+      if (publishedQuiz.quiz) {
+        setLocalQuestions(publishedQuiz.quiz);
+      }
+      
+      // Update publish settings with the published quiz key if available
+      if (publishedQuiz.quiz_key) {
+        console.log('Updating publish settings with quiz key:', publishedQuiz.quiz_key);
+        setPublishSettings(prev => ({
+          ...prev,
+          secretKey: publishedQuiz.quiz_key,
+          isSecretKeyRequired: !!publishedQuiz.quiz_key
+        }));
+      }
+    }
+  }, [publishedQuiz]);
+
   // Get current page questions
   const currentQuestions = useMemo(() => {
     const indexOfLastQuestion = currentPage * QUESTIONS_PER_PAGE;
@@ -183,6 +233,91 @@ export function QuizEditor() {
         className: "border-red-500/40 bg-red-600/20 text-red-100",
       });
       throw e;
+    }
+  };
+
+  // Handle successful publish
+  const handlePublishSuccess = (result: any) => {
+    setIsPublished(true);
+    setPublicUrl(result.publicUrl || '');
+    setIsPublishModalOpen(false);
+    setIsShareModalOpen(true);
+    
+    // Invalidate the published quiz query to refetch the latest data
+    if (quizId) {
+      queryClient.invalidateQueries({ queryKey: ['publishedQuiz', quizId] });
+    }
+  };
+
+  // Handle publish confirmation
+  const handlePublishConfirm = async (secretKey: string) => {
+    if (!quizId || !user?.id) return;
+    
+    setIsPublishing(true);
+    
+    try {
+      const publicLink = `${origin}/${slug}/take/quiz/${quizId}`;
+      const updatedSettings = {
+        ...publishSettings,
+        secretKey: secretKey.trim(),
+        isSecretKeyRequired: secretKey.trim().length > 0
+      };
+      setPublishSettings(updatedSettings);
+      
+      console.log('Publishing quiz with settings:', {
+        quizId,
+        settings: updatedSettings,
+        publicLink,
+        slug,
+        topic: quiz?.topic,
+        difficulty: quiz?.difficulty,
+        timeLimit: updatedSettings.timeLimit,
+        maxAttempts: updatedSettings.maxAttempts,
+        expirationDate: updatedSettings.expirationDate,
+        secretKey: updatedSettings.secretKey
+      });
+      
+      const response = await fetch('/api/quiz/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quiz_id: quizId,
+          settings: updatedSettings,
+          questions: localQuestions,
+          publicLink,
+          slug: slug,
+          topic: quiz?.topic,
+          difficulty: quiz?.difficulty,
+          timeLimit: updatedSettings.timeLimit,
+          maxAttempts: updatedSettings.maxAttempts,
+          expirationDate: updatedSettings.expirationDate,
+          secretKey: updatedSettings.secretKey
+        }),
+      });
+
+      const result = await response.json();
+      console.log('Publish API response:', result);
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to publish quiz');
+      }
+
+      handlePublishSuccess(result);
+      
+      toast({
+        title: 'Success!',
+        description: 'Your quiz has been published successfully.',
+        className: 'bg-green-500/20 text-green-300',
+      });
+    } catch (error) {
+      console.error('Publish error:', error);
+      toast({
+        title: 'Publish failed',
+        description: error instanceof Error ? error.message : 'There was an error publishing your quiz. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -263,110 +398,52 @@ export function QuizEditor() {
         className: "border-red-500/40 bg-red-600/20 text-red-100",
       });
     } finally {
-      setIsDeleteDialogOpen(false);
-    }
-  };
-
-  // Handle publish
-  const handlePublish = async () => {
-    if (isPublished) {
-      const handleCopyLink = () => {
-        if (!publicUrl) return;
-        
-        navigator.clipboard.writeText(publicUrl);
-        toast({
-          title: 'Link copied!',
-          description: 'The quiz link has been copied to your clipboard.',
-          className: "border-green-500/40 bg-green-600/20 text-green-100",
-        });
-        return publicUrl;
-      };
-    }
-    setIsPublishModalOpen(true);
-  };
-
-  // Handle publish confirmation
-  const handlePublishConfirm = async (secretKey: string = '') => {
-    if (!quizId || !user) return;
-
-    setIsPublishing(true);
-
-    try {
-      // Generate user slug from username or email
-      const userSlug = (user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'user')
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-+|-+$/g, '');
-        
-      const publicLink = `${origin}/${userSlug}/take/quiz/${quizId}`;
-      
-      // Update publishSettings with the latest secretKey
-      const updatedSettings = {
-        ...publishSettings,
-        secretKey: secretKey.trim(),
-        isSecretKeyRequired: secretKey.trim().length > 0
-      };
-      setPublishSettings(updatedSettings);
-      
-      const response = await fetch('/api/quiz/publish', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          quiz_id: quizId,
-          settings: updatedSettings,
-          questions: localQuestions,
-          publicLink,
-          slug: (user.firstName as string).trim().replace(' ', '').toLowerCase(),
-          topic: quiz?.topic,
-          difficulty: quiz?.difficulty,
-          timeLimit: updatedSettings.timeLimit,
-          maxAttempts: updatedSettings.maxAttempts,
-          expirationDate: updatedSettings.expirationDate,
-          secretKey: updatedSettings.secretKey || ''
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to publish quiz');
-      }
-
-      setIsPublished(true);
-      setPublicUrl(result.publicUrl || '');
-      
-      setIsPublishModalOpen(false);
-      toast({
-        title: 'Success!',
-        description: result.message || 'Your quiz is now live and ready to be shared.',
-        className: "border-green-500/40 bg-green-800 text-green-100",
-      });
-    } catch (error) {
-      console.error('Publish error:', error);
-      toast({
-        title: 'Publish failed',
-        description: error instanceof Error ? error.message : 'There was an error publishing your quiz. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
       setIsPublishing(false);
     }
   };
 
+  // Handle publish button click
+  const handlePublish = () => {
+    setIsPublishModalOpen(true);
+  };
+
   // Handle copy link
-  const handleCopyLink = () => {
-    const quizLink = `${origin}/${slug}/take/quiz/${quiz?.quiz_id}`;
-    navigator.clipboard.writeText(quizLink);
+  const handleCopyLink = async () => {
+    if (!quizId || !user?.id) return;
+    
+    const url = `${origin}/${slug}/take/quiz/${quizId}`;
+    await navigator.clipboard.writeText(url);
     
     toast({
-      title: "Link copied to clipboard!",
-      description: "Share this link with your participants.",
-      className: "border-green-500/40 bg-green-800 text-green-100",
+      title: 'Link copied!',
+      description: 'Quiz link has been copied to clipboard.',
+      className: 'bg-green-500/20 text-green-300',
     });
   };
+
+  // Get the quiz key to show in the share modal
+  const quizKeyForShare = useMemo(() => {
+    // First check if we have a published quiz with a key
+    if (publishedQuiz?.quiz_key) {
+      console.log('Using quiz key from published quiz:', publishedQuiz.quiz_key);
+      return publishedQuiz.quiz_key;
+    }
+    
+    // Fall back to the key from publish settings
+    if (publishSettings.secretKey) {
+      console.log('Using quiz key from publish settings:', publishSettings.secretKey);
+      return publishSettings.secretKey;
+    }
+    
+    // Fall back to the key from the quiz data
+    if (quiz?.quiz_key) {
+      console.log('Using quiz key from quiz data:', quiz.quiz_key);
+      return quiz.quiz_key;
+    }
+    
+    console.log('No quiz key found');
+    return '';
+  }, [publishedQuiz, publishSettings.secretKey, quiz?.quiz_key]);
 
   // Open add question modal
   const openAddModal = () => {
@@ -407,7 +484,7 @@ export function QuizEditor() {
   };
 
   // Show loading state
-  if (!isLoaded || rqLoading) {
+  if (!isLoaded || rqLoading || (quiz?.is_publish && isLoadingPublished)) {
     return (
       <div className="flex items-center justify-center py-10">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -425,7 +502,7 @@ export function QuizEditor() {
   }
 
   // Show not found state
-  if (!quiz) {
+  if (!quiz || (quiz.is_publish && !publishedQuiz && !isLoadingPublished)) {
     return <div className="text-white/70">Quiz not found.</div>;
   }
 
@@ -433,8 +510,8 @@ export function QuizEditor() {
     <div className="mx-auto max-w-5xl space-y-8 px-3 sm:px-4">
       {/* Quiz Header */}
       <QuizHeader
-        quiz={quiz}
-        questionsCount={localQuestions.length}
+        quiz={publishedQuiz || quiz}
+        questionsCount={publishedQuiz?.quiz?.length || localQuestions.length}
         onAddQuestion={openAddModal}
         onPublish={handlePublish}
         isPublished={isPublished}
@@ -486,6 +563,14 @@ export function QuizEditor() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSaveQuestion}
         initialData={formData}
+      />
+
+      {/* Share Quiz Modal */}
+      <ShareQuizModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        quizLink={`${origin}/${slug}/take/quiz/${quizId}`}
+        quizKey={quizKeyForShare}
       />
 
       {/* Publish Modal */}
