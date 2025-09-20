@@ -160,7 +160,7 @@ export function QuizEditor() {
       toast({
         title: "Saved",
         description: "Quiz updated successfully",
-        className: "border-blue-500/40 bg-blue-700 text-blue-100",
+        className: "border-green-500/40 bg-green-600/20 text-green-100",
       });
 
       return await res.json();
@@ -259,14 +259,17 @@ export function QuizEditor() {
   // Handle publish
   const handlePublish = async () => {
     if (isPublished) {
-      // Copy public URL to clipboard
-      navigator.clipboard.writeText(publicUrl);
-      toast({
-        title: 'Link copied!',
-        description: 'The quiz link has been copied to your clipboard.',
-        variant: 'default',
-      });
-      return;
+      const handleCopyLink = () => {
+        if (!publicUrl) return;
+        
+        navigator.clipboard.writeText(publicUrl);
+        toast({
+          title: 'Link copied!',
+          description: 'The quiz link has been copied to your clipboard.',
+          className: "border-green-500/40 bg-green-600/20 text-green-100",
+        });
+        return publicUrl;
+      };
     }
     setIsPublishModalOpen(true);
   };
@@ -278,7 +281,14 @@ export function QuizEditor() {
     setIsPublishing(true);
 
     try {
-      const publicLink = `${origin}/quiz/${(user.firstName as string).trim().replace(' ', '').toLowerCase()}/${quizId}`;
+      // Generate user slug from username or email
+      const userSlug = (user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'user')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+        
+      const publicLink = `${origin}/${userSlug}/take/quiz/${quizId}`;
       
       // Update publishSettings with the latest secretKey
       const updatedSettings = {
@@ -321,7 +331,7 @@ export function QuizEditor() {
       toast({
         title: 'Success!',
         description: result.message || 'Your quiz is now live and ready to be shared.',
-        variant: 'default',
+        className: "border-green-500/40 bg-green-800 text-green-100",
       });
     } catch (error) {
       console.error('Publish error:', error);
@@ -343,7 +353,7 @@ export function QuizEditor() {
     toast({
       title: "Link copied to clipboard!",
       description: "Share this link with your participants.",
-      className: "border-green-500/40 bg-green-600/20 text-green-100",
+      className: "border-green-500/40 bg-green-800 text-green-100",
     });
   };
 
@@ -418,6 +428,9 @@ export function QuizEditor() {
         onPublish={handlePublish}
         isPublished={isPublished}
         onDelete={() => setIsDeleteDialogOpen(true)}
+        settings={publishSettings}
+        onCopyLink={handleCopyLink}
+        quizId={quizId || ''}
       />
 
       {/* Questions List */}

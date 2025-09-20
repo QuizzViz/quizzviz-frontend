@@ -1,6 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { QuizSummary } from "./types";
+import { QuizSummary, PublishSettings } from "./types";
+import { Share2 } from "lucide-react";
+import { useState } from "react";
+import { ShareQuizModal } from "./ShareQuizModal";
+import { useUser } from "@clerk/nextjs";
 
 interface QuizHeaderProps {
   quiz: QuizSummary | undefined;
@@ -9,6 +13,9 @@ interface QuizHeaderProps {
   onPublish: () => void;
   isPublished: boolean;
   onDelete: () => void;
+  settings: PublishSettings;
+  onCopyLink: () => void;
+  quizId: string;
 }
 
 export function QuizHeader({ 
@@ -17,9 +24,19 @@ export function QuizHeader({
   onAddQuestion, 
   onPublish, 
   isPublished,
-  onDelete 
+  onDelete,
+  settings,
+  onCopyLink,
+  quizId
 }: QuizHeaderProps) {
+  const { user } = useUser();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  
   if (!quiz) return null;
+
+  const handleShareClick = () => {
+    setIsShareModalOpen(true);
+  };
 
   return (
     <header className="space-y-2">
@@ -43,12 +60,22 @@ export function QuizHeader({
           >
             Add Question
           </Button>
-          <Button 
-            className={`${isPublished ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white pointer-events-auto`}
-            onClick={onPublish}
-          >
-            {isPublished ? 'Copy Quiz Link' : 'Publish Quiz'}
-          </Button>
+          {isPublished ? (
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white pointer-events-auto"
+              onClick={handleShareClick}
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share Quiz
+            </Button>
+          ) : (
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto"
+              onClick={onPublish}
+            >
+              Publish Quiz
+            </Button>
+          )}
           <Button 
             variant="destructive" 
             className="pointer-events-auto hover:bg-red-700" 
@@ -58,6 +85,18 @@ export function QuizHeader({
           </Button>
         </div>
       </div>
+      
+      {/* Share Quiz Modal */}
+      <ShareQuizModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        quizLink={`${window.location.origin}/${(user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'user')
+          .toLowerCase()
+          .replace(/[^a-z0-9-]/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-+|-+$/g, '')}/take/quiz/${quizId}`}
+        quizKey={settings?.secretKey || ''}
+      />
     </header>
   );
 }

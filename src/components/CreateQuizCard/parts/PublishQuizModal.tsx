@@ -16,6 +16,7 @@ interface PublishQuizModalProps {
     timeLimit: number;
     maxAttempts: number;
     expirationDate: string;
+    publicLink: string;
   }) => Promise<void>;
   isPublishing: boolean;
 }
@@ -54,9 +55,17 @@ export function PublishQuizModal({
 
   // Generate the correct quiz link format
   const quizLink = `${window.location.origin}/${userSlug}/take/quiz/${quizId}`;
+  
+  // Ensure the URL is properly formatted
+  const formatQuizLink = (link: string) => {
+    // Remove any duplicate slashes and ensure proper formatting
+    return link.replace(/([^:]\/)\/+/g, '$1').replace(/\/$/, '');
+  };
+  
+  const formattedQuizLink = formatQuizLink(quizLink);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(quizLink);
+    navigator.clipboard.writeText(formattedQuizLink);
     setHasCopied(true);
     toast({
       title: "Link copied to clipboard!",
@@ -90,6 +99,7 @@ export function PublishQuizModal({
       timeLimit,
       maxAttempts,
       expirationDate: expirationDateTime,
+      publicLink: formattedQuizLink // Ensure the formatted link is sent to the API
     });
   };
 
@@ -129,10 +139,9 @@ export function PublishQuizModal({
             </div>
             <div className="relative">
               <Input
-                id="quizLink"
                 readOnly
-                value={quizLink}
-                className="pl-3 pr-10 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-mono text-sm h-10"
+                value={formattedQuizLink}
+                className="flex-1 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700 font-mono text-sm"
               />
               <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                 <LinkIcon className="h-4 w-4 text-gray-400" />

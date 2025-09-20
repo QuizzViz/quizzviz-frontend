@@ -17,13 +17,35 @@ const QuizView: FC<{
     timeLimit: number;
     maxAttempts: number;
     expirationDate: string;
+    publicLink: string;
   }) => {
     setIsPublishing(true);
     try {
-      // TODO: Implement actual publish API call
-      console.log('Publishing quiz with settings:', settings);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/quiz/publish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          quiz_id: data?.id || 'new-quiz',
+          settings: {
+            secretKey: settings.secretKey,
+            timeLimit: settings.timeLimit,
+            maxAttempts: settings.maxAttempts,
+            expirationDate: settings.expirationDate,
+          },
+          questions: data?.quiz || [],
+          publicLink: settings.publicLink,
+          topic: data?.topic || 'General Knowledge',
+          difficulty: data?.difficulty || 'Medium',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to publish quiz');
+      }
+      
+      const result = await response.json();
       
       // Show success message
       toast({
@@ -37,7 +59,7 @@ const QuizView: FC<{
       console.error('Error publishing quiz:', error);
       toast({
         title: "Error",
-        description: "Failed to publish quiz. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to publish quiz. Please try again.",
         variant: "destructive",
       });
     } finally {
