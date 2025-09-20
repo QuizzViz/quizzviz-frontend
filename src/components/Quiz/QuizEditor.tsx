@@ -33,6 +33,8 @@ export function QuizEditor() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isPublished, setIsPublished] = useState(false);
+  const [publicUrl, setPublicUrl] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [origin, setOrigin] = useState('');
   const [editIndex, setEditIndex] = useState<number | null>(null);
@@ -254,29 +256,79 @@ export function QuizEditor() {
     }
   };
 
-  // Handle quiz publishing
+  // Handle publish
   const handlePublish = async () => {
-    setIsPublishing(true);
-    try {
-      // TODO: Implement actual publish API call
-      console.log('Publishing quiz with settings:', publishSettings);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+    if (isPublished) {
+      // Copy public URL to clipboard
+      navigator.clipboard.writeText(publicUrl);
       toast({
-        title: "Quiz Published!",
-        description: "Your quiz is now live and can be accessed with the shared link.",
-        className: "border-green-500/40 bg-green-600/20 text-green-100",
+        title: 'Link copied!',
+        description: 'The quiz link has been copied to your clipboard.',
+        variant: 'default',
       });
+      return;
+    }
+    setIsPublishModalOpen(true);
+  };
+
+  // Handle publish confirmation
+  const handlePublishConfirm = async (secretKey: string = '') => {
+    if (!quizId || !user) return;
+
+    setIsPublishing(true);
+
+    try {
+      const publicLink = `${origin}/quiz/${(user.firstName as string).trim().replace(' ', '').toLowerCase()}/${quizId}`;
+      
+      // Update publishSettings with the latest secretKey
+      const updatedSettings = {
+        ...publishSettings,
+        secretKey: secretKey.trim(),
+        isSecretKeyRequired: secretKey.trim().length > 0
+      };
+      setPublishSettings(updatedSettings);
+      
+      const response = await fetch('/api/quiz/publish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          quiz_id: quizId,
+          settings: updatedSettings,
+          questions: localQuestions,
+          publicLink,
+          slug: (user.firstName as string).trim().replace(' ', '').toLowerCase(),
+          topic: quiz?.topic,
+          difficulty: quiz?.difficulty,
+          timeLimit: updatedSettings.timeLimit,
+          maxAttempts: updatedSettings.maxAttempts,
+          expirationDate: updatedSettings.expirationDate,
+          secretKey: updatedSettings.secretKey || ''
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to publish quiz');
+      }
+
+      setIsPublished(true);
+      setPublicUrl(result.publicUrl || '');
       
       setIsPublishModalOpen(false);
-    } catch (error) {
-      console.error('Error publishing quiz:', error);
       toast({
-        title: "Error",
-        description: "Failed to publish quiz. Please try again.",
-        className: "border-red-500/40 bg-red-600/20 text-red-100",
+        title: 'Success!',
+        description: result.message || 'Your quiz is now live and ready to be shared.',
+        variant: 'default',
+      });
+    } catch (error) {
+      console.error('Publish error:', error);
+      toast({
+        title: 'Publish failed',
+        description: error instanceof Error ? error.message : 'There was an error publishing your quiz. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsPublishing(false);
@@ -363,7 +415,8 @@ export function QuizEditor() {
         quiz={quiz}
         questionsCount={localQuestions.length}
         onAddQuestion={openAddModal}
-        onPublish={() => setIsPublishModalOpen(true)}
+        onPublish={handlePublish}
+        isPublished={isPublished}
         onDelete={() => setIsDeleteDialogOpen(true)}
       />
 
@@ -415,13 +468,14 @@ export function QuizEditor() {
       <PublishModal
         isOpen={isPublishModalOpen}
         onClose={() => setIsPublishModalOpen(false)}
-        onPublish={handlePublish}
-        quizId={quiz.quiz_id}
+        onPublish={handlePublishConfirm}
+        quizId={quizId || ''}
         settings={publishSettings}
         onSettingsChange={setPublishSettings}
         isPublishing={isPublishing}
         origin={origin}
         onCopyLink={handleCopyLink}
+        isPublished={isPublished}
       />
 
       {/* Delete Confirmation Dialog */}

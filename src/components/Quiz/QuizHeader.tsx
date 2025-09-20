@@ -7,6 +7,7 @@ interface QuizHeaderProps {
   questionsCount: number;
   onAddQuestion: () => void;
   onPublish: () => void;
+  isPublished: boolean;
   onDelete: () => void;
 }
 
@@ -15,6 +16,7 @@ export function QuizHeader({
   questionsCount, 
   onAddQuestion, 
   onPublish, 
+  isPublished,
   onDelete 
 }: QuizHeaderProps) {
   if (!quiz) return null;
@@ -42,10 +44,10 @@ export function QuizHeader({
             Add Question
           </Button>
           <Button 
-            className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto"
+            className={`${isPublished ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white pointer-events-auto`}
             onClick={onPublish}
           >
-            Publish Quiz
+            {isPublished ? 'Copy Quiz Link' : 'Publish Quiz'}
           </Button>
           <Button 
             variant="destructive" 

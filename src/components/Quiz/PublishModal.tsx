@@ -10,13 +10,14 @@ import { useUser } from "@clerk/nextjs";
 interface PublishModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPublish: () => void;
+  onPublish: (secretKey: string) => void;
   quizId: string;
   settings: PublishSettings;
   onSettingsChange: (settings: PublishSettings) => void;
   isPublishing: boolean;
   origin: string;
   onCopyLink: () => void;
+  isPublished?: boolean;
 }
 
 export function PublishModal({
@@ -28,7 +29,8 @@ export function PublishModal({
   onSettingsChange,
   isPublishing,
   origin,
-  onCopyLink
+  onCopyLink,
+  isPublished = false
 }: PublishModalProps) {
   const [isCopied, setIsCopied] = React.useState(false);
   const [localSecretKey, setLocalSecretKey] = React.useState(settings.secretKey || '');
@@ -42,6 +44,17 @@ export function PublishModal({
     onCopyLink();
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handlePublish = () => {
+    // Ensure the secret key is properly set in settings before publishing
+    const updatedSettings = {
+      ...settings,
+      secretKey: localSecretKey.trim(),
+      isSecretKeyRequired: localSecretKey.trim().length > 0
+    };
+    onSettingsChange(updatedSettings);
+    onPublish(localSecretKey.trim());
   };
 
   const handleSettingChange = <K extends keyof PublishSettings>(
@@ -214,17 +227,22 @@ export function PublishModal({
           </Button>
           <Button 
             type="button" 
-            onClick={onPublish}
-            disabled={isPublishing || !localSecretKey?.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white h-9 text-sm font-medium shadow-lg"
+            onClick={handlePublish}
+            disabled={isPublishing || (settings.isSecretKeyRequired && !localSecretKey.trim())}
+            className={`w-full ${isPublished ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
           >
             {isPublishing ? (
               <>
-                <div className="animate-spin rounded-full h-3 w-3 border-2 border-white/30 border-t-white mr-2"></div>
-                Publishing...
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {isPublished ? 'Updating...' : 'Publishing...'}
               </>
+            ) : isPublished ? (
+              'Update Quiz Settings'
             ) : (
-              "Publish Quiz"
+              'Publish Quiz'
             )}
           </Button>
         </DialogFooter>

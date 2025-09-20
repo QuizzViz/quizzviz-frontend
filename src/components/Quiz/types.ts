@@ -49,6 +49,7 @@ export interface QuizHeaderProps {
   questionsCount: number;
   onAddQuestion: () => void;
   onPublish: () => void;
+  isPublished: boolean;
   onDelete: () => void;
 }
 
