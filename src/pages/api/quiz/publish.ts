@@ -53,23 +53,97 @@ export default async function handler(
       return res.status(400).json({ message: 'Public link is required' });
     }
 
-    // Format the request body using the values from PublishModal
+    // Prepare the request body for the external API
     const requestBody = {
       quiz_id,
       user_id: userId,
-      title,
-      topic: topic, // From the page where quiz was created
-      difficulty: difficulty, // From the page where quiz was created
+      title: title || topic || 'Untitled Quiz',
+      topic: topic || 'General',
+      difficulty: difficulty || 'medium',
       num_questions: totalQuestions,
       theory_questions_percentage: theoryPercentage,
       code_analysis_questions_percentage: codeAnalysisPercentage,
       quiz: questions,
-      quiz_public_link: publicLink, // Directly from PublishModal
-      quiz_key: secretKey, // Use the secretKey from the request body
-      max_attempts: maxAttempts, // From PublishModal
-      quiz_time: timeLimit, // From PublishModal
-      quiz_expiration_time: expirationDate // From PublishModal
+      quiz_public_link: publicLink,
+      quiz_key: secretKey,
+      max_attempts: maxAttempts,
+      quiz_time: timeLimit,
+      quiz_expiration_time: expirationDate,
+      is_publish: true // Using is_publish to match backend field name
     };
+    
+    // Prepare the update payload for the quiz
+    const updatePayload = {
+      quiz_id,
+      is_publish: true,
+      public_link: publicLink,
+      max_attempts: maxAttempts,
+      quiz_time: timeLimit,
+      quiz_expiration_time: expirationDate
+    };
+
+    // Update the quiz to mark it as published
+    try {
+      // Get the session token from the request cookies
+      const cookieHeader = req.headers.cookie || '';
+      const cookies = Object.fromEntries(
+        cookieHeader.split(';').map(c => {
+          const [key, ...vals] = c.trim().split('=');
+          return [key, vals.join('=')];
+        })
+      );
+      
+      const sessionToken = cookies.__session || '';
+      
+      if (!sessionToken) {
+        console.error('No session token found in cookies');
+        // Continue with the publish process even if we can't update the status
+      } else {
+        try {
+          // Call the backend API directly to update the quiz status
+          const backendUrl = `https://quizzviz-quiz-generation.up.railway.app/user/${encodeURIComponent(userId)}/quizz/${encodeURIComponent(quiz_id)}`;
+          
+          console.log('Updating quiz status with URL:', backendUrl);
+          console.log('Using session token:', sessionToken ? '***' : 'none');
+          
+          const updateResponse = await fetch(backendUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${sessionToken}`,
+              'Cookie': `__session=${sessionToken}`,
+              'x-user-id': userId
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              is_publish: true,
+              public_link: publicLink,
+              max_attempts: maxAttempts,
+              quiz_time: timeLimit,
+              quiz_expiration_time: expirationDate,
+              quiz_key: secretKey
+            })
+          });
+
+          if (!updateResponse.ok) {
+            const errorText = await updateResponse.text();
+            console.error('Failed to update quiz published status:', {
+              status: updateResponse.status,
+              statusText: updateResponse.statusText,
+              error: errorText
+            });
+          } else {
+            console.log('Successfully updated quiz published status');
+          }
+        } catch (error) {
+          console.error('Error updating quiz status:', error);
+          // Continue with publishing even if the update fails
+        }
+      }
+    } catch (updateError) {
+      console.error('Error updating quiz published status:', updateError);
+      // Continue with publishing even if the update fails, but log the error
+    }
 
     // Call the external API with proper authorization
     const response = await fetch('https://quizzviz-publish-quiz.up.railway.app/publish/quizz', {

@@ -5,7 +5,16 @@ import { Users, Star, FileText } from "lucide-react";
 
 // Grid of previous quizzes with key stats
 export const QuizLibrary: FC<{
-  items: { id: number; title: string; questions: number; completed: number; rating: number; subject: string; difficulty: string }[];
+  items: { 
+    id: number; 
+    title: string; 
+    questions: number; 
+    completed: number; 
+    rating: number; 
+    subject: string; 
+    difficulty: string;
+    is_publish?: boolean;
+  }[];
 }> = ({ items }) => {
   return (
     <section>
@@ -45,13 +54,20 @@ export const QuizLibrary: FC<{
                 <span>{quiz.rating}/5.0 rating</span>
               </div>
               <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="bg-gray-200 text-black group-hover:bg-white group-hover:text-black transition-colors duration-300">
                   {quiz.subject}
                 </Badge>
-                <Badge variant="outline" className="text-xs border-gray-200 text-gray-200 group-hover:border-white group-hover:text-white transition-all duration-300">
-                  {quiz.difficulty}
-                </Badge>
+                {quiz.is_publish && (
+                  <Badge className="bg-green-600 text-white hover:bg-green-700 transition-colors duration-300">
+                    Published
+                  </Badge>
+                )}
               </div>
+              <Badge variant="outline" className="text-xs border-gray-200 text-gray-200 group-hover:border-white group-hover:text-white transition-all duration-300">
+                {quiz.difficulty}
+              </Badge>
+            </div>
             </CardContent>
           </Card>
         ))}

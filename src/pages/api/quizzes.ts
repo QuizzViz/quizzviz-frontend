@@ -92,7 +92,8 @@ async function handlePost(userId: string, token: string, body: any) {
       num_questions: body.num_questions || 25,
       theory_questions_percentage: theoryPercentage,
       code_analysis_questions_percentage: codePercentage,
-      user_id: userIdStr
+      user_id: userIdStr,
+      isPublished: false // Default to false when creating a new quiz
     };
     
     // Log the outgoing request for debugging

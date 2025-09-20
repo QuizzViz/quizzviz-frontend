@@ -52,10 +52,41 @@ async function handlePut(res: NextApiResponse, url: string, headers: HeadersInit
       }
     });
 
+    // Prepare the update payload for the backend
+    const updatePayload: any = {};
+    
+    // Include all possible fields that might be updated
+    const possibleFields = [
+      'is_publish', 'public_link', 
+      'max_attempts', 'quiz_time', 'quiz_expiration_time',
+      'quiz_key'
+    ];
+    
+    // Only include fields that are present in the request body
+    possibleFields.forEach(field => {
+      if (body[field] !== undefined) {
+        updatePayload[field] = body[field];
+      }
+    });
+    
+    // Handle the publish status - ensure we're using is_publish
+    if (body.is_publish !== undefined) {
+      updatePayload.is_publish = body.is_publish;
+    }
+
+    console.log('Sending update to backend:', {
+      url,
+      body: updatePayload,
+      headers: {
+        ...headers,
+        'Authorization': 'Bearer ***'
+      }
+    });
+
     const response = await fetch(url, {
       method: 'PUT',
       headers,
-      body: JSON.stringify(body)
+      body: JSON.stringify(updatePayload)
     });
 
     const data = await response.json().catch(() => ({}));
