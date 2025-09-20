@@ -87,7 +87,7 @@ export function PublishModal({
           <DialogTitle className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
             Publish Quiz
           </DialogTitle>
-          <p className="text-xs text-blue-300/70">
+          <p className="text-xs text-gray-200">
             Configure settings and share with participants
           </p>
         </DialogHeader>
@@ -182,17 +182,19 @@ export function PublishModal({
             <Label htmlFor="expirationDate" className="text-sm font-medium text-white">
               Expiration Date & Time
             </Label>
-            <Input
-              id="expirationDate"
-              type="datetime-local"
-              value={formatDateTimeLocal(settings.expirationDate)}
-              min={getMinDateTime()}
-              onChange={(e) => 
-                handleSettingChange("expirationDate", e.target.value || '')
-              }
-              className="bg-slate-800/80 border-blue-600/60 text-white focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:border-blue-400 h-9 text-sm hover:border-blue-500/70 transition-colors"
-              disabled={isPublishing}
-            />
+            <div className="relative">
+              <Input
+                id="expirationDate"
+                type="datetime-local"
+                value={formatDateTimeLocal(settings.expirationDate)}
+                min={getMinDateTime()}
+                onChange={(e) => 
+                  handleSettingChange("expirationDate", e.target.value || '')
+                }
+                className="bg-slate-800/80 border-blue-600/60 text-white focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:border-blue-400 h-9 text-sm hover:border-blue-500/70 transition-colors [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit-fields-wrapper]:text-white/90"
+                disabled={isPublishing}
+              />
+            </div>
           </div>
         </div>
 
