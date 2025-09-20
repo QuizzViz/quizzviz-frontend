@@ -100,6 +100,16 @@ export function QuizEditor() {
       }));
       
       setLocalQuestions(formattedQuestions);
+      
+      // Update isPublished state when quiz data is loaded
+      if (quiz.is_publish !== undefined) {
+        setIsPublished(quiz.is_publish);
+      }
+      
+      // Update isPublished state when quiz data changes
+      if (quiz.is_publish !== undefined) {
+        setIsPublished(quiz.is_publish);
+      }
     } catch (e) {
       console.error('Error parsing quiz questions:', e);
       setLocalQuestions([]);
@@ -139,6 +149,7 @@ export function QuizEditor() {
         theory_questions_percentage: quiz.theory_questions_percentage,
         code_analysis_questions_percentage: quiz.code_analysis_questions_percentage,
         quiz: questions,
+        is_publish: quiz.is_publish
       };
 
       const res = await fetch(`/api/quiz/${encodeURIComponent(quiz.quiz_id)}`, {
