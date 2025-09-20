@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Copy, Check } from "lucide-react";
 import { PublishSettings } from "./types";
 import React from "react";
+import { useUser } from "@clerk/nextjs";
 
 interface PublishModalProps {
   isOpen: boolean;
@@ -80,6 +81,9 @@ export function PublishModal({
     return now.toISOString().slice(0, 16);
   };
 
+  const { user } = useUser();
+  const slug = (user?.firstName as string).trim().replace(" ", "").toLowerCase();
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md bg-gray-950 border-gray-800/50 shadow-2xl backdrop-blur-xl max-h-[90vh] overflow-y-auto">
@@ -102,7 +106,7 @@ export function PublishModal({
               <Input
                 id="quizLink"
                 readOnly
-                value={origin ? `${origin}/quiz/take/${quizId}` : 'Loading...'}
+                value={origin ? `${origin}/${slug}/take/quiz/${quizId}` : 'Loading...'}
                 className="flex-1 border-0 bg-transparent text-white text-xs h-9 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <Button
