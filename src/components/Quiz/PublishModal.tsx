@@ -50,37 +50,43 @@ export function PublishModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px] bg-zinc-900 border-white/10">
+      <DialogContent className="sm:max-w-[560px] bg-zinc-900/95 border-white/10 shadow-2xl backdrop-blur supports-[backdrop-filter]:backdrop-blur-md">
         <DialogHeader>
-          <DialogTitle className="text-white">Publish Quiz</DialogTitle>
+          <DialogTitle className="text-white tracking-tight">Publish Quiz</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
-          <div>
+          <div className="rounded-lg border border-white/10 bg-zinc-800/40 p-4 transition-colors hover:border-white/20">
             <Label htmlFor="quizLink" className="text-white">Quiz Link</Label>
             <div className="flex mt-1">
               <Input
                 id="quizLink"
                 readOnly
                 value={origin ? `${origin}/quiz/take/${quizId}` : 'Loading...'}
-                className="rounded-r-none bg-zinc-800 border-white/10 text-white"
+                className="rounded-r-none bg-zinc-800 border-white/10 text-white focus-visible:ring-2 focus-visible:ring-blue-600"
               />
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-l-none border-l-0 bg-zinc-800 hover:bg-zinc-700 text-white"
+                className="rounded-l-none border-l-0 bg-zinc-800 hover:bg-zinc-700 text-white transition-colors"
                 onClick={handleCopy}
                 disabled={!origin || isPublishing}
               >
-                {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {isCopied ? (
+                  <span className="inline-flex items-center gap-2"><Check className="h-4 w-4" /> Copied</span>
+                ) : (
+                  <span className="inline-flex items-center gap-2"><Copy className="h-4 w-4" /> Copy</span>
+                )}
               </Button>
             </div>
-            <p className="text-xs text-white/50 mt-1">
-              Share this link with participants to take the quiz
-            </p>
+            <div aria-live="polite" className="min-h-[1.25rem] mt-1">
+              <p className="text-xs text-white/50">
+                {isCopied ? 'Link copied to clipboard' : 'Share this link with participants to take the quiz'}
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-4 pt-2">
+          <div className="space-y-4 pt-2 rounded-lg border border-white/10 bg-zinc-800/40 p-4 transition-colors hover:border-white/20">
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="requireSecretKey" 
@@ -107,7 +113,7 @@ export function PublishModal({
                   value={settings.secretKey}
                   onChange={(e) => handleSettingChange("secretKey", e.target.value)}
                   placeholder="Enter a secret key"
-                  className="mt-1 bg-zinc-800 border-white/10 text-white"
+                  className="mt-1 bg-zinc-800 border-white/10 text-white focus-visible:ring-2 focus-visible:ring-blue-600"
                   disabled={isPublishing}
                 />
                 <p className="text-xs text-white/50 mt-1">
@@ -117,7 +123,7 @@ export function PublishModal({
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border border-white/10 bg-zinc-800/40 p-4">
             <div>
               <Label htmlFor="timeLimit" className="text-white">
                 Time Limit (minutes)
@@ -130,7 +136,7 @@ export function PublishModal({
                 onChange={(e) => 
                   handleSettingChange("timeLimit", Number(e.target.value) || 30)
                 }
-                className="mt-1 bg-zinc-800 border-white/10 text-white"
+                className="mt-1 bg-zinc-800 border-white/10 text-white focus-visible:ring-2 focus-visible:ring-blue-600"
                 disabled={isPublishing}
               />
             </div>
@@ -147,13 +153,13 @@ export function PublishModal({
                 onChange={(e) => 
                   handleSettingChange("maxAttempts", Number(e.target.value) || 1)
                 }
-                className="mt-1 bg-zinc-800 border-white/10 text-white"
+                className="mt-1 bg-zinc-800 border-white/10 text-white focus-visible:ring-2 focus-visible:ring-blue-600"
                 disabled={isPublishing}
               />
             </div>
           </div>
 
-          <div>
+          <div className="rounded-lg border border-white/10 bg-zinc-800/40 p-4">
             <Label htmlFor="expirationDate" className="text-white">
               Expiration Date
             </Label>
@@ -168,7 +174,7 @@ export function PublishModal({
                   e.target.value || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
                 )
               }
-              className="mt-1 bg-zinc-800 border-white/10 text-white"
+              className="mt-1 bg-zinc-800 border-white/10 text-white focus-visible:ring-2 focus-visible:ring-blue-600"
               disabled={isPublishing}
             />
             <p className="text-xs text-white/50 mt-1">
@@ -177,7 +183,7 @@ export function PublishModal({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-3">
           <Button 
             type="button" 
             variant="outline" 
