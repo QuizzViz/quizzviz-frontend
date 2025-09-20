@@ -24,6 +24,8 @@ export function QuizEditor() {
   const { user, isLoaded } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const slug = (user?.firstName as string).trim().replace(" ", "").toLowerCase();
+  
   
   // State
   const [localQuestions, setLocalQuestions] = useState<QuizQuestion[]>([]);
@@ -283,7 +285,7 @@ export function QuizEditor() {
 
   // Handle copy link
   const handleCopyLink = () => {
-    const quizLink = `${origin}/quiz/take/${quiz?.quiz_id}`;
+    const quizLink = `${origin}/${slug}/take/quiz/${quiz?.quiz_id}`;
     navigator.clipboard.writeText(quizLink);
     
     toast({
