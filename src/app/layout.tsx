@@ -87,7 +87,7 @@ export const metadata: Metadata = {
     title: "QuizzViz – AI Powered Technical Quiz Generator",
     description:
       "Build enterprise-grade coding quizzes in minutes with QuizzViz. Intelligent, fast, and professional quiz generation.",
-    images: [`${siteUrl}/favicon.ico`],
+    images: [`${siteUrl}/QuizzViz-logo.png`],
     creator: "@QuizzViz",
     site: "@QuizzViz",
   },
