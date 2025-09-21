@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatTime } from '@/lib/utils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -51,7 +51,7 @@ type FormData = {
 export default function QuizPage({ params }: QuizPageProps) {
   const router = useRouter();
   const { username, quizId } = params;
-  const [step, setStep] = useState<'info' | 'instructions' | 'quiz' | 'results'>('info');
+  const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -66,6 +66,33 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [quizStarted, setQuizStarted] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState('');
+
+  // Tab monitoring for security
+  useEffect(() => {
+    if (step === 'quiz' && quizStarted) {
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          toast.error('Quiz terminated due to tab switch!', {
+            style: { background: '#1F2937', color: '#EF4444', border: '1px solid #374151' }
+          });
+          handleSubmitQuiz();
+        }
+      };
+
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = 'Are you sure you want to leave? Your quiz progress will be lost.';
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('beforeunload', handleBeforeUnload);
+
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      };
+    }
+  }, [step, quizStarted]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -93,24 +120,26 @@ export default function QuizPage({ params }: QuizPageProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch quiz data');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to verify quiz key');
       }
 
       const data = await response.json();
       
       if (data.quiz_key !== formData.quizKey) {
-        throw new Error('Invalid quiz key');
+        throw new Error('Invalid quiz key. Please check and try again.');
       }
 
       setQuizData(data);
-      setTimeLeft(data.quiz_time * 60); // Convert minutes to seconds
+      setTimeLeft(data.quiz_time * 60);
       setStep('instructions');
-      toast.success('Quiz key verified successfully!');
       return true;
     } catch (error: any) {
       console.error('Verification error:', error);
       setVerificationError(error.message || 'Failed to verify quiz key');
-      toast.error(error.message || 'Failed to verify quiz key');
+      toast.error(error.message || 'Failed to verify quiz key', {
+        style: { background: '#1F2937', color: '#EF4444', border: '1px solid #374151' }
+      });
       return false;
     } finally {
       setVerifying(false);
@@ -123,6 +152,10 @@ export default function QuizPage({ params }: QuizPageProps) {
   };
 
   const startQuiz = () => {
+    setStep('quiz-info');
+  };
+
+  const beginQuiz = () => {
     setQuizStarted(true);
     setStep('quiz');
   };
@@ -137,12 +170,6 @@ export default function QuizPage({ params }: QuizPageProps) {
   const handleNextQuestion = () => {
     if (currentQuestionIndex < (quizData?.quiz.length || 0) - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
-    }
-  };
-
-  const handlePreviousQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
     }
   };
 
@@ -183,347 +210,558 @@ export default function QuizPage({ params }: QuizPageProps) {
     return { correct, total, percentage };
   };
 
+  const securityInstructions = [
+    {
+      icon: <Lock className="w-5 h-5 text-red-400" />,
+      text: 'Your browser tab will be LOCKED during the quiz. Switching tabs will automatically end the quiz.',
+      important: true
+    },
+    {
+      icon: <Eye className="w-5 h-5 text-yellow-400" />,
+      text: 'The quiz monitors tab activity. Any attempt to leave this page will terminate your session.',
+      important: true
+    },
+    {
+      icon: <Shield className="w-5 h-5 text-blue-400" />,
+      text: 'Keep this tab active and in focus throughout the entire quiz duration.'
+    },
+    {
+      icon: <AlertTriangle className="w-5 h-5 text-orange-400" />,
+      text: 'Do not refresh the page, use browser navigation buttons, or open new tabs/windows.'
+    }
+  ];
+
   const quizInstructions = [
-    `This quiz contains ${quizData?.num_questions || 'multiple'}-choice questions with a time limit of ${quizData?.quiz_time || 30} minutes.`,
-    'Once you select an answer, you can review and change it before submitting the quiz.',
-    'The timer will continue running even if you close the browser - use your time wisely!',
-    'Using other devices or applications during the quiz is strictly prohibited.',
-    'Your progress is automatically saved, but do not refresh the page.',
-    'Ensure you have a stable internet connection before starting.',
-    `Quiz Topic: ${quizData?.topic || 'N/A'}`,
-    `Difficulty: ${quizData?.difficulty || 'N/A'}`,
+    {
+      icon: <BookOpen className="w-5 h-5" />,
+      text: `This quiz contains ${quizData?.num_questions || 'multiple'} multiple-choice questions with a time limit of ${quizData?.quiz_time || 30} minutes.`
+    },
+    {
+      icon: <ArrowRight className="w-5 h-5" />,
+      text: 'Questions are sequential - you can only move FORWARD. No going back to previous questions.'
+    },
+    {
+      icon: <CheckCircle className="w-5 h-5" />,
+      text: 'Select your answer carefully before proceeding to the next question.'
+    },
+    {
+      icon: <Timer className="w-5 h-5" />,
+      text: 'The timer runs continuously. Make sure to manage your time wisely across all questions.'
+    },
+    {
+      icon: <Zap className="w-5 h-5" />,
+      text: 'Your progress is automatically saved for each question you complete.'
+    }
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            <Link href="/" className="text-xl sm:text-2xl font-semibold text-foreground">
-              QuizzViz
-            </Link>
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Background gradient effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black to-purple-900/20"></div>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+      
+      {/* Header with Logo */}
+      <header className="relative z-20 p-6 border-b border-gray-800/50">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="text-2xl font-bold text-white">
+            QuizzViz
           </div>
+          {step === 'quiz' && quizData && (
+            <div className="flex items-center gap-4">
+              <div className="bg-gray-800 rounded-2xl px-6 py-3 flex items-center gap-3 border border-gray-700">
+                <Clock className="h-6 w-6 text-white" />
+                <span className="font-mono text-white text-xl font-bold">{formatTime(timeLeft)}</span>
+              </div>
+            </div>
+          )}
         </div>
       </header>
-
-      <main className="container mx-auto p-4 pt-8 max-w-2xl">
+      
+      <main className="relative z-10">
         {step === 'info' && (
-          <Card className="border-border/50 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl">Enter Your Details</CardTitle>
-              <CardDescription>
-                Please provide the following information to start the quiz
-              </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSubmitInfo}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="John Doe"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="john@example.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="quizKey">Quiz Key</Label>
-                  <Input
-                    id="quizKey"
-                    name="quizKey"
-                    type="text"
-                    required
-                    value={formData.quizKey}
-                    onChange={handleInputChange}
-                    placeholder="Enter the quiz key provided to you"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button 
-                  type="submit" 
-                  disabled={!formData.name || !formData.email || !formData.quizKey || verifying}
-                >
-                  {verifying ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    'Continue to Instructions'
-                  )}
-                </Button>
-                {verificationError && (
-                  <p className="text-sm text-red-500 mt-2">{verificationError}</p>
-                )}
-              </CardFooter>
-            </form>
-          </Card>
+          <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
+            <div className="w-full max-w-lg">
+              {/* Header - Removed icon */}
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                  Welcome to Quiz
+                </h1>
+                <p className="text-gray-400">Enter your details to begin the assessment</p>
+              </div>
+
+              {/* Form Card */}
+              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl">
+                <CardContent className="p-8">
+                  <form onSubmit={handleSubmitInfo} className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-gray-300 font-medium flex items-center gap-2">
+                        <User className="w-4 h-4 text-blue-400" />
+                        Username
+                      </Label>
+                      <Input
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="Enter your username"
+                        required
+                        className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/20"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-gray-300 font-medium flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-purple-400" />
+                        Full Name
+                      </Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        placeholder="Enter your full name"
+                        required
+                        className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500 focus:ring-purple-500/20"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="quizKey" className="text-gray-300 font-medium flex items-center gap-2">
+                        <Key className="w-4 h-4 text-green-400" />
+                        Quiz Key
+                      </Label>
+                      <Input
+                        id="quizKey"
+                        name="quizKey"
+                        value={formData.quizKey}
+                        onChange={handleInputChange}
+                        placeholder="Enter the quiz access key"
+                        required
+                        className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-green-500 focus:ring-green-500/20"
+                      />
+                      {verificationError && (
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
+                          <p className="text-sm text-red-400 flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4" />
+                            {verificationError}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={verifying}
+                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
+                    >
+                      {verifying ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Verifying Access...
+                        </>
+                      ) : (
+                        <>
+                          Continue to Quiz
+                          <ArrowRight className="ml-2 h-5 w-5" />
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         )}
 
-        {step === 'instructions' && (
-          <Card className="border-border/50 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl">Quiz Instructions</CardTitle>
-              <CardDescription>Please read the instructions carefully before starting</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-medium">About This Quiz</h3>
-                <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
-                  {quizInstructions.map((instruction, index) => (
-                    <li key={index}>{instruction}</li>
-                  ))}
-                </ul>
+        {step === 'instructions' && quizData && (
+          <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
+            <div className="w-full max-w-6xl">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl mb-4">
+                  <BookOpen className="w-8 h-8 text-white" />
+                </div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent mb-2">
+                  Quiz Instructions & Security
+                </h1>
+                <p className="text-gray-400">Please read all instructions carefully before starting</p>
               </div>
-              <div className="mt-6 p-4 bg-muted/50 rounded-lg space-y-3">
-                <h4 className="font-medium mb-2">Your Information:</h4>
-                <p><span className="font-medium">Name:</span> {formData.name}</p>
-                <p><span className="font-medium">Email:</span> {formData.email}</p>
-                <p><span className="font-medium">Quiz Key:</span> {formData.quizKey}</p>
-                
-                <div className="flex items-start space-x-2 pt-2 mt-4 border-t border-border/50">
-                  <Checkbox
-                    id="terms"
-                    checked={acceptedTerms}
-                    onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-                    required
-                    className="mt-1"
-                  />
-                  <label
-                    htmlFor="terms"
-                    className="text-sm font-medium leading-snug text-foreground/90"
-                  >
-                    I understand and agree to the quiz conditions and terms of service. I will not switch tabs/devices during the quiz.
-                  </label>
+
+              <div className="grid lg:grid-cols-3 gap-6 mb-8">
+                {/* Quiz Info */}
+                <Card className="border-0 bg-gray-900/50 backdrop-blur-xl">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Trophy className="w-5 h-5 text-yellow-500" />
+                      Quiz Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-gray-800/50 rounded-lg p-3">
+                      <div className="text-xs text-gray-400 mb-1">Topic</div>
+                      <div className="text-white font-medium">{quizData?.topic || 'N/A'}</div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-lg p-3">
+                      <div className="text-xs text-gray-400 mb-1">Difficulty</div>
+                      <div className="text-white font-medium capitalize">{quizData?.difficulty || 'N/A'}</div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-lg p-3">
+                      <div className="text-xs text-gray-400 mb-1">Questions</div>
+                      <div className="text-white font-medium">{quizData?.num_questions || 0} Questions</div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-lg p-3">
+                      <div className="text-xs text-gray-400 mb-1">Time Limit</div>
+                      <div className="text-white font-medium">{quizData?.quiz_time || 30} Minutes</div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Quiz Instructions */}
+                <Card className="border-0 bg-gray-900/50 backdrop-blur-xl">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      How to Take Quiz
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {quizInstructions.map((instruction, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <div className="text-blue-400 mt-0.5">
+                            {instruction.icon}
+                          </div>
+                          <span className="text-gray-300 text-sm leading-relaxed">{instruction.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+
+                {/* Security Instructions */}
+                <Card className="border-0 bg-red-900/20 backdrop-blur-xl border-red-500/30">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Lock className="w-5 h-5 text-red-400" />
+                      Security Rules
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {securityInstructions.map((instruction, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <div className="mt-0.5">
+                            {instruction.icon}
+                          </div>
+                          <span className={`text-sm leading-relaxed ${
+                            instruction.important ? 'text-red-300 font-medium' : 'text-gray-300'
+                          }`}>
+                            {instruction.text}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Warning Banner */}
+              <div className="bg-gradient-to-r from-red-900/50 to-orange-900/50 border border-red-500/30 rounded-xl p-6 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="bg-red-500/20 rounded-full p-3">
+                    <AlertTriangle className="w-6 h-6 text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold mb-2">IMPORTANT SECURITY NOTICE</h3>
+                    <p className="text-red-200 text-sm">
+                      This quiz has strict monitoring enabled. Any attempt to switch tabs, navigate away, or use external resources 
+                      will immediately terminate your quiz session. Once you start, stay focused on this tab until completion.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep('info')}>
-                Back
-              </Button>
-              <Button 
-                onClick={startQuiz} 
-                disabled={isLoading || !acceptedTerms || !quizData}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Starting...
-                  </>
-                ) : (
-                  'Start Quiz'
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
+
+              <div className="text-center">
+                <Button 
+                  onClick={beginQuiz} 
+                  className="h-14 px-8 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02]"
+                >
+                  <Lock className="mr-2 h-5 w-5" />
+                  I Understand - Start Secured Quiz
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
         {step === 'quiz' && quizData && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center bg-card p-4 rounded-lg border border-border">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-5 w-5 text-primary" />
-                <span className="font-medium">Time Left: {formatTime(timeLeft)}</span>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Question {currentQuestionIndex + 1} of {quizData.quiz.length}
+          <div className="min-h-[calc(100vh-80px)]">
+            {/* Progress Header */}
+            <div className="bg-gray-900/50 backdrop-blur-xl border-b border-gray-800 sticky top-20 z-10">
+              <div className="max-w-4xl mx-auto px-4 py-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-lg font-semibold text-white">
+                    Question {currentQuestionIndex + 1} of {quizData.quiz.length}
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {Object.keys(selectedAnswers).length} answered
+                  </div>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${((currentQuestionIndex + 1) / quizData.quiz.length) * 100}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
 
-            <Card className="border-border/50 shadow-lg">
-              <CardHeader className="pb-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {quizData.quiz[currentQuestionIndex].type === 'code_analysis' ? 'Code Analysis' : 'Theory'}
-                  </span>
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {Math.round(((currentQuestionIndex + 1) / quizData.quiz.length) * 100)}% Complete
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">{quizData.quiz[currentQuestionIndex].question}</h3>
-                  
+            {/* Main Content */}
+            <div className="max-w-4xl mx-auto p-6">
+              {/* Question Card */}
+              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl mb-6">
+                <CardContent className="p-8">
+                  <h2 className="text-2xl font-semibold text-white mb-6 leading-relaxed">
+                    {quizData.quiz[currentQuestionIndex].question}
+                  </h2>
+
+                  {/* Code Snippet */}
                   {quizData.quiz[currentQuestionIndex].code_snippet && (
-                    <div className="rounded-md overflow-hidden border border-border">
-                      <SyntaxHighlighter 
-                        language="python" 
+                    <div className="mb-8 rounded-xl overflow-hidden border border-gray-700">
+                      <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
+                        <span className="text-sm text-gray-300 font-medium">Code Preview</span>
+                      </div>
+                      <SyntaxHighlighter
+                        language="python"
                         style={atomDark}
-                        showLineNumbers
                         customStyle={{
                           margin: 0,
-                          borderRadius: '0.375rem',
-                          fontSize: '0.875rem',
-                          lineHeight: '1.5',
+                          backgroundColor: '#1F2937',
+                          fontSize: '0.95rem',
+                          lineHeight: '1.6',
+                          padding: '1.5rem',
                         }}
+                        wrapLines={true}
+                        showLineNumbers={true}
                       >
                         {quizData.quiz[currentQuestionIndex].code_snippet || ''}
                       </SyntaxHighlighter>
                     </div>
                   )}
 
-                  <div className="space-y-3 pt-2">
-                    {Object.entries(quizData.quiz[currentQuestionIndex].options).map(([key, value]) => (
-                      <button
-                        key={key}
-                        onClick={() => handleAnswerSelect(key)}
-                        className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                          selectedAnswers[currentQuestionIndex] === key
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border hover:bg-accent/50'
-                        }`}
-                      >
-                        <div className="flex items-center">
-                          <div className={`flex items-center justify-center w-6 h-6 rounded-full mr-3 border ${
-                            selectedAnswers[currentQuestionIndex] === key
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'border-muted-foreground/30'
-                          }`}>
-                            {String.fromCharCode(64 + parseInt(key) + (key >= 'A' ? 0 : 1))}
-                          </div>
-                          <span>{value}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between pt-2">
-                <Button 
-                  variant="outline" 
-                  onClick={handlePreviousQuestion}
-                  disabled={currentQuestionIndex === 0}
-                >
-                  Previous
-                </Button>
-                
-                {currentQuestionIndex < quizData.quiz.length - 1 ? (
-                  <Button 
-                    onClick={handleNextQuestion}
-                    disabled={!selectedAnswers[currentQuestionIndex]}
-                  >
-                    Next
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={handleSubmitQuiz}
-                    disabled={!selectedAnswers[currentQuestionIndex]}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Submit Quiz
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
-          </div>
-        )}
-
-        {step === 'results' && quizData && (
-          <div className="space-y-8">
-            <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold tracking-tight">Quiz Completed!</h2>
-              <p className="text-muted-foreground">
-                You've finished the quiz on {quizData.topic}.
-              </p>
-            </div>
-
-            <Card className="border-border/50 shadow-lg">
-              <CardHeader className="pb-2">
-                <CardTitle>Your Results</CardTitle>
-                <CardDescription>
-                  Here's how you performed on the quiz
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-lg border border-border">
-                    <div className="text-4xl font-bold">{calculateScore().correct}</div>
-                    <div className="text-sm text-muted-foreground">Correct Answers</div>
-                  </div>
-                  <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-lg border border-border">
-                    <div className="text-4xl font-bold">{quizData.quiz.length - calculateScore().correct}</div>
-                    <div className="text-sm text-muted-foreground">Incorrect Answers</div>
-                  </div>
-                  <div className="flex flex-col items-center justify-center p-6 bg-muted/30 rounded-lg border border-border">
-                    <div className="text-4xl font-bold">{calculateScore().percentage}%</div>
-                    <div className="text-sm text-muted-foreground">Overall Score</div>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4">
-                  <h3 className="font-medium">Question Review</h3>
+                  {/* Options */}
                   <div className="space-y-4">
-                    {quizData.quiz.map((question, index) => {
-                      const isCorrect = selectedAnswers[index] === question.correct_answer;
+                    <h3 className="text-white font-medium mb-4">Choose your answer:</h3>
+                    {Object.entries(quizData.quiz[currentQuestionIndex].options).map(([key, value]) => {
+                      const isSelected = selectedAnswers[currentQuestionIndex] === key;
                       return (
-                        <div 
-                          key={question.id} 
-                          className={`p-4 rounded-lg border ${
-                            isCorrect 
-                              ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800/50'
-                              : 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800/50'
+                        <div
+                          key={key}
+                          onClick={() => handleAnswerSelect(key)}
+                          className={`group relative p-6 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/20'
+                              : 'border-gray-700 hover:border-gray-600 bg-gray-800/30 hover:bg-gray-800/50'
                           }`}
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-2">
-                              <div className="flex items-center space-x-2">
-                                {isCorrect ? (
-                                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                ) : (
-                                  <XCircle className="h-5 w-5 text-red-500" />
-                                )}
-                                <span className="font-medium">
-                                  Question {index + 1}: {question.question}
-                                </span>
-                              </div>
-                              {!isCorrect && (
-                                <div className="pl-7 text-sm">
-                                  <p className="text-muted-foreground">
-                                    Your answer: <span className="text-red-600 dark:text-red-400">
-                                      {selectedAnswers[index] ? question.options[selectedAnswers[index]] : 'Not answered'}
-                                    </span>
-                                  </p>
-                                  <p className="text-muted-foreground">
-                                    Correct answer: <span className="text-green-600 dark:text-green-400">
-                                      {question.options[question.correct_answer]}
-                                    </span>
-                                  </p>
-                                </div>
+                          <div className="flex items-center">
+                            <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+                              isSelected
+                                ? 'border-blue-500 bg-blue-500'
+                                : 'border-gray-500 group-hover:border-gray-400'
+                            }`}>
+                              {isSelected && (
+                                <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
                               )}
+                            </div>
+                            <div className="ml-4 flex-1">
+                              <span className="text-gray-100 leading-relaxed text-lg">{value}</span>
                             </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Navigation - Moved to left side with better positioning */}
+              <div className="flex justify-start">
+                {currentQuestionIndex < quizData.quiz.length - 1 ? (
+                  <Button 
+                    onClick={handleNextQuestion}
+                    disabled={!selectedAnswers[currentQuestionIndex]}
+                    className="h-14 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed text-lg rounded-xl"
+                  >
+                    {!selectedAnswers[currentQuestionIndex] ? (
+                      'Select an answer to continue'
+                    ) : (
+                      <>
+                        Next Question
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleSubmitQuiz}
+                    disabled={!selectedAnswers[currentQuestionIndex]}
+                    className="h-14 px-8 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed text-lg rounded-xl"
+                  >
+                    <CheckCircle className="mr-2 h-5 w-5" />
+                    Submit Quiz
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 'results' && quizData && (
+          <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
+            <div className="w-full max-w-2xl">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl mb-4">
+                  <Trophy className="w-8 h-8 text-white" />
                 </div>
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button asChild>
-                  <Link href="/">
-                    Back to Home
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  {calculateScore().percentage >= 70 ? 'Congratulations!' : 'Quiz Complete!'}
+                </h1>
+                <p className="text-gray-400">Here are your results</p>
+              </div>
+
+              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl">
+                <CardContent className="p-8">
+                  {/* Score Circle */}
+                  <div className="text-center mb-8">
+                    <div className="relative inline-flex items-center justify-center">
+                      <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 100 100">
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          fill="none"
+                          className="text-gray-700"
+                        />
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          stroke="url(#gradient)"
+                          strokeWidth="8"
+                          fill="none"
+                          strokeDasharray={`${calculateScore().percentage * 2.51} 251`}
+                          strokeLinecap="round"
+                          className="transition-all duration-1000"
+                        />
+                        <defs>
+                          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#3B82F6" />
+                            <stop offset="100%" stopColor="#8B5CF6" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-5xl font-bold text-white mb-2">
+                            {calculateScore().percentage}%
+                          </div>
+                          <div className="text-gray-400 text-sm">Your Score</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Score Details */}
+                  <div className="grid grid-cols-3 gap-4 mb-8">
+                    <div className="text-center p-4 bg-gray-800/50 rounded-xl">
+                      <div className="text-2xl font-bold text-green-400 mb-1">
+                        {calculateScore().correct}
+                      </div>
+                      <div className="text-sm text-gray-400">Correct</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-800/50 rounded-xl">
+                      <div className="text-2xl font-bold text-red-400 mb-1">
+                        {quizData.quiz.length - calculateScore().correct}
+                      </div>
+                      <div className="text-sm text-gray-400">Incorrect</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-800/50 rounded-xl">
+                      <div className="text-2xl font-bold text-blue-400 mb-1">
+                        {quizData.quiz.length}
+                      </div>
+                      <div className="text-sm text-gray-400">Total</div>
+                    </div>
+                  </div>
+
+                  {/* Performance Message */}
+                  <div className={`p-6 rounded-xl mb-8 border ${
+                    calculateScore().percentage >= 70 
+                      ? 'bg-green-500/10 border-green-500/30' 
+                      : calculateScore().percentage >= 50 
+                        ? 'bg-yellow-500/10 border-yellow-500/30' 
+                        : 'bg-red-500/10 border-red-500/30'
+                  }`}>
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-white mb-2">
+                        {calculateScore().percentage >= 70 
+                          ? 'Excellent Performance!' 
+                          : calculateScore().percentage >= 50 
+                            ? 'Good Effort!' 
+                            : 'Keep Practicing!'}
+                      </h3>
+                      <p className="text-gray-300">
+                        {calculateScore().percentage >= 70 
+                          ? 'You demonstrated strong understanding of the material. Well done!' 
+                          : calculateScore().percentage >= 50 
+                            ? 'You have a solid foundation. Review the topics you missed for improvement.' 
+                            : 'Consider reviewing the material and practicing more to improve your understanding.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Quiz Summary - Fixed spacing */}
+                  <div className="bg-gray-800/30 rounded-xl p-6 mb-8">
+                    <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                      <BookOpen className="w-5 h-5 text-blue-400" />
+                      Quiz Summary
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
+                        <span className="text-gray-400">Topic:</span>
+                        <span className="text-white font-medium">{quizData.topic}</span>
+                      </div>
+                      <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
+                        <span className="text-gray-400">Difficulty:</span>
+                        <span className="text-white font-medium capitalize">{quizData.difficulty}</span>
+                      </div>
+                      <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
+                        <span className="text-gray-400">Questions:</span>
+                        <span className="text-white font-medium">{quizData.quiz.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-gray-400">Time Limit:</span>
+                        <span className="text-white font-medium">{quizData.quiz_time} min</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="text-center">
+                    <Button asChild className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]">
+                      <Link href="/" className="flex items-center">
+                        <Home className="mr-2 h-5 w-5" />
+                        Return to Dashboard
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
       </main>

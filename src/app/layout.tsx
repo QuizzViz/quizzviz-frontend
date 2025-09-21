@@ -140,7 +140,7 @@ export default function RootLayout({
           <div className="min-h-screen bg-background text-foreground">
             {/* <ConditionalNavbar /> */}
             {children}
-            <Footer />
+            {/* <Footer /> */}
           </div>
         </Providers>
       </body>
