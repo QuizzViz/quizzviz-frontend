@@ -19,6 +19,7 @@ interface PublishModalProps {
   origin: string;
   onCopyLink: () => void;
   isPublished?: boolean;
+  quizPublicLink?: string;
 }
 
 export function PublishModal({
@@ -31,7 +32,8 @@ export function PublishModal({
   isPublishing,
   origin,
   onCopyLink,
-  isPublished = false
+  isPublished = false,
+  quizPublicLink
 }: PublishModalProps) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -266,7 +268,7 @@ export function PublishModal({
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={`${origin}/quiz/${(user?.firstName as string)?.trim().replace(' ', '').toLowerCase()}/${quizId}`}
+        quizLink={quizPublicLink || `${origin}/quiz/${(user?.firstName as string)?.trim().replace(' ', '').toLowerCase()}/${quizId}`}
         quizKey={localSecretKey}
       />
     </Dialog>

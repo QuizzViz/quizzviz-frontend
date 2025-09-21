@@ -297,6 +297,21 @@ export function QuizEditor() {
 
       const result = await response.json();
       console.log('Publish API response:', result);
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to publish quiz');
+      }
+      
+      // Update the public URL with the one from the server response if available
+      if (result.quiz_public_link) {
+        setPublicUrl(result.quiz_public_link);
+      } else if (result.publicUrl) {
+        // Fallback to publicUrl if quiz_public_link is not available
+        setPublicUrl(result.publicUrl);
+      } else {
+        // Fallback to the client-side generated link if server doesn't return one
+        setPublicUrl(publicLink);
+      }
 
       if (!response.ok) {
         throw new Error(result.message || 'Failed to publish quiz');
@@ -585,6 +600,7 @@ export function QuizEditor() {
         origin={origin}
         onCopyLink={handleCopyLink}
         isPublished={isPublished}
+        quizPublicLink={publicUrl}
       />
 
       {/* Delete Confirmation Dialog */}
