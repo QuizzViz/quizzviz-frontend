@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "QuizzViz – AI Powered Coding Quiz Generator",
+    title: "QuizzViz – AI Powered Technical Quiz Generator",
     description:
       "Build enterprise-grade coding quizzes in minutes with QuizzViz. Intelligent, fast, and professional quiz generation.",
     url: siteUrl,
@@ -84,10 +84,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "QuizzViz – Create Professional Coding Quizzes in Minutes",
+    title: "QuizzViz – AI Powered Technical Quiz Generator",
     description:
       "Build enterprise-grade coding quizzes in minutes with QuizzViz. Intelligent, fast, and professional quiz generation.",
-    images: [`${siteUrl}/QuizzViz-logo.png`],
+    images: [`${siteUrl}/favicon.ico`],
     creator: "@QuizzViz",
     site: "@QuizzViz",
   },
@@ -133,10 +133,10 @@ export default function RootLayout({
       name: "QuizzViz",
       alternateName: "Quizz Viz",
       url: "https://www.quizzviz.com",
-      logo: "https://www.quizzviz.com/QuizzViz-logo.png",
-      image: "https://www.quizzviz.com/QuizzViz-logo.png",
+      logo: "https://www.quizzviz.com/favicon.ico",
+      image: "https://www.quizzviz.com/favicon.ico",
       description:
-        "QuizzViz is an AI-powered coding quiz generator that helps companies create professional, real-world coding quizzes in minutes.",
+        "QuizzViz – AI Powered Technical Quiz Generator",
     }),
   }}
 />
