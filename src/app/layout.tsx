@@ -1,24 +1,20 @@
-
 // layout.tsx
 import "./globals.css";
 import Providers from "./providers";
 import React from "react";
-import ConditionalNavbar from "@/components/ConditionalNavbar";
+// import ConditionalNavbar from "@/components/ConditionalNavbar";
 import { Footer } from "@/components/Footer";
 import type { Metadata } from "next";
 
-// import ConditionalNavbar from "@/components/ConditionalNavbar";
-
 const siteUrl = "https://www.quizzviz.com";
-
 
 // Viewport configuration should be exported separately
 export const viewport = {
-  themeColor: '#ffffff', // Or your brand color
-  width: 'device-width',
+  themeColor: "#ffffff", // Or your brand color
+  width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  viewportFit: 'cover',
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -49,10 +45,10 @@ export const metadata: Metadata = {
     "AI Coding Quiz Generator for technical assessments",
     "AI Coding Quiz Generator for technical interviews",
     "AI Coding Quiz Generator for technical assessments",
-    "AI Coding Quiz Generator for hiring Programmers",  
+    "AI Coding Quiz Generator for hiring Programmers",
     "coding interview",
     "react",
-    "nextjs"
+    "nextjs",
   ],
   referrer: "origin-when-cross-origin",
   authors: [{ name: "QuizzViz" }],
@@ -113,34 +109,31 @@ export const metadata: Metadata = {
   },
 };
 
-
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
   return (
     <html lang="en">
       <head>
-        {/* JSON-LD Structured Data for WebSite */}
+        {/* JSON-LD Structured Data for Organization + Logo */}
         <script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{
-    __html: JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      name: "QuizzViz",
-      alternateName: "Quizz Viz",
-      url: "https://www.quizzviz.com",
-      logo: "https://www.quizzviz.com/QuizzViz-logo.png",
-      image: "https://www.quizzviz.com/QuizzViz-logo.png",
-      description:
-        "QuizzViz – AI Powered Technical Quiz Generator",
-    }),
-  }}
-/>
-
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "QuizzViz",
+              alternateName: "Quizz Viz",
+              url: siteUrl,
+              logo: `${siteUrl}/QuizzViz-logo.png`,
+              image: `${siteUrl}/QuizzViz-logo.png`,
+              description:
+                "QuizzViz – AI Powered Technical Quiz Generator",
+            }),
+          }}
+        />
       </head>
       <body>
         <Providers>
