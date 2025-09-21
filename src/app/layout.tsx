@@ -133,8 +133,8 @@ export default function RootLayout({
       name: "QuizzViz",
       alternateName: "Quizz Viz",
       url: "https://www.quizzviz.com",
-      logo: "https://www.quizzviz.com/favicon.ico",
-      image: "https://www.quizzviz.com/favicon.ico",
+      logo: "https://www.quizzviz.com/QuizzViz-logo.png",
+      image: "https://www.quizzviz.com/QuizzViz-logo.png",
       description:
         "QuizzViz – AI Powered Technical Quiz Generator",
     }),
