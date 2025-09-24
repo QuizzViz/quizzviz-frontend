@@ -118,7 +118,19 @@ export default function MyQuizzesPage() {
                           <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-[radial-gradient(600px_circle_at_var(--x,50%)_var(--y,50%),rgba(59,130,246,0.08),transparent_40%)]" />
                           <CardHeader>
                             <div className="flex items-center justify-between">
-                              <CardTitle className="text-xl font-semibold text-white">{q.topic}</CardTitle>
+                              <div className="relative group">
+                                <CardTitle 
+                                  className="text-xl font-semibold text-white truncate max-w-[200px]"
+                                  title={q.topic}
+                                >
+                                  {q.topic}
+                                </CardTitle>
+                                {q.topic.length > 30 && (
+                                  <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2 text-sm text-white bg-gray-800 rounded shadow-lg z-10">
+                                    {q.topic}
+                                  </div>
+                                )}
+                              </div>
                               <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.difficulty}</Badge>
                             </div>
                             <CardDescription className="text-white/70">

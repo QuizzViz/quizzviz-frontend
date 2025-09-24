@@ -114,7 +114,7 @@ export default function CreateQuizCard() {
             {typeof error === 'string' ? error : error}
           </div>
         )}
-        <ReasoningPanel visible={isReasoning} steps={steps} stepIcons={stepIcons} stepIndex={stepIndex} typedText={typedText} progress={progress} />
+        <ReasoningPanel visible={isReasoning} steps={steps} stepIcons={stepIcons} stepIndex={stepIndex} typedText={typedText} />
       </CardContent>
     </Card>
   );
