@@ -124,10 +124,10 @@ export function Navbar() {
           <div id="mobile-menu" className="md:hidden glassmorphism rounded-lg mt-2 py-3" data-testid="mobile-menu">
             <div className="flex flex-col divide-y divide-border/50">
               <div className="flex flex-col py-2">
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200" data-testid="mobile-link-about">About</button>
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Pricing</button>
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Contact Us</button>
-                <button onClick={() => scrollToSection("about")} className="px-4 py-2 text-left text-white hover:text-gray-200">Dashboard</button>
+               <Link href="/about"> <button className="px-4 py-2 text-left text-white hover:text-gray-200" data-testid="mobile-link-about">About</button></Link>
+               <Link href="/pricing"><button className="px-4 py-2 text-left text-white hover:text-gray-200">Pricing</button></Link>
+               <Link href="/contact"><button className="px-4 py-2 text-left text-white hover:text-gray-200">Contact Us</button></Link>
+               <Link href="/dashboard"><button className="px-4 py-2 text-left text-white hover:text-gray-200">Dashboard</button></Link>
               </div>
               <div className="flex flex-col py-2">
                 <Button onClick={() => scrollToSection("demo")} className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium hover:translate-x-2 duration-150" data-testid="mobile-button-demo">
