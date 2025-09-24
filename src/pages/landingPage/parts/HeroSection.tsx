@@ -36,7 +36,7 @@ const HeroSection: FC = () => {
                   </Link>
                 ) : (
                   <Link href="/signup" className="w-full sm:w-auto">
-                    <Button className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-white text-black shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/90 text-base md:text-sm ring-1 ring-black/10 hover:ring-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+                    <Button className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-white text-black shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/90 text-base md:text-sm ring-1 ring-black/10 hover:ring-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:translate-x-2 duration-150">
                       Get Started <ArrowRight className="ml-2 w-6 h-6" />
                     </Button>
                   </Link>
