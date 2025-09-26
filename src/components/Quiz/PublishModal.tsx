@@ -38,13 +38,15 @@ export function PublishModal({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [localSecretKey, setLocalSecretKey] = useState(settings.secretKey || '');
-
+  const [publishedQuizData, setPublishedQuizData] = useState<{quiz_public_link: string; quiz_key: string} | null>(null);
+  
   // Sync local state with props when settings change
   React.useEffect(() => {
     setLocalSecretKey(settings.secretKey || '');
   }, [settings.secretKey]);
 
   const handleCopy = () => {
+    navigator.clipboard.writeText(quizLink);
     onCopyLink();
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
@@ -54,15 +56,50 @@ export function PublishModal({
     setIsShareModalOpen(true);
   };
 
-  const handlePublish = () => {
-    // Ensure the secret key is properly set in settings before publishing
-    const updatedSettings = {
-      ...settings,
-      secretKey: localSecretKey.trim(),
-      isSecretKeyRequired: localSecretKey.trim().length > 0
-    };
-    onSettingsChange(updatedSettings);
-    onPublish(localSecretKey.trim());
+  const handlePublish = async () => {
+    try {
+      // Ensure the secret key is properly set in settings before publishing
+      const updatedSettings = {
+        ...settings,
+        secretKey: localSecretKey.trim(),
+        isSecretKeyRequired: localSecretKey.trim().length > 0
+      };
+      onSettingsChange(updatedSettings);
+      
+      // Call the publish handler and wait for it to complete
+      await onPublish(localSecretKey.trim());
+      
+      // Fetch the published quiz data
+      const response = await fetch(`/api/publish/${user?.id}/${quizId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          const quizKey = data.data.quiz_key || localSecretKey.trim();
+          
+          // If we have a public link from the API, use it, otherwise construct it
+          let publicLink = data.data.quiz_public_link;
+          if (!publicLink && user) {
+            // Use the user's first name from the client-side user object
+            const firstName = (user.firstName || 'user').split(' ')[0].toLowerCase().replace(/\s+/g, '');
+            publicLink = `${origin}/${firstName}/take/quiz/${quizId}`;
+          }
+          
+          setPublishedQuizData({
+            quiz_public_link: publicLink,
+            quiz_key: quizKey
+          });
+          setIsShareModalOpen(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error in handlePublish:', error);
+      // Fallback to the generated link if there's an error
+      setPublishedQuizData({
+        quiz_public_link: `${origin}/${slug}/take/quiz/${quizId}`,
+        quiz_key: localSecretKey.trim()
+      });
+      setIsShareModalOpen(true);
+    }
   };
 
   const handleSettingChange = <K extends keyof PublishSettings>(
@@ -96,14 +133,17 @@ export function PublishModal({
     return dateStr;
   };
 
-  // Get minimum datetime (current time)
   const getMinDateTime = () => {
     const now = new Date();
     return now.toISOString().slice(0, 16);
   };
 
   const { user } = useUser();
-  const slug = (user?.firstName as string).trim().replace(" ", "").toLowerCase();
+  // Use first name for consistency with the database and remove any spaces
+  const slug = (user?.firstName?.trim() as string).toLowerCase().replace(/\s+/g, '');
+  
+  // Create a single source of truth for the quiz link
+  const quizLink = `${origin}/${slug}/take/quiz/${quizId}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -127,7 +167,7 @@ export function PublishModal({
               <Input
                 id="quizLink"
                 readOnly
-                value={origin ? `${origin}/${slug}/take/quiz/${quizId}` : 'Loading...'}
+                value={origin ? quizLink : 'Loading...'}
                 className="flex-1 border-0 bg-transparent text-white text-xs h-9 focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <Button
@@ -264,12 +304,12 @@ export function PublishModal({
         </DialogFooter>
       </DialogContent>
       
-      {/* Share Quiz Modal */}
+      {/* Share Quiz Modal - Use the public link from the API if available, otherwise fallback to generated link */}
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={quizPublicLink || `${origin}/quiz/${(user?.firstName as string)?.trim().replace(' ', '').toLowerCase()}/${quizId}`}
-        quizKey={localSecretKey}
+        quizLink={publishedQuizData?.quiz_public_link || `${origin}/${slug}/take/quiz/${quizId}`}
+        quizKey={publishedQuizData?.quiz_key || localSecretKey}
       />
     </Dialog>
   );

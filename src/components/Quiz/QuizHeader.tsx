@@ -53,13 +53,15 @@ export function QuizHeader({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
-          <Button 
-            variant="outline" 
-            className="pointer-events-auto" 
-            onClick={onAddQuestion}
-          >
-            Add Question
-          </Button>
+          {!isPublished && (
+            <Button 
+              variant="outline" 
+              className="pointer-events-auto" 
+              onClick={onAddQuestion}
+            >
+              Add Question
+            </Button>
+          )}
           {isPublished ? (
             <Button 
               className="bg-green-600 hover:bg-green-700 text-white pointer-events-auto"
@@ -90,11 +92,7 @@ export function QuizHeader({
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={`${window.location.origin}/${(user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'user')
-          .toLowerCase()
-          .replace(/[^a-z0-9-]/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-+|-+$/g, '')}/take/quiz/${quizId}`}
+        quizLink={`${window.location.origin}/${(user?.firstName?.trim().toLowerCase().replace(/\s+/g, ''))}/take/quiz/${quizId}`}
         quizKey={settings?.secretKey || ''}
       />
     </header>
