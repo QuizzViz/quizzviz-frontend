@@ -140,7 +140,7 @@ export function PublishModal({
 
   const { user } = useUser();
   // Use first name for consistency with the database and remove any spaces
-  const slug = (user?.firstName?.trim() || user?.username || 'user').toLowerCase().replace(/\s+/g, '');
+  const slug = (user?.firstName?.trim() as string).toLowerCase().replace(/\s+/g, '');
   
   // Create a single source of truth for the quiz link
   const quizLink = `${origin}/${slug}/take/quiz/${quizId}`;

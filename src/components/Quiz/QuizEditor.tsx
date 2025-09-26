@@ -25,7 +25,7 @@ export function QuizEditor() {
   const { user, isLoaded } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const slug = username || user?.username || user?.firstName?.trim().replace(/\s+/g, '').toLowerCase() || 'user';
+  const slug =  user?.firstName?.trim().replace(/\s+/g, '').toLowerCase();
   
   // State
   const [localQuestions, setLocalQuestions] = useState<QuizQuestion[]>([]);

@@ -90,11 +90,7 @@ export function QuizHeader({
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={`${window.location.origin}/${(user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'user')
-          .toLowerCase()
-          .replace(/[^a-z0-9-]/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-+|-+$/g, '')}/take/quiz/${quizId}`}
+        quizLink={`${window.location.origin}/${(user?.firstName?.trim().toLowerCase().replace(/\s+/g, ''))}/take/quiz/${quizId}`}
         quizKey={settings?.secretKey || ''}
       />
     </header>
