@@ -53,13 +53,15 @@ export function QuizHeader({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
-          <Button 
-            variant="outline" 
-            className="pointer-events-auto" 
-            onClick={onAddQuestion}
-          >
-            Add Question
-          </Button>
+          {!isPublished && (
+            <Button 
+              variant="outline" 
+              className="pointer-events-auto" 
+              onClick={onAddQuestion}
+            >
+              Add Question
+            </Button>
+          )}
           {isPublished ? (
             <Button 
               className="bg-green-600 hover:bg-green-700 text-white pointer-events-auto"

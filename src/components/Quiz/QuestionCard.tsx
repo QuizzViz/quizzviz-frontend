@@ -8,30 +8,32 @@ interface QuestionCardProps {
   questionNumber: number;
   onEdit: () => void;
   onDelete: () => void;
+  isPublished?: boolean;
 }
 
-export function QuestionCard({ question, questionNumber, onEdit, onDelete }: QuestionCardProps) {
+export function QuestionCard({ question, questionNumber, onEdit, onDelete, isPublished = false }: QuestionCardProps) {
   return (
     <Card className="bg-zinc-950 border-white/10">
       <CardHeader>
         <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
           <div className="flex items-center gap-3">
-            <CardTitle className="text-xl text-white">Question {questionNumber}</CardTitle>
             <Badge>{question.type.replace(/_/g, " ")}</Badge>
           </div>
-          <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
-            <Button size="sm" className="pointer-events-auto hover:bg-blue-700" onClick={onEdit}>
-              Update
-            </Button>
-            <Button 
-              size="sm" 
-              className="pointer-events-auto hover:bg-red-700" 
-              variant="destructive" 
-              onClick={onDelete}
-            >
-              Delete
-            </Button>
-          </div>
+          {!isPublished && (
+            <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
+              <Button size="sm" className="pointer-events-auto hover:bg-blue-700" onClick={onEdit}>
+                Update
+              </Button>
+              <Button 
+                size="sm" 
+                className="pointer-events-auto hover:bg-red-700" 
+                variant="destructive" 
+                onClick={onDelete}
+              >
+                Delete
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

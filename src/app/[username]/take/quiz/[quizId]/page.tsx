@@ -272,9 +272,9 @@ export default function QuizPage({ params }: QuizPageProps) {
       {/* Header with Logo */}
       <header className="relative z-20 p-6 border-b border-gray-800/50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="text-2xl font-bold text-white">
+          <Link href="/" className="text-2xl font-bold text-white">
             QuizzViz
-          </div>
+          </Link>
           {step === 'quiz' && quizData && (
             <div className="flex items-center gap-4">
               <div className="bg-gray-800 rounded-2xl px-6 py-3 flex items-center gap-3 border border-gray-700">

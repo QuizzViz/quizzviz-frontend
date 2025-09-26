@@ -546,10 +546,8 @@ export function QuizEditor() {
                 question={question}
                 questionNumber={globalQuestionNumber}
                 onEdit={() => openEditModal((currentPage - 1) * QUESTIONS_PER_PAGE + index)}
-                onDelete={() => {
-                  const globalIndex = (currentPage - 1) * QUESTIONS_PER_PAGE + index;
-                  handleDeleteQuestion(globalIndex);
-                }}
+                onDelete={() => handleDeleteQuestion((currentPage - 1) * QUESTIONS_PER_PAGE + index)}
+                isPublished={isPublished}
               />
             );
           })
