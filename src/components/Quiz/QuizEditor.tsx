@@ -382,7 +382,12 @@ export function QuizEditor() {
       return;
     }
 
+    console.log('Starting quiz deletion for quiz ID:', quiz.quiz_id);
+    console.log('Is published:', isPublished);
+
     try {
+      // First, delete the quiz from our database
+      console.log('Deleting quiz from database...');
       const res = await fetch(`/api/quiz/${encodeURIComponent(quiz.quiz_id)}`, {
         method: 'DELETE',
         headers: {
@@ -390,9 +395,41 @@ export function QuizEditor() {
         },
       });
 
+      const responseData = await res.json().catch(() => ({}));
+      console.log('Delete quiz response:', { status: res.status, data: responseData });
+
       if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        throw new Error(error.error || `Failed to delete quiz (${res.status})`);
+        throw new Error(responseData.error || `Failed to delete quiz (${res.status})`);
+      }
+
+      // If the quiz is published, also delete it from the publishing service
+      if (isPublished) {
+        console.log('Quiz is published, deleting from publishing service...');
+        try {
+          const publishRes = await fetch(
+            `/api/publish/${user.id}/${quiz.quiz_id}`,
+            {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include'
+            }
+          );
+
+          const publishResponse = await publishRes.json().catch(() => ({}));
+          console.log('Publish service delete response:', { 
+            status: publishRes.status, 
+            data: publishResponse 
+          });
+
+          if (!publishRes.ok) {
+            console.warn('Failed to delete published quiz from publishing service, but continuing with local deletion');
+          }
+        } catch (publishError) {
+          console.error('Error deleting from publishing service:', publishError);
+          // Continue with normal flow even if this fails
+        }
       }
 
       await queryClient.invalidateQueries({ queryKey: ["quizzes", user.id] });

@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getAuth, clerkClient } from '@clerk/nextjs/server';
+import { clerkClient, getAuth } from '@clerk/nextjs/server';
 
 // Types
-type ApiResponse<T> = {
+type ApiResponse<T = any> = {
   success: boolean;
   data?: T;
   error?: string;
@@ -23,30 +23,38 @@ type PublishedQuiz = {
   theory_questions_percentage: number;
   code_analysis_questions_percentage: number;
   quiz: any[];
-
 };
 
-// Main handler
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse<PublishedQuiz>>
 ) {
-  // Handle only GET requests
-  if (req.method !== 'GET') {
-    return res.status(405).json({ 
-      success: false, 
-      message: 'Method not allowed' 
-    });
+  // Handle only GET and DELETE requests
+  if (req.method !== 'GET' && req.method !== 'DELETE') {
+    res.setHeader('Allow', ['GET', 'DELETE']);
+    res.status(405).json({ success: false, message: `Method ${req.method} Not Allowed` });
+    return;
   }
 
   try {
     // Authentication check
-    const { userId } = getAuth(req);
+    const { userId, getToken } = getAuth(req);
     if (!userId) {
-      return res.status(401).json({ 
+      res.status(401).json({ 
         success: false, 
         message: 'Unauthorized' 
       });
+      return;
+    }
+
+    // Get the session token
+    const token = await getToken();
+    if (!token) {
+      res.status(401).json({ 
+        success: false, 
+        message: 'Authentication token not found' 
+      });
+      return;
     }
 
     // Extract route parameters
@@ -56,29 +64,75 @@ export default async function handler(
     };
 
     if (!paramUserId || !quizId) {
-      return res.status(400).json({ 
+      res.status(400).json({ 
         success: false,
         message: 'User ID and Quiz ID are required' 
       });
+      return;
     }
 
-    // Get auth token
-    const token = await getAuth(req).getToken();
-    if (!token) {
-      return res.status(401).json({ 
+    // Handle DELETE request
+    if (req.method === 'DELETE') {
+      try {
+        const deleteResponse = await fetch(
+          `https://quizzviz-publish-quiz.up.railway.app/publish/user/${paramUserId}/quiz/${quizId}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'accept': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (!deleteResponse.ok) {
+          const errorText = await deleteResponse.text();
+          console.error('Delete API error:', deleteResponse.status, errorText);
+          res.status(deleteResponse.status).json({
+            success: false,
+            message: 'Failed to unpublish quiz',
+            error: errorText
+          });
+          return;
+        }
+
+        res.status(204).end();
+        return;
+      } catch (error) {
+        console.error('Error in DELETE handler:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Internal server error during unpublish',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        return;
+      }
+    }
+
+    // Handle GET request (original functionality)
+    let user;
+    try {
+      const clerk = await clerkClient();
+      user = await clerk.users.getUser(paramUserId);
+      if (!user) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'User not found' 
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user from Clerk:', error);
+      return res.status(500).json({ 
         success: false, 
-        message: 'Authentication required' 
+        message: 'Failed to fetch user information',
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
-
-    // First, get the user's username from Clerk
-    const clerk = await clerkClient();
-    const user = await clerk.users.getUser(paramUserId);
     const username = (user.username || user.firstName || 'user').toLowerCase().replace(/\s+/g, '');
     
     // Get the origin from the request headers
     const origin = req.headers.origin || req.headers.host 
-      ? `${req.headers.host?.includes('localhost') ? 'http' : 'https'}://${req.headers.host}` 
+      ? `${req.headers.host?.includes('localhost') ? 'http' : 'https'}://${req.headers.host}`  
       : '';
     
     // Fetch published quiz from external API using the username
@@ -96,26 +150,32 @@ export default async function handler(
     if (!response.ok) {
       const errorText = await response.text();
       console.error('External API error:', response.status, errorText);
-      return res.status(response.status).json({ 
+      res.status(response.status).json({ 
         success: false,
         message: 'Failed to fetch published quiz',
         error: errorText
       });
+      return;
     }
 
     const quizData: PublishedQuiz = await response.json();
     
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       data: quizData
     });
+    return;
 
   } catch (error) {
     console.error('Server error:', error);
-    return res.status(500).json({ 
+    if (error instanceof Error) {
+      console.error('Error details:', error.stack);
+    }
+res.status(500).json({ 
       success: false,
       message: 'Internal server error',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
+    return;
   }
 }
