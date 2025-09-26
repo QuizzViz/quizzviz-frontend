@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getAuth } from '@clerk/nextjs/server';
+import { getAuth, clerkClient } from '@clerk/nextjs/server';
 
 // Types
 type ApiResponse<T> = {
@@ -71,9 +71,19 @@ export default async function handler(
       });
     }
 
-    // Fetch published quiz from external API
+    // First, get the user's username from Clerk
+    const clerk = await clerkClient();
+    const user = await clerk.users.getUser(paramUserId);
+    const username = (user.username || user.firstName || 'user').toLowerCase().replace(/\s+/g, '');
+    
+    // Get the origin from the request headers
+    const origin = req.headers.origin || req.headers.host 
+      ? `${req.headers.host?.includes('localhost') ? 'http' : 'https'}://${req.headers.host}` 
+      : '';
+    
+    // Fetch published quiz from external API using the username
     const response = await fetch(
-      `https://quizzviz-publish-quiz.up.railway.app/publish/user/${paramUserId}/quiz/${quizId}`, 
+      `https://quizzviz-publish-quiz.up.railway.app/publish/public/quiz/${encodeURIComponent(`${origin}/${username}/take/quiz/${quizId}`)}`,
       {
         method: 'GET',
         headers: {

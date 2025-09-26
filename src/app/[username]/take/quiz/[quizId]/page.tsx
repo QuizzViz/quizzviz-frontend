@@ -98,7 +98,7 @@ export default function QuizPage({ params }: QuizPageProps) {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
   };
 
@@ -112,10 +112,14 @@ export default function QuizPage({ params }: QuizPageProps) {
     setVerificationError('');
 
     try {
-      const response = await fetch(`/api/quiz/${quizId}`, {
+      // Get the current URL path
+      const currentPath = window.location.href;
+      
+      // First verify the quiz exists and get its details
+      const response = await fetch(`https://quizzviz-publish-quiz.up.railway.app/publish/public/quiz/${encodeURIComponent(currentPath)}?key=${encodeURIComponent(formData.quizKey)}`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
+          'accept': 'application/json',
         },
       });
 
@@ -138,7 +142,11 @@ export default function QuizPage({ params }: QuizPageProps) {
       console.error('Verification error:', error);
       setVerificationError(error.message || 'Failed to verify quiz key');
       toast.error(error.message || 'Failed to verify quiz key', {
-        style: { background: '#1F2937', color: '#EF4444', border: '1px solid #374151' }
+        style: { 
+          background: '#1F2937', 
+          color: '#EF4444', 
+          border: '1px solid #374151' 
+        }
       });
       return false;
     } finally {
@@ -297,14 +305,13 @@ export default function QuizPage({ params }: QuizPageProps) {
                     <div className="space-y-2">
                       <Label htmlFor="name" className="text-gray-300 font-medium flex items-center gap-2">
                         <User className="w-4 h-4 text-blue-400" />
-                        Username
-                      </Label>
+Full Name                      </Label>
                       <Input
                         id="name"
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        placeholder="Enter your username"
+                        placeholder="Enter your Full Name"
                         required
                         className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/20"
                       />
@@ -313,14 +320,14 @@ export default function QuizPage({ params }: QuizPageProps) {
                     <div className="space-y-2">
                       <Label htmlFor="email" className="text-gray-300 font-medium flex items-center gap-2">
                         <Mail className="w-4 h-4 text-purple-400" />
-                        Full Name
+                        Email
                       </Label>
                       <Input
                         id="email"
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="Enter your full name"
+                        placeholder="Enter your email"
                         required
                         className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500 focus:ring-purple-500/20"
                       />

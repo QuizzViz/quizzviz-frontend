@@ -21,12 +21,11 @@ const QUESTIONS_PER_PAGE = 10;
 
 export function QuizEditor() {
   const router = useRouter();
-  const { quizId } = router.query as { quizId?: string };
+  const { quizId, username } = router.query as { quizId?: string; username?: string };
   const { user, isLoaded } = useUser();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const slug = (user?.firstName as string).trim().replace(" ", "").toLowerCase();
-  
+  const slug = username || user?.username || user?.firstName?.trim().replace(/\s+/g, '').toLowerCase() || 'user';
   
   // State
   const [localQuestions, setLocalQuestions] = useState<QuizQuestion[]>([]);
@@ -38,7 +37,7 @@ export function QuizEditor() {
   const [isPublished, setIsPublished] = useState(false);
   const [publicUrl, setPublicUrl] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [origin, setOrigin] = useState('');
+  const [origin, setOrigin] = useState(typeof window !== 'undefined' ? window.location.origin : '');
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [publishSettings, setPublishSettings] = useState<PublishSettings>({
     secretKey: "",
@@ -599,8 +598,8 @@ export function QuizEditor() {
         isPublishing={isPublishing}
         origin={origin}
         onCopyLink={handleCopyLink}
-        isPublished={isPublished}
         quizPublicLink={publicUrl}
+        isPublished={isPublished}
       />
 
       {/* Delete Confirmation Dialog */}
