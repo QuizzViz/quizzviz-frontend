@@ -1,7 +1,7 @@
 'use client';
 
 import { notFound, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,33 +66,86 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [quizStarted, setQuizStarted] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState('');
+  const [warnings, setWarnings] = useState(0);
+  const [showWarning, setShowWarning] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const warningTimeoutRef = useRef<NodeJS.Timeout>();
+  const screenshotIntervalRef = useRef<NodeJS.Timeout>();
+  const activityMonitorRef = useRef({ 
+    lastActivity: Date.now(), 
+    warnings: 0,
+    mouseX: 0,
+    mouseY: 0,
+    lastMouseMove: Date.now(),
+    lastKeyPress: Date.now()
+  });
 
-  // Tab monitoring for security
-  useEffect(() => {
-    if (step === 'quiz' && quizStarted) {
-      const handleVisibilityChange = () => {
-        if (document.hidden) {
-          toast.error('Quiz terminated due to tab switch!', {
-            style: { background: '#1F2937', color: '#EF4444', border: '1px solid #374151' }
-          });
-          handleSubmitQuiz();
-        }
-      };
-
-      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-        e.preventDefault();
-        e.returnValue = 'Are you sure you want to leave? Your quiz progress will be lost.';
-      };
-
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      window.addEventListener('beforeunload', handleBeforeUnload);
-
-      return () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-      };
+  // Proctoring functions
+  const requestFullscreen = useCallback(async () => {
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      } else if ((document.documentElement as any).webkitRequestFullscreen) {
+        await (document.documentElement as any).webkitRequestFullscreen();
+      } else if ((document.documentElement as any).msRequestFullscreen) {
+        await (document.documentElement as any).msRequestFullscreen();
+      }
+      setIsFullscreen(true);
+    } catch (err) {
+      console.error('Fullscreen error:', err);
+      setIsFullscreen(false);
     }
-  }, [step, quizStarted]);
+  }, []);
+
+  const exitFullscreen = useCallback(() => {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(console.error);
+    } else if ((document as any).webkitExitFullscreen) {
+      (document as any).webkitExitFullscreen();
+    } else if ((document as any).msExitFullscreen) {
+      (document as any).msExitFullscreen();
+    }
+  }, []);
+
+  const showWarningMessage = useCallback((message: string) => {
+    setWarnings(prev => prev + 1);
+    setShowWarning(true);
+    
+    // Show the warning toast
+    toast.warning(message, {
+      style: {
+        background: '#92400E',
+        color: '#FEF3C7',
+        border: '1px solid #B45309',
+        maxWidth: '500px',
+        margin: '0 auto',
+        textAlign: 'center',
+        borderRadius: '0.5rem',
+        fontSize: '0.95rem',
+        padding: '1rem',
+        zIndex: 9999,
+      },
+      duration: 5000,
+      position: 'top-center',
+      className: 'warning-toast',
+    });
+    
+    // Force focus back to the window
+    window.focus();
+    
+    // Clear any existing timeout
+    if (warningTimeoutRef.current) {
+      clearTimeout(warningTimeoutRef.current);
+    }
+    
+    // Hide the warning after 5 seconds
+    warningTimeoutRef.current = setTimeout(() => {
+      setShowWarning(false);
+    }, 5000);
+  }, []);
+  const handleSubmitQuiz = () => {
+    setStep('results');
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -101,6 +154,96 @@ export default function QuizPage({ params }: QuizPageProps) {
       [name]: value
     }));
   };
+
+  // Enhanced proctoring system with mandatory fullscreen and tab monitoring
+  useEffect(() => {
+    if (step === 'quiz' && quizStarted) {
+      // Request fullscreen when quiz starts
+      const enterFullscreen = async () => {
+        try {
+          await requestFullscreen();
+          // Disable exit fullscreen with ESC
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' || e.keyCode === 27) {
+              e.preventDefault();
+              requestFullscreen();
+            }
+          });
+        } catch (err) {
+          console.error('Failed to enter fullscreen:', err);
+        }
+      };
+      
+      enterFullscreen();
+
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          // Only increment warnings if not already at max
+          if (activityMonitorRef.current.warnings < 3) {
+            activityMonitorRef.current.warnings++;
+            const warningCount = activityMonitorRef.current.warnings;
+            const remainingWarnings = 3 - warningCount;
+            const message = `Warning: Tab switch detected! ${remainingWarnings} ${remainingWarnings === 1 ? 'warning' : 'warnings'} remaining.`;
+            showWarningMessage(message);
+            
+            if (warningCount >= 3) {
+              toast.error('Quiz terminated due to multiple violations!', {
+                style: { 
+                  background: '#1F2937', 
+                  color: '#EF4444', 
+                  border: '1px solid #374151',
+                  maxWidth: '500px',
+                  margin: '0 auto',
+                  textAlign: 'center',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.95rem',
+                  padding: '1rem',
+                },
+                duration: 10000,
+                position: 'top-center',
+              });
+              // Small delay before submitting to show the error message
+              setTimeout(() => handleSubmitQuiz(), 2000);
+            }
+          }
+        } else {
+          // When coming back to tab, re-request fullscreen
+          requestFullscreen();
+        }
+      };
+
+      // Add event listeners for proctoring
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
+      // Prevent context menu (right-click)
+      const handleContextMenu = (e: MouseEvent) => {
+        e.preventDefault();
+        return false;
+      };
+      document.addEventListener('contextmenu', handleContextMenu);
+
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = 'Are you sure you want to leave? Your quiz progress will be lost.';
+      };
+      window.addEventListener('beforeunload', handleBeforeUnload);
+
+      // Check fullscreen status periodically
+      const checkFullscreen = setInterval(() => {
+        if (!document.fullscreenElement) {
+          requestFullscreen();
+        }
+      }, 1000);
+
+      // Cleanup function
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        document.removeEventListener('contextmenu', handleContextMenu);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        clearInterval(checkFullscreen);
+      };
+    }
+  }, [step, quizStarted, requestFullscreen, showWarningMessage]);
 
   const verifyQuizKey = async () => {
     if (!formData.quizKey.trim()) {
@@ -181,9 +324,6 @@ export default function QuizPage({ params }: QuizPageProps) {
     }
   };
 
-  const handleSubmitQuiz = () => {
-    setStep('results');
-  };
 
   // Timer effect
   useEffect(() => {
