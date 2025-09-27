@@ -31,6 +31,8 @@ export function QuizEditor() {
   const [localQuestions, setLocalQuestions] = useState<QuizQuestion[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteQuestionDialogOpen, setIsDeleteQuestionDialogOpen] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<number | null>(null);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -358,11 +360,22 @@ export function QuizEditor() {
     await persistQuiz(updatedQuestions);
   };
 
+  // Handle question deletion confirmation
+  const confirmDeleteQuestion = (index: number) => {
+    setQuestionToDelete(index);
+    setIsDeleteQuestionDialogOpen(true);
+  };
+
   // Handle question deletion
-  const handleDeleteQuestion = async (index: number) => {
-    const updatedQuestions = localQuestions.filter((_, i) => i !== index);
+  const handleDeleteQuestion = async () => {
+    if (questionToDelete === null) return;
+    
+    const updatedQuestions = localQuestions.filter((_, i) => i !== questionToDelete);
     setLocalQuestions(updatedQuestions);
     await persistQuiz(updatedQuestions);
+    
+    setIsDeleteQuestionDialogOpen(false);
+    setQuestionToDelete(null);
     
     toast({
       title: "Question removed",
@@ -583,7 +596,7 @@ export function QuizEditor() {
                 question={question}
                 questionNumber={globalQuestionNumber}
                 onEdit={() => openEditModal((currentPage - 1) * QUESTIONS_PER_PAGE + index)}
-                onDelete={() => handleDeleteQuestion((currentPage - 1) * QUESTIONS_PER_PAGE + index)}
+                onDelete={() => confirmDeleteQuestion((currentPage - 1) * QUESTIONS_PER_PAGE + index)}
                 isPublished={isPublished}
               />
             );
@@ -637,7 +650,7 @@ export function QuizEditor() {
         isPublished={isPublished}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Quiz Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
@@ -645,6 +658,20 @@ export function QuizEditor() {
         title="Delete Quiz"
         description="Are you sure you want to delete this quiz? This action cannot be undone."
         confirmText="Delete Quiz"
+        variant="destructive"
+      />
+
+      {/* Delete Question Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isDeleteQuestionDialogOpen}
+        onClose={() => {
+          setIsDeleteQuestionDialogOpen(false);
+          setQuestionToDelete(null);
+        }}
+        onConfirm={handleDeleteQuestion}
+        title="Delete Question"
+        description="Are you sure you want to delete this question? This action cannot be undone."
+        confirmText="Delete Question"
         variant="destructive"
       />
     </div>
