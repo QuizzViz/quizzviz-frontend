@@ -471,6 +471,16 @@ export default function QuizPage({ params }: QuizPageProps) {
     }
   }, [step, quizStarted, requestFullscreen, showWarningMessage]);
 
+  // Function to shuffle an array using Fisher-Yates algorithm
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  };
+
   const verifyQuizKey = async () => {
     if (!formData.quizKey.trim()) {
       setVerificationError('Please enter a quiz key');
@@ -501,6 +511,11 @@ export default function QuizPage({ params }: QuizPageProps) {
       
       if (data.quiz_key !== formData.quizKey) {
         throw new Error('Invalid quiz key. Please check and try again.');
+      }
+      
+      // Shuffle the questions array before setting the state
+      if (data.quiz && Array.isArray(data.quiz)) {
+        data.quiz = shuffleArray(data.quiz);
       }
 
       setQuizData(data);
