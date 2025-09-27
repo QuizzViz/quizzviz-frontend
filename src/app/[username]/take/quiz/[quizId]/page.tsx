@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatTime } from '@/lib/utils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -79,8 +79,13 @@ export default function QuizPage({ params }: QuizPageProps) {
     lastMouseMove: Date.now(),
     lastKeyPress: Date.now()
   });
+  const exitConfirmationRef = useRef(false);
 
-  // Proctoring functions
+  // Define all functions before they're used
+  const handleSubmitQuiz = useCallback(() => {
+    setStep('results');
+  }, []);
+
   const requestFullscreen = useCallback(async () => {
     try {
       if (document.documentElement.requestFullscreen) {
@@ -143,9 +148,104 @@ export default function QuizPage({ params }: QuizPageProps) {
       setShowWarning(false);
     }, 5000);
   }, []);
-  const handleSubmitQuiz = () => {
-    setStep('results');
-  };
+
+  // State for custom confirmation dialog
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const exitConfirmResolve = useRef<((value: boolean) => void) | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  // Custom confirmation dialog
+  const confirmExit = useCallback((): Promise<boolean> => {
+    return new Promise((resolve) => {
+      exitConfirmResolve.current = resolve;
+      setShowExitConfirm(true);
+    });
+  }, []);
+
+  // Handle exit confirmation response
+  const handleExitResponse = useCallback((confirmed: boolean) => {
+    if (exitConfirmResolve.current) {
+      exitConfirmResolve.current(confirmed);
+      exitConfirmResolve.current = null;
+    }
+    setShowExitConfirm(false);
+    
+    if (!confirmed) {
+      // Focus back to the quiz content
+      const quizContent = document.getElementById('quiz-content');
+      if (quizContent) {
+        quizContent.focus();
+      }
+    }
+  }, []);
+
+  // Handle fullscreen change with custom confirmation
+  const handleFullscreenChange = useCallback(async () => {
+    // Check if we're already handling this change or if the quiz isn't started
+    if (exitConfirmationRef.current || !quizStarted || isRestoring) return;
+    
+    // Check if any fullscreen mode is active (cross-browser compatible)
+    const isFullscreen = document.fullscreenElement || 
+                        (document as any).webkitFullscreenElement || 
+                        (document as any).msFullscreenElement;
+    
+    if (!isFullscreen) {
+      // Prevent multiple dialogs
+      exitConfirmationRef.current = true;
+      
+      try {
+        // Store scroll position
+        const scrollY = window.scrollY;
+        
+        // Use custom confirmation dialog
+        const userConfirmed = await confirmExit();
+        
+        if (userConfirmed) {
+          // User wants to quit
+          handleSubmitQuiz();
+          return;
+        } else {
+          // User wants to continue, re-enter fullscreen with retry logic
+          setIsRestoring(true);
+          let fullscreenRestored = false;
+          
+          // Try multiple times to restore fullscreen
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              await requestFullscreen();
+              // Wait for fullscreen to be fully applied
+              await new Promise(resolve => setTimeout(resolve, 100));
+              
+              // Restore scroll position
+              window.scrollTo(0, scrollY);
+              
+              // Force a reflow to ensure everything is properly laid out
+              document.body.offsetHeight;
+              
+              fullscreenRestored = true;
+              break;
+            } catch (err) {
+              console.warn(`Fullscreen restore attempt ${attempt + 1} failed, retrying...`);
+              await new Promise(resolve => setTimeout(resolve, 200));
+            }
+          }
+          
+          if (!fullscreenRestored) {
+            // If all retries failed, show error and end quiz
+            alert('Could not restore fullscreen mode. The quiz will now end.');
+            handleSubmitQuiz();
+            return;
+          }
+        }
+      } finally {
+        setIsRestoring(false);
+        // Reset the flag after a short delay to prevent multiple dialogs
+        setTimeout(() => {
+          exitConfirmationRef.current = false;
+        }, 1000);
+      }
+    }
+  }, [quizStarted, requestFullscreen, handleSubmitQuiz]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -170,7 +270,6 @@ export default function QuizPage({ params }: QuizPageProps) {
             }
           });
         } catch (err) {
-          console.error('Failed to enter fullscreen:', err);
         }
       };
       
@@ -178,34 +277,26 @@ export default function QuizPage({ params }: QuizPageProps) {
 
       const handleVisibilityChange = () => {
         if (document.hidden) {
-          // Only increment warnings if not already at max
-          if (activityMonitorRef.current.warnings < 3) {
-            activityMonitorRef.current.warnings++;
-            const warningCount = activityMonitorRef.current.warnings;
-            const remainingWarnings = 3 - warningCount;
-            const message = `Warning: Tab switch detected! ${remainingWarnings} ${remainingWarnings === 1 ? 'warning' : 'warnings'} remaining.`;
-            showWarningMessage(message);
-            
-            if (warningCount >= 3) {
-              toast.error('Quiz terminated due to multiple violations!', {
-                style: { 
-                  background: '#1F2937', 
-                  color: '#EF4444', 
-                  border: '1px solid #374151',
-                  maxWidth: '500px',
-                  margin: '0 auto',
-                  textAlign: 'center',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.95rem',
-                  padding: '1rem',
-                },
-                duration: 10000,
-                position: 'top-center',
-              });
-              // Small delay before submitting to show the error message
-              setTimeout(() => handleSubmitQuiz(), 2000);
-            }
-          }
+          // End quiz on first violation
+          activityMonitorRef.current.warnings = 1;
+          showWarningMessage('Quiz terminated due to tab switch!');
+          toast.error('Quiz terminated due to violation!', {
+            style: { 
+              background: '#1F2937', 
+              color: '#EF4444', 
+              border: '1px solid #374151',
+              maxWidth: '500px',
+              margin: '0 auto',
+              textAlign: 'center',
+              borderRadius: '0.5rem',
+              fontSize: '0.95rem',
+              padding: '1rem',
+            },
+            duration: 10000,
+            position: 'top-center',
+          });
+          // End quiz immediately
+          handleSubmitQuiz();
         } else {
           // When coming back to tab, re-request fullscreen
           requestFullscreen();
@@ -216,11 +307,135 @@ export default function QuizPage({ params }: QuizPageProps) {
       document.addEventListener('visibilitychange', handleVisibilityChange);
       
       // Prevent context menu (right-click)
+      // Prevent context menu (right-click)
       const handleContextMenu = (e: MouseEvent) => {
         e.preventDefault();
         return false;
       };
+
+      // Handle keyboard shortcuts
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // Specifically handle Escape key
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          showWarningMessage('Escape key is disabled during the quiz!');
+          return false;
+        }
+
+        // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
+        const forbiddenKeys = [
+          'F12',
+          'Escape',
+          'F11',
+          ...(e.ctrlKey ? ['r', 'R', 'u', 'U', 'Shift'] : []),
+          ...(e.ctrlKey && e.shiftKey ? ['i', 'I', 'j', 'J', 'c', 'C'] : [])
+        ];
+
+        if (forbiddenKeys.includes(e.key) || 
+            (e.ctrlKey && e.key.toLowerCase() === 'r') ||
+            (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') ||
+            (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'j') ||
+            (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') ||
+            (e.ctrlKey && e.key.toLowerCase() === 'u')) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      };
+
+      // Detect mouse leave window
+      const handleMouseLeave = (e: MouseEvent) => {
+        if (e.clientY <= 0 || e.clientX <= 0 || 
+            e.clientX >= window.innerWidth || 
+            e.clientY >= window.innerHeight) {
+          showWarningMessage('Please keep your mouse within the quiz window!');
+        }
+      };
+
+      // Detect developer tools opening (basic detection)
+      const devToolsOpened = () => {
+        const threshold = 160; // pixels
+        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+        const orientation = widthThreshold ? 'vertical' : 'horizontal';
+        
+        if (widthThreshold || heightThreshold) {
+          showWarningMessage('Developer tools are not allowed during the quiz!');
+          // Force close dev tools (may not work in all browsers)
+          window.dispatchEvent(new Event('resize'));
+          document.body.innerHTML = '';
+          window.location.reload();
+          return true;
+        }
+        return false;
+      };
+
+      // Check for dev tools periodically
+      const devToolsCheck = setInterval(devToolsOpened, 1000);
+
+      // Add event listeners with capture phase for better key blocking
       document.addEventListener('contextmenu', handleContextMenu);
+      
+      // Add keydown listener with capture phase to catch events early
+      const blockEscapeKey = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          showWarningMessage('Escape key is disabled during the quiz!');
+          return false;
+        }
+      };
+      
+      // Add multiple layers of key blocking
+      document.addEventListener('keydown', blockEscapeKey, true); // Capture phase
+      document.addEventListener('keydown', handleKeyDown);
+      
+      // Fullscreen change handlers
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+      document.addEventListener('mouseleave', handleMouseLeave);
+      
+      // Global key handler as final defense
+      document.onkeydown = function(e) {
+        // Block Escape key and other restricted keys
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          e.preventDefault();
+          e.stopPropagation();
+          showWarningMessage('Escape key is disabled during the quiz!');
+          return false;
+        }
+        
+        // Block other restricted keys
+        if (e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) || 
+            (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
+          e.preventDefault();
+          return false;
+        }
+      };
+      
+      // Prevent default Escape key behavior on window
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }, true);
+
+      // Disable right click, selection, and copy
+      document.addEventListener('selectstart', (e) => {
+        e.preventDefault();
+        return false;
+      });
+
+      document.addEventListener('copy', (e) => {
+        e.preventDefault();
+        return false;
+      });
 
       const handleBeforeUnload = (e: BeforeUnloadEvent) => {
         e.preventDefault();
@@ -230,8 +445,8 @@ export default function QuizPage({ params }: QuizPageProps) {
 
       // Check fullscreen status periodically
       const checkFullscreen = setInterval(() => {
-        if (!document.fullscreenElement) {
-          requestFullscreen();
+        if (!document.fullscreenElement && quizStarted && !exitConfirmationRef.current) {
+          handleFullscreenChange();
         }
       }, 1000);
 
@@ -239,11 +454,32 @@ export default function QuizPage({ params }: QuizPageProps) {
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         document.removeEventListener('contextmenu', handleContextMenu);
+        document.removeEventListener('keydown', blockEscapeKey, true);
+        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+        document.removeEventListener('mouseleave', handleMouseLeave);
+        document.removeEventListener('selectstart', () => {});
+        document.removeEventListener('copy', () => {});
         window.removeEventListener('beforeunload', handleBeforeUnload);
+        window.removeEventListener('keydown', blockEscapeKey, true);
         clearInterval(checkFullscreen);
+        clearInterval(devToolsCheck);
       };
     }
   }, [step, quizStarted, requestFullscreen, showWarningMessage]);
+
+  // Function to shuffle an array using Fisher-Yates algorithm
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  };
 
   const verifyQuizKey = async () => {
     if (!formData.quizKey.trim()) {
@@ -275,6 +511,11 @@ export default function QuizPage({ params }: QuizPageProps) {
       
       if (data.quiz_key !== formData.quizKey) {
         throw new Error('Invalid quiz key. Please check and try again.');
+      }
+      
+      // Shuffle the questions array before setting the state
+      if (data.quiz && Array.isArray(data.quiz)) {
+        data.quiz = shuffleArray(data.quiz);
       }
 
       setQuizData(data);
@@ -358,52 +599,62 @@ export default function QuizPage({ params }: QuizPageProps) {
     return { correct, total, percentage };
   };
 
-  const securityInstructions = [
-    {
-      icon: <Lock className="w-5 h-5 text-red-400" />,
-      text: 'Your browser tab will be LOCKED during the quiz. Switching tabs will automatically end the quiz.',
-      important: true
-    },
-    {
-      icon: <Eye className="w-5 h-5 text-yellow-400" />,
-      text: 'The quiz monitors tab activity. Any attempt to leave this page will terminate your session.',
-      important: true
-    },
-    {
-      icon: <Shield className="w-5 h-5 text-blue-400" />,
-      text: 'Keep this tab active and in focus throughout the entire quiz duration.'
-    },
-    {
-      icon: <AlertTriangle className="w-5 h-5 text-orange-400" />,
-      text: 'Do not refresh the page, use browser navigation buttons, or open new tabs/windows.'
-    }
-  ];
-
   const quizInstructions = [
     {
-      icon: <BookOpen className="w-5 h-5" />,
-      text: `This quiz contains ${quizData?.num_questions || 'multiple'} multiple-choice questions with a time limit of ${quizData?.quiz_time || 30} minutes.`
+      icon: <Shield className="w-5 h-5 text-red-500" />,
+      title: 'Honor Code',
+      text: 'This is an individual assessment. Cheating will result in disqualification.'
     },
     {
-      icon: <ArrowRight className="w-5 h-5" />,
-      text: 'Questions are sequential - you can only move FORWARD. No going back to previous questions.'
+      icon: <BookOpen className="w-5 h-5 text-blue-500" />,
+      title: 'Quiz Details',
+      text: `${quizData?.num_questions || 'Multiple'} questions • ${quizData?.quiz_time || 30} minutes`
     },
     {
-      icon: <CheckCircle className="w-5 h-5" />,
-      text: 'Select your answer carefully before proceeding to the next question.'
+      icon: <Maximize2 className="w-5 h-5 text-amber-500" />,
+      title: 'Full-Screen Mode',
+      text: 'The quiz will start in full-screen. You must stay in full-screen mode.'
     },
     {
-      icon: <Timer className="w-5 h-5" />,
-      text: 'The timer runs continuously. Make sure to manage your time wisely across all questions.'
-    },
-    {
-      icon: <Zap className="w-5 h-5" />,
-      text: 'Your progress is automatically saved for each question you complete.'
+      icon: <AlertTriangle className="w-5 h-5 text-red-500" />,
+      title: 'Important',
+      text: 'Switching tabs or leaving full-screen will end your quiz immediately.'
     }
   ];
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Exit Confirmation Modal */}
+      {showExitConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="w-6 h-6 text-yellow-500" />
+              <h3 className="text-xl font-bold text-white">Confirm Exit</h3>
+            </div>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to quit the quiz? This will end your current attempt.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => handleExitResponse(false)}
+                className="px-4 py-2 rounded-lg border border-gray-700 text-white hover:bg-gray-800 transition-colors"
+                disabled={isRestoring}
+              >
+                {isRestoring ? 'Restoring...' : 'Continue Quiz'}
+              </button>
+              <button
+                onClick={() => handleExitResponse(true)}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                disabled={isRestoring}
+              >
+                End Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Background gradient effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black to-purple-900/20"></div>
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -426,7 +677,7 @@ export default function QuizPage({ params }: QuizPageProps) {
         </div>
       </header>
       
-      <main className="relative z-10">
+      <main id="quiz-content" className="relative z-10" tabIndex={-1}>
         {step === 'info' && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
@@ -523,119 +774,77 @@ Full Name                      </Label>
 
         {step === 'instructions' && quizData && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
-            <div className="w-full max-w-6xl">
+            <div className="w-full max-w-2xl">
               {/* Header */}
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl mb-4">
+              <div className="text-center mb-10">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-4">
                   <BookOpen className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent mb-2">
-                  Quiz Instructions & Security
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  {quizData?.topic || 'Quiz'}
                 </h1>
-                <p className="text-gray-400">Please read all instructions carefully before starting</p>
+                <p className="text-gray-400">
+                  {quizData?.difficulty ? `${quizData.difficulty.charAt(0).toUpperCase() + quizData.difficulty.slice(1)}` : 'Quiz'}
+                </p>
               </div>
 
-              <div className="grid lg:grid-cols-3 gap-6 mb-8">
-                {/* Quiz Info */}
-                <Card className="border-0 bg-gray-900/50 backdrop-blur-xl">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <Trophy className="w-5 h-5 text-yellow-500" />
-                      Quiz Details
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="bg-gray-800/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Topic</div>
-                      <div className="text-white font-medium">{quizData?.topic || 'N/A'}</div>
-                    </div>
-                    <div className="bg-gray-800/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Difficulty</div>
-                      <div className="text-white font-medium capitalize">{quizData?.difficulty || 'N/A'}</div>
-                    </div>
-                    <div className="bg-gray-800/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Questions</div>
-                      <div className="text-white font-medium">{quizData?.num_questions || 0} Questions</div>
-                    </div>
-                    <div className="bg-gray-800/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Time Limit</div>
-                      <div className="text-white font-medium">{quizData?.quiz_time || 30} Minutes</div>
-                    </div>
-                  </CardContent>
-                </Card>
+              {/* Quiz Info */}
+              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl mb-8">
+                <CardContent className="p-6">
+                  <ul className="space-y-5">
+                    {quizInstructions.map((instruction, index) => (
+                      <li key={index} className="flex items-start gap-4">
+                        <div className="flex-shrink-0 mt-0.5">
+                          {instruction.icon}
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-white">{instruction.title}</h3>
+                          <p className="text-gray-300 text-sm">{instruction.text}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
 
-                {/* Quiz Instructions */}
-                <Card className="border-0 bg-gray-900/50 backdrop-blur-xl">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
-                      How to Take Quiz
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {quizInstructions.map((instruction, index) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <div className="text-blue-400 mt-0.5">
-                            {instruction.icon}
-                          </div>
-                          <span className="text-gray-300 text-sm leading-relaxed">{instruction.text}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-
-                {/* Security Instructions */}
-                <Card className="border-0 bg-red-900/20 backdrop-blur-xl border-red-500/30">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <Lock className="w-5 h-5 text-red-400" />
-                      Security Rules
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {securityInstructions.map((instruction, index) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <div className="mt-0.5">
-                            {instruction.icon}
-                          </div>
-                          <span className={`text-sm leading-relaxed ${
-                            instruction.important ? 'text-red-300 font-medium' : 'text-gray-300'
-                          }`}>
-                            {instruction.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Warning Banner */}
-              <div className="bg-gradient-to-r from-red-900/50 to-orange-900/50 border border-red-500/30 rounded-xl p-6 mb-8">
-                <div className="flex items-center gap-4">
-                  <div className="bg-red-500/20 rounded-full p-3">
-                    <AlertTriangle className="w-6 h-6 text-red-400" />
+              {/* Important Notice */}
+              <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/20 rounded-xl p-5 mb-8">
+                <div className="flex items-start gap-3.5">
+                  <div className="bg-blue-500/10 p-2 rounded-lg">
+                    <AlertCircle className="w-5 h-5 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold mb-2">IMPORTANT SECURITY NOTICE</h3>
-                    <p className="text-red-200 text-sm">
-                      This quiz has strict monitoring enabled. Any attempt to switch tabs, navigate away, or use external resources 
-                      will immediately terminate your quiz session. Once you start, stay focused on this tab until completion.
-                    </p>
+                    <h3 className="text-white font-medium mb-2">Important Guidelines</h3>
+                    <ul className="space-y-2 text-sm text-gray-300">
+                      <li className="flex items-start gap-2">
+                        <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <span>Do not switch tabs, windows, or use other devices</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <span>Keep the browser in full-screen mode</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span>Ensure a stable internet connection</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                        <span>Your activity is being recorded and monitored</span>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>
 
+              {/* Start Button */}
               <div className="text-center">
                 <Button 
-                  onClick={beginQuiz} 
-                  className="h-14 px-8 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02]"
+                  onClick={beginQuiz}
+                  className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02]"
                 >
-                  <Lock className="mr-2 h-5 w-5" />
-                  I Understand - Start Secured Quiz
+                  Start Quiz
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
             </div>
@@ -902,7 +1111,7 @@ Full Name                      </Label>
                     <Button asChild className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]">
                       <Link href="/" className="flex items-center">
                         <Home className="mr-2 h-5 w-5" />
-                        Return to Dashboard
+                        Return to Home
                       </Link>
                     </Button>
                   </div>
