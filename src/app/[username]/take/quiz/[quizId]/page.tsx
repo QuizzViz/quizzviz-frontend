@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatTime } from '@/lib/utils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -599,47 +599,26 @@ export default function QuizPage({ params }: QuizPageProps) {
     return { correct, total, percentage };
   };
 
-  const securityInstructions = [
-    {
-      icon: <Lock className="w-5 h-5 text-red-400" />,
-      text: 'Your browser tab will be LOCKED during the quiz. Switching tabs will automatically end the quiz.',
-      important: true
-    },
-    {
-      icon: <Eye className="w-5 h-5 text-yellow-400" />,
-      text: 'The quiz monitors tab activity. Any attempt to leave this page will terminate your session.',
-      important: true
-    },
-    {
-      icon: <Shield className="w-5 h-5 text-blue-400" />,
-      text: 'Keep this tab active and in focus throughout the entire quiz duration.'
-    },
-    {
-      icon: <AlertTriangle className="w-5 h-5 text-orange-400" />,
-      text: 'Do not refresh the page, use browser navigation buttons, or open new tabs/windows.'
-    }
-  ];
-
   const quizInstructions = [
     {
-      icon: <BookOpen className="w-5 h-5" />,
-      text: `This quiz contains ${quizData?.num_questions || 'multiple'} multiple-choice questions with a time limit of ${quizData?.quiz_time || 30} minutes.`
+      icon: <Shield className="w-5 h-5 text-red-500" />,
+      title: 'Honor Code',
+      text: 'This is an individual assessment. Cheating will result in disqualification.'
     },
     {
-      icon: <ArrowRight className="w-5 h-5" />,
-      text: 'Questions are sequential - you can only move FORWARD. No going back to previous questions.'
+      icon: <BookOpen className="w-5 h-5 text-blue-500" />,
+      title: 'Quiz Details',
+      text: `${quizData?.num_questions || 'Multiple'} questions • ${quizData?.quiz_time || 30} minutes`
     },
     {
-      icon: <CheckCircle className="w-5 h-5" />,
-      text: 'Select your answer carefully before proceeding to the next question.'
+      icon: <Maximize2 className="w-5 h-5 text-amber-500" />,
+      title: 'Full-Screen Mode',
+      text: 'The quiz will start in full-screen. You must stay in full-screen mode.'
     },
     {
-      icon: <Timer className="w-5 h-5" />,
-      text: 'The timer runs continuously. Make sure to manage your time wisely across all questions.'
-    },
-    {
-      icon: <Zap className="w-5 h-5" />,
-      text: 'Your progress is automatically saved for each question you complete.'
+      icon: <AlertTriangle className="w-5 h-5 text-red-500" />,
+      title: 'Important',
+      text: 'Switching tabs or leaving full-screen will end your quiz immediately.'
     }
   ];
 
@@ -795,119 +774,77 @@ Full Name                      </Label>
 
         {step === 'instructions' && quizData && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
-            <div className="w-full max-w-6xl">
+            <div className="w-full max-w-2xl">
               {/* Header */}
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl mb-4">
+              <div className="text-center mb-10">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-4">
                   <BookOpen className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent mb-2">
-                  Quiz Instructions & Security
+                <h1 className="text-3xl font-bold text-white mb-2">
+                  {quizData?.topic || 'Quiz'}
                 </h1>
-                <p className="text-gray-400">Please read all instructions carefully before starting</p>
+                <p className="text-gray-400">
+                  {quizData?.difficulty ? `${quizData.difficulty.charAt(0).toUpperCase() + quizData.difficulty.slice(1)}` : 'Quiz'}
+                </p>
               </div>
 
-              <div className="grid lg:grid-cols-3 gap-6 mb-8">
-                {/* Quiz Info */}
-                <Card className="border-0 bg-gray-900/50 backdrop-blur-xl">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <Trophy className="w-5 h-5 text-yellow-500" />
-                      Quiz Details
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="bg-gray-800/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Topic</div>
-                      <div className="text-white font-medium">{quizData?.topic || 'N/A'}</div>
-                    </div>
-                    <div className="bg-gray-800/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Difficulty</div>
-                      <div className="text-white font-medium capitalize">{quizData?.difficulty || 'N/A'}</div>
-                    </div>
-                    <div className="bg-gray-800/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Questions</div>
-                      <div className="text-white font-medium">{quizData?.num_questions || 0} Questions</div>
-                    </div>
-                    <div className="bg-gray-800/50 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Time Limit</div>
-                      <div className="text-white font-medium">{quizData?.quiz_time || 30} Minutes</div>
-                    </div>
-                  </CardContent>
-                </Card>
+              {/* Quiz Info */}
+              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl mb-8">
+                <CardContent className="p-6">
+                  <ul className="space-y-5">
+                    {quizInstructions.map((instruction, index) => (
+                      <li key={index} className="flex items-start gap-4">
+                        <div className="flex-shrink-0 mt-0.5">
+                          {instruction.icon}
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-white">{instruction.title}</h3>
+                          <p className="text-gray-300 text-sm">{instruction.text}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
 
-                {/* Quiz Instructions */}
-                <Card className="border-0 bg-gray-900/50 backdrop-blur-xl">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
-                      How to Take Quiz
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {quizInstructions.map((instruction, index) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <div className="text-blue-400 mt-0.5">
-                            {instruction.icon}
-                          </div>
-                          <span className="text-gray-300 text-sm leading-relaxed">{instruction.text}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-
-                {/* Security Instructions */}
-                <Card className="border-0 bg-red-900/20 backdrop-blur-xl border-red-500/30">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <Lock className="w-5 h-5 text-red-400" />
-                      Security Rules
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {securityInstructions.map((instruction, index) => (
-                        <li key={index} className="flex items-start gap-3">
-                          <div className="mt-0.5">
-                            {instruction.icon}
-                          </div>
-                          <span className={`text-sm leading-relaxed ${
-                            instruction.important ? 'text-red-300 font-medium' : 'text-gray-300'
-                          }`}>
-                            {instruction.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Warning Banner */}
-              <div className="bg-gradient-to-r from-red-900/50 to-orange-900/50 border border-red-500/30 rounded-xl p-6 mb-8">
-                <div className="flex items-center gap-4">
-                  <div className="bg-red-500/20 rounded-full p-3">
-                    <AlertTriangle className="w-6 h-6 text-red-400" />
+              {/* Important Notice */}
+              <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/20 rounded-xl p-5 mb-8">
+                <div className="flex items-start gap-3.5">
+                  <div className="bg-blue-500/10 p-2 rounded-lg">
+                    <AlertCircle className="w-5 h-5 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold mb-2">IMPORTANT SECURITY NOTICE</h3>
-                    <p className="text-red-200 text-sm">
-                      This quiz has strict monitoring enabled. Any attempt to switch tabs, navigate away, or use external resources 
-                      will immediately terminate your quiz session. Once you start, stay focused on this tab until completion.
-                    </p>
+                    <h3 className="text-white font-medium mb-2">Important Guidelines</h3>
+                    <ul className="space-y-2 text-sm text-gray-300">
+                      <li className="flex items-start gap-2">
+                        <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <span>Do not switch tabs, windows, or use other devices</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <span>Keep the browser in full-screen mode</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span>Ensure a stable internet connection</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                        <span>Your activity is being recorded and monitored</span>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>
 
+              {/* Start Button */}
               <div className="text-center">
                 <Button 
-                  onClick={beginQuiz} 
-                  className="h-14 px-8 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02]"
+                  onClick={beginQuiz}
+                  className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02]"
                 >
-                  <Lock className="mr-2 h-5 w-5" />
-                  I Understand - Start Secured Quiz
+                  Start Quiz
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
             </div>
@@ -1174,7 +1111,7 @@ Full Name                      </Label>
                     <Button asChild className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]">
                       <Link href="/" className="flex items-center">
                         <Home className="mr-2 h-5 w-5" />
-                        Return to Dashboard
+                        Return to Home
                       </Link>
                     </Button>
                   </div>
