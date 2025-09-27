@@ -222,7 +222,7 @@ export function QuizEditor() {
       toast({
         title: "Saved",
         description: "Quiz updated successfully",
-        className: "border-green-500/40 bg-green-600/20 text-green-100",
+        className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
       });
 
       return await res.json();
@@ -231,7 +231,7 @@ export function QuizEditor() {
       toast({
         title: "Update failed",
         description: e?.message || "Unable to save quiz",
-        className: "border-red-500/40 bg-red-600/20 text-red-100",
+        variant: 'destructive'
       });
       throw e;
     }
@@ -323,7 +323,7 @@ export function QuizEditor() {
       toast({
         title: 'Success!',
         description: 'Your quiz has been published successfully.',
-        className: 'bg-green-500/20 text-green-300',
+        className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30'
       });
     } catch (error) {
       console.error('Publish error:', error);
@@ -380,7 +380,8 @@ export function QuizEditor() {
     toast({
       title: "Question removed",
       description: "The question has been deleted from the quiz.",
-      className: "border-red-500/40 bg-red-600 text-red-100",
+      className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30'
+
     });
   };
 
@@ -390,7 +391,7 @@ export function QuizEditor() {
       toast({
         title: "Error",
         description: "Missing quiz or user information",
-        className: "border-red-500/40 bg-red-600/20 text-red-100",
+        variant: 'destructive'
       });
       return;
     }
@@ -450,7 +451,7 @@ export function QuizEditor() {
       toast({
         title: "Deleted",
         description: "Quiz has been deleted",
-        className: "border-red-500/40 bg-red-600 text-red-100",
+        className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30'
       });
 
       router.push("/dashboard/my-quizzes");
@@ -459,7 +460,7 @@ export function QuizEditor() {
       toast({
         title: "Delete failed",
         description: e?.message || "Unable to delete quiz",
-        className: "border-red-500/40 bg-red-600/20 text-red-100",
+        variant: 'destructive'
       });
     } finally {
       setIsPublishing(false);
@@ -481,7 +482,8 @@ export function QuizEditor() {
     toast({
       title: 'Link copied!',
       description: 'Quiz link has been copied to clipboard.',
-      className: 'bg-green-500/20 text-green-300',
+      className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30'
+
     });
   };
 
