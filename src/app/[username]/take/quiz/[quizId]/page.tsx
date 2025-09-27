@@ -79,8 +79,13 @@ export default function QuizPage({ params }: QuizPageProps) {
     lastMouseMove: Date.now(),
     lastKeyPress: Date.now()
   });
+  const exitConfirmationRef = useRef(false);
 
-  // Proctoring functions
+  // Define all functions before they're used
+  const handleSubmitQuiz = useCallback(() => {
+    setStep('results');
+  }, []);
+
   const requestFullscreen = useCallback(async () => {
     try {
       if (document.documentElement.requestFullscreen) {
@@ -143,9 +148,104 @@ export default function QuizPage({ params }: QuizPageProps) {
       setShowWarning(false);
     }, 5000);
   }, []);
-  const handleSubmitQuiz = () => {
-    setStep('results');
-  };
+
+  // State for custom confirmation dialog
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const exitConfirmResolve = useRef<((value: boolean) => void) | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  // Custom confirmation dialog
+  const confirmExit = useCallback((): Promise<boolean> => {
+    return new Promise((resolve) => {
+      exitConfirmResolve.current = resolve;
+      setShowExitConfirm(true);
+    });
+  }, []);
+
+  // Handle exit confirmation response
+  const handleExitResponse = useCallback((confirmed: boolean) => {
+    if (exitConfirmResolve.current) {
+      exitConfirmResolve.current(confirmed);
+      exitConfirmResolve.current = null;
+    }
+    setShowExitConfirm(false);
+    
+    if (!confirmed) {
+      // Focus back to the quiz content
+      const quizContent = document.getElementById('quiz-content');
+      if (quizContent) {
+        quizContent.focus();
+      }
+    }
+  }, []);
+
+  // Handle fullscreen change with custom confirmation
+  const handleFullscreenChange = useCallback(async () => {
+    // Check if we're already handling this change or if the quiz isn't started
+    if (exitConfirmationRef.current || !quizStarted || isRestoring) return;
+    
+    // Check if any fullscreen mode is active (cross-browser compatible)
+    const isFullscreen = document.fullscreenElement || 
+                        (document as any).webkitFullscreenElement || 
+                        (document as any).msFullscreenElement;
+    
+    if (!isFullscreen) {
+      // Prevent multiple dialogs
+      exitConfirmationRef.current = true;
+      
+      try {
+        // Store scroll position
+        const scrollY = window.scrollY;
+        
+        // Use custom confirmation dialog
+        const userConfirmed = await confirmExit();
+        
+        if (userConfirmed) {
+          // User wants to quit
+          handleSubmitQuiz();
+          return;
+        } else {
+          // User wants to continue, re-enter fullscreen with retry logic
+          setIsRestoring(true);
+          let fullscreenRestored = false;
+          
+          // Try multiple times to restore fullscreen
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              await requestFullscreen();
+              // Wait for fullscreen to be fully applied
+              await new Promise(resolve => setTimeout(resolve, 100));
+              
+              // Restore scroll position
+              window.scrollTo(0, scrollY);
+              
+              // Force a reflow to ensure everything is properly laid out
+              document.body.offsetHeight;
+              
+              fullscreenRestored = true;
+              break;
+            } catch (err) {
+              console.warn(`Fullscreen restore attempt ${attempt + 1} failed, retrying...`);
+              await new Promise(resolve => setTimeout(resolve, 200));
+            }
+          }
+          
+          if (!fullscreenRestored) {
+            // If all retries failed, show error and end quiz
+            alert('Could not restore fullscreen mode. The quiz will now end.');
+            handleSubmitQuiz();
+            return;
+          }
+        }
+      } finally {
+        setIsRestoring(false);
+        // Reset the flag after a short delay to prevent multiple dialogs
+        setTimeout(() => {
+          exitConfirmationRef.current = false;
+        }, 1000);
+      }
+    }
+  }, [quizStarted, requestFullscreen, handleSubmitQuiz]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -207,11 +307,135 @@ export default function QuizPage({ params }: QuizPageProps) {
       document.addEventListener('visibilitychange', handleVisibilityChange);
       
       // Prevent context menu (right-click)
+      // Prevent context menu (right-click)
       const handleContextMenu = (e: MouseEvent) => {
         e.preventDefault();
         return false;
       };
+
+      // Handle keyboard shortcuts
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // Specifically handle Escape key
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          showWarningMessage('Escape key is disabled during the quiz!');
+          return false;
+        }
+
+        // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U
+        const forbiddenKeys = [
+          'F12',
+          'Escape',
+          'F11',
+          ...(e.ctrlKey ? ['r', 'R', 'u', 'U', 'Shift'] : []),
+          ...(e.ctrlKey && e.shiftKey ? ['i', 'I', 'j', 'J', 'c', 'C'] : [])
+        ];
+
+        if (forbiddenKeys.includes(e.key) || 
+            (e.ctrlKey && e.key.toLowerCase() === 'r') ||
+            (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') ||
+            (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'j') ||
+            (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') ||
+            (e.ctrlKey && e.key.toLowerCase() === 'u')) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      };
+
+      // Detect mouse leave window
+      const handleMouseLeave = (e: MouseEvent) => {
+        if (e.clientY <= 0 || e.clientX <= 0 || 
+            e.clientX >= window.innerWidth || 
+            e.clientY >= window.innerHeight) {
+          showWarningMessage('Please keep your mouse within the quiz window!');
+        }
+      };
+
+      // Detect developer tools opening (basic detection)
+      const devToolsOpened = () => {
+        const threshold = 160; // pixels
+        const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+        const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+        const orientation = widthThreshold ? 'vertical' : 'horizontal';
+        
+        if (widthThreshold || heightThreshold) {
+          showWarningMessage('Developer tools are not allowed during the quiz!');
+          // Force close dev tools (may not work in all browsers)
+          window.dispatchEvent(new Event('resize'));
+          document.body.innerHTML = '';
+          window.location.reload();
+          return true;
+        }
+        return false;
+      };
+
+      // Check for dev tools periodically
+      const devToolsCheck = setInterval(devToolsOpened, 1000);
+
+      // Add event listeners with capture phase for better key blocking
       document.addEventListener('contextmenu', handleContextMenu);
+      
+      // Add keydown listener with capture phase to catch events early
+      const blockEscapeKey = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          showWarningMessage('Escape key is disabled during the quiz!');
+          return false;
+        }
+      };
+      
+      // Add multiple layers of key blocking
+      document.addEventListener('keydown', blockEscapeKey, true); // Capture phase
+      document.addEventListener('keydown', handleKeyDown);
+      
+      // Fullscreen change handlers
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+      document.addEventListener('mouseleave', handleMouseLeave);
+      
+      // Global key handler as final defense
+      document.onkeydown = function(e) {
+        // Block Escape key and other restricted keys
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          e.preventDefault();
+          e.stopPropagation();
+          showWarningMessage('Escape key is disabled during the quiz!');
+          return false;
+        }
+        
+        // Block other restricted keys
+        if (e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) || 
+            (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
+          e.preventDefault();
+          return false;
+        }
+      };
+      
+      // Prevent default Escape key behavior on window
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }, true);
+
+      // Disable right click, selection, and copy
+      document.addEventListener('selectstart', (e) => {
+        e.preventDefault();
+        return false;
+      });
+
+      document.addEventListener('copy', (e) => {
+        e.preventDefault();
+        return false;
+      });
 
       const handleBeforeUnload = (e: BeforeUnloadEvent) => {
         e.preventDefault();
@@ -221,8 +445,8 @@ export default function QuizPage({ params }: QuizPageProps) {
 
       // Check fullscreen status periodically
       const checkFullscreen = setInterval(() => {
-        if (!document.fullscreenElement) {
-          requestFullscreen();
+        if (!document.fullscreenElement && quizStarted && !exitConfirmationRef.current) {
+          handleFullscreenChange();
         }
       }, 1000);
 
@@ -230,8 +454,19 @@ export default function QuizPage({ params }: QuizPageProps) {
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         document.removeEventListener('contextmenu', handleContextMenu);
+        document.removeEventListener('keydown', blockEscapeKey, true);
+        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+        document.removeEventListener('mouseleave', handleMouseLeave);
+        document.removeEventListener('selectstart', () => {});
+        document.removeEventListener('copy', () => {});
         window.removeEventListener('beforeunload', handleBeforeUnload);
+        window.removeEventListener('keydown', blockEscapeKey, true);
         clearInterval(checkFullscreen);
+        clearInterval(devToolsCheck);
       };
     }
   }, [step, quizStarted, requestFullscreen, showWarningMessage]);
@@ -395,6 +630,37 @@ export default function QuizPage({ params }: QuizPageProps) {
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Exit Confirmation Modal */}
+      {showExitConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="w-6 h-6 text-yellow-500" />
+              <h3 className="text-xl font-bold text-white">Confirm Exit</h3>
+            </div>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to quit the quiz? This will end your current attempt.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => handleExitResponse(false)}
+                className="px-4 py-2 rounded-lg border border-gray-700 text-white hover:bg-gray-800 transition-colors"
+                disabled={isRestoring}
+              >
+                {isRestoring ? 'Restoring...' : 'Continue Quiz'}
+              </button>
+              <button
+                onClick={() => handleExitResponse(true)}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                disabled={isRestoring}
+              >
+                End Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Background gradient effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black to-purple-900/20"></div>
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -417,7 +683,7 @@ export default function QuizPage({ params }: QuizPageProps) {
         </div>
       </header>
       
-      <main className="relative z-10">
+      <main id="quiz-content" className="relative z-10" tabIndex={-1}>
         {step === 'info' && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
