@@ -170,7 +170,6 @@ export default function QuizPage({ params }: QuizPageProps) {
             }
           });
         } catch (err) {
-          console.error('Failed to enter fullscreen:', err);
         }
       };
       
@@ -178,34 +177,26 @@ export default function QuizPage({ params }: QuizPageProps) {
 
       const handleVisibilityChange = () => {
         if (document.hidden) {
-          // Only increment warnings if not already at max
-          if (activityMonitorRef.current.warnings < 3) {
-            activityMonitorRef.current.warnings++;
-            const warningCount = activityMonitorRef.current.warnings;
-            const remainingWarnings = 3 - warningCount;
-            const message = `Warning: Tab switch detected! ${remainingWarnings} ${remainingWarnings === 1 ? 'warning' : 'warnings'} remaining.`;
-            showWarningMessage(message);
-            
-            if (warningCount >= 3) {
-              toast.error('Quiz terminated due to multiple violations!', {
-                style: { 
-                  background: '#1F2937', 
-                  color: '#EF4444', 
-                  border: '1px solid #374151',
-                  maxWidth: '500px',
-                  margin: '0 auto',
-                  textAlign: 'center',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.95rem',
-                  padding: '1rem',
-                },
-                duration: 10000,
-                position: 'top-center',
-              });
-              // Small delay before submitting to show the error message
-              setTimeout(() => handleSubmitQuiz(), 2000);
-            }
-          }
+          // End quiz on first violation
+          activityMonitorRef.current.warnings = 1;
+          showWarningMessage('Quiz terminated due to tab switch!');
+          toast.error('Quiz terminated due to violation!', {
+            style: { 
+              background: '#1F2937', 
+              color: '#EF4444', 
+              border: '1px solid #374151',
+              maxWidth: '500px',
+              margin: '0 auto',
+              textAlign: 'center',
+              borderRadius: '0.5rem',
+              fontSize: '0.95rem',
+              padding: '1rem',
+            },
+            duration: 10000,
+            position: 'top-center',
+          });
+          // End quiz immediately
+          handleSubmitQuiz();
         } else {
           // When coming back to tab, re-request fullscreen
           requestFullscreen();
