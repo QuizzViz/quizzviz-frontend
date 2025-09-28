@@ -51,70 +51,112 @@ export function ShareQuizModal({ isOpen, onClose, quizLink, quizKey }: ShareQuiz
     }
   };
 
+  const isPrivate = !!quizKey;
+  const statusColor = isPrivate ? 'amber' : 'blue';
+  const statusIcon = isPrivate ? (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+  ) : (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md bg-gray-900 border border-gray-700/50 rounded-lg shadow-xl">
-        <div className="space-y-4">
-          <DialogTitle className="text-lg font-semibold text-white mb-2">Share Quiz</DialogTitle>
-          
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm text-gray-300 mb-2">Quiz Link</p>
-              {formattedQuizLink ? (
-                <div className="flex gap-2">
-                  <Input
-                    readOnly
-                    value={formattedQuizLink}
-                    className="bg-gray-800/50 border-gray-600/50 text-gray-100 text-sm h-9 flex-1 font-mono text-xs"
-                  />
-                  <Button
-                    size="sm"
-                    variant={copied === 'link' ? 'default' : 'outline'}
-                    onClick={() => handleCopy(formattedQuizLink, 'link')}
-                    className="h-9 px-3"
-                  >
-                    {copied === 'link' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-sm text-gray-400 py-2">Loading quiz link...</div>
-              )}
+      <DialogContent className="max-w-md bg-gray-900/95 backdrop-blur-sm border border-gray-700/50 rounded-xl shadow-xl p-0 overflow-hidden">
+        {/* Header */}
+        <div className={`p-5 border-b border-gray-700/50 bg-gradient-to-r ${
+          isPrivate 
+            ? 'from-amber-900/30 to-amber-900/10' 
+            : 'from-blue-900/30 to-blue-900/10'
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${
+              isPrivate 
+                ? 'bg-amber-900/30 text-amber-400' 
+                : 'bg-blue-900/30 text-blue-400'
+            }`}>
+              {statusIcon}
             </div>
-
             <div>
-              <p className="text-sm text-gray-300 mb-2">Access Key</p>
-              {quizKey ? (
-                <>
-                  <div className="flex gap-2">
-                    <Input
-                      readOnly
-                      value={quizKey}
-                      className="bg-gray-800/50 border-gray-600/50 text-gray-100 text-sm h-9 flex-1 font-mono text-xs"
-                    />
-                    <Button
-                      size="sm"
-                      variant={copied === 'key' ? 'default' : 'outline'}
-                      onClick={() => handleCopy(quizKey, 'key')}
-                      className="h-9 px-3"
-                    >
-                      {copied === 'key' ? <Check className="h-4 w-4" /> : <Key className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Share this key only with authorized participants</p>
-                  <p className="text-xs text-gray-600 mt-1">Participants will need both the link and this key to access the quiz</p>
-                </>
-              ) : (
-                <div className="text-sm text-gray-400 py-2">No access key required - this quiz is publicly accessible</div>
-              )}
+              <DialogTitle className="text-lg font-semibold text-white">
+                {isPrivate ? 'Private Quiz' : 'Public Quiz'}
+              </DialogTitle>
+              <p className="text-sm text-gray-400">
+                {isPrivate 
+                  ? 'Share both link and key with participants' 
+                  : 'Anyone with the link can take this quiz'}
+              </p>
             </div>
+          </div>
+        </div>
 
-            {!quizKey && (
-              <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded-md text-center">
-                <p className="text-sm text-blue-300">This quiz is publicly accessible</p>
-                <p className="text-xs text-blue-400/80 mt-1">Anyone with the link can take the quiz</p>
+        {/* Content */}
+        <div className="space-y-4 p-5">
+          {/* Quiz Link */}
+          <div>
+            <label className="text-sm font-medium text-gray-300 mb-2 block">Quiz Link</label>
+            
+            {formattedQuizLink ? (
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={formattedQuizLink}
+                  className="bg-gray-800/60 border-gray-600/40 text-gray-100 text-sm h-10 flex-1 font-mono text-xs hover:border-gray-500/50 transition-colors"
+                />
+                <Button
+                  size="sm"
+                  variant={copied === 'link' ? 'default' : 'outline'}
+                  onClick={() => handleCopy(formattedQuizLink, 'link')}
+                  className="h-10 w-10 p-0 flex items-center justify-center"
+                  title="Copy link"
+                >
+                  {copied === 'link' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.open(formattedQuizLink, '_blank', 'noopener,noreferrer')}
+                  className="h-10 w-10 p-0 flex items-center justify-center"
+                  title="Open in new tab"
+                >
+                  <LinkIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="h-10 flex items-center justify-center bg-gray-800/30 rounded-md border border-dashed border-gray-700/50">
+                <span className="text-sm text-gray-400">Loading quiz link...</span>
               </div>
             )}
           </div>
+
+          {/* Access Key */}
+          {isPrivate && (
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">Access Key</label>
+              <div className="flex gap-2">
+                <Input
+                  readOnly
+                  value={quizKey}
+                  className="bg-gray-800/60 border-amber-500/30 text-amber-100 text-sm h-10 flex-1 font-mono text-xs"
+                />
+                <Button
+                  size="sm"
+                  variant={copied === 'key' ? 'default' : 'outline'}
+                  onClick={() => handleCopy(quizKey, 'key')}
+                  className="h-10 w-10 p-0 flex items-center justify-center"
+                  title="Copy key"
+                >
+                  {copied === 'key' ? <Check className="h-4 w-4" /> : <Key className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 px-1">
+                Share this key <span className="text-amber-300">only with authorized participants</span>
+              </p>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
