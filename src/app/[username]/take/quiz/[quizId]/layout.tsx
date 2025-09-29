@@ -1,4 +1,5 @@
 import { Metadata, Viewport } from 'next';
+import { ToastProvider } from '@/components/ui/toast-provider';
 
 export async function generateMetadata({ params }: { params: { username: string } }): Promise<Metadata> {
   const firstName = params.username
@@ -31,6 +32,7 @@ export default function QuizLayout({
   return (
     <div className="min-h-screen bg-background text-foreground">
       {children}
+      <ToastProvider />
     </div>
   );
 }

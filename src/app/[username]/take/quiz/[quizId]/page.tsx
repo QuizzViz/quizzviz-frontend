@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
+import { Toaster } from 'sonner';
 import { formatTime } from '@/lib/utils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
@@ -83,9 +84,14 @@ export default function QuizPage({ params }: QuizPageProps) {
   const exitConfirmationRef = useRef(false);
 
   // Check if user has attempts left
-  const checkUserAttempts = useCallback(async (): Promise<boolean> => {
+  const checkUserAttempts = useCallback(async (showToast = true): Promise<boolean> => {
     if (!formData.name || !formData.email) {
-      toast.error('Please fill in your name and email first');
+      if (showToast) {
+        toast.error('Please fill in your name and email first', {
+          duration: 3000,
+          important: true
+        });
+      }
       return false;
     }
 
@@ -95,30 +101,35 @@ export default function QuizPage({ params }: QuizPageProps) {
       );
       
       if (!response.ok) {
-        throw new Error('Failed to check attempts');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to check attempts');
       }
 
       const data = await response.json();
       const maxAttempts = quizData?.max_attempts || 1;
       const currentAttempt = data.attempts || 0;
+      const hasReachedMax = currentAttempt >= maxAttempts;
       
+      // Always update the attempts info
       setAttemptsInfo({
         current: currentAttempt,
         max: maxAttempts
       });
       
-      if (currentAttempt >= maxAttempts) {
-        toast.error(`Your maximum attempt limit (${maxAttempts}) has been reached. You can't attempt this quiz again.`, {
-          duration: 10000,
-          position: 'top-center',
+      if (hasReachedMax && showToast) {
+        toast.error(`Maximum attempts reached! You've used ${currentAttempt} of ${maxAttempts} attempts.`, {
+          duration: 5000,
+          important: true
         });
-        return false;
       }
       
-      return true;
+      return !hasReachedMax;
     } catch (error) {
       console.error('Error checking attempts:', error);
-      toast.error('Failed to verify your quiz attempts. Please try again.');
+      if (showToast) {
+        toast.error(`❌ ${error instanceof Error ? error.message : 'Failed to check your attempts. Please try again.'}`);
+      }
+toast.error('❌ Failed to verify your quiz attempts. Please try again.');
       return false;
     }
   }, [formData.name, formData.email, quizId, quizData?.max_attempts]);
@@ -136,9 +147,6 @@ export default function QuizPage({ params }: QuizPageProps) {
         const question = quizData.quiz[parseInt(questionIndex)];
         return {
           question_id: question.id.toString(),
-          question_text: question.type === 'code_analysis' 
-            ? 'Analyze the code snippet' 
-            : 'Answer the question',
           user_answer: answer,
           is_correct: answer === question.correct_answer,
           correct_answer: question.correct_answer
@@ -163,7 +171,7 @@ export default function QuizPage({ params }: QuizPageProps) {
             correct_answers: correct,
             quiz_topic: quizData.topic,
             quiz_difficulty: quizData.difficulty,
-            time_taken: quizData.quiz_time * 60 - timeLeft
+            time_taken: Math.ceil((quizData.quiz_time * 60 - timeLeft) / 60) // Convert to minutes and round up
           },
           attempt: attemptsInfo ? attemptsInfo.current + 1 : 1,
           created_at: new Date().toISOString(),
@@ -690,10 +698,56 @@ export default function QuizPage({ params }: QuizPageProps) {
     setStep('quiz-info');
   };
 
-  const beginQuiz = () => {
-    setQuizStarted(true);
-    setStep('quiz');
-  };
+  const beginQuiz = useCallback(async () => {
+    try {
+      // First, check if we already know the user has reached max attempts
+      if (attemptsInfo && attemptsInfo.current >= attemptsInfo.max) {
+        toast.error(`Maximum attempts reached! You've used all ${attemptsInfo.max} attempt${attemptsInfo.max > 1 ? 's' : ''}.`, {
+          duration: 5000,
+          important: true
+        });
+        return;
+      }
+      
+      // Show loading state immediately
+      const loadingToast = toast.loading('Checking your attempts...', {
+        duration: 1000,
+        important: true
+      });
+      
+      try {
+        // Check with the server
+        const hasAttemptsLeft = await checkUserAttempts(true);
+        
+        if (!hasAttemptsLeft) {
+          toast.dismiss(loadingToast);
+          return;
+        }
+        
+        // If we get here, user has attempts left
+        toast.dismiss(loadingToast);
+        setQuizStarted(true);
+        setStep('quiz');
+        
+        // Request fullscreen when starting the quiz
+        if (document.documentElement.requestFullscreen) {
+          try {
+            await document.documentElement.requestFullscreen();
+            setIsFullscreen(true);
+          } catch (err) {
+            console.error('Fullscreen error:', err);
+            // Continue with quiz even if fullscreen fails
+          }
+        }
+      } catch (error) {
+        toast.dismiss(loadingToast);
+        throw error; // Re-throw to be caught by the outer catch
+      }
+    } catch (error) {
+      console.error('Error starting quiz:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to start the quiz. Please try again.');
+    }
+  }, [checkUserAttempts, attemptsInfo]);
 
   const handleAnswerSelect = (answer: string) => {
     setSelectedAnswers(prev => ({
@@ -982,13 +1036,26 @@ Full Name                      </Label>
 
               {/* Start Button */}
               <div className="text-center">
-                <Button 
-                  onClick={beginQuiz}
-                  className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02]"
-                >
-                  Start Quiz
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                {attemptsInfo && attemptsInfo.current >= attemptsInfo.max ? (
+                  <div className="p-4 bg-red-900/30 border border-red-800 rounded-xl">
+                    <div className="flex items-center justify-center gap-2 text-red-300">
+                      <AlertCircle className="w-5 h-5" />
+                      <span>Maximum attempts reached ({attemptsInfo.current}/{attemptsInfo.max})</span>
+                    </div>
+                    <p className="text-sm text-red-200 mt-1">
+                      You've used all available attempts for this quiz.
+                    </p>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={beginQuiz}
+                    className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    disabled={!attemptsInfo || attemptsInfo.current >= attemptsInfo.max}
+                  >
+                    {attemptsInfo && attemptsInfo.current > 0 ? 'Continue to Quiz' : 'Start Quiz'}
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
