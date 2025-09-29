@@ -53,24 +53,25 @@ export default function QuizPage({ params }: QuizPageProps) {
   const router = useRouter();
   const { username, quizId } = params;
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    quizKey: '',
-  });
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<FormData>({ name: '', email: '', quizKey: '' });
   const [quizData, setQuizData] = useState<QuizData | null>(null);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [quizStarted, setQuizStarted] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [verificationError, setVerificationError] = useState('');
-  const [warnings, setWarnings] = useState(0);
+  const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [quizStarted, setQuizStarted] = useState<boolean>(false);
+  const [verifying, setVerifying] = useState<boolean>(false);
+  const [verificationError, setVerificationError] = useState<string>('');
+  const [warnings, setWarnings] = useState<number>(0);
   const [showWarning, setShowWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [attemptsInfo, setAttemptsInfo] = useState<{current: number; max: number} | null>(null);
+  interface AttemptsInfo {
+    current: number;
+    max: number;
+  }
+
+  const [attemptsInfo, setAttemptsInfo] = useState<{ current: number; max: number }>({ current: 0, max: 1 });
+  const [showingMaxAttemptsNotification, setShowingMaxAttemptsNotification] = useState(false);
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
   const screenshotIntervalRef = useRef<NodeJS.Timeout>();
   const activityMonitorRef = useRef({ 
@@ -83,13 +84,17 @@ export default function QuizPage({ params }: QuizPageProps) {
   });
   const exitConfirmationRef = useRef(false);
 
-  // Check if user has attempts left
   const checkUserAttempts = useCallback(async (showToast = true): Promise<boolean> => {
-    if (!formData.name || !formData.email) {
+    if (showingMaxAttemptsNotification) return false;
+    
+    if (!formData?.name || !formData?.email) {
       if (showToast) {
+        setIsButtonLoading(true);
         toast.error('Please fill in your name and email first', {
           duration: 3000,
-          important: true
+          style: { background: '#B91C1C', color: 'white' },
+          className: 'font-medium',
+          onAutoClose: () => setIsButtonLoading(false)
         });
       }
       return false;
@@ -117,19 +122,31 @@ export default function QuizPage({ params }: QuizPageProps) {
       });
       
       if (hasReachedMax && showToast) {
+        setShowingMaxAttemptsNotification(true);
         toast.error(`Maximum attempts reached! You've used ${currentAttempt} of ${maxAttempts} attempts.`, {
           duration: 5000,
-          important: true
+          className: 'font-medium',
+          onAutoClose: () => {
+            setShowingMaxAttemptsNotification(false);
+          }
         });
       }
       
       return !hasReachedMax;
     } catch (error) {
       console.error('Error checking attempts:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to check your attempts. Please try again.';
+      
       if (showToast) {
-        toast.error(`❌ ${error instanceof Error ? error.message : 'Failed to check your attempts. Please try again.'}`);
+        toast.error(`❌ ${errorMessage}`, {
+          duration: 5000,
+          style: { background: '#B91C1C', color: 'white' },
+          className: 'font-medium',
+          onAutoClose: () => setIsButtonLoading(false)
+        });
       }
-toast.error('❌ Failed to verify your quiz attempts. Please try again.');
+      
+      setIsButtonLoading(false);
       return false;
     }
   }, [formData.name, formData.email, quizId, quizData?.max_attempts]);
@@ -155,13 +172,12 @@ toast.error('❌ Failed to verify your quiz attempts. Please try again.');
       
       // Submit results to the backend using POST
       const response = await fetch('/api/quiz_result', {
-        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          quiz_id: quizData.quiz_id,
-          owner_id: params.username,  // Using the quiz owner's username from URL path
+          quiz_id: quizData?.quiz_id,
+          owner_id: params.username,
           username: formData.name,
           user_email: formData.email,
           user_answers: userAnswers,
@@ -169,32 +185,35 @@ toast.error('❌ Failed to verify your quiz attempts. Please try again.');
             score: percentage,
             total_questions: total,
             correct_answers: correct,
-            quiz_topic: quizData.topic,
-            quiz_difficulty: quizData.difficulty,
-            time_taken: Math.ceil((quizData.quiz_time * 60 - timeLeft) / 60) // Convert to minutes and round up
+            quiz_topic: quizData?.topic,
+            quiz_difficulty: quizData?.difficulty,
+            time_taken: Math.ceil((quizData?.quiz_time * 60 - timeLeft) / 60)
           },
-          attempt: attemptsInfo ? attemptsInfo.current + 1 : 1,
+          attempt: attemptsInfo?.current + 1,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Failed to submit quiz results:', errorData);
-        toast.error('Failed to submit quiz results. Please try again.');
-      } else {
-        // Update local attempts info if needed
-        if (attemptsInfo) {
-          setAttemptsInfo(prev => ({
-            ...prev!,
-            current: prev!.current + 1
-          }));
-        }
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || 'Failed to submit quiz results';
+        console.error('Failed to submit quiz results:', errorMessage);
+        throw new Error(errorMessage);
       }
+      
+      // Update attempts info on successful submission
+      setAttemptsInfo(prev => prev ? {
+        current: prev.current + 1,
+        max: prev.max
+      } : {
+        current: 1,
+        max: 1
+      });
+      
     } catch (error) {
       console.error('Error submitting quiz:', error);
-      toast.error('An error occurred while submitting your quiz. Your results may not have been saved.');
+      toast.error(error instanceof Error ? error.message : 'An error occurred while submitting your quiz');
     } finally {
       // Always move to results page, even if submission fails
       setStep('results');
@@ -699,20 +718,29 @@ toast.error('❌ Failed to verify your quiz attempts. Please try again.');
   };
 
   const beginQuiz = useCallback(async () => {
+    if (isButtonLoading) return; // Prevent multiple clicks
+    
+    setIsButtonLoading(true);
+    let loadingToast: string | number | undefined;
+    
     try {
       // First, check if we already know the user has reached max attempts
-      if (attemptsInfo && attemptsInfo.current >= attemptsInfo.max) {
+      if (attemptsInfo.current >= attemptsInfo.max) {
         toast.error(`Maximum attempts reached! You've used all ${attemptsInfo.max} attempt${attemptsInfo.max > 1 ? 's' : ''}.`, {
           duration: 5000,
-          important: true
+          style: { background: '#B91C1C', color: 'white' },
+          className: 'font-medium',
+          onAutoClose: () => setIsButtonLoading(false)
         });
+        setIsButtonLoading(false);
         return;
       }
       
       // Show loading state immediately
-      const loadingToast = toast.loading('Checking your attempts...', {
+      loadingToast = toast.loading('Checking your attempts...', {
         duration: 1000,
-        important: true
+        style: { background: '#1D4ED8', color: 'white' },
+        className: 'font-medium'
       });
       
       try {
@@ -721,6 +749,7 @@ toast.error('❌ Failed to verify your quiz attempts. Please try again.');
         
         if (!hasAttemptsLeft) {
           toast.dismiss(loadingToast);
+          setIsButtonLoading(false);
           return;
         }
         
@@ -742,12 +771,14 @@ toast.error('❌ Failed to verify your quiz attempts. Please try again.');
       } catch (error) {
         toast.dismiss(loadingToast);
         throw error; // Re-throw to be caught by the outer catch
+      } finally {
+        setIsButtonLoading(false);
       }
     } catch (error) {
       console.error('Error starting quiz:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to start the quiz. Please try again.');
     }
-  }, [checkUserAttempts, attemptsInfo]);
+  }, [checkUserAttempts, attemptsInfo, formData?.name, formData?.email, quizId, quizData?.max_attempts]);
 
   const handleAnswerSelect = (answer: string) => {
     setSelectedAnswers(prev => ({
@@ -947,13 +978,18 @@ Full Name                      </Label>
 
                     <Button
                       type="submit"
-                      disabled={verifying}
-                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
+                      disabled={verifying || showingMaxAttemptsNotification}
+                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                     >
-                      {verifying ? (
+                      {showingMaxAttemptsNotification ? (
                         <>
                           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Verifying Access...
+                          Processing...
+                        </>
+                      ) : verifying ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Verifying...
                         </>
                       ) : (
                         <>
@@ -1040,7 +1076,7 @@ Full Name                      </Label>
                   <div className="p-4 bg-red-900/30 border border-red-800 rounded-xl">
                     <div className="flex items-center justify-center gap-2 text-red-300">
                       <AlertCircle className="w-5 h-5" />
-                      <span>Maximum attempts reached ({attemptsInfo.current}/{attemptsInfo.max})</span>
+                      <span>Maximum attempts reached ({attemptsInfo?.current ?? 0}/{attemptsInfo?.max ?? 0})</span>
                     </div>
                     <p className="text-sm text-red-200 mt-1">
                       You've used all available attempts for this quiz.
@@ -1049,11 +1085,25 @@ Full Name                      </Label>
                 ) : (
                   <Button 
                     onClick={beginQuiz}
-                    className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                    disabled={!attemptsInfo || attemptsInfo.current >= attemptsInfo.max}
+                    className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                    disabled={attemptsInfo.current >= attemptsInfo.max || isButtonLoading || showingMaxAttemptsNotification}
                   >
-                    {attemptsInfo && attemptsInfo.current > 0 ? 'Continue to Quiz' : 'Start Quiz'}
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    {showingMaxAttemptsNotification ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Verifying attempts...
+                      </>
+                    ) : isButtonLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        {attemptsInfo.current > 0 ? 'Continuing...' : 'Starting...'}
+                      </>
+                    ) : (
+                      <>
+                        {attemptsInfo.current > 0 ? 'Continue to Quiz' : 'Start Quiz'}
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
