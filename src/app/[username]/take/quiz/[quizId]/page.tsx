@@ -18,6 +18,7 @@ import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 interface Question {
   id: string | number;
   type: 'theory' | 'code_analysis';
+  question: string;
   code_snippet: string | null;
   options: Record<string, string>;
   correct_answer: string;
@@ -88,15 +89,7 @@ export default function QuizPage({ params }: QuizPageProps) {
     if (showingMaxAttemptsNotification) return false;
     
     if (!formData?.name || !formData?.email) {
-      if (showToast) {
-        setIsButtonLoading(true);
-        toast.error('Please fill in your name and email first', {
-          duration: 3000,
-          style: { background: '#B91C1C', color: 'white' },
-          className: 'font-medium',
-          onAutoClose: () => setIsButtonLoading(false)
-        });
-      }
+      setIsButtonLoading(false);
       return false;
     }
 
@@ -115,7 +108,7 @@ export default function QuizPage({ params }: QuizPageProps) {
       const currentAttempt = data.attempts || 0;
       const hasReachedMax = currentAttempt >= maxAttempts;
       
-      // Always update the attempts info
+      // Update the attempts info
       setAttemptsInfo({
         current: currentAttempt,
         max: maxAttempts
@@ -135,33 +128,30 @@ export default function QuizPage({ params }: QuizPageProps) {
       return !hasReachedMax;
     } catch (error) {
       console.error('Error checking attempts:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to check your attempts. Please try again.';
-      
-      if (showToast) {
-        toast.error(`❌ ${errorMessage}`, {
-          duration: 5000,
-          style: { background: '#B91C1C', color: 'white' },
-          className: 'font-medium',
-          onAutoClose: () => setIsButtonLoading(false)
-        });
-      }
-      
       setIsButtonLoading(false);
       return false;
     }
-  }, [formData.name, formData.email, quizId, quizData?.max_attempts]);
+  }, [formData.name, formData.email, quizId, quizData?.max_attempts, showingMaxAttemptsNotification]);
 
   // Define all functions before they're used
   const handleSubmitQuiz = useCallback(async () => {
     if (!quizData) return;
     
     try {
+      // Make sure we have at least one answer
+      if (Object.keys(selectedAnswers).length === 0) {
+        // If no answers, create empty answers for all questions
+        quizData.quiz.forEach((_, index) => {
+          selectedAnswers[index] = '';
+        });
+      }
+      
       // Calculate results
       const { correct, total, percentage } = calculateResults();
       
       // Prepare user answers in the required format
-      const userAnswers = Object.entries(selectedAnswers).map(([questionIndex, answer]) => {
-        const question = quizData.quiz[parseInt(questionIndex)];
+      const userAnswers = quizData.quiz.map((question, index) => {
+        const answer = selectedAnswers[index] || '';
         return {
           question_id: question.id.toString(),
           user_answer: answer,
@@ -172,11 +162,13 @@ export default function QuizPage({ params }: QuizPageProps) {
       
       // Submit results to the backend using POST
       const response = await fetch('/api/quiz_result', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'accept': 'application/json'
         },
         body: JSON.stringify({
-          quiz_id: quizData?.quiz_id,
+          quiz_id: quizData.quiz_id,
           owner_id: params.username,
           username: formData.name,
           user_email: formData.email,
@@ -185,35 +177,32 @@ export default function QuizPage({ params }: QuizPageProps) {
             score: percentage,
             total_questions: total,
             correct_answers: correct,
-            quiz_topic: quizData?.topic,
-            quiz_difficulty: quizData?.difficulty,
-            time_taken: Math.ceil((quizData?.quiz_time * 60 - timeLeft) / 60)
+            quiz_topic: quizData.topic,
+            quiz_difficulty: quizData.difficulty,
+            time_taken: Math.ceil((quizData.quiz_time * 60 - timeLeft) / 60)
           },
-          attempt: attemptsInfo?.current + 1,
+          attempt: attemptsInfo ? attemptsInfo.current + 1 : 1,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        }),
+        })
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || 'Failed to submit quiz results';
+        const errorMessage = errorData.detail || errorData.message || 'Failed to submit quiz results';
         console.error('Failed to submit quiz results:', errorMessage);
         throw new Error(errorMessage);
       }
       
       // Update attempts info on successful submission
-      setAttemptsInfo(prev => prev ? {
-        current: prev.current + 1,
-        max: prev.max
-      } : {
-        current: 1,
-        max: 1
-      });
+      setAttemptsInfo(prev => ({
+        current: prev ? prev.current + 1 : 1,
+        max: prev?.max || 1
+      }));
       
     } catch (error) {
       console.error('Error submitting quiz:', error);
-      toast.error(error instanceof Error ? error.message : 'An error occurred while submitting your quiz');
+      // Don't show error toast to user
     } finally {
       // Always move to results page, even if submission fails
       setStep('results');
@@ -249,25 +238,6 @@ export default function QuizPage({ params }: QuizPageProps) {
   const showWarningMessage = useCallback((message: string) => {
     setWarnings(prev => prev + 1);
     setShowWarning(true);
-    
-    // Show the warning toast
-    toast.warning(message, {
-      style: {
-        background: '#92400E',
-        color: '#FEF3C7',
-        border: '1px solid #B45309',
-        maxWidth: '500px',
-        margin: '0 auto',
-        textAlign: 'center',
-        borderRadius: '0.5rem',
-        fontSize: '0.95rem',
-        padding: '1rem',
-        zIndex: 9999,
-      },
-      duration: 5000,
-      position: 'top-center',
-      className: 'warning-toast',
-    });
     
     // Force focus back to the window
     window.focus();
@@ -313,8 +283,14 @@ export default function QuizPage({ params }: QuizPageProps) {
     }
   }, []);
 
+  // Track if quiz submission is in progress
+  const isSubmittingRef = useRef(false);
+
   // Handle fullscreen change with custom confirmation
   const handleFullscreenChange = useCallback(async () => {
+    // Prevent multiple submissions
+    if (isSubmittingRef.current) return;
+    
     // Check if we're already handling this change or if the quiz isn't started
     if (exitConfirmationRef.current || !quizStarted || isRestoring) return;
     
@@ -335,8 +311,10 @@ export default function QuizPage({ params }: QuizPageProps) {
         const userConfirmed = await confirmExit();
         
         if (userConfirmed) {
+          // Set submitting flag to prevent multiple submissions
+          isSubmittingRef.current = true;
           // User wants to quit
-          handleSubmitQuiz();
+          await handleSubmitQuiz();
           return;
         } else {
           // User wants to continue, re-enter fullscreen with retry logic
@@ -366,8 +344,9 @@ export default function QuizPage({ params }: QuizPageProps) {
           
           if (!fullscreenRestored) {
             // If all retries failed, show error and end quiz
+            isSubmittingRef.current = true;
             alert('Could not restore fullscreen mode. The quiz will now end.');
-            handleSubmitQuiz();
+            await handleSubmitQuiz();
             return;
           }
         }
@@ -721,62 +700,43 @@ export default function QuizPage({ params }: QuizPageProps) {
     if (isButtonLoading) return; // Prevent multiple clicks
     
     setIsButtonLoading(true);
-    let loadingToast: string | number | undefined;
     
     try {
       // First, check if we already know the user has reached max attempts
       if (attemptsInfo.current >= attemptsInfo.max) {
-        toast.error(`Maximum attempts reached! You've used all ${attemptsInfo.max} attempt${attemptsInfo.max > 1 ? 's' : ''}.`, {
-          duration: 5000,
-          style: { background: '#B91C1C', color: 'white' },
-          className: 'font-medium',
-          onAutoClose: () => setIsButtonLoading(false)
-        });
+        // Don't show toast here, it will be handled by checkUserAttempts
+        setIsButtonLoading(false);
+        await checkUserAttempts(true); // Show max attempts toast if needed
+        return;
+      }
+      
+      // Check with the server
+      const hasAttemptsLeft = await checkUserAttempts(true);
+      
+      if (!hasAttemptsLeft) {
         setIsButtonLoading(false);
         return;
       }
       
-      // Show loading state immediately
-      loadingToast = toast.loading('Checking your attempts...', {
-        duration: 1000,
-        style: { background: '#1D4ED8', color: 'white' },
-        className: 'font-medium'
-      });
+      // If we get here, user has attempts left
+      setQuizStarted(true);
+      setStep('quiz');
       
-      try {
-        // Check with the server
-        const hasAttemptsLeft = await checkUserAttempts(true);
-        
-        if (!hasAttemptsLeft) {
-          toast.dismiss(loadingToast);
-          setIsButtonLoading(false);
-          return;
+      // Request fullscreen when starting the quiz
+      if (document.documentElement.requestFullscreen) {
+        try {
+          await document.documentElement.requestFullscreen();
+          setIsFullscreen(true);
+        } catch (err) {
+          console.error('Fullscreen error:', err);
+          // Continue with quiz even if fullscreen fails
         }
-        
-        // If we get here, user has attempts left
-        toast.dismiss(loadingToast);
-        setQuizStarted(true);
-        setStep('quiz');
-        
-        // Request fullscreen when starting the quiz
-        if (document.documentElement.requestFullscreen) {
-          try {
-            await document.documentElement.requestFullscreen();
-            setIsFullscreen(true);
-          } catch (err) {
-            console.error('Fullscreen error:', err);
-            // Continue with quiz even if fullscreen fails
-          }
-        }
-      } catch (error) {
-        toast.dismiss(loadingToast);
-        throw error; // Re-throw to be caught by the outer catch
-      } finally {
-        setIsButtonLoading(false);
       }
     } catch (error) {
       console.error('Error starting quiz:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to start the quiz. Please try again.');
+      // No toast for generic errors
+    } finally {
+      setIsButtonLoading(false);
     }
   }, [checkUserAttempts, attemptsInfo, formData?.name, formData?.email, quizId, quizData?.max_attempts]);
 
@@ -1139,7 +1099,7 @@ Full Name                      </Label>
               <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl mb-6">
                 <CardContent className="p-8">
                   <h2 className="text-2xl font-semibold text-white mb-6 leading-relaxed">
-                    {quizData?.quiz?.[currentQuestionIndex]?.options?.['question'] || 'Loading question...'}
+                    {quizData?.quiz?.[currentQuestionIndex]?.question || 'Loading question...'}
                   </h2>
 
                   {/* Code Snippet */}
@@ -1169,35 +1129,37 @@ Full Name                      </Label>
                   {/* Options */}
                   <div className="space-y-4">
                     <h3 className="text-white font-medium mb-4">Choose your answer:</h3>
-                    {Object.entries(quizData.quiz[currentQuestionIndex].options).map(([key, value]) => {
-                      const isSelected = selectedAnswers[currentQuestionIndex] === key;
-                      return (
-                        <div
-                          key={key}
-                          onClick={() => handleAnswerSelect(key)}
-                          className={`group relative p-6 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                            isSelected
-                              ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/20'
-                              : 'border-gray-700 hover:border-gray-600 bg-gray-800/30 hover:bg-gray-800/50'
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+                    {Object.entries(quizData.quiz[currentQuestionIndex].options)
+                      .filter(([key]) => key !== 'question') // Filter out the question from options
+                      .map(([key, value]) => {
+                        const isSelected = selectedAnswers[currentQuestionIndex] === key;
+                        return (
+                          <div
+                            key={key}
+                            onClick={() => handleAnswerSelect(key)}
+                            className={`group relative p-6 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
                               isSelected
-                                ? 'border-blue-500 bg-blue-500'
-                                : 'border-gray-500 group-hover:border-gray-400'
-                            }`}>
-                              {isSelected && (
-                                <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
-                              )}
-                            </div>
-                            <div className="ml-4 flex-1">
-                              <span className="text-gray-100 leading-relaxed text-lg">{value}</span>
+                                ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/20'
+                                : 'border-gray-700 hover:border-gray-600 bg-gray-800/30 hover:bg-gray-800/50'
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+                                isSelected
+                                  ? 'border-blue-500 bg-blue-500'
+                                  : 'border-gray-500 group-hover:border-gray-400'
+                              }`}>
+                                {isSelected && (
+                                  <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                                )}
+                              </div>
+                              <div className="ml-4 flex-1">
+                                <span className="text-gray-100 leading-relaxed text-lg">{value}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 </CardContent>
               </Card>
