@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import { Metadata, Viewport } from 'next';
 
 export async function generateMetadata({ params }: { params: { username: string } }): Promise<Metadata> {
   const firstName = params.username
@@ -7,8 +7,20 @@ export async function generateMetadata({ params }: { params: { username: string 
     params.username.split(/[-_]/)[0].slice(1).toLowerCase();
   
   return {
-    title: `${firstName} Quiz`,
+    title: `${firstName}'s Quiz`,
+    description: `Take ${firstName}'s quiz on QuizzViz`,
   };
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ],
 }
 
 export default function QuizLayout({
@@ -19,7 +31,6 @@ export default function QuizLayout({
   return (
     <div className="min-h-screen bg-background text-foreground">
       {children}
-      {/* Footer removed from this layout */}
     </div>
   );
 }

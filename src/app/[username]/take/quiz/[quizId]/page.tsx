@@ -17,7 +17,6 @@ import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 interface Question {
   id: string | number;
   type: 'theory' | 'code_analysis';
-  question: string;
   code_snippet: string | null;
   options: Record<string, string>;
   correct_answer: string;
@@ -32,6 +31,7 @@ interface QuizData {
   quiz_key: string;
   quiz_time: number;
   quiz_expiration_time: string;
+  max_attempts?: number;
 }
 
 interface QuizPageProps {
@@ -69,6 +69,7 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [warnings, setWarnings] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [attemptsInfo, setAttemptsInfo] = useState<{current: number; max: number} | null>(null);
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
   const screenshotIntervalRef = useRef<NodeJS.Timeout>();
   const activityMonitorRef = useRef({ 
@@ -81,10 +82,116 @@ export default function QuizPage({ params }: QuizPageProps) {
   });
   const exitConfirmationRef = useRef(false);
 
+  // Check if user has attempts left
+  const checkUserAttempts = useCallback(async (): Promise<boolean> => {
+    if (!formData.name || !formData.email) {
+      toast.error('Please fill in your name and email first');
+      return false;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/quiz_result/check-attempt?user_id=${encodeURIComponent(formData.name)}&email=${encodeURIComponent(formData.email)}&quiz_id=${quizId}`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to check attempts');
+      }
+
+      const data = await response.json();
+      const maxAttempts = quizData?.max_attempts || 1;
+      const currentAttempt = data.attempts || 0;
+      
+      setAttemptsInfo({
+        current: currentAttempt,
+        max: maxAttempts
+      });
+      
+      if (currentAttempt >= maxAttempts) {
+        toast.error(`Your maximum attempt limit (${maxAttempts}) has been reached. You can't attempt this quiz again.`, {
+          duration: 10000,
+          position: 'top-center',
+        });
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error checking attempts:', error);
+      toast.error('Failed to verify your quiz attempts. Please try again.');
+      return false;
+    }
+  }, [formData.name, formData.email, quizId, quizData?.max_attempts]);
+
   // Define all functions before they're used
-  const handleSubmitQuiz = useCallback(() => {
-    setStep('results');
-  }, []);
+  const handleSubmitQuiz = useCallback(async () => {
+    if (!quizData) return;
+    
+    try {
+      // Calculate results
+      const { correct, total, percentage } = calculateResults();
+      
+      // Prepare user answers in the required format
+      const userAnswers = Object.entries(selectedAnswers).map(([questionIndex, answer]) => {
+        const question = quizData.quiz[parseInt(questionIndex)];
+        return {
+          question_id: question.id.toString(),
+          question_text: question.type === 'code_analysis' 
+            ? 'Analyze the code snippet' 
+            : 'Answer the question',
+          user_answer: answer,
+          is_correct: answer === question.correct_answer,
+          correct_answer: question.correct_answer
+        };
+      });
+      
+      // Submit results to the backend using POST
+      const response = await fetch('/api/quiz_result', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          quiz_id: quizData.quiz_id,
+          owner_id: params.username,  // Using the quiz owner's username from URL path
+          username: formData.name,
+          user_email: formData.email,
+          user_answers: userAnswers,
+          result: {
+            score: percentage,
+            total_questions: total,
+            correct_answers: correct,
+            quiz_topic: quizData.topic,
+            quiz_difficulty: quizData.difficulty,
+            time_taken: quizData.quiz_time * 60 - timeLeft
+          },
+          attempt: attemptsInfo ? attemptsInfo.current + 1 : 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to submit quiz results:', errorData);
+        toast.error('Failed to submit quiz results. Please try again.');
+      } else {
+        // Update local attempts info if needed
+        if (attemptsInfo) {
+          setAttemptsInfo(prev => ({
+            ...prev!,
+            current: prev!.current + 1
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      toast.error('An error occurred while submitting your quiz. Your results may not have been saved.');
+    } finally {
+      // Always move to results page, even if submission fails
+      setStep('results');
+    }
+  }, [quizData, selectedAnswers, formData, attemptsInfo, timeLeft]);
 
   const requestFullscreen = useCallback(async () => {
     try {
@@ -481,16 +588,41 @@ export default function QuizPage({ params }: QuizPageProps) {
     return newArray;
   };
 
-  const verifyQuizKey = async () => {
+  // Calculate quiz results based on selected answers
+  const calculateResults = () => {
+    if (!quizData) return { correct: 0, total: 0, percentage: 0 };
+    
+    let correct = 0;
+    const total = quizData.quiz.length;
+    
+    // Count correct answers
+    Object.entries(selectedAnswers).forEach(([index, answer]) => {
+      const question = quizData.quiz[parseInt(index)];
+      if (question && answer === question.correct_answer) {
+        correct++;
+      }
+    });
+    
+    // Calculate percentage (rounded to 2 decimal places)
+    const percentage = total > 0 ? Math.round((correct / total) * 100 * 100) / 100 : 0;
+    
+    return { correct, total, percentage };
+  };
+
+  const verifyQuizKey = async (): Promise<boolean> => {
     if (!formData.quizKey.trim()) {
       setVerificationError('Please enter a quiz key');
       return false;
     }
-
-    setVerifying(true);
-    setVerificationError('');
-
+    
     try {
+      // Check attempts before verifying key
+      const canProceed = await checkUserAttempts();
+      if (!canProceed) return false;
+
+      setVerifying(true);
+      setVerificationError('');
+
       // Get the current URL path
       const currentPath = window.location.href;
       
@@ -503,29 +635,40 @@ export default function QuizPage({ params }: QuizPageProps) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to verify quiz key');
       }
 
       const data = await response.json();
       
+      if (!data || !data.quiz_key) {
+        throw new Error('Invalid response from server');
+      }
+      
       if (data.quiz_key !== formData.quizKey) {
         throw new Error('Invalid quiz key. Please check and try again.');
       }
       
-      // Shuffle the questions array before setting the state
-      if (data.quiz && Array.isArray(data.quiz)) {
-        data.quiz = shuffleArray(data.quiz);
+      // Validate and set quiz data
+      if (!data.quiz || !Array.isArray(data.quiz)) {
+        throw new Error('Invalid quiz data received');
       }
-
-      setQuizData(data);
+      
+      // Shuffle the questions array before setting the state
+      const shuffledQuiz = {
+        ...data,
+        quiz: shuffleArray([...data.quiz]) // Create a new array to ensure reactivity
+      };
+      
+      setQuizData(shuffledQuiz);
       setTimeLeft(data.quiz_time * 60);
       setStep('instructions');
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Verification error:', error);
-      setVerificationError(error.message || 'Failed to verify quiz key');
-      toast.error(error.message || 'Failed to verify quiz key', {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to verify quiz key';
+      setVerificationError(errorMessage);
+      toast.error(errorMessage, {
         style: { 
           background: '#1F2937', 
           color: '#EF4444', 
@@ -684,7 +827,7 @@ export default function QuizPage({ params }: QuizPageProps) {
               {/* Header - Removed icon */}
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                  Welcome to Quiz
+                  Welcome to QuizzViz
                 </h1>
                 <p className="text-gray-400">Enter your details to begin the assessment</p>
               </div>
@@ -879,11 +1022,11 @@ Full Name                      </Label>
               <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl mb-6">
                 <CardContent className="p-8">
                   <h2 className="text-2xl font-semibold text-white mb-6 leading-relaxed">
-                    {quizData.quiz[currentQuestionIndex].question}
+                    {quizData?.quiz?.[currentQuestionIndex]?.options?.['question'] || 'Loading question...'}
                   </h2>
 
                   {/* Code Snippet */}
-                  {quizData.quiz[currentQuestionIndex].code_snippet && (
+                  {quizData?.quiz?.[currentQuestionIndex]?.code_snippet && (
                     <div className="mb-8 rounded-xl overflow-hidden border border-gray-700">
                       <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
                         <span className="text-sm text-gray-300 font-medium">Code Preview</span>
