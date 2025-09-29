@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
+import { Toaster } from 'sonner';
 import { formatTime } from '@/lib/utils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
@@ -32,6 +33,7 @@ interface QuizData {
   quiz_key: string;
   quiz_time: number;
   quiz_expiration_time: string;
+  max_attempts?: number;
 }
 
 interface QuizPageProps {
@@ -52,23 +54,25 @@ export default function QuizPage({ params }: QuizPageProps) {
   const router = useRouter();
   const { username, quizId } = params;
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    quizKey: '',
-  });
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<FormData>({ name: '', email: '', quizKey: '' });
   const [quizData, setQuizData] = useState<QuizData | null>(null);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [quizStarted, setQuizStarted] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [verificationError, setVerificationError] = useState('');
-  const [warnings, setWarnings] = useState(0);
+  const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [quizStarted, setQuizStarted] = useState<boolean>(false);
+  const [verifying, setVerifying] = useState<boolean>(false);
+  const [verificationError, setVerificationError] = useState<string>('');
+  const [warnings, setWarnings] = useState<number>(0);
   const [showWarning, setShowWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  interface AttemptsInfo {
+    current: number;
+    max: number;
+  }
+
+  const [attemptsInfo, setAttemptsInfo] = useState<{ current: number; max: number }>({ current: 0, max: 1 });
+  const [showingMaxAttemptsNotification, setShowingMaxAttemptsNotification] = useState(false);
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
   const screenshotIntervalRef = useRef<NodeJS.Timeout>();
   const activityMonitorRef = useRef({ 
@@ -81,10 +85,129 @@ export default function QuizPage({ params }: QuizPageProps) {
   });
   const exitConfirmationRef = useRef(false);
 
+  const checkUserAttempts = useCallback(async (showToast = true): Promise<boolean> => {
+    if (showingMaxAttemptsNotification) return false;
+    
+    if (!formData?.name || !formData?.email) {
+      setIsButtonLoading(false);
+      return false;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/quiz_result/check-attempt?user_id=${encodeURIComponent(formData.name)}&email=${encodeURIComponent(formData.email)}&quiz_id=${quizId}`
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to check attempts');
+      }
+
+      const data = await response.json();
+      const maxAttempts = quizData?.max_attempts || 1;
+      const currentAttempt = data.attempts || 0;
+      const hasReachedMax = currentAttempt >= maxAttempts;
+      
+      // Update the attempts info
+      setAttemptsInfo({
+        current: currentAttempt,
+        max: maxAttempts
+      });
+      
+      if (hasReachedMax && showToast) {
+        setShowingMaxAttemptsNotification(true);
+        toast.error(`Maximum attempts reached! You've used ${currentAttempt} of ${maxAttempts} attempts.`, {
+          duration: 5000,
+          className: 'font-medium',
+          onAutoClose: () => {
+            setShowingMaxAttemptsNotification(false);
+          }
+        });
+      }
+      
+      return !hasReachedMax;
+    } catch (error) {
+      console.error('Error checking attempts:', error);
+      setIsButtonLoading(false);
+      return false;
+    }
+  }, [formData.name, formData.email, quizId, quizData?.max_attempts, showingMaxAttemptsNotification]);
+
   // Define all functions before they're used
-  const handleSubmitQuiz = useCallback(() => {
-    setStep('results');
-  }, []);
+  const handleSubmitQuiz = useCallback(async () => {
+    if (!quizData) return;
+    
+    try {
+      // Make sure we have at least one answer
+      if (Object.keys(selectedAnswers).length === 0) {
+        // If no answers, create empty answers for all questions
+        quizData.quiz.forEach((_, index) => {
+          selectedAnswers[index] = '';
+        });
+      }
+      
+      // Calculate results
+      const { correct, total, percentage } = calculateResults();
+      
+      // Prepare user answers in the required format
+      const userAnswers = quizData.quiz.map((question, index) => {
+        const answer = selectedAnswers[index] || '';
+        return {
+          question_id: question.id.toString(),
+          user_answer: answer,
+          is_correct: answer === question.correct_answer,
+          correct_answer: question.correct_answer
+        };
+      });
+      
+      // Submit results to the backend using POST
+      const response = await fetch('/api/quiz_result', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': 'application/json'
+        },
+        body: JSON.stringify({
+          quiz_id: quizData.quiz_id,
+          owner_id: params.username,
+          username: formData.name,
+          user_email: formData.email,
+          user_answers: userAnswers,
+          result: {
+            score: percentage,
+            total_questions: total,
+            correct_answers: correct,
+            quiz_topic: quizData.topic,
+            quiz_difficulty: quizData.difficulty,
+            time_taken: Math.ceil((quizData.quiz_time * 60 - timeLeft) / 60)
+          },
+          attempt: attemptsInfo ? attemptsInfo.current + 1 : 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.detail || errorData.message || 'Failed to submit quiz results';
+        console.error('Failed to submit quiz results:', errorMessage);
+        throw new Error(errorMessage);
+      }
+      
+      // Update attempts info on successful submission
+      setAttemptsInfo(prev => ({
+        current: prev ? prev.current + 1 : 1,
+        max: prev?.max || 1
+      }));
+      
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      // Don't show error toast to user
+    } finally {
+      // Always move to results page, even if submission fails
+      setStep('results');
+    }
+  }, [quizData, selectedAnswers, formData, attemptsInfo, timeLeft]);
 
   const requestFullscreen = useCallback(async () => {
     try {
@@ -115,25 +238,6 @@ export default function QuizPage({ params }: QuizPageProps) {
   const showWarningMessage = useCallback((message: string) => {
     setWarnings(prev => prev + 1);
     setShowWarning(true);
-    
-    // Show the warning toast
-    toast.warning(message, {
-      style: {
-        background: '#92400E',
-        color: '#FEF3C7',
-        border: '1px solid #B45309',
-        maxWidth: '500px',
-        margin: '0 auto',
-        textAlign: 'center',
-        borderRadius: '0.5rem',
-        fontSize: '0.95rem',
-        padding: '1rem',
-        zIndex: 9999,
-      },
-      duration: 5000,
-      position: 'top-center',
-      className: 'warning-toast',
-    });
     
     // Force focus back to the window
     window.focus();
@@ -179,8 +283,14 @@ export default function QuizPage({ params }: QuizPageProps) {
     }
   }, []);
 
+  // Track if quiz submission is in progress
+  const isSubmittingRef = useRef(false);
+
   // Handle fullscreen change with custom confirmation
   const handleFullscreenChange = useCallback(async () => {
+    // Prevent multiple submissions
+    if (isSubmittingRef.current) return;
+    
     // Check if we're already handling this change or if the quiz isn't started
     if (exitConfirmationRef.current || !quizStarted || isRestoring) return;
     
@@ -201,8 +311,10 @@ export default function QuizPage({ params }: QuizPageProps) {
         const userConfirmed = await confirmExit();
         
         if (userConfirmed) {
+          // Set submitting flag to prevent multiple submissions
+          isSubmittingRef.current = true;
           // User wants to quit
-          handleSubmitQuiz();
+          await handleSubmitQuiz();
           return;
         } else {
           // User wants to continue, re-enter fullscreen with retry logic
@@ -232,8 +344,9 @@ export default function QuizPage({ params }: QuizPageProps) {
           
           if (!fullscreenRestored) {
             // If all retries failed, show error and end quiz
+            isSubmittingRef.current = true;
             alert('Could not restore fullscreen mode. The quiz will now end.');
-            handleSubmitQuiz();
+            await handleSubmitQuiz();
             return;
           }
         }
@@ -481,16 +594,41 @@ export default function QuizPage({ params }: QuizPageProps) {
     return newArray;
   };
 
-  const verifyQuizKey = async () => {
+  // Calculate quiz results based on selected answers
+  const calculateResults = () => {
+    if (!quizData) return { correct: 0, total: 0, percentage: 0 };
+    
+    let correct = 0;
+    const total = quizData.quiz.length;
+    
+    // Count correct answers
+    Object.entries(selectedAnswers).forEach(([index, answer]) => {
+      const question = quizData.quiz[parseInt(index)];
+      if (question && answer === question.correct_answer) {
+        correct++;
+      }
+    });
+    
+    // Calculate percentage (rounded to 2 decimal places)
+    const percentage = total > 0 ? Math.round((correct / total) * 100 * 100) / 100 : 0;
+    
+    return { correct, total, percentage };
+  };
+
+  const verifyQuizKey = async (): Promise<boolean> => {
     if (!formData.quizKey.trim()) {
       setVerificationError('Please enter a quiz key');
       return false;
     }
-
-    setVerifying(true);
-    setVerificationError('');
-
+    
     try {
+      // Check attempts before verifying key
+      const canProceed = await checkUserAttempts();
+      if (!canProceed) return false;
+
+      setVerifying(true);
+      setVerificationError('');
+
       // Get the current URL path
       const currentPath = window.location.href;
       
@@ -503,29 +641,40 @@ export default function QuizPage({ params }: QuizPageProps) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to verify quiz key');
       }
 
       const data = await response.json();
       
+      if (!data || !data.quiz_key) {
+        throw new Error('Invalid response from server');
+      }
+      
       if (data.quiz_key !== formData.quizKey) {
         throw new Error('Invalid quiz key. Please check and try again.');
       }
       
-      // Shuffle the questions array before setting the state
-      if (data.quiz && Array.isArray(data.quiz)) {
-        data.quiz = shuffleArray(data.quiz);
+      // Validate and set quiz data
+      if (!data.quiz || !Array.isArray(data.quiz)) {
+        throw new Error('Invalid quiz data received');
       }
-
-      setQuizData(data);
+      
+      // Shuffle the questions array before setting the state
+      const shuffledQuiz = {
+        ...data,
+        quiz: shuffleArray([...data.quiz]) // Create a new array to ensure reactivity
+      };
+      
+      setQuizData(shuffledQuiz);
       setTimeLeft(data.quiz_time * 60);
       setStep('instructions');
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Verification error:', error);
-      setVerificationError(error.message || 'Failed to verify quiz key');
-      toast.error(error.message || 'Failed to verify quiz key', {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to verify quiz key';
+      setVerificationError(errorMessage);
+      toast.error(errorMessage, {
         style: { 
           background: '#1F2937', 
           color: '#EF4444', 
@@ -547,10 +696,49 @@ export default function QuizPage({ params }: QuizPageProps) {
     setStep('quiz-info');
   };
 
-  const beginQuiz = () => {
-    setQuizStarted(true);
-    setStep('quiz');
-  };
+  const beginQuiz = useCallback(async () => {
+    if (isButtonLoading) return; // Prevent multiple clicks
+    
+    setIsButtonLoading(true);
+    
+    try {
+      // First, check if we already know the user has reached max attempts
+      if (attemptsInfo.current >= attemptsInfo.max) {
+        // Don't show toast here, it will be handled by checkUserAttempts
+        setIsButtonLoading(false);
+        await checkUserAttempts(true); // Show max attempts toast if needed
+        return;
+      }
+      
+      // Check with the server
+      const hasAttemptsLeft = await checkUserAttempts(true);
+      
+      if (!hasAttemptsLeft) {
+        setIsButtonLoading(false);
+        return;
+      }
+      
+      // If we get here, user has attempts left
+      setQuizStarted(true);
+      setStep('quiz');
+      
+      // Request fullscreen when starting the quiz
+      if (document.documentElement.requestFullscreen) {
+        try {
+          await document.documentElement.requestFullscreen();
+          setIsFullscreen(true);
+        } catch (err) {
+          console.error('Fullscreen error:', err);
+          // Continue with quiz even if fullscreen fails
+        }
+      }
+    } catch (error) {
+      console.error('Error starting quiz:', error);
+      // No toast for generic errors
+    } finally {
+      setIsButtonLoading(false);
+    }
+  }, [checkUserAttempts, attemptsInfo, formData?.name, formData?.email, quizId, quizData?.max_attempts]);
 
   const handleAnswerSelect = (answer: string) => {
     setSelectedAnswers(prev => ({
@@ -684,7 +872,7 @@ export default function QuizPage({ params }: QuizPageProps) {
               {/* Header - Removed icon */}
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                  Welcome to Quiz
+                  Welcome to QuizzViz
                 </h1>
                 <p className="text-gray-400">Enter your details to begin the assessment</p>
               </div>
@@ -750,13 +938,18 @@ Full Name                      </Label>
 
                     <Button
                       type="submit"
-                      disabled={verifying}
-                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
+                      disabled={verifying || showingMaxAttemptsNotification}
+                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                     >
-                      {verifying ? (
+                      {showingMaxAttemptsNotification ? (
                         <>
                           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Verifying Access...
+                          Processing...
+                        </>
+                      ) : verifying ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Verifying...
                         </>
                       ) : (
                         <>
@@ -839,13 +1032,40 @@ Full Name                      </Label>
 
               {/* Start Button */}
               <div className="text-center">
-                <Button 
-                  onClick={beginQuiz}
-                  className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02]"
-                >
-                  Start Quiz
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                {attemptsInfo && attemptsInfo.current >= attemptsInfo.max ? (
+                  <div className="p-4 bg-red-900/30 border border-red-800 rounded-xl">
+                    <div className="flex items-center justify-center gap-2 text-red-300">
+                      <AlertCircle className="w-5 h-5" />
+                      <span>Maximum attempts reached ({attemptsInfo?.current ?? 0}/{attemptsInfo?.max ?? 0})</span>
+                    </div>
+                    <p className="text-sm text-red-200 mt-1">
+                      You've used all available attempts for this quiz.
+                    </p>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={beginQuiz}
+                    className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                    disabled={attemptsInfo.current >= attemptsInfo.max || isButtonLoading || showingMaxAttemptsNotification}
+                  >
+                    {showingMaxAttemptsNotification ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Verifying attempts...
+                      </>
+                    ) : isButtonLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        {attemptsInfo.current > 0 ? 'Continuing...' : 'Starting...'}
+                      </>
+                    ) : (
+                      <>
+                        {attemptsInfo.current > 0 ? 'Continue to Quiz' : 'Start Quiz'}
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -879,11 +1099,11 @@ Full Name                      </Label>
               <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl mb-6">
                 <CardContent className="p-8">
                   <h2 className="text-2xl font-semibold text-white mb-6 leading-relaxed">
-                    {quizData.quiz[currentQuestionIndex].question}
+                    {quizData?.quiz?.[currentQuestionIndex]?.question || 'Loading question...'}
                   </h2>
 
                   {/* Code Snippet */}
-                  {quizData.quiz[currentQuestionIndex].code_snippet && (
+                  {quizData?.quiz?.[currentQuestionIndex]?.code_snippet && (
                     <div className="mb-8 rounded-xl overflow-hidden border border-gray-700">
                       <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
                         <span className="text-sm text-gray-300 font-medium">Code Preview</span>
@@ -909,35 +1129,37 @@ Full Name                      </Label>
                   {/* Options */}
                   <div className="space-y-4">
                     <h3 className="text-white font-medium mb-4">Choose your answer:</h3>
-                    {Object.entries(quizData.quiz[currentQuestionIndex].options).map(([key, value]) => {
-                      const isSelected = selectedAnswers[currentQuestionIndex] === key;
-                      return (
-                        <div
-                          key={key}
-                          onClick={() => handleAnswerSelect(key)}
-                          className={`group relative p-6 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                            isSelected
-                              ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/20'
-                              : 'border-gray-700 hover:border-gray-600 bg-gray-800/30 hover:bg-gray-800/50'
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+                    {Object.entries(quizData.quiz[currentQuestionIndex].options)
+                      .filter(([key]) => key !== 'question') // Filter out the question from options
+                      .map(([key, value]) => {
+                        const isSelected = selectedAnswers[currentQuestionIndex] === key;
+                        return (
+                          <div
+                            key={key}
+                            onClick={() => handleAnswerSelect(key)}
+                            className={`group relative p-6 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
                               isSelected
-                                ? 'border-blue-500 bg-blue-500'
-                                : 'border-gray-500 group-hover:border-gray-400'
-                            }`}>
-                              {isSelected && (
-                                <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
-                              )}
-                            </div>
-                            <div className="ml-4 flex-1">
-                              <span className="text-gray-100 leading-relaxed text-lg">{value}</span>
+                                ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/20'
+                                : 'border-gray-700 hover:border-gray-600 bg-gray-800/30 hover:bg-gray-800/50'
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <div className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all duration-200 ${
+                                isSelected
+                                  ? 'border-blue-500 bg-blue-500'
+                                  : 'border-gray-500 group-hover:border-gray-400'
+                              }`}>
+                                {isSelected && (
+                                  <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                                )}
+                              </div>
+                              <div className="ml-4 flex-1">
+                                <span className="text-gray-100 leading-relaxed text-lg">{value}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 </CardContent>
               </Card>
