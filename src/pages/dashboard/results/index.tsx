@@ -49,9 +49,8 @@ export default function ProfilePage() {
                 userEmail={user?.emailAddresses?.[0]?.emailAddress}
               />
               <main className="flex-1 p-6 space-y-6">
-                <h1 className="text-2xl font-semibold">Profile</h1>
-                <p className="text-white/70">Update your personal information and preferences.</p>
-                <div className="border border-white/10 rounded-lg p-6">Profile settings coming soon.</div>
+                <h1 className="text-2xl font-semibold">Result</h1>
+                <div className="border border-white/10 rounded-lg p-6">Result Page coming soon.</div>
               </main>
             </div>
           </div>
