@@ -16,16 +16,16 @@ export default async function handler(
   }
 
   try {
-    const { user_id, email, quiz_id } = req.query;
+    const { email, quiz_id } = req.query;
     
-    if (!user_id || !email || !quiz_id) {
+    if (!email || !quiz_id) {
       return res.status(400).json({ 
-        detail: 'user_id, email, and quiz_id are required query parameters' 
+        detail: 'email and quiz_id are required query parameters' 
       });
     }
 
     const response = await fetch(
-      `${API_BASE_URL}/check/attempt/user/${user_id}/email/${email}/quiz/${quiz_id}`,
+      `${API_BASE_URL}/check/attempt/email/${email}/quiz/${quiz_id}`,
       {
         headers: {
           'accept': 'application/json',

@@ -107,7 +107,7 @@ export default function QuizPage({ params }: QuizPageProps) {
 
     try {
       const response = await fetch(
-        `/api/quiz_result/check-attempt?user_id=${encodeURIComponent(formData.name)}&email=${encodeURIComponent(formData.email)}&quiz_id=${quizId}`
+        `/api/quiz_result/check-attempt?email=${encodeURIComponent(formData.email)}&quiz_id=${quizId}`
       );
       
       if (!response.ok) {
@@ -704,7 +704,7 @@ export default function QuizPage({ params }: QuizPageProps) {
 
     try {
       const response = await fetch(
-        `/api/quiz_result/check-attempt?user_id=${encodeURIComponent(formData.name)}&email=${encodeURIComponent(formData.email)}&quiz_id=${quizId}`
+        `/api/quiz_result/check-attempt?email=${encodeURIComponent(formData.email)}&quiz_id=${quizId}`
       );
       
       if (!response.ok) {
