@@ -1,5 +1,6 @@
 
-// layout.tsx
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import "./globals.css";
 import Providers from "./providers";
 import React from "react";
@@ -146,6 +147,8 @@ export default function RootLayout({
           <div className="min-h-screen bg-background text-foreground">
             {/* <ConditionalNavbar /> */}
             {children}
+            <Analytics />
+            <SpeedInsights />
           </div>
         </Providers>
       </body>
