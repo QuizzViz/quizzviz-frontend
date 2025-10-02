@@ -110,7 +110,7 @@ export default function DashboardSidebar({
   const menuItems: { name: string; href: string; Icon: (props: { className?: string }) => JSX.Element }[] = [
     { name: "Dashboard", href: "/dashboard", Icon: (props) => <FiHome {...props} /> },
     { name: "My Quizzes", href: "/dashboard/my-quizzes", Icon: (props) => <FiBook {...props} /> },
-    { name: "Results", href: "/dashboard/results", Icon: (props) => <FiBarChart2 {...props} /> },
+    { name: "Analytics", href: "/dashboard/analytics", Icon: (props) => <FiBarChart2 {...props} /> },
     { name: "Billing", href: "/dashboard/billing", Icon: (props) => <FiCreditCard {...props} /> },
     { name: "Profile", href: "/dashboard/profile", Icon: (props) => <FiUser {...props} /> },
     { name: "Settings", href: "/dashboard/settings", Icon: (props) => <FiSettings {...props} /> },

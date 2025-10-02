@@ -143,7 +143,6 @@ const exportPDF = (data: QuizResult[]) => {
   doc.save(`${quizTopic.toLowerCase().replace(/\s+/g, '-')}-results-${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
-// --- MAIN COMPONENT ---
 
 export default function ResultsDashboard() {
   const { user, isLoaded } = useUser();
@@ -249,11 +248,14 @@ export default function ResultsDashboard() {
               <DashboardHeader userName={user?.fullName || "User"} userEmail={user?.emailAddresses?.[0]?.emailAddress}/>
               
               <main className="flex-1 overflow-y-auto bg-black">
-                <div className="max-w-7xl mx-auto p-6 space-y-8"> {/* Adjusted space-y */}
+                <div className="max-w-7xl mx-auto p-6 space-y-8">
+                   {/* Adjusted space-y */}
+                   <div>
+                 <h1 className="text-2xl font-bold text-white">Quiz Analytics</h1>
                   <p className="text-lg text-gray-400 mb-6">
                     Analyze candidate performance and identify top talent.
                   </p>
-
+                  </div>
                   {analyticsPerQuiz.map((quiz, idx)=> {
                     const selectedScore = selectedScores[quiz.quiz_topic] ?? null;
                     
@@ -273,11 +275,7 @@ export default function ResultsDashboard() {
                       });
 
                     const highestScore = Math.max(...quiz.details.map(d=>d.result.score), 0);
-                    const topCandidates = quiz.details
-                        .filter(d=>d.result.score === highestScore)
-                        .map(d=>d.user_email)
-                        .filter((value, index, self) => self.indexOf(value) === index); // Unique emails
-
+                    
                     const totalAttempts = quiz.details.length; // Corrected to just count entries, not sum attempt number
                     const totalUniqueCandidates = Array.from(new Set(quiz.details.map(d=>d.user_email))).length;
                     const maxCount = Math.max(...quiz.scoreDistribution.map(d=>d.count), 1);
@@ -287,7 +285,7 @@ export default function ResultsDashboard() {
                       <Card key={idx} className="bg-zinc-950 border-zinc-800 shadow-2xl rounded-xl p-4 transition-all duration-500 hover:shadow-purple-500/10">
                         <CardHeader className="flex flex-row justify-between items-start border-b border-zinc-800 pb-3 mb-4">
                           <div>
-                            <CardTitle className="text-white text-3xl font-semibold">{quiz.quiz_topic}</CardTitle>
+                            <CardTitle className="text-white text-3xl font-semibold">{quiz.quiz_topic} Quiz</CardTitle>
                             <CardDescription className="text-gray-400 mt-1">Score distribution across all attempts. Click on a bar to filter results.</CardDescription>
                           </div>
                         </CardHeader>
