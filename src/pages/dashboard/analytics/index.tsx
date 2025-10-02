@@ -223,16 +223,13 @@ export default function ResultsDashboard() {
     return result;
   }, [quizData]);
 
-  if (loading || !isLoaded) return (
-    <div className="flex items-center justify-center h-screen bg-black">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto relative">
-          <Sparkles className="w-6 h-6 text-purple-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"/>
-        </div>
-        <p className="mt-4 text-gray-400">Fetching data from API...</p>
+   if (loading || !isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <>
