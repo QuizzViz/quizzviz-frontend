@@ -7,6 +7,7 @@ import CTASection  from "./parts/CTASection";
 import  useScrollFade  from "./hooks/useScrollFade";
 import { Navbar } from "@/components/NavBar";
 import { Footer } from "@/components/Footer";
+import FAQsSection from "./parts/FAQsSection";
 
 // Landing page entry: compose all sections and init scroll animations
 export default function LandingPage() {
@@ -19,6 +20,7 @@ export default function LandingPage() {
       <ProblemsSection />
       <FeaturesSection />
       <HowItWorksSection />
+      <FAQsSection />
       <CTASection />
       <Footer/>
     </div>

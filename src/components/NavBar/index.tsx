@@ -42,8 +42,16 @@ export function Navbar() {
             onClick={() => scrollToSection("hero")}
             data-testid="logo-brand"
           >
-            {/* <Logo size="md" animate={true} /> */}
-           <Link href="/"> <span className="inline-block text-xl sm:text-2xl font-semibold text-foreground">QuizzViz</span></Link>
+            <Link href="/" className="flex items-center gap-2">
+              <div className="flex items-center gap-y-1.5"> {/* Increased gap for better spacing */}
+                <img 
+                  src="/QuizzViz-logo.png" 
+                  alt="QuizzViz Logo" 
+                  className="h-10 w-10 sm:h-12 sm:w-12 object-contain self-center" // Larger size to match text height, self-center for precise vertical alignment
+                />
+                <span className="text-xl sm:text-2xl font-semibold text-foreground leading-none">QuizzViz</span> {/* Added leading-none to tighten line-height and align baseline */}
+              </div>
+            </Link>
           </div>
           
           {/* Desktop Navigation */}
