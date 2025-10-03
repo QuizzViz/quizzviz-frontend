@@ -150,18 +150,18 @@ const HeroSection: FC = () => {
   const getDescription = () => {
     switch(userType) {
       case 'individual':
-        return "Generate coding quizzes in minutes that test real-world coding concepts with AI, practice in a secure proctored environment, and get instant feedback.";
+        return "Generate coding quizzes in minutes that test coding concepts with real-world scenarioes, practice in a secure proctored environment, and get instant feedback.";
       case 'business':
-        return "Generate coding quizzes in minutes that test real-world coding concepts with AI, share secure proctored assessments, and analyze results for smarter hiring.";
+        return "Generate coding quizzes in minutes that test coding concepts with real-world scenarioes, share secure proctored assessments, and analyze results for smarter hiring.";
       case 'enterprise':
-        return "Generate coding quizzes in minutes that test real-world coding concepts with AI, scale secure proctored assessments with advanced analytics and team tools.";
+        return "Generate coding quizzes in minutes that test coding concepts with real-world scenarioes, scale secure proctored assessments with advanced analytics and team tools.";
     }
   };
 
   const headline = getHeadlineText();
 
   return (
-    <section id="hero" className="relative overflow-hidden pt-8 sm:pt-10 md:pt-16 pb-6 min-h-[80vh] scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
+    <section id="hero" className="relative overflow-hidden pt-8 sm:pt-10 md:pt-16 lg:pt-20 pb-6 min-h-[80vh] scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background" />
       <div aria-hidden className="absolute right-[-12%] top-10 w-[65vw] max-w-[980px] aspect-square rounded-[36%] bg-[radial-gradient(60%_60%_at_30%_30%,rgba(147,197,253,0.25),rgba(59,130,246,0.12)_45%,rgba(34,197,94,0.08)_75%,transparent_85%)] blur-3xl opacity-70" />
@@ -171,15 +171,15 @@ const HeroSection: FC = () => {
           
           {/* Headline Section */}
           <div className="text-center mb-6 max-w-4xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-medium mb-4">
-              <Sparkles className="w-3 h-3" />
-              <span>AI-Powered Proctored Coding Assessments</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-md border border-green-500/30 text-white text-sm font-medium mb-4 shadow-md">
+              <Sparkles className="w-4 h-4 text-green-300" />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-300 to-blue-300">AI-Powered Proctored Coding Assessments</span>
             </div>
             
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-4 leading-tight">
               {headline.main}
               <br />
-              <span className="gradient-text">{headline.sub}</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">{headline.sub}</span>
             </h1>
             
             <p className="text-base md:text-lg text-gray-200 mb-6 leading-relaxed max-w-3xl mx-auto">
@@ -188,20 +188,20 @@ const HeroSection: FC = () => {
           </div>
 
           {/* User Type Selector */}
-          <div className="flex flex-wrap gap-2 justify-center mb-6">
+          <div className="flex flex-wrap gap-3 justify-center mb-6">
             {USER_TYPES.map(({ id, label, icon: Icon, description }) => (
               <button
                 key={id}
                 onClick={() => setUserType(id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 shadow-sm ${
                   userType === id
-                    ? 'bg-white text-black shadow-md scale-105'
-                    : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20'
+                    ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-md scale-105'
+                    : 'bg-white/5 backdrop-blur-md border border-white/10 text-white hover:bg-white/10 hover:border-white/20'
                 }`}
               >
                 <Icon className="w-4 h-4" />
                 <div className="text-left">
-                  <div className="font-semibold text-xs">{label}</div>
+                  <div className="font-semibold text-sm">{label}</div>
                   <div className="text-xs opacity-80">{description}</div>
                 </div>
               </button>
@@ -210,7 +210,7 @@ const HeroSection: FC = () => {
 
           {/* Quiz Generator Card - Full Width */}
           <div className="w-full max-w-5xl">
-            <Card className="bg-black/40 backdrop-blur-lg border-white/20 shadow-xl">
+            <Card className="bg-black/30 backdrop-blur-lg border border-white/10 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader className="pb-3 border-b border-white/10">
                 <CardTitle className="text-xl font-bold text-white text-center">
                   {userType === 'individual' ? 'Generate Your Practice Coding Quiz' : 'Create Your Coding Assessment'}
@@ -227,14 +227,14 @@ const HeroSection: FC = () => {
                   {/* Topic Input */}
                   <div className="space-y-1">
                     <Label htmlFor="topic" className="text-white font-medium text-sm">
-                      Topic or Technology
+                      Topic
                     </Label>
                     <Input
                       id="topic"
                       placeholder="e.g. React, Python, System Design"
                       value={topic}
                       onChange={(e) => setTopic(e.target.value)}
-                      className="h-10 text-sm bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                      className="h-10 text-sm bg-white/5 border border-white/10 text-white placeholder:text-gray-400 focus:border-green-500/50 transition-colors rounded-lg"
                       required
                     />
                   </div>
@@ -246,12 +246,12 @@ const HeroSection: FC = () => {
                         Difficulty Level
                       </Label>
                       <Select value={difficulty} onValueChange={setDifficulty}>
-                        <SelectTrigger className="h-10 bg-white/10 border-white/20 text-white text-sm">
+                        <SelectTrigger className="h-10 bg-white/5 border border-white/10 text-white text-sm focus:border-green-500/50 transition-colors rounded-lg">
                           <SelectValue placeholder="Select difficulty" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-gray-900 border-white/10">
                           {DIFFICULTY_LEVELS.map((level) => (
-                            <SelectItem key={level.value} value={level.value}>
+                            <SelectItem key={level.value} value={level.value} className="text-white hover:bg-green-500/20">
                               {level.label}
                             </SelectItem>
                           ))}
@@ -268,7 +268,7 @@ const HeroSection: FC = () => {
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="h-10 w-10 text-lg bg-white/10 border-white/20 text-white hover:bg-white/20"
+                          className="h-10 w-10 text-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 rounded-lg transition-colors"
                           onClick={() => updateCount(count - 1)}
                           disabled={count <= 1}
                         >
@@ -281,13 +281,13 @@ const HeroSection: FC = () => {
                           max={userType === 'individual' ? 20 : 50}
                           value={count}
                           onChange={(e) => updateCount(parseInt(e.target.value) || 1)}
-                          className="text-center h-10 text-lg font-bold bg-white/10 border-white/20 text-white"
+                          className="text-center h-10 text-lg font-bold bg-white/5 border border-white/10 text-white focus:border-green-500/50 rounded-lg transition-colors"
                         />
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="h-10 w-10 text-lg bg-white/10 border-white/20 text-white hover:bg-white/20"
+                          className="h-10 w-10 text-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 rounded-lg transition-colors"
                           onClick={() => updateCount(count + 1)}
                           disabled={count >= (userType === 'individual' ? 20 : 50)}
                         >
@@ -298,15 +298,13 @@ const HeroSection: FC = () => {
                   </div>
                   
                   {/* Code/Theory Mix */}
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <Label htmlFor="code-percentage" className="text-white font-medium text-sm">
                         Question Mix
                       </Label>
-                      <div className="text-xs font-semibold">
-                        <span className="text-blue-400">{codePercentage}% Coding</span>
-                        <span className="text-gray-400"> • </span>
-                        <span className="text-gray-400">{100 - codePercentage}% Theory</span>
+                      <div className="text-xs font-semibold  bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-green-400">
+                        {codePercentage}% Coding • {100 - codePercentage}% Theory
                       </div>
                     </div>
                     <input
@@ -317,14 +315,14 @@ const HeroSection: FC = () => {
                       step="10"
                       value={codePercentage}
                       onChange={(e) => setCodePercentage(parseInt(e.target.value))}
-                      className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                      className="w-full h-2 bg-white/10 rounded-full  cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-green-400 [&::-webkit-slider-thumb]:to-blue-400 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-white/20 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-gradient-to-r [&::-moz-range-thumb]:from-green-400 [&::-moz-range-thumb]:to-blue-400 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-lg"
                     />
                   </div>
                   
                   {/* Generate Button */}
                   <Button 
                     onClick={handleGenerate}
-                    className="w-full h-12 text-base font-bold bg-white text-black hover:bg-gray-100 transition-all duration-300 shadow-md hover:shadow-lg group"
+                    className="w-full h-12 text-base font-bold bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl group rounded-lg"
                     disabled={isGenerating}
                   >
                     {isGenerating ? (
@@ -346,12 +344,12 @@ const HeroSection: FC = () => {
                   {/* Trust Indicators */}
                   <div className="flex flex-wrap items-center justify-center gap-4 pt-3 text-xs text-gray-300">
                     <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-blue-400" />
+                      <Clock className="w-3 h-3 text-green-400" />
                       <span>In minutes</span>
                     </div>
                     <span className="hidden sm:inline text-white/30">|</span>
                     <div className="flex items-center gap-1">
-                      <Lock className="w-3 h-3 text-purple-400" />
+                      <Lock className="w-3 h-3 text-blue-400" />
                       <span>Proctored</span>
                     </div>
                   </div>
