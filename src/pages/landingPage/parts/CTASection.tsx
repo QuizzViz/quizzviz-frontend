@@ -9,7 +9,7 @@ const CTASection: FC = () => {
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
   return (
-    <section id="cta" className="py-24 bg-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden">
+    <section id="cta" className="py-24 bg-gradient-to-r from-gray-900/30 to-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden">
       {/* Subtle background elements for elegance */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/2 left-0 w-80 h-80 bg-gradient-to-r from-green-500/10 to-blue-500/10 rounded-full blur-3xl"></div>

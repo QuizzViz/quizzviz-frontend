@@ -28,17 +28,17 @@ const FAQsSection: FC = () => (
           Got <span className="gradient-text font-medium">Questions?</span>
         </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed opacity-90">
-          Find answers to common queries about QuizViz, from quiz generation to proctoring and pricing.
+          Find answers to common queries about QuizzViz, from quiz generation to proctoring and pricing.
         </p>
       </div>
       
       <Accordion type="single" collapsible className="w-full space-y-2" defaultValue="item-1">
         <AccordionItem value="item-1" className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
-            <h3 className="text-xl font-semibold text-foreground tracking-tight">What is QuizViz?</h3>
+            <h3 className="text-xl font-semibold text-foreground tracking-tight">What is QuizzViz?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            QuizViz is an AI-powered platform for generating secyure, real world scenario's based  coding quizzes. It helps individuals practice and evaluate their skillset, small businesses filter the right candidates, and enterprises scale their hiring and assessment process with real-time analytics and exports.
+            QuizzViz is an AI-powered platform for generating secyure, real world scenario's based  coding quizzes. It helps individuals practice and evaluate their skillset, small businesses filter the right candidates, and enterprises scale their hiring and assessment process with real-time analytics and exports.
           </AccordionContent>
         </AccordionItem>
         

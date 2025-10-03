@@ -43,15 +43,13 @@ export function Navbar() {
             data-testid="logo-brand"
           >
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-y-1.5"> {/* Increased gap for better spacing */}
                 <img 
                   src="/QuizzViz-logo.png" 
                   alt="QuizzViz Logo" 
-                  className="h-7 w-7 sm:h-9 sm:w-9" 
-                  width={36}
-                  height={36}
+                  className="h-10 w-10 sm:h-12 sm:w-12 object-contain self-center" // Larger size to match text height, self-center for precise vertical alignment
                 />
-                <span className="text-xl sm:text-2xl font-semibold text-foreground -mt-0.5">QuizzViz</span>
+                <span className="text-xl sm:text-2xl font-semibold text-foreground leading-none">QuizzViz</span> {/* Added leading-none to tighten line-height and align baseline */}
               </div>
             </Link>
           </div>
