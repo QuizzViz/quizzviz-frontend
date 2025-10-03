@@ -42,8 +42,18 @@ export function Navbar() {
             onClick={() => scrollToSection("hero")}
             data-testid="logo-brand"
           >
-            {/* <Logo size="md" animate={true} /> */}
-           <Link href="/"> <span className="inline-block text-xl sm:text-2xl font-semibold text-foreground">QuizzViz</span></Link>
+            <Link href="/" className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <img 
+                  src="/QuizzViz-logo.png" 
+                  alt="QuizzViz Logo" 
+                  className="h-7 w-7 sm:h-9 sm:w-9" 
+                  width={36}
+                  height={36}
+                />
+                <span className="text-xl sm:text-2xl font-semibold text-foreground -mt-0.5">QuizzViz</span>
+              </div>
+            </Link>
           </div>
           
           {/* Desktop Navigation */}

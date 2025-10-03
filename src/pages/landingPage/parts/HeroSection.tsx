@@ -1,56 +1,363 @@
-import { FC } from "react";
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { FC, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import HeroLogoSVG from "@/components/HeroLogoSVG";
+import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+import { 
+  ArrowRight, 
+  Zap, 
+  Users, 
+  Briefcase, 
+  User, 
+  Shield, 
+  Target,
+  TrendingUp,
+  CheckCircle, 
+  Clock, 
+  Lock,
+  Sparkles
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { 
+  Select, 
+  SelectTrigger, 
+  SelectValue, 
+  SelectContent, 
+  SelectItem 
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
-// Top hero section: headline, CTA, animated logo
+type UserType = 'individual' | 'business' | 'enterprise';
+
+interface UserTypeConfig {
+  id: UserType;
+  label: string;
+  icon: FC<{ className?: string }>;
+  description: string;
+}
+
+const USER_TYPES: UserTypeConfig[] = [
+  { 
+    id: 'individual', 
+    label: 'Individual', 
+    icon: User, 
+    description: 'Practice & Learn' 
+  },
+  { 
+    id: 'business', 
+    label: 'Small Business', 
+    icon: Briefcase, 
+    description: 'Hire Smarter' 
+  },
+  { 
+    id: 'enterprise', 
+    label: 'Enterprise', 
+    icon: Users, 
+    description: 'Scale Recruitment' 
+  }
+];
+
+const DIFFICULTY_LEVELS = [
+  { value: 'High School Level', label: 'High School Level' },
+  { value: 'Bachelors Level', label: 'Bachelors Level' },
+  { value: 'Masters Level', label: 'Masters Level' },
+  { value: 'PhD Level', label: 'PhD Level' }
+];
+
 const HeroSection: FC = () => {
   const { user } = useUser();
+  const router = useRouter();
+  const { toast } = useToast();
+  
+  const [userType, setUserType] = useState<UserType>('individual');
+  const [topic, setTopic] = useState<string>('');
+  const [difficulty, setDifficulty] = useState<string>('Bachelors Level');
+  const [count, setCount] = useState<number>(5);
+  const [codePercentage, setCodePercentage] = useState<number>(50);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+
+  const handleGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!topic.trim()) {
+      toast({
+        title: "Topic Required",
+        description: "Please enter a topic to generate your quiz.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    
+    const queryParams = new URLSearchParams({
+      topic: topic.trim(),
+      difficulty,
+      count: count.toString(),
+      codePercentage: codePercentage.toString(),
+      userType
+    });
+
+    if (!user) {
+      await router.push(`/signup?redirect=/dashboard&${queryParams.toString()}`);
+      return;
+    }
+
+    router.push(`/dashboard?${queryParams.toString()}`);
+  };
+
+  const updateCount = (value: number) => {
+    const min = 1;
+    const max = userType === 'individual' ? 20 : 50;
+    setCount(Math.min(Math.max(value, min), max));
+  };
+
+  useEffect(() => {
+    if (isGenerating) {
+      const timer = setTimeout(() => setIsGenerating(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isGenerating]);
+
+  const getHeadlineText = () => {
+    switch(userType) {
+      case 'individual':
+        return {
+          main: "AI-Powered Coding Quiz Generation",
+          sub: "with Proctoring in Minutes"
+        };
+      case 'business':
+        return {
+          main: "AI-Powered Coding Quiz Generation",
+          sub: "with Proctoring in Minutes"
+        };
+      case 'enterprise':
+        return {
+          main: "AI-Powered Coding Quiz Generation",
+          sub: "with Proctoring in Minutes"
+        };
+    }
+  };
+
+  const getDescription = () => {
+    switch(userType) {
+      case 'individual':
+        return "Generate coding quizzes in minutes that test real-world coding concepts with AI, practice in a secure proctored environment, and get instant feedback.";
+      case 'business':
+        return "Generate coding quizzes in minutes that test real-world coding concepts with AI, share secure proctored assessments, and analyze results for smarter hiring.";
+      case 'enterprise':
+        return "Generate coding quizzes in minutes that test real-world coding concepts with AI, scale secure proctored assessments with advanced analytics and team tools.";
+    }
+  };
+
+  const headline = getHeadlineText();
+
   return (
-    <section id="hero" className="relative overflow-hidden pt-10 sm:pt-14 md:pt-24 pb-8 md:min-h-screen scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32">
+    <section id="hero" className="relative overflow-hidden pt-8 sm:pt-10 md:pt-16 pb-6 min-h-[80vh] scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
+      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background" />
       <div aria-hidden className="absolute right-[-12%] top-10 w-[65vw] max-w-[980px] aspect-square rounded-[36%] bg-[radial-gradient(60%_60%_at_30%_30%,rgba(147,197,253,0.25),rgba(59,130,246,0.12)_45%,rgba(34,197,94,0.08)_75%,transparent_85%)] blur-3xl opacity-70" />
+      
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10 items-start md:items-center md:min-h-[calc(100vh-8rem)] py-1">
-          <div className="text-center md:text-left order-1">
-            <div className="max-w-2xl">
-              <h1 className="text-5xl md:text-6xl xl:text-7xl font-light tracking-[-0.02em] text-foreground mb-3 leading-[1.08]">
-                Transform Hiring <span className="ml-3">with</span>
-                <br />
-                <span className="gradient-text font-medium ml-3">Intelligent Assessments</span>
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground/90 text-gray-200 mb-3 leading-relaxed">
-                Hire Smarter, Faster.
-              </p>
-              <p className="text-md text-muted-foreground/90 text-gray-200 mb-6 leading-relaxed">
-                Create enterprise-grade technical quizzes in minutes and filter the right candidates instantly.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 mb-3">
-                {user ? (
-                  <Link href="/dashboard" className="w-full sm:w-auto">
-                    <Button className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-white text-black shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/90 text-base md:text-sm ring-1 ring-black/10 hover:ring-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:translate-x-2 duration-150">
-                      Get Started <ArrowRight className="ml-2 w-6 h-6" />
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href="/signup" className="w-full sm:w-auto">
-                    <Button className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-white text-black shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/90 text-base md:text-sm ring-1 ring-black/10 hover:ring-black/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:translate-x-2 duration-150">
-                      Get Started <ArrowRight className="ml-2 w-6 h-6" />
-                    </Button>
-                  </Link>
-                )}
-                <Button variant="outline" className="md:ml-2 inline-flex items-center rounded-xl px-4 md:px-6 py-2 md:py-4 bg-transparent border border-white/70 text-white hover:bg-white/10 hover:border-white transition-all duration-300 text-base md:text-sm">
-                  Book a Demo
-                </Button>
-              </div>
+        <div className="flex flex-col items-center justify-center min-h-[calc(80vh-6rem)] py-6">
+          
+          {/* Headline Section */}
+          <div className="text-center mb-6 max-w-4xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-medium mb-4">
+              <Sparkles className="w-3 h-3" />
+              <span>AI-Powered Proctored Coding Assessments</span>
             </div>
+            
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-4 leading-tight">
+              {headline.main}
+              <br />
+              <span className="gradient-text">{headline.sub}</span>
+            </h1>
+            
+            <p className="text-base md:text-lg text-gray-200 mb-6 leading-relaxed max-w-3xl mx-auto">
+              {getDescription()}
+            </p>
           </div>
-          <div className="hidden md:flex order-2 md:order-2 justify-center md:justify-end" aria-hidden="true">
-            <div className="w-full md:w-[min(88vh,1100px)] lg:w-[min(92vh,1400px)] aspect-square md:aspect-auto md:h-[min(88vh,1100px)] lg:h-[min(92vh,1400px)]">
-              <HeroLogoSVG size="100%" />
-            </div>
+
+          {/* User Type Selector */}
+          <div className="flex flex-wrap gap-2 justify-center mb-6">
+            {USER_TYPES.map(({ id, label, icon: Icon, description }) => (
+              <button
+                key={id}
+                onClick={() => setUserType(id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
+                  userType === id
+                    ? 'bg-white text-black shadow-md scale-105'
+                    : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <div className="text-left">
+                  <div className="font-semibold text-xs">{label}</div>
+                  <div className="text-xs opacity-80">{description}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Quiz Generator Card - Full Width */}
+          <div className="w-full max-w-5xl">
+            <Card className="bg-black/40 backdrop-blur-lg border-white/20 shadow-xl">
+              <CardHeader className="pb-3 border-b border-white/10">
+                <CardTitle className="text-xl font-bold text-white text-center">
+                  {userType === 'individual' ? 'Generate Your Practice Coding Quiz' : 'Create Your Coding Assessment'}
+                </CardTitle>
+                <CardDescription className="text-gray-300 text-center text-sm">
+                  {userType === 'individual' 
+                    ? 'Start practicing'
+                    : 'Build secure assessments and evaluate candidates effectively'}
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="p-4 md:p-6">
+                <div className="space-y-4">
+                  {/* Topic Input */}
+                  <div className="space-y-1">
+                    <Label htmlFor="topic" className="text-white font-medium text-sm">
+                      Topic or Technology
+                    </Label>
+                    <Input
+                      id="topic"
+                      placeholder="e.g. React, Python, System Design"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      className="h-10 text-sm bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                      required
+                    />
+                  </div>
+                  
+                  {/* Difficulty and Count */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="difficulty" className="text-white font-medium text-sm">
+                        Difficulty Level
+                      </Label>
+                      <Select value={difficulty} onValueChange={setDifficulty}>
+                        <SelectTrigger className="h-10 bg-white/10 border-white/20 text-white text-sm">
+                          <SelectValue placeholder="Select difficulty" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DIFFICULTY_LEVELS.map((level) => (
+                            <SelectItem key={level.value} value={level.value}>
+                              {level.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="count" className="text-white font-medium text-sm">
+                        Questions: {count}
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 text-lg bg-white/10 border-white/20 text-white hover:bg-white/20"
+                          onClick={() => updateCount(count - 1)}
+                          disabled={count <= 1}
+                        >
+                          −
+                        </Button>
+                        <Input
+                          id="count"
+                          type="number"
+                          min="1"
+                          max={userType === 'individual' ? 20 : 50}
+                          value={count}
+                          onChange={(e) => updateCount(parseInt(e.target.value) || 1)}
+                          className="text-center h-10 text-lg font-bold bg-white/10 border-white/20 text-white"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 text-lg bg-white/10 border-white/20 text-white hover:bg-white/20"
+                          onClick={() => updateCount(count + 1)}
+                          disabled={count >= (userType === 'individual' ? 20 : 50)}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Code/Theory Mix */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="code-percentage" className="text-white font-medium text-sm">
+                        Question Mix
+                      </Label>
+                      <div className="text-xs font-semibold">
+                        <span className="text-blue-400">{codePercentage}% Coding</span>
+                        <span className="text-gray-400"> • </span>
+                        <span className="text-gray-400">{100 - codePercentage}% Theory</span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      id="code-percentage"
+                      min="0"
+                      max="100"
+                      step="10"
+                      value={codePercentage}
+                      onChange={(e) => setCodePercentage(parseInt(e.target.value))}
+                      className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                    />
+                  </div>
+                  
+                  {/* Generate Button */}
+                  <Button 
+                    onClick={handleGenerate}
+                    className="w-full h-12 text-base font-bold bg-white text-black hover:bg-gray-100 transition-all duration-300 shadow-md hover:shadow-lg group"
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <span className="flex items-center gap-2">
+                        <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                        Generating...
+                      </span>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 mr-2" />
+                        {user 
+                          ? 'Generate Quiz' 
+                          : 'Generate Free Quiz'}
+                        <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Trust Indicators */}
+                  <div className="flex flex-wrap items-center justify-center gap-4 pt-3 text-xs text-gray-300">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-blue-400" />
+                      <span>In minutes</span>
+                    </div>
+                    <span className="hidden sm:inline text-white/30">|</span>
+                    <div className="flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-purple-400" />
+                      <span>Proctored</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
