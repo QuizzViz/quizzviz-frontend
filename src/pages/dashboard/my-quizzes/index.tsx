@@ -6,11 +6,13 @@ import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import Head from "next/head";
 import Link from "next/link";
+import { Zap, BookOpenCheck } from "lucide-react";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface QuizSummary {
   quiz_id: string;
@@ -34,6 +36,9 @@ export default function MyQuizzesPage() {
   const [quizzes, setQuizzes] = useState<QuizSummary[] | null>(null);
   const [isFetchingQuizzes, setIsFetchingQuizzes] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  
+  // Check if user is on consumer plan
+  const isConsumerPlan = user?.publicMetadata?.plan === 'consumer';
 
   useEffect(() => {
     if (isLoaded && !user) router.push("/signin");
@@ -63,6 +68,92 @@ export default function MyQuizzesPage() {
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
+    );
+  }
+
+  // Show consumer plan UI if user is on consumer plan
+  if (isConsumerPlan) {
+    return (
+      <>
+        <Head>
+          <title>My Quizzes | QuizzViz</title>
+          <meta name="description" content="Upgrade to access all your quizzes." />
+        </Head>
+        <div className="min-h-screen bg-black text-white">
+          <SignedIn>
+            <div className="flex min-h-screen">
+              {/* Sidebar */}
+              <div className="bg-white border-r border-white">
+                <DashboardSideBar />
+              </div>
+              {/* Main content */}
+              <div className="flex-1 flex flex-col">
+                <DashboardHeader 
+                  userName={user?.fullName || user?.firstName || "User"} 
+                  userEmail={user?.emailAddresses?.[0]?.emailAddress} 
+                />
+                <main className="flex-1 p-6">
+                  <div className="max-w-4xl mx-auto">
+                    <Card className="border-0 bg-gradient-to-br from-blue-900/20 to-blue-900/10 border-blue-700/30">
+                      <CardHeader className="text-center space-y-4">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-600/20">
+                          <BookOpenCheck className="h-8 w-8 text-blue-400" />
+                        </div>
+                        <CardTitle className="text-2xl font-bold text-white">Unlimited Quizzes with Business Plan</CardTitle>
+                        <CardDescription className="text-blue-200">
+                          Your current plan only allows access to a limited number of quizzes. Upgrade to our Business Plan to view and manage all your quizzes.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="text-center pb-8 px-8">
+                        <div className="mt-6 space-y-4">
+                          <div className="space-y-2 text-left max-w-md mx-auto">
+                            <div className="flex items-start space-x-3">
+                              <div className="flex-shrink-0 mt-1">
+                                <div className="h-2 w-2 rounded-full bg-blue-400"></div>
+                              </div>
+                              <p className="text-sm text-blue-100">Create and store unlimited quizzes</p>
+                            </div>
+                            <div className="flex items-start space-x-3">
+                              <div className="flex-shrink-0 mt-1">
+                                <div className="h-2 w-2 rounded-full bg-blue-400"></div>
+                              </div>
+                              <p className="text-sm text-blue-100">Access your full quiz history</p>
+                            </div>
+                            <div className="flex items-start space-x-3">
+                              <div className="flex-shrink-0 mt-1">
+                                <div className="h-2 w-2 rounded-full bg-blue-400"></div>
+                              </div>
+                              <p className="text-sm text-blue-100">Advanced quiz management features</p>
+                            </div>
+                          </div>
+                          <div className="pt-6">
+                            <Button 
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-6 text-base"
+                              onClick={() => router.push('/dashboard/billing')}
+                            >
+                              <Zap className="mr-2 h-5 w-5" />
+                              Upgrade to Business Plan
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </main>
+              </div>
+            </div>
+          </SignedIn>
+
+          <SignedOut>
+            <div className="flex items-center justify-center h-screen">
+              <div className="text-center">
+                <h1 className="text-lg md:text-xl lg:text-2xl font-semibold mb-4 text-white">Redirecting to sign in...</h1>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+              </div>
+            </div>
+          </SignedOut>
+        </div>
+      </>
     );
   }
 

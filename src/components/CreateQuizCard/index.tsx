@@ -16,8 +16,12 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useQueryClient } from "@tanstack/react-query";
 
+interface CreateQuizCardProps {
+  maxQuestions?: number;
+}
+
 // Main container composing all sub-parts and business logic via a hook
-export default function CreateQuizCard() {
+export default function CreateQuizCard({ maxQuestions = 100 }: CreateQuizCardProps) {
   const [codePercentage, setCodePercentage] = useState(50);
   
   const {
@@ -42,8 +46,16 @@ export default function CreateQuizCard() {
     typedText,
     progress,
     // actions
-    handleGenerate,
+    handleGenerate: _handleGenerate,
   } = useCreateQuizV2();
+
+  const handleGenerateWithLimit = (codePct: number) => {
+    if (maxQuestions && count > maxQuestions) {
+      setError(`Maximum ${maxQuestions} questions allowed in your plan`);
+      return;
+    }
+    _handleGenerate(codePct);
+  };
   
   const router = useRouter();
   const { toast } = useToast();
@@ -83,6 +95,7 @@ export default function CreateQuizCard() {
                 onChange={(e) => setCount(parseInt(e.target.value || "0"))}
                 className="bg-background border-border text-foreground focus:border-foreground"
                 min={1}
+                max={maxQuestions}
                 required
               />
             </div>
@@ -90,7 +103,13 @@ export default function CreateQuizCard() {
           
           {/* Desktop: Use the original DifficultyCountRow component */}
           <div className="hidden sm:block">
-            <DifficultyCountRow difficulty={difficulty} setDifficulty={setDifficulty} count={count} setCount={setCount} />
+            <DifficultyCountRow 
+              difficulty={difficulty} 
+              setDifficulty={setDifficulty} 
+              count={count} 
+              setCount={setCount} 
+              maxQuestions={maxQuestions}
+            />
           </div>
           
           <CodeTheorySlider 
@@ -101,7 +120,7 @@ export default function CreateQuizCard() {
         <div className="pt-2 flex justify-end">
           <GenerateButton
             isBusy={isReasoning || isFetching}
-            onClick={() => handleGenerate(codePercentage)}
+            onClick={() => handleGenerateWithLimit(codePercentage)}
             labelBusy="Thinking..."
             labelIdle="Generate"
             leftIconBusy={Loader2}

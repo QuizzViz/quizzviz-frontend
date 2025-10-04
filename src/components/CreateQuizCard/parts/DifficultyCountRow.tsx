@@ -4,12 +4,13 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Input } from "@/components/ui/input";
 
 // Renders difficulty select and number-of-questions input side-by-side
- const DifficultyCountRow: FC<{
+const DifficultyCountRow: FC<{
   difficulty: string;
   setDifficulty: (v: string) => void;
   count: number;
   setCount: (v: number) => void;
-}> = ({ difficulty, setDifficulty, count, setCount }) => {
+  maxQuestions?: number;
+}> = ({ difficulty, setDifficulty, count, setCount, maxQuestions = 100 }) => {
   return (
     <div className="grid grid-cols-2 gap-3">
       <div className="space-y-2">
@@ -27,13 +28,21 @@ import { Input } from "@/components/ui/input";
         </Select>
       </div>
       <div className="space-y-2">
-        <Label className="text-foreground">Number of Questions</Label>
+        <div className="flex justify-between items-center">
+          <Label className="text-foreground">Number of Questions</Label>
+          {maxQuestions && (
+            <span className="text-xs text-muted-foreground">
+              Max: {maxQuestions}
+            </span>
+          )}
+        </div>
         <Input
           type="number"
           value={count}
           onChange={(e) => setCount(parseInt(e.target.value || "0"))}
           className="bg-background border-border text-foreground focus:border-foreground"
           min={1}
+          max={maxQuestions}
           required
         />
       </div>
