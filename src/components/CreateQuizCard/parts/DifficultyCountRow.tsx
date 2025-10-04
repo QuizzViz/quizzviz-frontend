@@ -1,7 +1,10 @@
 import { FC } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
+import { currentPlan, PLAN_TYPE } from "@/config/plans";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 // Renders difficulty select and number-of-questions input side-by-side
 const DifficultyCountRow: FC<{
@@ -12,38 +15,62 @@ const DifficultyCountRow: FC<{
   maxQuestions?: number;
 }> = ({ difficulty, setDifficulty, count, setCount, maxQuestions = 100 }) => {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
-        <Label className="text-foreground">Difficulty</Label>
+        <Label className="text-sm font-medium text-white block">Difficulty Level</Label>
         <Select value={difficulty} onValueChange={setDifficulty}>
-          <SelectTrigger className="bg-background border-border text-foreground">
+          <SelectTrigger className="bg-background/50 border-border text-foreground h-10 w-full">
             <SelectValue placeholder="Select difficulty" />
           </SelectTrigger>
           <SelectContent className="bg-background border-border text-foreground">
-            <SelectItem value="High School">High School level</SelectItem>
-            <SelectItem value="Bachelors">Bachelors level</SelectItem>
-            <SelectItem value="Masters">Masters level</SelectItem>
-            <SelectItem value="PhD">PhD level</SelectItem>
+            {currentPlan.availableDifficulties.includes('High School') && (
+              <SelectItem value="High School">High School level</SelectItem>
+            )}
+            {currentPlan.availableDifficulties.includes('Bachelors') && (
+              <SelectItem value="Bachelors">Bachelors level</SelectItem>
+            )}
+            {currentPlan.availableDifficulties.includes('Masters') && (
+              <SelectItem value="Masters">Masters level</SelectItem>
+            )}
+            {PLAN_TYPE === 'Free' ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      <SelectItem 
+                        value="PhD" 
+                        disabled 
+                        className="opacity-50 cursor-not-allowed"
+                      >
+                        <div className="flex items-center">
+                          <span>PhD level</span>
+                          <Info className="ml-2 h-3.5 w-3.5 text-muted-foreground" />
+                        </div>
+                      </SelectItem>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[200px]">
+                    <p>Upgrade to a paid plan to access PhD level difficulty</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <SelectItem value="PhD">PhD level</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
       <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <Label className="text-foreground">Number of Questions</Label>
-          {maxQuestions && (
-            <span className="text-xs text-muted-foreground">
-              Max: {maxQuestions}
-            </span>
-          )}
+        <div className="h-[20px] flex items-center">
+          <Label className="text-sm font-medium text-white">Total Questions</Label>
         </div>
-        <Input
-          type="number"
+        <NumberInput
           value={count}
-          onChange={(e) => setCount(parseInt(e.target.value || "0"))}
-          className="bg-background border-border text-foreground focus:border-foreground"
+          onChange={setCount}
           min={1}
-          max={maxQuestions}
-          required
+          max={Math.min(maxQuestions, currentPlan.maxQuestions)}
+          showMaxIndicator={false}
+          className="w-full"
         />
       </div>
     </div>

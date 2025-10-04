@@ -13,6 +13,7 @@ import { GenerationQueue } from "@/components/Dashboard/Queue";
 import { QuizLibrary } from "@/components/Dashboard/Library";
 import { queuedQuizzes, previousQuizzes } from "@/components/Dashboard/data";
 import { currentPlan, PLAN_TYPE } from "@/config/plans";
+import { PlanInfoBanner } from "@/components/PlanInfoBanner";
 
 // Dashboard route with auth guard and modular sections
 export default function Dashboard() {
@@ -56,6 +57,7 @@ export default function Dashboard() {
               <CreateQuizCard maxQuestions={currentPlan.maxQuestions} />
               {/* <GenerationQueue items={queuedQuizzes} /> */}
               {/* <QuizLibrary items={previousQuizzes} /> */}
+              <PlanInfoBanner />
               {PLAN_TYPE === 'Consumer' && (
                 <div className="mt-4 p-4 bg-blue-900/20 border border-blue-700/30 rounded-lg text-sm text-blue-200">
                   <p>You're on the <span className="font-semibold">Consumer Plan</span> with a limit of {currentPlan.maxQuestions} questions per quiz.</p>

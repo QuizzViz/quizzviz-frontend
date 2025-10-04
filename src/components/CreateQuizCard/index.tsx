@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Send, Zap } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import QuizHeader from "./parts/QuizHeader";
 import TopicInput from "./parts/TopicInput";
 import DifficultyCountRow from "./parts/DifficultyCountRow";
@@ -15,13 +15,14 @@ import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { currentPlan } from "@/config/plans";
 
 interface CreateQuizCardProps {
   maxQuestions?: number;
 }
 
 // Main container composing all sub-parts and business logic via a hook
-export default function CreateQuizCard({ maxQuestions = 100 }: CreateQuizCardProps) {
+export default function CreateQuizCard({ maxQuestions = currentPlan.maxQuestions }: CreateQuizCardProps) {
   const [codePercentage, setCodePercentage] = useState(50);
   
   const {
@@ -50,8 +51,9 @@ export default function CreateQuizCard({ maxQuestions = 100 }: CreateQuizCardPro
   } = useCreateQuizV2();
 
   const handleGenerateWithLimit = (codePct: number) => {
-    if (maxQuestions && count > maxQuestions) {
-      setError(`Maximum ${maxQuestions} questions allowed in your plan`);
+    const effectiveMax = Math.min(maxQuestions, currentPlan.maxQuestions);
+    if (count > effectiveMax) {
+      setError(`Maximum ${effectiveMax} questions allowed in your plan`);
       return;
     }
     _handleGenerate(codePct);
@@ -87,16 +89,14 @@ export default function CreateQuizCard({ maxQuestions = 100 }: CreateQuizCardPro
             </div>
             
             {/* Number of Questions - Mobile Only */}
-            <div className="space-y-2">
-              <Label className="text-foreground">Number of Questions</Label>
-              <Input
-                type="number"
+            <div className="space-y-1">
+              <NumberInput
                 value={count}
-                onChange={(e) => setCount(parseInt(e.target.value || "0"))}
-                className="bg-background border-border text-foreground focus:border-foreground"
+                onChange={setCount}
                 min={1}
                 max={maxQuestions}
-                required
+                showMaxIndicator={true}
+                className="w-full"
               />
             </div>
           </div>
