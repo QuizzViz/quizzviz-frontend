@@ -1,17 +1,25 @@
-import { FC, useState } from "react";
+import { FC } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { User, Briefcase } from "lucide-react";
+import { useUserType } from "@/contexts/UserTypeContext";
 
 type UserType = 'individual' | 'business';
 
-const HowItWorksSection: FC = () => {
-  const [selectedUser, setSelectedUser] = useState<UserType>('individual');
+type Step = {
+  number: string;
+  title?: string; // Make title optional
+  description: string;
+  gradient: string;
+  ring: string;
+};
 
-  const steps = {
+const HowItWorksSection: FC = () => {
+  const { userType: selectedUser, setUserType: setSelectedUser } = useUserType();
+
+  const steps: Record<UserType, Step[]> = {
     individual: [
       {
         number: "1",
-        title: "Generate Quiz",
         description: "Select your coding topic, choose difficulty level, set number of questions, and adjust the theory-to-code analysis ratio to create a personalized practice quiz.",
         gradient: "from-green-500/80 to-blue-500/80",
         ring: "ring-green-500/30"
@@ -107,7 +115,7 @@ const HowItWorksSection: FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-          {steps[selectedUser].map((step, index) => (
+          {steps[selectedUser].map((step: any, index: any) => (
             <Card 
               key={index}
               className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 scroll-fade visible border-white/10 overflow-hidden"

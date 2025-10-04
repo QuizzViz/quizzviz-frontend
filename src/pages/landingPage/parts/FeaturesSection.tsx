@@ -1,17 +1,24 @@
-import { FC, useState } from "react";
+import { FC } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Zap, CheckCircle, BarChart3, Shield, User, Briefcase, BookOpen, Share2 } from "lucide-react";
+import { useUserType, type UserType } from "@/contexts/UserTypeContext";
 
-type UserType = 'individual' | 'business';
+interface Feature {
+  icon: React.ComponentType<any>;
+  title: string;
+  description: string;
+  gradient: string;
+  ring: string;
+}
 
 const FeaturesSection: FC = () => {
-  const [selectedUser, setSelectedUser] = useState<UserType>('individual');
+  const { userType: selectedUser, setUserType: setSelectedUser } = useUserType();
 
-  const features = {
+  const features: Record<UserType, Feature[]> = {
     individual: [
       {
         icon: Zap,
-        title: "Lightning Speed",
+        title: "AI-Powered Generation",
         description: "Generate coding quizzes in minutes with AI, customized by difficulty and mix. Perfect for instant practice sessions.",
         gradient: "from-green-500/80 to-blue-500/80",
         ring: "ring-green-500/30"

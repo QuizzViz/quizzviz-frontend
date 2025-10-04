@@ -34,17 +34,16 @@ import {
   SelectItem 
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { useUserType, UserType } from "@/contexts/UserTypeContext";
 
-type UserType = 'individual' | 'business' | 'enterprise';
-
-interface UserTypeConfig {
+export interface UserTypeConfig {
   id: UserType;
   label: string;
   icon: FC<{ className?: string }>;
   description: string;
 }
 
-const USER_TYPES: UserTypeConfig[] = [
+export const USER_TYPES: UserTypeConfig[] = [
   { 
     id: 'individual', 
     label: 'Individual', 
@@ -55,17 +54,17 @@ const USER_TYPES: UserTypeConfig[] = [
     id: 'business', 
     label: 'Business', 
     icon: Briefcase, 
-    description: 'Hire Smarter & Faster' 
+    description: 'Hire Smarter & Faster'
   }
-  // { 
-  //   id: 'enterprise', 
-  //   label: 'Enterprise', 
-  //   icon: Users, 
-  //   description: 'Scale Recruitment' 
-  // }
+ 
 ];
 
-const DIFFICULTY_LEVELS = [
+interface DifficultyLevel {
+  value: string;
+  label: string;
+}
+
+const DIFFICULTY_LEVELS: DifficultyLevel[] = [
   { value: 'High School Level', label: 'High School Level' },
   { value: 'Bachelors Level', label: 'Bachelors Level' },
   { value: 'Masters Level', label: 'Masters Level' },
@@ -77,7 +76,7 @@ const HeroSection: FC = () => {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [userType, setUserType] = useState<UserType>('individual');
+  const { userType, setUserType } = useUserType();
   const [topic, setTopic] = useState<string>('');
   const [difficulty, setDifficulty] = useState<string>('Bachelors Level');
   const [count, setCount] = useState<number>(5);
@@ -127,34 +126,28 @@ const HeroSection: FC = () => {
     }
   }, [isGenerating]);
 
-  const getHeadlineText = () => {
+  const getHeadlineText = (): { main: string; sub: string } => {
+    const common = {
+      main: "AI-Powered Coding Quiz Generation",
+      sub: "with Proctoring in Minutes"
+    };
+    
     switch(userType) {
       case 'individual':
-        return {
-          main: "AI-Powered Coding Quiz Generation",
-          sub: "with Proctoring in Minutes"
-        };
       case 'business':
-        return {
-          main: "AI-Powered Coding Quiz Generation",
-          sub: "with Proctoring in Minutes"
-        };
-      case 'enterprise':
-        return {
-          main: "AI-Powered Coding Quiz Generation",
-          sub: "with Proctoring in Minutes"
-        };
+      default:
+        return common;
     }
   };
 
-  const getDescription = () => {
+  const getDescription = (): string => {
     switch(userType) {
       case 'individual':
-        return "Generate coding quizzes in minutes that test coding concepts with real-world scenarioes, practice in a secure proctored environment, and get instant feedback.";
+        return "Generate coding quizzes in minutes that test coding concepts with real-world scenarios, practice in a secure proctored environment, and get instant feedback.";
       case 'business':
-        return "Generate coding quizzes in minutes that test coding concepts with real-world scenarioes, share secure proctored assessments, and analyze results for smarter hiring.";
-      case 'enterprise':
-        return "Generate coding quizzes in minutes that test coding concepts with real-world scenarioes, scale secure proctored assessments with advanced analytics and team tools.";
+        return "Generate coding quizzes in minutes that test coding concepts with real-world scenarios, share secure proctored assessments, and analyze results for smarter hiring.";
+      default:
+        return "Generate coding quizzes in minutes with our AI-powered platform.";
     }
   };
 

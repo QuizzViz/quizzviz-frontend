@@ -1,11 +1,10 @@
-import { FC, useState } from "react";
+import { FC } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckCircle, Zap, User, Briefcase } from "lucide-react";
-
-type UserType = 'individual' | 'business';
+import { useUserType } from "@/contexts/UserTypeContext";
 
 const ProblemsSection: FC = () => {
-  const [selectedUser, setSelectedUser] = useState<UserType>('individual');
+  const { userType: selectedUser, setUserType: setSelectedUser } = useUserType();
 
   const contentByUser = {
     individual: {
