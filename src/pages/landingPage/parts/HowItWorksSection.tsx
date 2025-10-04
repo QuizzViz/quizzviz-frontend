@@ -39,10 +39,10 @@ const HowItWorksSection: FC = () => (
                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 <span>Businesses: Role-specific tests</span>
               </li>
-              <li className="flex items-center gap-2 py-1">
+              {/* <li className="flex items-center gap-2 py-1">
                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 <span>Enterprises: Bulk customization</span>
-              </li>
+              </li> */}
             </ul>
           </CardContent>
         </Card>
@@ -65,10 +65,10 @@ const HowItWorksSection: FC = () => (
                 <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                 <span>Businesses: Easy candidate invites</span>
               </li>
-              <li className="flex items-center gap-2 py-1">
+              {/* <li className="flex items-center gap-2 py-1">
                 <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                 <span>Enterprises: Secure team distribution</span>
-              </li>
+              </li> */}
             </ul>
           </CardContent>
         </Card>
@@ -91,10 +91,10 @@ const HowItWorksSection: FC = () => (
                 <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
                 <span>Businesses: Hiring rankings</span>
               </li>
-              <li className="flex items-center gap-2 py-1">
+              {/* <li className="flex items-center gap-2 py-1">
                 <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
                 <span>Enterprises: Advanced reporting</span>
-              </li>
+              </li> */}
             </ul>
           </CardContent>
         </Card>

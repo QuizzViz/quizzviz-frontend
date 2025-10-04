@@ -38,7 +38,7 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">What is QuizzViz?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            QuizzViz is an AI-powered platform for generating secyure, real world scenario's based  coding quizzes. It helps individuals practice and evaluate their skillset, small businesses filter the right candidates, and enterprises scale their hiring and assessment process with real-time analytics and exports.
+            QuizzViz is an AI-powered platform for generating secure, real world scenario's based  coding quizzes. It helps individuals practice and evaluate their skillset, small businesses filter the right candidates, and enterprises scale their hiring and assessment process with real-time analytics and exports.
           </AccordionContent>
         </AccordionItem>
         

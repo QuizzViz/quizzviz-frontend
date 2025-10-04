@@ -40,10 +40,10 @@ const FeaturesSection: FC = () => (
                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 <span>Businesses: Quick setups</span>
               </li>
-              <li className="flex items-center gap-2 py-1">
+              {/* <li className="flex items-center gap-2 py-1">
                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 <span>Enterprises: Bulk generation</span>
-              </li>
+              </li> */}
             </ul>
           </CardContent>
         </Card>
@@ -66,10 +66,10 @@ const FeaturesSection: FC = () => (
                 <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                 <span>Businesses: Fair evaluations</span>
               </li>
-              <li className="flex items-center gap-2 py-1">
+              {/* <li className="flex items-center gap-2 py-1">
                 <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                 <span>Enterprises: Compliant testing</span>
-              </li>
+              </li> */}
             </ul>
           </CardContent>
         </Card>
@@ -92,10 +92,10 @@ const FeaturesSection: FC = () => (
                 <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
                 <span>Businesses: Hiring reports</span>
               </li>
-              <li className="flex items-center gap-2 py-1">
+              {/* <li className="flex items-center gap-2 py-1">
                 <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
                 <span>Enterprises: Team dashboards</span>
-              </li>
+              </li> */}
             </ul>
           </CardContent>
         </Card>
@@ -118,10 +118,10 @@ const FeaturesSection: FC = () => (
                 <div className="w-2 h-2 bg-pink-400 rounded-full"></div>
                 <span>Businesses: Candidate invites</span>
               </li>
-              <li className="flex items-center gap-2 py-1">
+              {/* <li className="flex items-center gap-2 py-1">
                 <div className="w-2 h-2 bg-pink-400 rounded-full"></div>
                 <span>Enterprises: Team workflows</span>
-              </li>
+              </li> */}
             </ul>
           </CardContent>
         </Card>
