@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 
 // Renders difficulty select and number-of-questions input side-by-side
 const DifficultyCountRow: FC<{
@@ -12,11 +12,11 @@ const DifficultyCountRow: FC<{
   maxQuestions?: number;
 }> = ({ difficulty, setDifficulty, count, setCount, maxQuestions = 100 }) => {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
-        <Label className="text-foreground">Difficulty</Label>
+        <Label className="text-sm font-medium text-white block">Difficulty Level</Label>
         <Select value={difficulty} onValueChange={setDifficulty}>
-          <SelectTrigger className="bg-background border-border text-foreground">
+          <SelectTrigger className="bg-background/50 border-border text-foreground h-10 w-full">
             <SelectValue placeholder="Select difficulty" />
           </SelectTrigger>
           <SelectContent className="bg-background border-border text-foreground">
@@ -28,22 +28,16 @@ const DifficultyCountRow: FC<{
         </Select>
       </div>
       <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <Label className="text-foreground">Number of Questions</Label>
-          {maxQuestions && (
-            <span className="text-xs text-muted-foreground">
-              Max: {maxQuestions}
-            </span>
-          )}
+        <div className="h-[20px] flex items-center">
+          <Label className="text-sm font-medium text-white">Total Questions</Label>
         </div>
-        <Input
-          type="number"
+        <NumberInput
           value={count}
-          onChange={(e) => setCount(parseInt(e.target.value || "0"))}
-          className="bg-background border-border text-foreground focus:border-foreground"
+          onChange={setCount}
           min={1}
           max={maxQuestions}
-          required
+          showMaxIndicator={false}
+          className="w-full"
         />
       </div>
     </div>

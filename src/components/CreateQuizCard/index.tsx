@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Send, Zap } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import QuizHeader from "./parts/QuizHeader";
 import TopicInput from "./parts/TopicInput";
 import DifficultyCountRow from "./parts/DifficultyCountRow";
@@ -87,16 +87,14 @@ export default function CreateQuizCard({ maxQuestions = 100 }: CreateQuizCardPro
             </div>
             
             {/* Number of Questions - Mobile Only */}
-            <div className="space-y-2">
-              <Label className="text-foreground">Number of Questions</Label>
-              <Input
-                type="number"
+            <div className="space-y-1">
+              <NumberInput
                 value={count}
-                onChange={(e) => setCount(parseInt(e.target.value || "0"))}
-                className="bg-background border-border text-foreground focus:border-foreground"
+                onChange={setCount}
                 min={1}
                 max={maxQuestions}
-                required
+                showMaxIndicator={true}
+                className="w-full"
               />
             </div>
           </div>
