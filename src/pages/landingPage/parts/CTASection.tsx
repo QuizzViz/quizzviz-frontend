@@ -26,7 +26,7 @@ const CTASection: FC = () => {
             Ready to Transform Your <span className="gradient-text font-medium">Assessments?</span>
           </h2>
           <p className="text-lg lg:text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed opacity-90">
-            Join individuals, small businesses, and enterprises using QuizzViz to build skills, screen talent, and scale hiring faster with AI-powered coding quizzes.
+            Join individuals and startups using QuizzViz to build skills, screen talent, and scale hiring faster with AI-powered coding quizzes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 

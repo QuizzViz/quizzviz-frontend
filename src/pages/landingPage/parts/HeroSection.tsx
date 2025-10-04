@@ -49,20 +49,20 @@ const USER_TYPES: UserTypeConfig[] = [
     id: 'individual', 
     label: 'Individual', 
     icon: User, 
-    description: 'Practice & Learn' 
+    description: 'Practice, Learn & Evaluate' 
   },
   { 
     id: 'business', 
     label: 'Small Business', 
     icon: Briefcase, 
-    description: 'Hire Smarter' 
-  },
-  { 
-    id: 'enterprise', 
-    label: 'Enterprise', 
-    icon: Users, 
-    description: 'Scale Recruitment' 
+    description: 'Hire Smarter & Faster' 
   }
+  // { 
+  //   id: 'enterprise', 
+  //   label: 'Enterprise', 
+  //   icon: Users, 
+  //   description: 'Scale Recruitment' 
+  // }
 ];
 
 const DIFFICULTY_LEVELS = [
