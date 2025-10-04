@@ -53,7 +53,7 @@ const USER_TYPES: UserTypeConfig[] = [
   },
   { 
     id: 'business', 
-    label: 'Small Business', 
+    label: 'Business', 
     icon: Briefcase, 
     description: 'Hire Smarter & Faster' 
   }
