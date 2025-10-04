@@ -11,7 +11,7 @@ import { ChevronDown, Sparkles } from "lucide-react";
 
 // FAQs section with accordion
 const FAQsSection: FC = () => (
-  <section id="faqs" className="py-20 bg-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden">
+  <section id="faqs" className="py-20 relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden">
     {/* Subtle background elements for elegance */}
     <div className="absolute inset-0 opacity-10">
       <div className="absolute top-1/2 left-0 w-72 h-72 bg-gradient-to-r from-green-500/5 to-blue-500/5 rounded-full blur-3xl"></div>
@@ -28,7 +28,7 @@ const FAQsSection: FC = () => (
           Got <span className="gradient-text font-medium">Questions?</span>
         </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed opacity-90">
-          Find answers to common queries about QuizzViz, from quiz generation to proctoring and pricing.
+          Find answers to common queries about QuizzViz, from quiz generation to proctoring and analytics.
         </p>
       </div>
       
@@ -38,7 +38,7 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">What is QuizzViz?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            QuizzViz is an AI-powered platform for generating secure, real world scenario's based  coding quizzes. It helps individuals practice and evaluate their skillset, small businesses filter the right candidates, and enterprises scale their hiring and assessment process with real-time analytics and exports.
+            QuizzViz is an AI-powered platform for generating secure, real-world scenario-based coding quizzes. For <strong>individuals</strong>, it provides instant practice sessions with immediate answer reviews to track learning progress. For <strong>businesses</strong>, it offers advanced hiring tools including secure sharing, smart analytics, and downloadable reports to filter the right candidates efficiently.
           </AccordionContent>
         </AccordionItem>
         
@@ -47,7 +47,7 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">How does proctoring work?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            Proctoring enforces a full-screen mode during quizzes. If users escape full-screen or switch tabs, a modal prompts them to return or end the quiz. Unauthorized exits auto-end the session, ensuring fair, cheat-proof assessments.
+            Proctoring is available for <strong>both individuals and businesses</strong>. It enforces full-screen mode during quizzes. If anyone escapes full-screen or switches tabs, a modal appears prompting them to return or end the quiz. Unauthorized exits automatically end the session, ensuring fair and cheat-proof assessments whether you're practicing individually or evaluating candidates.
           </AccordionContent>
         </AccordionItem>
         
@@ -56,7 +56,7 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">Can I customize quizzes?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            Yes! Select topics, difficulty levels (High School to PhD level), question count, and coding/theory mix. AI generates real-world scenarios tailored for your needs—perfect for personal practice or professional hiring.
+            <strong>Both plans</strong> let you select topics, difficulty levels (High School to PhD), question count, and the theory-to-code analysis ratio during quiz generation. However, <strong>only Business plan users</strong> can add, update, or remove individual questions after the quiz is generated, giving you complete control to fine-tune assessments for specific roles or requirements.
           </AccordionContent>
         </AccordionItem>
         
@@ -65,7 +65,7 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">How do I share quizzes with others?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            After generating, publish quizzes with a secure link and secret key. Set duration, expiration, and max attempts. Candidates access via link, enter the key, and complete in proctored mode—ideal for remote screening.
+            Quiz sharing is <strong>exclusively available for Business plan users</strong>. After generating a quiz, you can publish it and get the shareable link. Set a secret key to control access, configure custom duration and expiration dates, and define maximum attempts per candidate. Share the link with candidates who can then access and complete the quiz in proctored mode—perfect for remote screening.
           </AccordionContent>
         </AccordionItem>
         
@@ -74,23 +74,18 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">What analytics are available?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            View real-time graphs, tables, and scores. Export filtered or full data as PDF/Excel. Individuals track progress; businesses rank hires; enterprises get team dashboards for scalable insights.
+            <strong>Individuals</strong> get instant feedback with correct answers and explanations after completing quizzes to track personal learning progress. <strong>Business users</strong> unlock powerful analytics including real-time performance graphs, comprehensive data tables with filtering options, and the ability to export results as PDF or Excel files. This enables you to rank candidates, compare performances, and make confident data-driven hiring decisions.
           </AccordionContent>
         </AccordionItem>
         
-        {/* <AccordionItem value="item-6" className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+        <AccordionItem value="item-6" className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
-            <h3 className="text-xl font-semibold text-foreground tracking-tight">What are your pricing plans?</h3>
+            <h3 className="text-xl font-semibold text-foreground tracking-tight">Do you support enterprise solutions?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            <ul className="list-disc pl-5 space-y-1">
-              <li><strong>Consumer ($2.99/mo):</strong> Unlimited personal quizzes, proctoring, basic tracking (max 5 stored).</li>
-              <li><strong>Business ($99/mo):</strong> Sharing, analytics, exports (up to 100 assessments/mo).</li>
-              <li><strong>Enterprise:</strong> Custom pricing—unlimited scale, team roles, API integrations.</li>
-            </ul>
-            Start with a free trial—no card required.
+            Currently, QuizzViz is designed for individuals and businesses. However, if you're an enterprise looking for a custom assessment solution with advanced features like team management, API integrations, and unlimited scale, we'd love to hear from you! Please reach out to us at <a href="mailto:syedshahmirsultan@gmail.com" className="text-green-400 hover:text-green-300 underline transition-colors">syedshahmirsultan@gmail.com</a> and we can build a tailored solution for your organization.
           </AccordionContent>
-        </AccordionItem> */}
+        </AccordionItem>
       </Accordion>
       
       {/* CTA */}
@@ -107,6 +102,12 @@ const FAQsSection: FC = () => (
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .gradient-text {
+        background: linear-gradient(to right, rgb(34, 197, 94), rgb(59, 130, 246));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
       }
       .animate-fade-in {
         animation: fadeIn 1s ease-out;
