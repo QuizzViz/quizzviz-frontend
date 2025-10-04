@@ -1,4 +1,6 @@
-import { FC, useState, useEffect } from "react";
+'use client';
+
+import { FC, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";

@@ -1,31 +1,12 @@
-import HeroSection from "./parts/HeroSection";
-import DemoSection from "./parts/DemoSection";
-import ProblemsSection from "./parts/ProblemsSection";
-import FeaturesSection from "./parts/FeaturesSection";
-import HowItWorksSection from "./parts/HowItWorksSection";
-import CTASection from "./parts/CTASection";
-import useScrollFade from "./hooks/useScrollFade";
-import { Navbar } from "@/components/NavBar";
-import { Footer } from "@/components/Footer";
-import FAQsSection from "./parts/FAQsSection";
-import { UserTypeProvider } from "@/contexts/UserTypeContext";
+import dynamic from 'next/dynamic';
 
-// Landing page entry: compose all sections and init scroll animations
+// Dynamically import the client component with SSR disabled
+const ClientLandingPage = dynamic(
+  () => import('./ClientLandingPage'),
+  { ssr: false }
+);
+
+// This is now a server component that renders the client component
 export default function LandingPage() {
-  useScrollFade();
-  return (
-    <UserTypeProvider>
-      <div className="min-h-screen mt-24 md:mt-0">
-        <Navbar />
-        <HeroSection />
-        <DemoSection />
-        <ProblemsSection />
-        <FeaturesSection />
-        <HowItWorksSection />
-        <FAQsSection />
-        <CTASection />
-        <Footer/>
-      </div>
-    </UserTypeProvider>
-  );
+  return <ClientLandingPage />;
 }

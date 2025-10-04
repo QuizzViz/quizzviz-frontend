@@ -1,3 +1,5 @@
+'use client';
+
 import { FC } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { User, Briefcase } from "lucide-react";
