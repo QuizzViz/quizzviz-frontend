@@ -1,24 +1,20 @@
-
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import "./globals.css";
 import Providers from "./providers";
 import React from "react";
+import type { Metadata, Viewport } from "next";
 
-import type { Metadata } from "next";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.quizzviz.com';
 
-// import ConditionalNavbar from "@/components/ConditionalNavbar";
-
-const siteUrl = "https://www.quizzviz.com";
-
-
-// Viewport configuration should be exported separately
-export const viewport = {
-  themeColor: '#ffffff', // Or your brand color
+// Viewport configuration
+export const viewport: Viewport = {
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
+  colorScheme: 'light',
 };
 
 export const metadata: Metadata = {
@@ -27,8 +23,7 @@ export const metadata: Metadata = {
     default: "QuizzViz – AI Powered Coding Quiz Generator",
     template: "%s | QuizzViz",
   },
-  description:
-    "QuizzViz helps companies create high-quality, real-world coding quizzes in minutes. Fast, reliable, and built for professionals.",
+  description: "QuizzViz helps companies create high-quality, real-world coding quizzes in minutes. Fast, reliable, and built for professionals.",
   applicationName: "QuizzViz",
   generator: "Next.js",
   keywords: [
@@ -37,17 +32,12 @@ export const metadata: Metadata = {
     "technical hiring",
     "programming quiz generator",
     "ai quiz generator",
-    "ai quiz",
     "ai quiz platform",
     "hiring platform",
-    "hiring",
-    "enterprise quizzes",
     "enterprise coding quizzes",
     "AI coding quiz generator for interviews",
-    "AI Coding Quiz Generator for hiring",
-    "AI Coding Quiz Generator for technical hiring",
-    "AI Coding Quiz Generator for technical assessments",
-    "AI Coding Quiz Generator for technical interviews",
+    "technical assessments",
+    "technical interviews",
     "AI Coding Quiz Generator for technical assessments",
     "AI Coding Quiz Generator for hiring Programmers",  
     "coding interview",

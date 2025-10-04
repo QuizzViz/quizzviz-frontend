@@ -1,28 +1,14 @@
-import  HeroSection  from "./parts/HeroSection";
-import DemoSection  from "./parts/DemoSection";
-import ProblemsSection  from "./parts/ProblemsSection";
-import FeaturesSection  from "./parts/FeaturesSection";
-import  HowItWorksSection  from "./parts/HowItWorksSection";
-import CTASection  from "./parts/CTASection";
-import  useScrollFade  from "./hooks/useScrollFade";
-import { Navbar } from "@/components/NavBar";
-import { Footer } from "@/components/Footer";
-import FAQsSection from "./parts/FAQsSection";
+import dynamic from "next/dynamic";
+import { UserTypeProvider } from "@/contexts/UserTypeContext";
 
-// Landing page entry: compose all sections and init scroll animations
+const ClientLandingPage = dynamic(() => import("./ClientLandingPage"), {
+  ssr: false,
+});
+
 export default function LandingPage() {
-  useScrollFade();
   return (
-    <div className="min-h-screen mt-24 md:mt-0">
-      <Navbar />
-      <HeroSection />
-      <DemoSection />
-      <ProblemsSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <FAQsSection />
-      <CTASection />
-      <Footer/>
-    </div>
+    <UserTypeProvider>
+      <ClientLandingPage />
+    </UserTypeProvider>
   );
 }
