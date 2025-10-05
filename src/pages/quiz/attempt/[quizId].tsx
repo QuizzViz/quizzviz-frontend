@@ -668,7 +668,7 @@ if (typeof data.quiz === 'string') {
           difficulty: data.difficulty,
           num_questions: data.num_questions || parsedQuiz.length,
           questions: parsedQuiz,
-          quiz_time: (data.num_questions || parsedQuiz.length) * 2 * 60, // 2 minutes per question
+          quiz_time: (data.num_questions || parsedQuiz.length) * 3 * 60, // 3 minutes per question
         };
         
         console.log('Parsed quiz data:', quizData);
@@ -1143,7 +1143,7 @@ if (typeof data.quiz === 'string') {
                       </div>
                       <div className="flex items-center justify-between py-2">
                         <span className="text-gray-400">Time Limit:</span>
-                        <span className="text-white font-medium">{quizData.quiz_time} min</span>
+                        <span className="text-white font-medium">{quizData.questions.length * 3} min</span>
                       </div>
                     </div>
                   </div>
