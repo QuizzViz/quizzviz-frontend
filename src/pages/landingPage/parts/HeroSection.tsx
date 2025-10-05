@@ -142,17 +142,6 @@ const HeroSection: FC = () => {
     }
   };
 
-  const getDescription = (): string => {
-    switch(userType) {
-      case 'individual':
-        return "Generate coding quizzes in minutes that test coding concepts with real-world scenarios, practice in a secure proctored environment, and get instant feedback.";
-      case 'business':
-        return "Generate coding quizzes in minutes that test coding concepts with real-world scenarios, share secure proctored assessments, and analyze results for smarter hiring.";
-      default:
-        return "Generate coding quizzes in minutes with our AI-powered platform.";
-    }
-  };
-
   const headline = getHeadlineText();
 
   return (
@@ -176,10 +165,6 @@ const HeroSection: FC = () => {
               <br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">{headline.sub}</span>
             </h1>
-            
-            <p className="text-base md:text-lg text-gray-200 mb-6 leading-relaxed max-w-3xl mx-auto">
-              {getDescription()}
-            </p>
           </div>
 
           {/* User Type Selector */}
