@@ -13,6 +13,7 @@ import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, ArrowRight, Home, T
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { formatTime } from '@/lib/utils';
+import { PLAN_TYPE } from '@/config/plans';
 
 interface Question {
   id: string | number;
@@ -52,6 +53,7 @@ const QuizAttemptPage = () => {
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showWarning, setShowWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
   
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
   const activityMonitorRef = useRef({ 
@@ -799,7 +801,7 @@ if (typeof data.quiz === 'string') {
             <div className="w-full max-w-lg">
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                  Welcome to QuizzViz, {user?.fullName || 'User'}
+                  Welcome {user?.firstName || 'User'}
                 </h1>
                 <p className="text-gray-400">Ready to start the quiz?</p>
               </div>
@@ -1178,14 +1180,217 @@ if (typeof data.quiz === 'string') {
                     </div>
                   </div>
 
-                  <div className="text-center">
-                    <Button asChild className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]">
-                      <Link href="/" className="flex items-center">
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+                    {PLAN_TYPE === 'Consumer' ? (
+                      <Button 
+                        onClick={() => setShowCorrectAnswers(true)}
+                        className="h-12 px-8 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
+                      >
+                        <Eye className="mr-2 h-5 w-5" />
+                        See Correct Answers
+                      </Button>
+                    ) : (
+                      <div className="relative group">
+                        <Button 
+                          disabled
+                          className="h-12 px-8 bg-gray-600 text-white font-medium rounded-xl cursor-not-allowed opacity-100"
+                        >
+                          <Lock className="mr-2 h-5 w-5" />
+                          See Correct Answers
+                        </Button>
+                        <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 hidden group-hover:block w-64 bg-black/95 border border-gray-700 text-gray-100 text-sm rounded-lg p-3 shadow-2xl shadow-black/50 text-center transition-all duration-200 ease-in-out">
+                          <div className="flex items-center justify-center space-x-1">
+                            <Zap className="w-4 h-4 text-blue-400" />
+                            <span>Upgrade to <span className="font-semibold text-blue-400">Consumer</span> plan to see correct answers</span>
+                          </div>
+                          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-black/95 border-b border-r border-gray-700 rotate-45"></div>
+                        </div>
+                      </div>
+                    )}
+                    <Button 
+                      asChild 
+                      className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
+                    >
+                      <Link href="/dashboard" className="flex items-center">
                         <Home className="mr-2 h-5 w-5" />
-                        Return to Home
+                        Return to Dashboard
                       </Link>
                     </Button>
                   </div>
+
+                  {/* Enhanced Correct Answers Modal */}
+                  {showCorrectAnswers && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+                      <div className="bg-gray-900 border border-gray-700/50 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl shadow-black/50 flex flex-col">
+                        {/* Header */}
+                        <div className="sticky top-0 bg-gradient-to-r from-gray-900 to-gray-800/90 backdrop-blur-sm p-6 border-b border-gray-700/50 flex justify-between items-center">
+                          <div>
+                            <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                              Quiz Review
+                            </h3>
+                            <p className="text-sm text-gray-400 mt-1">Review your answers and learn from any mistakes</p>
+                          </div>
+                          <button 
+                            onClick={() => setShowCorrectAnswers(false)}
+                            className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-gray-700/50"
+                            aria-label="Close"
+                          >
+                            <XCircle className="h-6 w-6" />
+                          </button>
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="overflow-y-auto flex-1 p-6 space-y-8">
+                          {quizData.questions.map((question, index) => {
+                            const isCorrect = selectedAnswers[index] === question.correct_answer;
+                            return (
+                              <div 
+                                key={index} 
+                                className={`bg-gray-800/40 backdrop-blur-sm rounded-xl p-6 border ${
+                                  isCorrect ? 'border-green-500/20' : 'border-red-500/20'
+                                } transition-all duration-300 hover:shadow-lg hover:shadow-${isCorrect ? 'green' : 'red'}-500/10`}
+                              >
+                                {/* Question Header */}
+                                <div className="flex items-start gap-4 mb-4">
+                                  <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-white font-medium ${
+                                    isCorrect ? 'bg-green-500/90' : 'bg-red-500/90'
+                                  }`}>
+                                    {isCorrect ? (
+                                      <CheckCircle2 className="h-4 w-4" />
+                                    ) : (
+                                      <XCircle className="h-4 w-4" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="text-lg font-medium text-white">
+                                        Question {index + 1}
+                                      </h4>
+                                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                                        isCorrect 
+                                          ? 'bg-green-500/20 text-green-400' 
+                                          : 'bg-red-500/20 text-red-400'
+                                      }`}>
+                                        {isCorrect ? 'Correct' : 'Incorrect'}
+                                      </span>
+                                    </div>
+                                    <p className="mt-1 text-gray-300">{question.question}</p>
+                                  </div>
+                                </div>
+
+                                {/* Code Snippet */}
+                                {question.code_snippet && (
+                                  <div className="mt-4 mb-6 overflow-hidden rounded-lg border border-gray-700/50 shadow-lg">
+                                    <div className="bg-gray-900/80 px-4 py-2 border-b border-gray-700/50 flex items-center">
+                                      <div className="flex space-x-1.5">
+                                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                      </div>
+                                      <span className="text-xs text-gray-400 ml-2">code_snippet.py</span>
+                                    </div>
+                                    <SyntaxHighlighter 
+                                      language="python" 
+                                      style={atomDark}
+                                      showLineNumbers={true}
+                                      wrapLines={true}
+                                      className="text-sm !m-0 !p-4"
+                                      customStyle={{
+                                        background: '#0f172a',
+                                        margin: 0,
+                                        padding: '1rem',
+                                        borderRadius: 0
+                                      }}
+                                    >
+                                      {question.code_snippet}
+                                    </SyntaxHighlighter>
+                                  </div>
+                                )}
+
+                                {/* Options */}
+                                <div className="space-y-3 mt-4">
+                                  <p className="text-sm font-medium text-gray-300 mb-2">Options:</p>
+                                  {Object.entries(question.options).map(([key, value]) => {
+                                    const isCorrectOption = key === question.correct_answer;
+                                    const isUserSelection = selectedAnswers[index] === key;
+                                    
+                                    return (
+                                      <div 
+                                        key={key}
+                                        className={`p-3.5 rounded-xl border-2 transition-all duration-200 ${
+                                          isCorrectOption
+                                            ? 'border-green-500/30 bg-green-500/5'
+                                            : isUserSelection
+                                              ? 'border-red-500/30 bg-red-500/5'
+                                              : 'border-gray-700/50 hover:border-gray-600/50 bg-gray-800/30'
+                                        }`}
+                                      >
+                                        <div className="flex items-start">
+                                          <div className={`flex-shrink-0 h-5 w-5 rounded-full flex items-center justify-center mr-3 mt-0.5 ${
+                                            isCorrectOption
+                                              ? 'bg-green-500/90 text-white'
+                                              : isUserSelection
+                                                ? 'bg-red-500/90 text-white'
+                                                : 'bg-gray-700/50 text-gray-400'
+                                          }`}>
+                                            {isCorrectOption ? (
+                                              <CheckCircle2 className="h-3 w-3" />
+                                            ) : isUserSelection ? (
+                                              <XCircle className="h-3 w-3" />
+                                            ) : key + '.'}
+                                          </div>
+                                          <div>
+                                            <span className={`text-sm ${
+                                              isCorrectOption 
+                                                ? 'text-green-300 font-medium' 
+                                                : isUserSelection
+                                                  ? 'text-red-300 font-medium'
+                                                  : 'text-gray-300'
+                                            }`}>
+                                              {value}
+                                            </span>
+                                            {isCorrectOption && (
+                                              <div className="mt-1.5 flex items-center text-xs text-green-400">
+                                                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                                <span>Correct Answer</span>
+                                              </div>
+                                            )}
+                                            {isUserSelection && !isCorrectOption && (
+                                              <div className="mt-1.5 flex items-center text-xs text-red-400">
+                                                <XCircle className="h-3.5 w-3.5 mr-1.5" />
+                                                <span>Your Selection</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        
+                        {/* Footer */}
+                        <div className="sticky bottom-0 bg-gray-900/90 backdrop-blur-sm p-4 border-t border-gray-700/50 flex justify-between items-center">
+                          <div className="text-sm text-gray-400">
+                            <span className="text-green-400 font-medium">{calculateScore().correct} correct</span>
+                            <span className="mx-2">•</span>
+                            <span className="text-red-400 font-medium">
+                              {quizData.questions.length - calculateScore().correct} incorrect
+                            </span>
+                          </div>
+                          <Button 
+                            onClick={() => setShowCorrectAnswers(false)}
+                            className="h-10 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200"
+                          >
+                            Close Review
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
