@@ -56,6 +56,58 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
   const [formData, setFormData] = useState<FormData>({ name: '', email: '', quizKey: '' });
   const [quizData, setQuizData] = useState<QuizData | null>(null);
+  
+  // Shuffle options for business plan quizzes
+  const shuffleOptions = useCallback((question: Question): Question => {
+    if (question.type === 'code_analysis') {
+      const options = { ...question.options };
+      const entries = Object.entries(options);
+      
+      // Skip the first option (the question) if it exists
+      const questionKey = entries.find(([_, value]) => value === question.question)?.[0];
+      let shuffledEntries = [...entries];
+      
+      if (questionKey) {
+        const questionEntry = shuffledEntries.find(([key]) => key === questionKey);
+        shuffledEntries = shuffledEntries.filter(([key]) => key !== questionKey);
+        
+        // Shuffle the remaining options
+        for (let i = shuffledEntries.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledEntries[i], shuffledEntries[j]] = [shuffledEntries[j], shuffledEntries[i]];
+        }
+        
+        // Add the question back at the beginning if it exists
+        if (questionEntry) {
+          shuffledEntries = [questionEntry, ...shuffledEntries];
+        }
+      } else {
+        // If no question key found, just shuffle all options
+        for (let i = shuffledEntries.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledEntries[i], shuffledEntries[j]] = [shuffledEntries[j], shuffledEntries[i]];
+        }
+      }
+      
+      return {
+        ...question,
+        options: Object.fromEntries(shuffledEntries)
+      };
+    }
+    return question;
+  }, []);
+  
+  // Check if device is mobile
+  useEffect(() => {
+    const checkIfMobile = () => {
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(isMobileDevice);
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false);
@@ -66,6 +118,8 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [warnings, setWarnings] = useState<number>(0);
   const [showWarning, setShowWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   interface AttemptsInfo {
     current: number;
@@ -153,6 +207,7 @@ export default function QuizPage({ params }: QuizPageProps) {
     }
     
     hasSubmittedRef.current = true;
+    setIsSubmitting(true);
     
     if (!quizData || !formData) {
       console.error('Quiz data or form data is missing');
@@ -252,6 +307,7 @@ export default function QuizPage({ params }: QuizPageProps) {
       console.error('Error submitting quiz:', error);
       return false;
     } finally {
+      setIsSubmitting(false);
       setStep('results');
     }
   }, [quizData, formData, attemptsInfo, timeLeft, params.username]);
@@ -1221,11 +1277,20 @@ export default function QuizPage({ params }: QuizPageProps) {
                 ) : (
                   <Button 
                     onClick={() => submitQuiz(selectedAnswers)}
-                    disabled={!selectedAnswers[currentQuestionIndex]}
+                    disabled={!selectedAnswers[currentQuestionIndex] || isSubmitting}
                     className="h-14 px-8 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed text-lg rounded-xl"
                   >
-                    <CheckCircle className="mr-2 h-5 w-5" />
-                    Submit Quiz
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2 h-5 w-5" />
+                        Submit Quiz
+                      </>
+                    )}
                   </Button>
                 )}
               </div>

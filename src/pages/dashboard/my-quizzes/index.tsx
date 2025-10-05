@@ -38,9 +38,12 @@ export default function MyQuizzesPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   
   // Get user's plan type from metadata or default to Free
-  const userPlan = (user?.publicMetadata?.plan as 'Free' | 'Consumer' | 'Business') || 'Consumer';
-  const isFreePlan = userPlan === 'Free';
-  const isConsumerPlan = userPlan === 'Consumer';
+
+  type PlanType = 'Free' | 'Consumer' | 'Business';
+  const userPlan:PlanType = 'Free';
+  const isFreePlan:Boolean = userPlan === 'Free';
+  // @ts-ignore
+  const isConsumerPlan:Boolean = userPlan === 'Consumer';
 
   useEffect(() => {
     if (isLoaded && !user) router.push("/signin");

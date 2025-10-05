@@ -48,6 +48,8 @@ const QuizAttemptPage = () => {
   const [quizStarted, setQuizStarted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [warnings, setWarnings] = useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showWarning, setShowWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
@@ -122,6 +124,7 @@ const QuizAttemptPage = () => {
     }
     
     hasSubmittedRef.current = true;
+    setIsSubmitting(true);
     
     if (!quizData) {
       console.error('Quiz data is missing');
@@ -177,6 +180,7 @@ const QuizAttemptPage = () => {
       return false;
     } finally {
       setStep('results');
+      setIsSubmitting(false);
     }
   }, [quizData]);
 
@@ -554,7 +558,7 @@ const QuizAttemptPage = () => {
     {
       icon: <BookOpen className="w-5 h-5 text-blue-500" />,
       title: 'Quiz Details',
-      text: `${quizData?.num_questions || 'Multiple'} questions • ${quizData?.quiz_time || 30} minutes`
+      text: `${quizData?.num_questions || 'Multiple'} questions • ${(quizData?.num_questions as number) * 3 || 'Multiple'} minutes`
     },
     {
       icon: <Maximize2 className="w-5 h-5 text-amber-500" />,
@@ -878,26 +882,43 @@ if (typeof data.quiz === 'string') {
               </div>
 
               <div className="text-center">
-                <Button 
-                  onClick={() => {
-                    setQuizStarted(true);
-                    setStep('quiz');
-                  }}
-                  className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-                  disabled={isButtonLoading}
-                >
-                  {isButtonLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      Starting...
-                    </>
-                  ) : (
-                    <>
-                      Start Quiz
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </>
-                  )}
-                </Button>
+                {isMobile ? (
+                  <div className="w-full max-w-md mx-auto p-6 bg-red-900/20 border border-red-800/50 rounded-xl text-center">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <Monitor className="h-12 w-12 text-red-400" />
+                      <h3 className="text-lg font-semibold text-white">Desktop Required</h3>
+                      <p className="text-sm text-red-300">This quiz cannot be attempted on mobile devices. Please use a desktop or laptop computer to continue.</p>
+                      <Button 
+                        variant="outline" 
+                        className="mt-2 text-red-300 border-red-500/50 hover:bg-red-900/30"
+                        onClick={() => window.close()}
+                      >
+                        Close Page
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={() => {
+                      setQuizStarted(true);
+                      setStep('quiz');
+                    }}
+                    className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                    disabled={isButtonLoading || isMobile}
+                  >
+                    {isButtonLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Starting...
+                      </>
+                    ) : (
+                      <>
+                        Start Quiz
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -1009,11 +1030,20 @@ if (typeof data.quiz === 'string') {
                 ) : (
                   <Button 
                     onClick={() => submitQuiz(selectedAnswers)}
-                    disabled={!selectedAnswers[currentQuestionIndex]}
+                    disabled={!selectedAnswers[currentQuestionIndex] || isSubmitting}
                     className="h-14 px-8 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed text-lg rounded-xl"
                   >
-                    <CheckCircle className="mr-2 h-5 w-5" />
-                    Submit Quiz
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2 h-5 w-5" />
+                        Submit Quiz
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
