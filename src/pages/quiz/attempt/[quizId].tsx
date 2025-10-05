@@ -1,25 +1,24 @@
 'use client';
 
-import { notFound, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useUser, useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
+import Head from 'next/head';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
-import { toast } from 'sonner';
-import { Toaster } from 'sonner';
-import { formatTime } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { formatTime } from '@/lib/utils';
 
 interface Question {
   id: string | number;
   type: 'theory' | 'code_analysis';
   question: string;
-  code_snippet: string | null;
+  code_snippet?: string | null;
   options: Record<string, string>;
   correct_answer: string;
 }
@@ -30,53 +29,29 @@ interface QuizData {
   difficulty: string;
   num_questions: number;
   quiz: Question[];
-  quiz_key: string;
   quiz_time: number;
-  quiz_expiration_time: string;
-  max_attempts?: number;
 }
 
-interface QuizPageProps {
-  params: {
-    username: string;
-    quizId: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
+type Step = 'welcome' | 'instructions' | 'quiz' | 'results';
 
-type FormData = {
-  name: string;
-  email: string;
-  quizKey: string;
-};
-
-export default function QuizPage({ params }: QuizPageProps) {
+const QuizAttemptPage = () => {
   const router = useRouter();
-  const { username, quizId } = params;
-  const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
-  const [formData, setFormData] = useState<FormData>({ name: '', email: '', quizKey: '' });
+  const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
+  
+  const [step, setStep] = useState<Step>('welcome');
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [quizStarted, setQuizStarted] = useState<boolean>(false);
-  const [verifying, setVerifying] = useState<boolean>(false);
-  const [verificationError, setVerificationError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [warnings, setWarnings] = useState<number>(0);
   const [showWarning, setShowWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
-  interface AttemptsInfo {
-    current: number;
-    max: number;
-  }
-
-  const [attemptsInfo, setAttemptsInfo] = useState<{ current: number; max: number }>({ current: 0, max: 1 });
-  const [showingMaxAttemptsNotification, setShowingMaxAttemptsNotification] = useState(false);
-
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
-  const screenshotIntervalRef = useRef<NodeJS.Timeout>();
   const activityMonitorRef = useRef({ 
     lastActivity: Date.now(), 
     warnings: 0,
@@ -88,63 +63,57 @@ export default function QuizPage({ params }: QuizPageProps) {
   const exitConfirmationRef = useRef(false);
   const hasSubmittedRef = useRef(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const exitConfirmResolve = useRef<((value: boolean) => void) | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
   };
 
-  // FIXED: Now uses the actual max_attempts from quizData
-  const checkUserAttempts = useCallback(async (showToast = true): Promise<boolean> => {
-    if (showingMaxAttemptsNotification) return false;
+  const shuffleOptions = (question: Question): Question => {
+    const optionsEntries = Object.entries(question.options);
+    const correctValue = question.options[question.correct_answer];
+    const shuffledOptions = shuffleArray(optionsEntries);
+    const newOptions: Record<string, string> = {};
+    const labels = 'ABCD'; // Assuming 4 options
+    let newCorrect: string | undefined;
+    shuffledOptions.forEach(([oldKey, value], i) => {
+      const newLabel = labels[i];
+      newOptions[newLabel] = value;
+      if (value === correctValue) {
+        newCorrect = newLabel;
+      }
+    });
+    question.options = newOptions;
+    if (newCorrect) {
+      question.correct_answer = newCorrect;
+    }
+    return question;
+  };
+
+  const calculateResults = () => {
+    if (!quizData) return { correct: 0, total: 0, percentage: 0 };
     
-    if (!formData?.name || !formData?.email) {
-      setIsButtonLoading(false);
-      return false;
-    }
-
-    try {
-      const response = await fetch(
-        `/api/quiz_result/check-attempt?email=${encodeURIComponent(formData.email)}&quiz_id=${quizId}`
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to check attempts');
+    let correct = 0;
+    const total = quizData.quiz.length;
+    
+    Object.entries(selectedAnswers).forEach(([index, answer]) => {
+      const question = quizData.quiz[parseInt(index)];
+      if (question && answer === question.correct_answer) {
+        correct++;
       }
-
-      const data = await response.json();
-      // FIXED: Get max_attempts from quizData, fallback to 1 if not set
-      const maxAttempts = quizData?.max_attempts || 1;
-      const currentAttempt = data.attempts || 0;
-      const hasReachedMax = currentAttempt >= maxAttempts;
-      
-      // FIXED: Update with correct max_attempts from quiz data
-      setAttemptsInfo({
-        current: currentAttempt,
-        max: maxAttempts
-      });
-      
-      // FIXED: Show notification with dynamic attempt numbers
-      if (hasReachedMax && showToast) {
-        setShowingMaxAttemptsNotification(true);
-        toast.error(`Maximum attempts reached! You've used ${currentAttempt} of ${maxAttempts} attempts.`, {
-          duration: 5000,
-          className: 'font-medium',
-          onAutoClose: () => {
-            setShowingMaxAttemptsNotification(false);
-          }
-        });
-      }
-      
-      return !hasReachedMax;
-    } catch (error) {
-      console.error('Error checking attempts:', error);
-      return false;
-    }
-  }, [showingMaxAttemptsNotification, formData, quizId, quizData?.max_attempts]);
+    });
+    
+    const percentage = total > 0 ? Math.round((correct / total) * 100 * 100) / 100 : 0;
+    
+    return { correct, total, percentage };
+  };
 
   const submitQuiz = useCallback(async (answers: Record<number, string>): Promise<boolean> => {
     if (hasSubmittedRef.current) {
@@ -154,8 +123,8 @@ export default function QuizPage({ params }: QuizPageProps) {
     
     hasSubmittedRef.current = true;
     
-    if (!quizData || !formData) {
-      console.error('Quiz data or form data is missing');
+    if (!quizData) {
+      console.error('Quiz data is missing');
       return false;
     }
     
@@ -177,8 +146,8 @@ export default function QuizPage({ params }: QuizPageProps) {
       setSelectedAnswers(allAnswers);
       
       let correct = 0;
-      const total = quizData.quiz.length;
-      const userAnswers = quizData.quiz.map((question, index) => {
+      const total = quizData.quiz.length
+      quizData.quiz.map((question, index) => {
         const answer = allAnswers[index] || '';
         const isCorrect = answer === question.correct_answer;
         if (isCorrect) correct++;
@@ -199,53 +168,8 @@ export default function QuizPage({ params }: QuizPageProps) {
       
       console.log('Processed answers:', { 
         correct, 
-        total, 
-        userAnswers 
+        total
       });
-      
-      const percentage = total > 0 ? Math.round((correct / total) * 100 * 100) / 100 : 0;
-      
-      const submissionData = {
-        quiz_id: quizData.quiz_id,
-        owner_id: params.username,
-        username: formData.name,
-        user_email: formData.email,
-        user_answers: userAnswers,
-        result: {
-          score: percentage,
-          total_questions: total,
-          correct_answers: correct,
-          quiz_topic: quizData.topic,
-          quiz_difficulty: quizData.difficulty,
-          time_taken: Math.max(1, Math.ceil((quizData.quiz_time * 60 - timeLeft) / 60))
-        },
-        attempt: attemptsInfo ? attemptsInfo.current + 1 : 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      console.log('Submitting quiz data:', JSON.stringify(submissionData, null, 2));
-
-      const response = await fetch('/api/quiz_result', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'accept': 'application/json'
-        },
-        body: JSON.stringify(submissionData)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.detail || errorData.message || 'Failed to submit quiz results';
-        console.error('Failed to submit quiz results:', errorMessage);
-        throw new Error(errorMessage);
-      }
-      
-      setAttemptsInfo(prev => ({
-        current: prev ? prev.current + 1 : 1,
-        max: prev?.max || 1
-      }));
       
       return true;
     } catch (error) {
@@ -254,14 +178,24 @@ export default function QuizPage({ params }: QuizPageProps) {
     } finally {
       setStep('results');
     }
-  }, [quizData, formData, attemptsInfo, timeLeft, params.username]);
+  }, [quizData]);
 
-  const getCurrentAnswer = useCallback((questionIndex: number) => {
-    if (selectedAnswers[questionIndex] !== undefined) {
-      return selectedAnswers[questionIndex];
+  const handleAnswerSelect = useCallback((answer: string) => {
+    setSelectedAnswers(prev => {
+      const newAnswers = {
+        ...prev,
+        [currentQuestionIndex]: answer
+      };
+      console.log('Selected answers updated:', newAnswers);
+      return newAnswers;
+    });
+  }, [currentQuestionIndex]);
+
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < (quizData?.quiz.length || 0) - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
     }
-    return '';
-  }, [selectedAnswers]);
+  };
 
   const requestFullscreen = useCallback(async () => {
     try {
@@ -303,10 +237,6 @@ export default function QuizPage({ params }: QuizPageProps) {
       setShowWarning(false);
     }, 5000);
   }, []);
-
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const exitConfirmResolve = useRef<((value: boolean) => void) | null>(null);
-  const [isRestoring, setIsRestoring] = useState(false);
 
   const confirmExit = useCallback((): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -417,20 +347,11 @@ export default function QuizPage({ params }: QuizPageProps) {
         if (document.hidden && !hasSubmittedRef.current) {
           activityMonitorRef.current.warnings = 1;
           showWarningMessage('Quiz terminated due to tab switch!');
-          toast.error('Quiz terminated due to violation!', {
-            style: { 
-              background: '#1F2937', 
-              color: '#EF4444', 
-              border: '1px solid #374151',
-              maxWidth: '500px',
-              margin: '0 auto',
-              textAlign: 'center',
-              borderRadius: '0.5rem',
-              fontSize: '0.95rem',
-              padding: '1rem',
-            },
-            duration: 10000,
-            position: 'top-center',
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Quiz terminated due to violation!",
+            className: "max-w-[500px] mx-auto text-center rounded-lg text-sm p-4"
           });
           setSelectedAnswers(currentAnswers => {
             submitQuiz(currentAnswers);
@@ -590,220 +511,6 @@ export default function QuizPage({ params }: QuizPageProps) {
     }
   }, [step, quizStarted, requestFullscreen, showWarningMessage, handleFullscreenChange, submitQuiz]);
 
-  const shuffleArray = <T,>(array: T[]): T[] => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-  };
-
-  const calculateResults = () => {
-    if (!quizData) return { correct: 0, total: 0, percentage: 0 };
-    
-    let correct = 0;
-    const total = quizData.quiz.length;
-    
-    Object.entries(selectedAnswers).forEach(([index, answer]) => {
-      const question = quizData.quiz[parseInt(index)];
-      if (question && answer === question.correct_answer) {
-        correct++;
-      }
-    });
-    
-    const percentage = total > 0 ? Math.round((correct / total) * 100 * 100) / 100 : 0;
-    
-    return { correct, total, percentage };
-  };
-
-  const verifyQuizKey = async (): Promise<boolean> => {
-    if (!formData.quizKey.trim()) {
-      setVerificationError('Please enter a quiz key');
-      return false;
-    }
-    
-    try {
-      setVerifying(true);
-      setVerificationError('');
-
-      const currentPath = window.location.href;
-      
-      const response = await fetch(`https://quizzviz-publish-quiz.up.railway.app/publish/public/quiz/${encodeURIComponent(currentPath)}?key=${encodeURIComponent(formData.quizKey)}`, {
-        method: 'GET',
-        headers: {
-          'accept': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to verify quiz key');
-      }
-
-      const data = await response.json();
-      
-      if (!data || !data.quiz_key) {
-        throw new Error('Invalid response from server');
-      }
-      
-      if (data.quiz_key !== formData.quizKey) {
-        throw new Error('Invalid quiz key. Please check and try again.');
-      }
-      
-      if (!data.quiz || !Array.isArray(data.quiz)) {
-        throw new Error('Invalid quiz data received');
-      }
-      
-      const shuffledQuiz = {
-        ...data,
-        quiz: shuffleArray([...data.quiz])
-      };
-      
-      // FIXED: Set quiz data first so max_attempts is available
-      setQuizData(shuffledQuiz);
-      setTimeLeft(data.quiz_time * 60);
-      
-      // FIXED: Initialize attempts info with actual max_attempts from API
-      const maxAttempts = data.max_attempts || 1;
-      setAttemptsInfo({
-        current: 0, // Will be updated by checkUserAttempts
-        max: maxAttempts
-      });
-      
-      // Now check user attempts with the correct max_attempts
-      const canProceed = await checkUserAttemptsAfterLoad(maxAttempts);
-      if (!canProceed) {
-        return false;
-      }
-      
-      setStep('instructions');
-      return true;
-    } catch (error) {
-      console.error('Verification error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to verify quiz key';
-      setVerificationError(errorMessage);
-      toast.error(errorMessage, {
-        style: { 
-          background: '#1F2937', 
-          color: '#EF4444', 
-          border: '1px solid #374151' 
-        }
-      });
-      return false;
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  // FIXED: New function to check attempts after quiz data is loaded
-  const checkUserAttemptsAfterLoad = async (maxAttempts: number): Promise<boolean> => {
-    if (!formData?.name || !formData?.email) {
-      return false;
-    }
-
-    try {
-      const response = await fetch(
-        `/api/quiz_result/check-attempt?email=${encodeURIComponent(formData.email)}&quiz_id=${quizId}`
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to check attempts');
-      }
-
-      const data = await response.json();
-      const currentAttempt = data.attempts || 0;
-      const hasReachedMax = currentAttempt >= maxAttempts;
-      
-      // Update with correct values
-      setAttemptsInfo({
-        current: currentAttempt,
-        max: maxAttempts
-      });
-      
-      // Show notification with dynamic attempt numbers
-      if (hasReachedMax) {
-        toast.error(`Maximum attempts reached! You've used ${currentAttempt} of ${maxAttempts} attempts.`, {
-          duration: 5000,
-          className: 'font-medium',
-        });
-      }
-      
-      return !hasReachedMax;
-    } catch (error) {
-      console.error('Error checking attempts:', error);
-      return false;
-    }
-  };
-
-  const handleSubmitInfo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await verifyQuizKey();
-  };
-
-  const startQuiz = () => {
-    setStep('quiz-info');
-  };
-
-  const beginQuiz = useCallback(async () => {
-    if (isButtonLoading) return;
-    
-    setIsButtonLoading(true);
-    
-    try {
-      // FIXED: Check with actual max_attempts from attemptsInfo
-      if (attemptsInfo.current >= attemptsInfo.max) {
-        setIsButtonLoading(false);
-        toast.error(`Maximum attempts reached! You've used ${attemptsInfo.current} of ${attemptsInfo.max} attempts.`, {
-          duration: 5000,
-          className: 'font-medium',
-        });
-        return;
-      }
-      
-      const hasAttemptsLeft = await checkUserAttempts(true);
-      
-      if (!hasAttemptsLeft) {
-        setIsButtonLoading(false);
-        return;
-      }
-      
-      setQuizStarted(true);
-      setStep('quiz');
-      
-      if (document.documentElement.requestFullscreen) {
-        try {
-          await document.documentElement.requestFullscreen();
-          setIsFullscreen(true);
-        } catch (err) {
-          console.error('Fullscreen error:', err);
-        }
-      }
-    } catch (error) {
-      console.error('Error starting quiz:', error);
-    } finally {
-      setIsButtonLoading(false);
-    }
-  }, [checkUserAttempts, attemptsInfo, isButtonLoading]);
-
-  const handleAnswerSelect = useCallback((answer: string) => {
-    setSelectedAnswers(prev => {
-      const newAnswers = {
-        ...prev,
-        [currentQuestionIndex]: answer
-      };
-      console.log('Selected answers updated:', newAnswers);
-      return newAnswers;
-    });
-  }, [currentQuestionIndex]);
-
-  const handleNextQuestion = () => {
-    if (currentQuestionIndex < (quizData?.quiz.length || 0) - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    }
-  };
-
   useEffect(() => {
     if (!quizStarted || step !== 'quiz') return;
     
@@ -861,8 +568,165 @@ export default function QuizPage({ params }: QuizPageProps) {
     }
   ];
 
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchQuiz = async () => {
+      if (typeof window === 'undefined') {
+        setIsLoading(false);
+        return;
+      };
+      
+      const pathSegments = window.location.pathname.split('/');
+      const quizId = pathSegments[pathSegments.length - 1];
+      
+      console.log('URL Path Segments:', pathSegments);
+      console.log('Extracted Quiz ID:', quizId);
+      
+      if (!quizId || quizId === 'attempt') {
+        console.error('No valid quiz ID found in URL');
+        toast({
+          title: 'Error',
+          description: 'Invalid quiz link. Please try again from the dashboard.',
+          variant: 'destructive',
+          duration: 5000,
+        });
+        setIsLoading(false);
+        router.push('/dashboard');
+        return;
+      }
+      
+      try {
+        console.log('Fetching quiz with ID:', quizId);
+        const token = await getToken();
+        if (!token) {
+          throw new Error('Authentication token not found');
+        }
+        
+        const response = await fetch(`/api/quiz/${quizId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'accept': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          },
+          cache: 'no-store'
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Failed to fetch quiz:', { status: response.status, errorData });
+          throw new Error(errorData.error || `Failed to fetch quiz (Status: ${response.status})`);
+        }
+
+        const data = await response.json();
+        console.log('Received quiz data:', data);
+        
+        let parsedQuiz: Question[] = [];
+        if (typeof data.quiz === 'string') {
+          try {
+            parsedQuiz = JSON.parse(data.quiz);
+          } catch (parseError) {
+            console.error('JSON Parse Error:', parseError);
+            throw new Error('Invalid quiz data format: Failed to parse quiz JSON');
+          }
+        } else if (Array.isArray(data.quiz)) {
+          parsedQuiz = data.quiz;
+        } else {
+          throw new Error('Invalid quiz data format: Quiz data is not a valid array');
+        }
+
+        if (!parsedQuiz || parsedQuiz.length === 0) {
+          throw new Error('Invalid quiz data format: No questions found');
+        }
+
+        // Validate each question structure
+        parsedQuiz = parsedQuiz.map((q, index) => {
+          if (!q.question || !q.options || !q.correct_answer) {
+            console.warn(`Invalid question structure at index ${index}:`, q);
+            throw new Error(`Invalid question at position ${index + 1}: Missing required fields`);
+          }
+          return q;
+        });
+
+        // Shuffle questions and options
+        parsedQuiz = shuffleArray(parsedQuiz);
+        parsedQuiz = parsedQuiz.map(shuffleOptions);
+        
+        const quizData: QuizData = {
+          quiz_id: data.quiz_id || data.id,
+          topic: data.topic,
+          difficulty: data.difficulty,
+          num_questions: data.num_questions || parsedQuiz.length,
+          quiz: parsedQuiz,
+          quiz_time: (data.num_questions || parsedQuiz.length) * 2, // 2 minutes per question
+        };
+        
+        console.log('Parsed quiz data:', quizData);
+        
+        if (isMounted) {
+          setQuizData(quizData);
+          setTimeLeft(quizData.quiz_time);
+          setStep('welcome');
+        }
+        
+      } catch (error: any) {
+        console.error('Error in fetchQuiz:', error);
+        
+        if (!isMounted) return;
+        
+        let errorMessage = 'Failed to load quiz. Please try again.';
+        
+        if (error.message.includes('404') || error.message.includes('not found')) {
+          errorMessage = 'Quiz not found. It may have been deleted or you may not have permission to access it.';
+        } else if (error.message.includes('401') || error.message.includes('403') || error.message.includes('token')) {
+          errorMessage = 'You need to be logged in to access this quiz.';
+        } else if (error.message.includes('Invalid quiz data format')) {
+          errorMessage = 'The quiz data is in an invalid format. Please contact support.';
+        } else if (error.message.includes('JSON Parse Error')) {
+          errorMessage = 'Failed to parse quiz data from server. Please refresh and try again.';
+        } else if (error.message.includes('No questions found')) {
+          errorMessage = 'No questions available for this quiz. Please contact the quiz creator.';
+        } else if (error.message.includes('Invalid question')) {
+          errorMessage = 'One or more questions are malformed. Please contact support.';
+        } else {
+          errorMessage = `Failed to load quiz: ${error.message}`;
+        }
+        
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+          duration: 7000,
+        });
+        
+        setTimeout(() => {
+          if (isMounted) {
+            router.push('/dashboard');
+          }
+        }, 4000);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchQuiz();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [getToken, router]);
+
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      <Head>
+        <title>{quizData?.topic || 'Quiz'} | Quiz Attempt | QuizzViz</title>
+      </Head>
       {showExitConfirm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
@@ -914,98 +778,31 @@ export default function QuizPage({ params }: QuizPageProps) {
       </header>
       
       <main id="quiz-content" className="relative z-10" tabIndex={-1}>
-        {step === 'info' && (
+        {isLoading && (
+          <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          </div>
+        )}
+
+        {step === 'welcome' && quizData && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                  Welcome to QuizzViz
+                  Welcome to QuizzViz, {user?.fullName || 'User'}
                 </h1>
-                <p className="text-gray-400">Enter your details to begin the assessment</p>
+                <p className="text-gray-400">Ready to start the quiz?</p>
               </div>
 
               <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl">
-                <CardContent className="p-8">
-                  <form onSubmit={handleSubmitInfo} className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-gray-300 font-medium flex items-center gap-2">
-                        <User className="w-4 h-4 text-blue-400" />
-                        Full Name
-                      </Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        placeholder="Enter your Full Name"
-                        required
-                        className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/20"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-gray-300 font-medium flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-purple-400" />
-                        Email
-                      </Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        placeholder="Enter your email"
-                        required
-                        className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500 focus:ring-purple-500/20"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="quizKey" className="text-gray-300 font-medium flex items-center gap-2">
-                        <Key className="w-4 h-4 text-green-400" />
-                        Quiz Key
-                      </Label>
-                      <Input
-                        id="quizKey"
-                        name="quizKey"
-                        value={formData.quizKey}
-                        onChange={handleInputChange}
-                        placeholder="Enter the quiz access key"
-                        required
-                        className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-green-500 focus:ring-green-500/20"
-                      />
-                      {verificationError && (
-                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
-                          <p className="text-sm text-red-400 flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4" />
-                            {verificationError}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={verifying || showingMaxAttemptsNotification}
-                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-                    >
-                      {showingMaxAttemptsNotification ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Processing...
-                        </>
-                      ) : verifying ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Verifying...
-                        </>
-                      ) : (
-                        <>
-                          Continue to Quiz
-                          <ArrowRight className="ml-2 h-5 w-5" />
-                        </>
-                      )}
-                    </Button>
-                  </form>
+                <CardContent className="p-8 flex justify-center">
+                  <Button
+                    onClick={() => setStep('instructions')}
+                    className="h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  >
+                    Continue to Quiz
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -1075,40 +872,26 @@ export default function QuizPage({ params }: QuizPageProps) {
               </div>
 
               <div className="text-center">
-                {attemptsInfo && attemptsInfo.current >= attemptsInfo.max ? (
-                  <div className="p-4 bg-red-900/30 border border-red-800 rounded-xl">
-                    <div className="flex items-center justify-center gap-2 text-red-300">
-                      <AlertCircle className="w-5 h-5" />
-                      <span>Maximum attempts reached ({attemptsInfo.current}/{attemptsInfo.max})</span>
-                    </div>
-                    <p className="text-sm text-red-200 mt-1">
-                      You've used all available attempts for this quiz.
-                    </p>
-                  </div>
-                ) : (
-                  <Button 
-                    onClick={beginQuiz}
-                    className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-                    disabled={attemptsInfo.current >= attemptsInfo.max || isButtonLoading || showingMaxAttemptsNotification}
-                  >
-                    {showingMaxAttemptsNotification ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        Verifying attempts...
-                      </>
-                    ) : isButtonLoading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        {attemptsInfo.current > 0 ? 'Continuing...' : 'Starting...'}
-                      </>
-                    ) : (
-                      <>
-                        {attemptsInfo.current > 0 ? 'Continue to Quiz' : 'Start Quiz'}
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </>
-                    )}
-                  </Button>
-                )}
+                <Button 
+                  onClick={() => {
+                    setQuizStarted(true);
+                    setStep('quiz');
+                  }}
+                  className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                  disabled={isButtonLoading}
+                >
+                  {isButtonLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      Start Quiz
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
           </div>
@@ -1168,7 +951,6 @@ export default function QuizPage({ params }: QuizPageProps) {
                   <div className="space-y-4">
                     <h3 className="text-white font-medium mb-4">Choose your answer:</h3>
                     {Object.entries(quizData.quiz[currentQuestionIndex].options)
-                      .filter(([key]) => key !== 'question')
                       .map(([key, value]) => {
                         const isSelected = selectedAnswers[currentQuestionIndex] === key;
                         return (
@@ -1374,6 +1156,9 @@ export default function QuizPage({ params }: QuizPageProps) {
           </div>
         )}
       </main>
+      <Toaster />
     </div>
   );
-}
+};
+
+export default QuizAttemptPage;

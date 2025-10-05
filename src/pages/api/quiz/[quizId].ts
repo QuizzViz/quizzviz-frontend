@@ -123,9 +123,64 @@ export default async function handler(
     // Handle different HTTP methods
     switch (req.method) {
       case 'GET': {
-        // Get quiz by ID
-        const response = await makeRequest('GET', baseUrl, headers);
-        return res.status(200).json(response);
+        try {
+          // Get quiz by ID
+          const response = await makeRequest('GET', baseUrl, headers);
+          console.log('Raw API response:', JSON.stringify(response, null, 2));
+          
+          // Parse the quiz string if it exists
+          let questions = [];
+          try {
+            // Try to parse the quiz data if it's a string
+            const quizData = typeof response.quiz === 'string' 
+              ? JSON.parse(response.quiz) 
+              : response.quiz;
+              
+            // Handle different possible structures
+            if (Array.isArray(quizData)) {
+              questions = quizData;
+            } else if (quizData && typeof quizData === 'object' && quizData.questions) {
+              questions = Array.isArray(quizData.questions) ? quizData.questions : [];
+            } else if (quizData && typeof quizData === 'object' && Object.keys(quizData).length > 0) {
+              // If quizData is an object with question data, convert to array
+              questions = Object.entries(quizData).map(([id, data]: [string, any]) => ({
+                id: data.id || id,
+                type: data.type || 'theory',
+                question: data.question || '',
+                code_snippet: data.code_snippet || null,
+                options: data.options || {},
+                correct_answer: data.correct_answer || ''
+              }));
+            }
+          } catch (e) {
+            console.error('Error parsing quiz data:', e);
+            // Continue with empty questions if parsing fails
+          }
+          
+          // Transform the response to match the expected frontend format
+          const quizData = {
+            quiz_id: response.quiz_id || quizId,
+            topic: response.topic || 'Untitled Quiz',
+            difficulty: response.difficulty || 'Medium',
+            questions: questions,
+            quiz_key: response.quiz_key || '',
+            quiz_time: response.quiz_time || 1800, // 30 minutes default
+            quiz_expiration_time: response.quiz_expiration_time || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            max_attempts: response.max_attempts,
+            num_questions: response.num_questions || questions.length || 0
+          };
+          
+          console.log('Formatted quiz data:', JSON.stringify(quizData, null, 2));
+          return res.status(200).json(quizData);
+        } catch (error: any) {
+          if (error.status === 404) {
+            return res.status(404).json({
+              error: 'Quiz not found',
+              details: 'The requested quiz could not be found or you do not have permission to access it.'
+            });
+          }
+          throw error; // Re-throw other errors to be caught by the outer try-catch
+        }
       }
       
       case 'PUT': {

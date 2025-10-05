@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {  useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
@@ -37,8 +37,10 @@ export default function MyQuizzesPage() {
   const [isFetchingQuizzes, setIsFetchingQuizzes] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   
-  // Check if user is on consumer plan
-  const isConsumerPlan = user?.publicMetadata?.plan === 'consumer';
+  // Get user's plan type from metadata or default to Free
+  const userPlan = (user?.publicMetadata?.plan as 'Free' | 'Consumer' | 'Business') || 'Consumer';
+  const isFreePlan = userPlan === 'Free';
+  const isConsumerPlan = userPlan === 'Consumer';
 
   useEffect(() => {
     if (isLoaded && !user) router.push("/signin");
@@ -56,7 +58,6 @@ export default function MyQuizzesPage() {
     },
     staleTime: Infinity,
   });
-
   useEffect(() => {
     if (quizzesData) setQuizzes(quizzesData);
     setIsFetchingQuizzes(rqFetching);
@@ -71,13 +72,13 @@ export default function MyQuizzesPage() {
     );
   }
 
-  // Show consumer plan UI if user is on consumer plan
-  if (isConsumerPlan) {
+  // Show Free/Consumer plan UI if user is not on Business plan
+  if (isFreePlan || isConsumerPlan) {
     return (
       <>
         <Head>
           <title>My Quizzes | QuizzViz</title>
-          <meta name="description" content="Upgrade to access all your quizzes." />
+          <meta name="description" content="View and take your quizzes" />
         </Head>
         <div className="min-h-screen bg-black text-white">
           <SignedIn>
@@ -93,51 +94,98 @@ export default function MyQuizzesPage() {
                   userEmail={user?.emailAddresses?.[0]?.emailAddress} 
                 />
                 <main className="flex-1 p-6">
-                  <div className="max-w-4xl mx-auto">
-                    <Card className="border-0 bg-gradient-to-br from-blue-900/20 to-blue-900/10 border-blue-700/30">
-                      <CardHeader className="text-center space-y-4">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-600/20">
-                          <BookOpenCheck className="h-8 w-8 text-blue-400" />
-                        </div>
-                        <CardTitle className="text-2xl font-bold text-white">Unlimited Quizzes with Business Plan</CardTitle>
-                        <CardDescription className="text-blue-200">
-                          Your current plan only allows access to a limited number of quizzes. Upgrade to our Business Plan to view and manage all your quizzes.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="text-center pb-8 px-8">
-                        <div className="mt-6 space-y-4">
-                          <div className="space-y-2 text-left max-w-md mx-auto">
-                            <div className="flex items-start space-x-3">
-                              <div className="flex-shrink-0 mt-1">
-                                <div className="h-2 w-2 rounded-full bg-blue-400"></div>
-                              </div>
-                              <p className="text-sm text-blue-100">Create and store unlimited quizzes</p>
-                            </div>
-                            <div className="flex items-start space-x-3">
-                              <div className="flex-shrink-0 mt-1">
-                                <div className="h-2 w-2 rounded-full bg-blue-400"></div>
-                              </div>
-                              <p className="text-sm text-blue-100">Access your full quiz history</p>
-                            </div>
-                            <div className="flex items-start space-x-3">
-                              <div className="flex-shrink-0 mt-1">
-                                <div className="h-2 w-2 rounded-full bg-blue-400"></div>
-                              </div>
-                              <p className="text-sm text-blue-100">Advanced quiz management features</p>
-                            </div>
-                          </div>
-                          <div className="pt-6">
-                            <Button 
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-6 text-base"
-                              onClick={() => router.push('/dashboard/billing')}
+                  <div className="max-w-5xl mx-auto">
+                    <div className="mb-6">
+                      <h1 className="text-2xl font-bold mb-2">My Quizzes</h1>
+                      <p className="text-white/70">Click on any quiz below to attempt it</p>
+                    </div>
+                    
+                    {fetchError ? (
+                      <div className="border border-red-500/40 text-red-300 rounded-lg p-4">
+                        {fetchError}
+                      </div>
+                    ) : isFetchingQuizzes && !quizzes ? (
+                      <div className="flex items-center justify-center py-10">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : !quizzes || quizzes.length === 0 ? (
+                      <div className="border border-white/10 rounded-lg p-6 text-center">
+                        <p className="text-white/70">No quizzes available to attempt yet.</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {quizzes.map((q) => {
+                          const quizLink = `/quiz/attempt/${q.quiz_id}`;
+                          
+                          return (
+                            <Link
+                              key={q.quiz_id}
+                              href={quizLink}
+                              className="group block"
                             >
-                              <Zap className="mr-2 h-5 w-5" />
-                              Upgrade to Business Plan
-                            </Button>
-                          </div>
+                              <Card className="relative overflow-hidden cursor-pointer border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-900 transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-blue-500/10 group-hover:border-white/20">
+                                <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-[radial-gradient(600px_circle_at_var(--x,50%)_var(--y,50%),rgba(59,130,246,0.08),transparent_40%)]" />
+                                <CardHeader>
+                                  <div className="flex items-center justify-between">
+                                    <div className="relative group">
+                                      <CardTitle 
+                                        className="text-xl font-semibold text-white truncate max-w-[200px]"
+                                        title={q.topic}
+                                      >
+                                        {q.topic}
+                                      </CardTitle>
+                                      {q.topic.length > 30 && (
+                                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2 text-sm text-white bg-gray-800 rounded shadow-lg z-10">
+                                          {q.topic}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.difficulty}</Badge>
+                                  </div>
+                                  <CardDescription className="text-white/70">
+                                    <span className="font-medium text-white">{q.num_questions}</span> questions
+                                  </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="flex flex-col gap-3">
+                                    <div className="flex flex-wrap gap-2">
+                                      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300 text-xs">
+                                        Theory {q.theory_questions_percentage}%
+                                      </span>
+                                      <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-indigo-300 text-xs">
+                                        Code {q.code_analysis_questions_percentage}%
+                                      </span>
+                                    </div>
+                                    <div className="mt-2">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-400 border border-blue-500/20">
+                                        Click to attempt
+                                      </span>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {!isConsumerPlan && (
+                      <div className="mt-8 border-t border-white/10 pt-6">
+                        <div className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 p-6 rounded-lg">
+                          <h3 className="text-lg font-medium mb-2">Upgrade to Consumer Plan</h3>
+                          <p className="text-sm text-white/70 mb-4">
+                            Get access to view correct answers after completing quizzes and more advanced features.
+                          </p>
+                          <Button 
+                            onClick={() => router.push('/dashboard/billing')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            Upgrade Now
+                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    )}
                   </div>
                 </main>
               </div>
