@@ -7,6 +7,7 @@ import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import Head from "next/head";
 import Link from "next/link";
 import { Zap, BookOpenCheck } from "lucide-react";
+import { PLAN_TYPE } from "@/config/plans";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
@@ -39,11 +40,9 @@ export default function MyQuizzesPage() {
   
   // Get user's plan type from metadata or default to Free
 
-  type PlanType = 'Free' | 'Consumer' | 'Business';
-  const userPlan:PlanType = 'Free';
-  const isFreePlan:Boolean = userPlan === 'Free';
-  // @ts-ignore
-  const isConsumerPlan:Boolean = userPlan === 'Consumer';
+  let isFreePlan:Boolean =  PLAN_TYPE === 'Free';
+  let isConsumerPlan:Boolean = PLAN_TYPE === 'Consumer';
+  let isBusinessPlan:Boolean = PLAN_TYPE === 'Business';
 
   useEffect(() => {
     if (isLoaded && !user) router.push("/signin");
@@ -76,7 +75,7 @@ export default function MyQuizzesPage() {
   }
 
   // Show Free/Consumer plan UI if user is not on Business plan
-  if (isFreePlan || isConsumerPlan) {
+  if (isFreePlan || isConsumerPlan || isBusinessPlan) {
     return (
       <>
         <Head>
