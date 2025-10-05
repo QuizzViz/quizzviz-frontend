@@ -15,20 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PLAN_TYPE } from "@/config/plans";
 
-// import {
-//   ResponsiveContainer,
-//   BarChart,
-//   Bar,
-//   XAxis,
-//   YAxis,
-//   CartesianGrid,
-//   Tooltip,
-//   Cell,
-// } from "recharts";
-
-
-// --- QUIZ DATA TYPES AND UTILITIES ---
 
 type QuizResult = {
   quiz_id: string;
@@ -46,8 +34,7 @@ type QuizResult = {
 
 const COLORS = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#06B6D4', '#E11D48', '#C026D3', '#F97316', '#22C55E', '#3B82F6', '#6366F1', '#D946EF', '#FCD34D', '#10B981', '#06B6D4', '#7C3AED', '#DB2777', '#FBBF24'];
 
-type PlanType = 'Consumer' | 'Business';  
-const plan_type: PlanType = 'Consumer'; 
+
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
@@ -331,7 +318,7 @@ export default function ResultsDashboard() {
     );
   }
 
-  if (plan_type !== "Business") {
+  if (PLAN_TYPE !== "Business") {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <SignedIn>
