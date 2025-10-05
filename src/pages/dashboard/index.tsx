@@ -61,7 +61,7 @@ export default function Dashboard() {
               {PLAN_TYPE === 'Consumer' && (
                 <div className="mt-4 p-4 bg-blue-900/20 border border-blue-700/30 rounded-lg text-sm text-blue-200">
                   <p>You're on the <span className="font-semibold">Consumer Plan</span> with a limit of {currentPlan.maxQuestions} questions per quiz.</p>
-                  <p className="mt-1">Upgrade to <span className="font-semibold">Business Plan</span> for unlimited questions and advanced features.</p>
+                  <p className="mt-1">Upgrade to <span className="font-semibold">Business Plan</span> for more questions per quiz and advanced features.</p>
                 </div>
               )}
             </main>
