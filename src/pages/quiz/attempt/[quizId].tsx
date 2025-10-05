@@ -28,7 +28,7 @@ interface QuizData {
   topic: string;
   difficulty: string;
   num_questions: number;
-  quiz: Question[];
+  questions: Question[];
   quiz_time: number;
 }
 
@@ -101,10 +101,10 @@ const QuizAttemptPage = () => {
     if (!quizData) return { correct: 0, total: 0, percentage: 0 };
     
     let correct = 0;
-    const total = quizData.quiz.length;
+    const total = quizData.questions.length;
     
     Object.entries(selectedAnswers).forEach(([index, answer]) => {
-      const question = quizData.quiz[parseInt(index)];
+      const question = quizData.questions[parseInt(index)];
       if (question && answer === question.correct_answer) {
         correct++;
       }
@@ -132,12 +132,12 @@ const QuizAttemptPage = () => {
       console.log('Initial answers:', answers);
       
       const allAnswers: Record<number, string> = {};
-      quizData.quiz.forEach((_, index) => {
+      quizData.questions.forEach((_, index) => {
         allAnswers[index] = answers[index] ?? '';
       });
       
       console.log('Processed answers before submission:', allAnswers);
-      quizData.quiz.forEach((_, index) => {
+      quizData.questions.forEach((_, index) => {
         if (!allAnswers.hasOwnProperty(index)) {
           allAnswers[index] = '';
         }
@@ -146,8 +146,8 @@ const QuizAttemptPage = () => {
       setSelectedAnswers(allAnswers);
       
       let correct = 0;
-      const total = quizData.quiz.length
-      quizData.quiz.map((question, index) => {
+      const total = quizData.questions.length
+      quizData.questions.map((question, index) => {
         const answer = allAnswers[index] || '';
         const isCorrect = answer === question.correct_answer;
         if (isCorrect) correct++;
@@ -192,7 +192,7 @@ const QuizAttemptPage = () => {
   }, [currentQuestionIndex]);
 
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < (quizData?.quiz.length || 0) - 1) {
+    if (currentQuestionIndex < (quizData?.questions.length || 0) - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
@@ -533,13 +533,13 @@ const QuizAttemptPage = () => {
     if (!quizData) return { correct: 0, total: 0, percentage: 0 };
     
     let correct = 0;
-    quizData.quiz.forEach((question, index) => {
+    quizData.questions.forEach((question, index) => {
       if (selectedAnswers[index] === question.correct_answer) {
         correct++;
       }
     });
     
-    const total = quizData.quiz.length;
+    const total = quizData.questions.length;
     const percentage = Math.round((correct / total) * 100);
     
     return { correct, total, percentage };
@@ -623,25 +623,31 @@ const QuizAttemptPage = () => {
         }
 
         const data = await response.json();
+
+        if (data.questions && !data.quiz) {
+          data.quiz = data.questions;
+        }
+
         console.log('Received quiz data:', data);
         
         let parsedQuiz: Question[] = [];
-        if (typeof data.quiz === 'string') {
-          try {
-            parsedQuiz = JSON.parse(data.quiz);
-          } catch (parseError) {
-            console.error('JSON Parse Error:', parseError);
-            throw new Error('Invalid quiz data format: Failed to parse quiz JSON');
-          }
-        } else if (Array.isArray(data.quiz)) {
-          parsedQuiz = data.quiz;
-        } else {
-          throw new Error('Invalid quiz data format: Quiz data is not a valid array');
-        }
-
-        if (!parsedQuiz || parsedQuiz.length === 0) {
-          throw new Error('Invalid quiz data format: No questions found');
-        }
+if (typeof data.quiz === 'string') {
+  try {
+    const parsed = JSON.parse(data.quiz);
+    if (!Array.isArray(parsed)) {
+      throw new Error('Parsed quiz data is not an array');
+    }
+    parsedQuiz = parsed;
+  } catch (parseError) {
+    console.error('JSON Parse Error:', parseError, 'Raw quiz data:', data.quiz);
+    throw new Error('Invalid quiz data format: Failed to parse quiz JSON - ' + (parseError as Error).message);
+  }
+} else if (Array.isArray(data.quiz)) {
+  parsedQuiz = data.quiz;
+} else {
+  console.error('Unexpected quiz data type:', typeof data.quiz, data.quiz);
+  throw new Error('Invalid quiz data format: Quiz data is not a string or array');
+}
 
         // Validate each question structure
         parsedQuiz = parsedQuiz.map((q, index) => {
@@ -661,8 +667,8 @@ const QuizAttemptPage = () => {
           topic: data.topic,
           difficulty: data.difficulty,
           num_questions: data.num_questions || parsedQuiz.length,
-          quiz: parsedQuiz,
-          quiz_time: (data.num_questions || parsedQuiz.length) * 2, // 2 minutes per question
+          questions: parsedQuiz,
+          quiz_time: (data.num_questions || parsedQuiz.length) * 2 * 60, // 2 minutes per question
         };
         
         console.log('Parsed quiz data:', quizData);
@@ -903,7 +909,7 @@ const QuizAttemptPage = () => {
               <div className="max-w-4xl mx-auto px-4 py-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-lg font-semibold text-white">
-                    Question {currentQuestionIndex + 1} of {quizData.quiz.length}
+                    Question {currentQuestionIndex + 1} of {quizData.questions.length}
                   </div>
                   <div className="text-sm text-gray-400">
                     {Object.keys(selectedAnswers).length} answered
@@ -912,7 +918,7 @@ const QuizAttemptPage = () => {
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div 
                     className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${((currentQuestionIndex + 1) / quizData.quiz.length) * 100}%` }}
+                    style={{ width: `${((currentQuestionIndex + 1) / quizData.questions.length) * 100}%` }}
                   ></div>
                 </div>
               </div>
@@ -922,10 +928,10 @@ const QuizAttemptPage = () => {
               <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl mb-6">
                 <CardContent className="p-8">
                   <h2 className="text-2xl font-semibold text-white mb-6 leading-relaxed">
-                    {quizData?.quiz?.[currentQuestionIndex]?.question || 'Loading question...'}
+                    {quizData?.questions?.[currentQuestionIndex]?.question || 'Loading question...'}
                   </h2>
 
-                  {quizData?.quiz?.[currentQuestionIndex]?.code_snippet && (
+                  {quizData?.questions?.[currentQuestionIndex]?.code_snippet && (
                     <div className="mb-8 rounded-xl overflow-hidden border border-gray-700">
                       <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
                         <span className="text-sm text-gray-300 font-medium">Code Preview</span>
@@ -943,14 +949,14 @@ const QuizAttemptPage = () => {
                         wrapLines={true}
                         showLineNumbers={true}
                       >
-                        {quizData.quiz[currentQuestionIndex].code_snippet || ''}
+                        {quizData.questions[currentQuestionIndex].code_snippet || ''}
                       </SyntaxHighlighter>
                     </div>
                   )}
 
                   <div className="space-y-4">
                     <h3 className="text-white font-medium mb-4">Choose your answer:</h3>
-                    {Object.entries(quizData.quiz[currentQuestionIndex].options)
+                    {Object.entries(quizData.questions[currentQuestionIndex].options)
                       .map(([key, value]) => {
                         const isSelected = selectedAnswers[currentQuestionIndex] === key;
                         return (
@@ -985,7 +991,7 @@ const QuizAttemptPage = () => {
               </Card>
 
               <div className="flex justify-start">
-                {currentQuestionIndex < quizData.quiz.length - 1 ? (
+                {currentQuestionIndex < quizData.questions.length - 1 ? (
                   <Button 
                     onClick={handleNextQuestion}
                     disabled={!selectedAnswers[currentQuestionIndex]}
@@ -1080,13 +1086,13 @@ const QuizAttemptPage = () => {
                     </div>
                     <div className="text-center p-4 bg-gray-800/50 rounded-xl">
                       <div className="text-2xl font-bold text-red-400 mb-1">
-                        {quizData.quiz.length - calculateScore().correct}
+                        {quizData.questions.length - calculateScore().correct}
                       </div>
                       <div className="text-sm text-gray-400">Incorrect</div>
                     </div>
                     <div className="text-center p-4 bg-gray-800/50 rounded-xl">
                       <div className="text-2xl font-bold text-blue-400 mb-1">
-                        {quizData.quiz.length}
+                        {quizData.questions.length}
                       </div>
                       <div className="text-sm text-gray-400">Total</div>
                     </div>
@@ -1133,7 +1139,7 @@ const QuizAttemptPage = () => {
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                         <span className="text-gray-400">Questions:</span>
-                        <span className="text-white font-medium">{quizData.quiz.length}</span>
+                        <span className="text-white font-medium">{quizData.questions.length}</span>
                       </div>
                       <div className="flex items-center justify-between py-2">
                         <span className="text-gray-400">Time Limit:</span>
