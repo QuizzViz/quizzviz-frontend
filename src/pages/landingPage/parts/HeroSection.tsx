@@ -37,6 +37,8 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useUserType, UserType } from "@/contexts/UserTypeContext";
+import { TOPICS } from "@/constants/topics";
+import { Combobox } from "@/components/ui/combobox";
 
 export interface UserTypeConfig {
   id: UserType;
@@ -209,14 +211,17 @@ const HeroSection: FC = () => {
                     <Label htmlFor="topic" className="text-white font-medium text-sm">
                       Topic
                     </Label>
-                    <Input
-                      id="topic"
-                      placeholder="e.g. React, Python, System Design"
-                      value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      className="h-10 text-sm bg-white/5 border border-white/10 text-white placeholder:text-gray-400 focus:border-green-500/50 transition-colors rounded-lg"
-                      required
-                    />
+                    <div className="relative">
+                      <Combobox
+                        options={TOPICS}
+                        value={topic}
+                        onChange={setTopic}
+                        placeholder="Select or search for a topic..."
+                        className="h-10 text-sm bg-white/5 border border-white/10 text-white placeholder:text-gray-400 focus:border-green-500/50 transition-colors rounded-lg"
+                        inputClassName="h-10 text-sm bg-white/5 border-0 text-white placeholder:text-gray-400 focus:ring-0 focus:ring-offset-0"
+                        popoverClassName="w-full max-w-md bg-gray-900 border border-white/10 rounded-lg shadow-lg"
+                      />
+                    </div>
                   </div>
                   
                   {/* Difficulty and Count */}

@@ -1,9 +1,10 @@
 import { FC } from "react";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { LucideIcon } from "lucide-react";
+import { Combobox } from "@/components/ui/combobox";
+import { TOPICS } from "@/constants/topics";
 
-// Controlled input for quiz topic with a right-side icon
+// Controlled combobox for quiz topic selection
 const TopicInput: FC<{
   topic: string;
   setTopic: (v: string) => void;
@@ -13,19 +14,18 @@ const TopicInput: FC<{
     <div className="space-y-2">
       <Label className="text-foreground">Topic</Label>
       <div className="relative">
-        <Input
+        <Combobox
+          options={TOPICS}
           value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          placeholder="e.g. MERN Stack"
-          className="bg-background border-border text-foreground placeholder:text-muted-foreground/70 pr-12 py-6 text-lg focus:border-foreground"
-          required
+          onChange={setTopic}
+          placeholder="Select or search for a topic..."
+          className="h-14 text-lg"
+          inputClassName="h-14 text-base"
+          popoverClassName="w-full max-w-md"
         />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          
-        </div>
       </div>
     </div>
   );
 };
 
-export default TopicInput
+export default TopicInput;
