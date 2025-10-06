@@ -11,17 +11,17 @@ const TopicInput: FC<{
   icon: LucideIcon;
 }> = ({ topic, setTopic, icon: Icon }) => {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 w-full">
       <Label className="text-foreground">Topic</Label>
-      <div className="relative">
+      <div className="relative w-full">
         <Combobox
           options={TOPICS}
           value={topic}
           onChange={setTopic}
-          placeholder="Select or search for a topic..."
-          className="h-14 text-lg"
-          inputClassName="h-14 text-base"
-          popoverClassName="w-full max-w-md"
+          placeholder="Search or select a topic..."
+          className="w-full h-14 text-base"
+          inputClassName="h-10 text-sm"
+          popoverClassName="w-full max-w-none"
         />
       </div>
     </div>

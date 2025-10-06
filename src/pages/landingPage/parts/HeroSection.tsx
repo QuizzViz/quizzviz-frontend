@@ -211,15 +211,15 @@ const HeroSection: FC = () => {
                     <Label htmlFor="topic" className="text-white font-medium text-sm">
                       Topic
                     </Label>
-                    <div className="relative">
+                    <div className="relative w-full">
                       <Combobox
                         options={TOPICS}
                         value={topic}
                         onChange={setTopic}
-                        placeholder="Select or search for a topic..."
-                        className="h-10 text-sm bg-white/5 border border-white/10 text-white placeholder:text-gray-400 focus:border-green-500/50 transition-colors rounded-lg"
-                        inputClassName="h-10 text-sm bg-white/5 border-0 text-white placeholder:text-gray-400 focus:ring-0 focus:ring-offset-0"
-                        popoverClassName="w-full max-w-md bg-gray-900 border border-white/10 rounded-lg shadow-lg"
+                        placeholder="Search or select a topic..."
+                        className="w-full h-10 text-sm text-white bg-white/5 border border-white/10 hover:bg-white/10 focus:border-green-500/50 transition-colors rounded-lg"
+                        inputClassName="h-10 text-sm bg-transparent border-0 text-white placeholder:text-gray-400 focus:ring-0 focus:ring-offset-0"
+                        popoverClassName="w-full max-w-none bg-gray-900 border border-white/10 rounded-lg shadow-lg"
                       />
                     </div>
                   </div>
