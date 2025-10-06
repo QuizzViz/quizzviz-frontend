@@ -39,11 +39,21 @@ export function PublishModal({
   const [isCopied, setIsCopied] = useState(false);
   const [localSecretKey, setLocalSecretKey] = useState(settings.secretKey || '');
   const [publishedQuizData, setPublishedQuizData] = useState<{quiz_public_link: string; quiz_key: string} | null>(null);
+  const [isPublishingLocal, setIsPublishingLocal] = useState(false);
   
   // Sync local state with props when settings change
   React.useEffect(() => {
     setLocalSecretKey(settings.secretKey || '');
   }, [settings.secretKey]);
+
+  // Reset share modal state when main modal closes
+  React.useEffect(() => {
+    if (!isOpen) {
+      setIsShareModalOpen(false);
+      setPublishedQuizData(null);
+      setIsPublishingLocal(false);
+    }
+  }, [isOpen]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(quizLink);
@@ -57,6 +67,13 @@ export function PublishModal({
   };
 
   const handlePublish = async () => {
+    // Prevent multiple clicks
+    if (isPublishingLocal) {
+      return;
+    }
+
+    setIsPublishingLocal(true);
+
     try {
       // Ensure the secret key is properly set in settings before publishing
       const updatedSettings = {
@@ -88,8 +105,10 @@ export function PublishModal({
             quiz_public_link: publicLink,
             quiz_key: quizKey
           });
-          setIsShareModalOpen(true);
+        
         }
+      } else {
+        setIsPublishingLocal(false);
       }
     } catch (error) {
       console.error('Error in handlePublish:', error);
@@ -98,9 +117,10 @@ export function PublishModal({
         quiz_public_link: `${origin}/${slug}/take/quiz/${quizId}`,
         quiz_key: localSecretKey.trim()
       });
-      setIsShareModalOpen(true);
+      
+  
     }
-  };
+   };
 
   const handleSettingChange = <K extends keyof PublishSettings>(
     key: K,
@@ -278,7 +298,7 @@ export function PublishModal({
                 type="button" 
                 variant="outline" 
                 onClick={onClose}
-                disabled={isPublishing}
+                disabled={isPublishing || isPublishingLocal}
                 className="text-white border-blue-600 hover:bg-blue-800/50 hover:border-blue-500 h-9 text-sm"
               >
                 Cancel
@@ -286,10 +306,10 @@ export function PublishModal({
               <Button 
                 type="button" 
                 onClick={handlePublish}
-                disabled={isPublishing || (settings.isSecretKeyRequired && !localSecretKey.trim())}
+                disabled={isPublishing || isPublishingLocal || (settings.isSecretKeyRequired && !localSecretKey.trim())}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               >
-                {isPublishing ? (
+                {(isPublishing || isPublishingLocal) ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -305,12 +325,14 @@ export function PublishModal({
       </DialogContent>
       
       {/* Share Quiz Modal - Use the public link from the API if available, otherwise fallback to generated link */}
-      <ShareQuizModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        quizLink={publishedQuizData?.quiz_public_link || `${origin}/${slug}/take/quiz/${quizId}`}
-        quizKey={publishedQuizData?.quiz_key || localSecretKey}
-      />
+      {isShareModalOpen && (
+        <ShareQuizModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          quizLink={publishedQuizData?.quiz_public_link || `${origin}/${slug}/take/quiz/${quizId}`}
+          quizKey={publishedQuizData?.quiz_key || localSecretKey}
+        />
+      )}
     </Dialog>
   );
 }

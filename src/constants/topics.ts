@@ -1,0 +1,86 @@
+export const TOPICS = [
+  // Programming Languages
+  { value: "Python", label: "Python" },
+  { value: "Java", label: "Java" },
+  { value: "JavaScript", label: "JavaScript" },
+  { value: "TypeScript", label: "TypeScript" },
+  { value: "C", label: "C" },
+  { value: "C++", label: "C++" },
+  { value: "C#", label: "C#" },
+  { value: "Go", label: "Go" },
+  { value: "Rust", label: "Rust" },
+  { value: "Ruby", label: "Ruby" },
+  { value: "PHP", label: "PHP" },
+  { value: "Swift", label: "Swift" },
+  { value: "Kotlin", label: "Kotlin" },
+  { value: "Scala", label: "Scala" },
+  { value: "Perl", label: "Perl" },
+  { value: "Haskell", label: "Haskell" },
+  { value: "MATLAB", label: "MATLAB" },
+  { value: "R", label: "R" },
+  { value: "SQL", label: "SQL" },
+  { value: "HTML5", label: "HTML5" },
+  { value: "CSS3", label: "CSS3" },
+  
+  // Frameworks & Libraries
+  { value: "React", label: "React" },
+  { value: "Angular", label: "Angular" },
+  { value: "Vue", label: "Vue" },
+  { value: "Svelte", label: "Svelte" },
+  { value: "Django", label: "Django" },
+  { value: "Flask", label: "Flask" },
+  { value: "FastAPI", label: "FastAPI" },
+  { value: "Spring", label: "Spring" },
+  { value: "Express", label: "Express" },
+  { value: "NextJS", label: "NextJS" },
+  { value: "NestJS", label: "NestJS" },
+  { value: "DotNet", label: ".NET" },
+  { value: "Bootstrap", label: "Bootstrap" },
+  { value: "Tailwind CSS", label: "Tailwind CSS" },
+  { value: "jQuery", label: "jQuery" },
+  
+  // Stacks
+  { value: "MERN Stack", label: "MERN Stack" },
+  { value: "MEAN Stack", label: "MEAN Stack" },
+  { value: "LAMP Stack", label: "LAMP Stack" },
+  { value: "JAMStack", label: "JAMStack" },
+  { value: "MEVN Stack", label: "MEVN Stack" },
+  
+  // DevOps / Tools
+  { value: "Docker", label: "Docker" },
+  { value: "Kubernetes", label: "Kubernetes" },
+  { value: "Terraform", label: "Terraform" },
+  { value: "Ansible", label: "Ansible" },
+  { value: "Jenkins", label: "Jenkins" },
+  { value: "Git", label: "Git" },
+  { value: "GitHub", label: "GitHub" },
+  { value: "GitLab", label: "GitLab" },
+  { value: "CI/CD", label: "CI/CD" },
+  
+  // Databases
+  { value: "PostgreSQL", label: "PostgreSQL" },
+  { value: "MySQL", label: "MySQL" },
+  { value: "MongoDB", label: "MongoDB" },
+  { value: "Redis", label: "Redis" },
+  { value: "SQLite", label: "SQLite" },
+  { value: "Oracle", label: "Oracle" },
+  { value: "DynamoDB", label: "DynamoDB" },
+  { value: "Firebase", label: "Firebase" },
+  { value: "Supabase", label: "Supabase" },
+  
+  // Cloud
+  { value: "Amazon Web Services (AWS)", label: "Amazon Web Services (AWS)" },
+  { value: "Microsoft Azure", label: "Microsoft Azure" },
+  { value: "Google Cloud Platform (GCP)", label: "Google Cloud Platform (GCP)" },
+  
+  // General
+  { value: "Compiler", label: "Compiler" },
+  { value: "Interpreter", label: "Interpreter" },
+  { value: "Operating System", label: "Operating System" },
+  { value: "Linux", label: "Linux" },
+  { value: "Unix", label: "Unix" },
+  { value: "Bash", label: "Bash" },
+  { value: "Shell", label: "Shell" },
+  { value: "Command Line", label: "Command Line" },
+  { value: "API", label: "API" }
+].sort((a, b) => a.label.localeCompare(b.label));

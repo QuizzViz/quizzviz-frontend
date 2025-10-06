@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/nextjs';
+import { PLAN_TYPE } from '@/config/plans';
 
 interface QuizGenerationContextType {
   isGenerating: boolean;
@@ -104,10 +105,8 @@ export function QuizGenerationProvider({ children }: { children: ReactNode }) {
       if (data?.quiz_id || data?.id) {
         const quizId = data.quiz_id || data.id;
         await queryClient.invalidateQueries({ queryKey: ['quizzes'] });
-        
-        // Navigate to the specific quiz page
-        const goToQuiz = () => router.push(`/quiz/${quizId}`);
-        
+        if (PLAN_TYPE === 'Business') {
+        let goToQuiz = () => router.push(`/quiz/${quizId}`);
         toast({
           title: "Quiz generated successfully!",
           description: `${data.topic || 'Your quiz'} is ready. Click to view it now.`,
@@ -127,6 +126,28 @@ export function QuizGenerationProvider({ children }: { children: ReactNode }) {
           ),
         });
       }
+      else {
+                // Navigate to the specific quiz page
+        let goToQuiz = () => router.push(`/dashboard/my-quizzes`);
+        toast({
+          title: "Quiz generated successfully!",
+          description: `${data.topic || 'Your quiz'} is ready. Click to view it now.`,
+          duration: 10000,
+          onClick: goToQuiz,
+          className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
+          action: (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                goToQuiz();
+              }}
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background hover:bg-green-800 border border-green-600/60 text-green-100 h-10 px-4"
+            >
+              View Quiz
+            </button>
+          ),
+        });
+      }}
     } catch (error) {
       console.error('Error in completeGeneration:', error);
       toast({

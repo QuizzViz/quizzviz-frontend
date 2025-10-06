@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
@@ -955,7 +956,8 @@ export default function QuizPage({ params }: QuizPageProps) {
       
       <header className="relative z-20 p-6 border-b border-gray-800/50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-white">
+          <Link href="/" className="text-2xl font-bold text-white flex items-center">
+          <Image src="/QuizzViz-logo.png" alt="QuizzViz Logo" width={50} height={50} />
             QuizzViz
           </Link>
           {step === 'quiz' && quizData && (

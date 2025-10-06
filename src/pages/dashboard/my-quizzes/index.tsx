@@ -1,12 +1,12 @@
 "use client";
 
-import {  useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import Head from "next/head";
 import Link from "next/link";
-import { Zap, BookOpenCheck } from "lucide-react";
+import { Zap, BookOpenCheck, MoreVertical, Trash2 } from "lucide-react";
 import { PLAN_TYPE } from "@/config/plans";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
@@ -14,6 +14,22 @@ import { DashboardHeader } from "@/components/Dashboard/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface QuizSummary {
   quiz_id: string;
@@ -37,6 +53,10 @@ export default function MyQuizzesPage() {
   const [quizzes, setQuizzes] = useState<QuizSummary[] | null>(null);
   const [isFetchingQuizzes, setIsFetchingQuizzes] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [quizToDelete, setQuizToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const queryClient = useQueryClient();
   
   // Get user's plan type from metadata or default to Free
 
@@ -66,6 +86,37 @@ export default function MyQuizzesPage() {
     setFetchError(rqError ? (rqError as Error).message : null);
   }, [quizzesData, rqFetching, rqError]);
 
+  const handleDeleteQuiz = async (quizId: string) => {
+    try {
+      setIsDeleting(true);
+      const response = await fetch(`/api/quiz/${quizId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to delete quiz');
+      }
+      
+      // Invalidate and refetch
+      await queryClient.invalidateQueries({ queryKey: ['quizzes', user?.id] });
+      setDeleteDialogOpen(false);
+      setQuizToDelete(null);
+      
+      // Show success message (you might want to use a toast notification here)
+      console.log('Quiz deleted successfully');
+    } catch (error) {
+      console.error('Error deleting quiz:', error);
+      // You might want to show a toast notification here with the error message
+      alert(error instanceof Error ? error.message : 'Failed to delete quiz');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading || !isLoaded) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -75,7 +126,7 @@ export default function MyQuizzesPage() {
   }
 
   // Show Free/Consumer plan UI if user is not on Business plan
-  if (isFreePlan || isConsumerPlan || isBusinessPlan) {
+  if (isFreePlan || isConsumerPlan) {
     return (
       <>
         <Head>
@@ -120,13 +171,53 @@ export default function MyQuizzesPage() {
                           const quizLink = `/quiz/attempt/${q.quiz_id}`;
                           
                           return (
-                            <Link
-                              key={q.quiz_id}
-                              href={quizLink}
-                              className="group block"
-                            >
-                              <Card className="relative overflow-hidden cursor-pointer border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-900 transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-blue-500/10 group-hover:border-white/20">
-                                <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-[radial-gradient(600px_circle_at_var(--x,50%)_var(--y,50%),rgba(59,130,246,0.08),transparent_40%)]" />
+                            <div key={q.quiz_id} className="group relative">
+                            <Card className="relative overflow-hidden cursor-pointer border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-900 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-blue-500/10 group-hover:border-blue-500/30">
+                              {/* Three-dot menu with better visibility */}
+                              <div className="absolute top-4 right-4 z-10 transition-opacity opacity-0 group-hover:opacity-100">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-9 w-9 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 hover:bg-white/20 hover:border-white/30 transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
+                                      onClick={(e) => e.stopPropagation()}
+                                      aria-label="Quiz options"
+                                    >
+                                      <MoreVertical className="h-5 w-5 text-white/80 hover:text-white" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent 
+                                    align="end" 
+                                    className="bg-zinc-900/95 backdrop-blur-sm border-white/10 w-48 p-1.5 space-y-1"
+                                    sideOffset={8}
+                                  >
+                                    <DropdownMenuItem 
+                                      className="flex items-center px-3 py-2.5 text-sm rounded-md text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 focus:text-red-400 cursor-pointer transition-colors duration-150"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setQuizToDelete(q.quiz_id);
+                                        setDeleteDialogOpen(true);
+                                      }}
+                                    >
+                                      <Trash2 className="mr-2.5 h-4 w-4 flex-shrink-0" />
+                                      <span>Delete Quiz</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                              {/* Always visible menu indicator on hover */}
+                              <div className="absolute top-4 right-4 z-5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                                <div className="h-9 w-9 rounded-full bg-blue-500/10 border border-blue-500/30 animate-pulse"></div>
+                              </div>
+                              <Link href={quizLink} className="block group-has-[button:hover]:opacity-90 transition-opacity duration-200">
+                                <div 
+                                  className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(600px_circle_at_var(--x,50%)_var(--y,50%),rgba(59,130,246,0.1),transparent_60%)]" 
+                                  style={{
+                                    '--x': '50%',
+                                    '--y': '50%',
+                                  } as React.CSSProperties}
+                                />
                                 <CardHeader>
                                   <div className="flex items-center justify-between">
                                     <div className="relative group">
@@ -165,8 +256,9 @@ export default function MyQuizzesPage() {
                                     </div>
                                   </div>
                                 </CardContent>
-                              </Card>
-                            </Link>
+                              </Link>
+                            </Card>
+                          </div>
                           );
                         })}
                       </div>
@@ -202,6 +294,28 @@ export default function MyQuizzesPage() {
               </div>
             </div>
           </SignedOut>
+          
+          {/* Delete Confirmation Dialog */}
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialogContent className="bg-zinc-900 border-white/10 text-white">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Quiz</AlertDialogTitle>
+                <AlertDialogDescription className="text-white/70">
+                  Are you sure you want to delete this quiz? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="bg-transparent border-white/20 hover:bg-white/10">Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  className="bg-red-600 hover:bg-red-700"
+                  onClick={() => quizToDelete && handleDeleteQuiz(quizToDelete)}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </>
     );

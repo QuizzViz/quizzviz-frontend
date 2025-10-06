@@ -5,11 +5,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useUser, useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
 import Head from 'next/head';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, AlertCircle, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, Maximize2, Monitor } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { formatTime } from '@/lib/utils';
@@ -36,6 +37,55 @@ interface QuizData {
 type Step = 'welcome' | 'instructions' | 'quiz' | 'results';
 
 const QuizAttemptPage = () => {
+  // Check if user is on mobile
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    // Check if the device is mobile
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobile(isMobileDevice);
+  }, []);
+
+  // Show mobile restriction message for business plan users on mobile
+  if (isMobile && PLAN_TYPE === 'Business') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4">
+        <div className="max-w-md w-full bg-gray-800/80 backdrop-blur-md rounded-2xl p-8 text-center border border-white/10 shadow-2xl">
+          <div className="flex flex-col items-center justify-center mb-6">
+            <div className="relative w-16 h-16 mb-4">
+              <Image 
+                src="/logo.png" 
+                alt="QuizzViz" 
+                fill 
+                className="object-contain"
+                priority
+              />
+            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+              QuizzViz
+            </h1>
+          </div>
+          
+          <div className="bg-red-900/30 border border-red-700/50 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-center gap-2 text-red-300 mb-2">
+              <Monitor className="w-5 h-5" />
+              <h3 className="font-semibold">Desktop/Laptop Required</h3>
+            </div>
+            <p className="text-gray-300 text-sm">
+              This quiz cannot be taken on mobile devices. Please use a desktop or laptop computer to attempt this quiz.
+            </p>
+          </div>
+          
+          <Button 
+            onClick={() => window.location.href = '/dashboard'} 
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
+          >
+            Return to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
@@ -50,10 +100,35 @@ const QuizAttemptPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [warnings, setWarnings] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isMobileDevice, setIsMobileDevice] = useState<boolean>(false);
   const [showWarning, setShowWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Check if user is on mobile and set up the component
+  useEffect(() => {
+    setIsClient(true);
+    const mobileCheck = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobileDevice(mobileCheck());
+    
+    // Show mobile restriction for business plan users
+    if (mobileCheck() && PLAN_TYPE === 'Business') {
+      return;
+    }
+
+    // Rest of your existing useEffect logic
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!hasSubmittedRef.current && quizStarted && !exitConfirmationRef.current) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [quizStarted]);
   
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
   const activityMonitorRef = useRef({ 
@@ -774,9 +849,10 @@ if (typeof data.quiz === 'string') {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
       
       <header className="relative z-20 p-6 border-b border-gray-800/50">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-white">
-            QuizzViz
+        <div className="max-w-7xl mx-auto flex items-center">
+        <Link href="/" className="text-2xl font-bold text-white flex items-center">
+          <Image src="/QuizzViz-logo.png" alt="QuizzViz Logo" width={50} height={50} />
+           <span>QuizzViz</span>
           </Link>
           {step === 'quiz' && quizData && (
             <div className="flex items-center gap-4">
