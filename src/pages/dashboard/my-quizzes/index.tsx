@@ -126,7 +126,7 @@ export default function MyQuizzesPage() {
   }
 
   // Show Free/Consumer plan UI if user is not on Business plan
-  if (isFreePlan || isConsumerPlan || isBusinessPlan) {
+  if (isFreePlan || isConsumerPlan) {
     return (
       <>
         <Head>
