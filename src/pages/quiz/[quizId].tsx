@@ -8,11 +8,19 @@ import { useToast } from "@/hooks/use-toast";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { QuizEditor } from "@/components/Quiz/QuizEditor";
+import { PLAN_TYPE } from "@/config/plans";
 
 export default function QuizDetailsPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const { toast } = useToast();
+  
+  // Redirect to 404 if not a Business plan user
+  useEffect(() => {
+    if (PLAN_TYPE !== 'Business') {
+      router.push('/404');
+    }
+  }, [router, toast]);
   
   // Get the quiz ID from the URL
   const { quizId } = router.query as { quizId?: string };
