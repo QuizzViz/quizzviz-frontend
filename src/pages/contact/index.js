@@ -19,6 +19,7 @@ export default function ContactPage() {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [submitStatus, setSubmitStatus] = useState({
     success: false,
     message: ''
@@ -52,7 +53,7 @@ export default function ContactPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          subject: `Contact Form: ${formData.subject || 'New Message'}`,
+          subject: `${formData.subject}`,
           message: `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`,
           email_type: 'contact'
         }),
@@ -61,9 +62,10 @@ export default function ContactPage() {
       const data = await response.json();
       
       if (data.success) {
+        setIsSuccess(true);
         setSubmitStatus({
           success: true,
-          message: 'Thank you! We’ll get back to you soon.'
+          message: 'Thank you! We\'ll get back to you soon.'
         });
         setFormData({
           name: '',
@@ -86,7 +88,45 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-foreground">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-foreground relative">
+      {/* Success Overlay */}
+      <AnimatePresence>
+        {isSuccess && (
+          <motion.div 
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <motion.div 
+              className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 text-center"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ 
+                type: 'spring',
+                damping: 25,
+                stiffness: 300
+              }}
+            >
+              <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">Message Sent!</h3>
+              <p className="text-gray-300 mb-6">We've received your message and will get back to you soon.</p>
+              <button
+                onClick={() => setIsSuccess(false)}
+                className="px-6 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+              >
+                Got it, thanks!
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <Head>
         <title>Contact Us | QuizzViz</title>
         <meta name="description" content="Get in touch with the QuizzViz team. We'd love to hear from you!" />
