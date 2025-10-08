@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Head from 'next/head';
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertCircle, Send, ThumbsUp, Lightbulb, MessageSquare, MessageCircle, FileText, Star, Mail, MessageCircleHeart } from 'lucide-react';
@@ -152,7 +153,11 @@ export default function FeedbackPage() {
 
   // Main form UI
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900">
+    <>
+      <Head>
+        <title>Feedback | QuizzViz</title>
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900">
       <div className="flex min-h-screen">
         {/* Sidebar */}
         <div className="bg-white border-r border-white">
@@ -374,6 +379,7 @@ export default function FeedbackPage() {
           </main>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
