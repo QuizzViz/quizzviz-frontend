@@ -78,6 +78,7 @@ export default function FeedbackPage() {
         body: JSON.stringify({
           subject,
           message,
+          email_type: 'feedback'
         }),
       });
 
