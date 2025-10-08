@@ -1,7 +1,14 @@
+import Head from "next/head";
+
 export default function ReportBugPage() {
     return (
-        <div>
-            <h1>Report Bug</h1>
-        </div>
+        <>
+        <Head>
+            <title>Report Bug | QuizzViz</title>
+        </Head>
+            <div>
+                <h1>Report Bug</h1>
+            </div>
+        </>
     );
 }
