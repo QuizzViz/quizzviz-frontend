@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, AlertCircle, Send, Sparkles, MessageSquare, Lightbulb, Target, PenTool } from 'lucide-react';
+import { CheckCircle, AlertCircle, Send, ThumbsUp, Lightbulb, MessageSquare, MessageCircle, FileText, Star, Mail, MessageCircleHeart } from 'lucide-react';
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 
@@ -24,8 +24,8 @@ export default function FeedbackPage() {
     { 
       id: 'compliment', 
       label: 'Compliment', 
-      icon: Sparkles,
-      gradient: 'from-pink-500 to-rose-500',
+      icon: ThumbsUp,
+      gradient: 'from-green-500 to-emerald-500',
       description: 'Share what you love'
     },
     { 
@@ -38,15 +38,15 @@ export default function FeedbackPage() {
     { 
       id: 'advice', 
       label: 'Advice', 
-      icon: Target,
-      gradient: 'from-blue-500 to-cyan-500',
+      icon: MessageSquare,
+      gradient: 'from-blue-500 to-indigo-500',
       description: 'Guide our direction'
     },
     { 
       id: 'other', 
       label: 'Other', 
-      icon: PenTool,
-      gradient: 'from-purple-500 to-indigo-500',
+      icon: FileText,
+      gradient: 'from-purple-500 to-pink-500',
       description: 'Something else'
     },
   ] as const;
@@ -104,6 +104,52 @@ export default function FeedbackPage() {
     }
   };
 
+  // Success state UI
+  if (submitStatus?.success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900">
+        <div className="flex min-h-screen">
+          <div className="bg-white border-r border-white">
+            <DashboardSideBar />
+          </div>
+          
+          <div className="flex-1 flex flex-col">
+            <DashboardHeader 
+              userName={user?.fullName || user?.firstName || 'User'} 
+              userEmail={user?.emailAddresses?.[0]?.emailAddress} 
+            />
+            
+            <main className="flex-1 flex items-center justify-center p-6 lg:p-8">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center max-w-2xl space-y-8"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 mb-6 mx-auto"
+                >
+                  <CheckCircle className="w-12 h-12 text-white" />
+                </motion.div>
+                
+                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+                  Thank You! 🎉
+                </h1>
+                
+                <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                  We've received your feedback and truly appreciate you taking the time to share your thoughts with us.
+                </p>
+              </motion.div>
+            </main>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main form UI
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900">
       <div className="flex min-h-screen">
@@ -285,35 +331,23 @@ export default function FeedbackPage() {
                   </div>
                 </motion.div>
 
-                {/* Status Messages */}
+                {/* Error Message */}
                 <AnimatePresence>
-                  {submitStatus && (
+                  {submitStatus && !submitStatus.success && (
                     <motion.div
                       initial={{ opacity: 0, y: 20, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -20, scale: 0.95 }}
                       transition={{ duration: 0.3 }}
-                      className={`rounded-2xl p-6 shadow-lg ${
-                        submitStatus.success 
-                          ? 'bg-gradient-to-br from-green-900/60 to-emerald-900/40 border border-green-700/50' 
-                          : 'bg-gradient-to-br from-red-900/60 to-rose-900/40 border border-red-700/50'
-                      }`}
+                      className="rounded-2xl p-6 shadow-lg bg-gradient-to-br from-red-900/60 to-rose-900/40 border border-red-700/50"
                     >
                       <div className="flex items-start gap-4">
-                        <div className={`p-2 rounded-lg ${
-                          submitStatus.success ? 'bg-green-500/20' : 'bg-red-500/20'
-                        }`}>
-                          {submitStatus.success ? (
-                            <CheckCircle className="h-6 w-6 text-green-400" />
-                          ) : (
-                            <AlertCircle className="h-6 w-6 text-red-400" />
-                          )}
+                        <div className="p-2 rounded-lg bg-red-500/20">
+                          <AlertCircle className="h-6 w-6 text-red-400" />
                         </div>
                         <div className="flex-1">
-                          <h3 className={`font-semibold mb-1 ${
-                            submitStatus.success ? 'text-green-300' : 'text-red-300'
-                          }`}>
-                            {submitStatus.success ? 'Success!' : 'Oops!'}
+                          <h3 className="font-semibold mb-1 text-red-300">
+                            Oops!
                           </h3>
                           <p className="text-sm text-gray-200 leading-relaxed">
                             {submitStatus.message}
@@ -324,15 +358,15 @@ export default function FeedbackPage() {
                   )}
                 </AnimatePresence>
 
-                {/* Footer Note */}
+                {/* Footer Note - Only shown when form is active */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.6 }}
                   className="text-center text-sm text-gray-500 space-y-2"
                 >
-                  <p>Every piece of feedback is valued and helps shape our future.</p>
-                  <p className="text-gray-600">We read every message and strive to respond within 24-48 hours.</p>
+                  <p>Your feedback means the world to us! 💛</p>
+                  <p className="text-gray-500">We'll get back to you as soon as we can - usually within a day or two.</p>
                 </motion.div>
               </motion.div>
             </div>
