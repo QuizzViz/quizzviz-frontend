@@ -49,13 +49,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       recipient_email: FEEDBACK_RECIPIENT_EMAIL,
       message: message.substring(0, 5000), // Limit message length
       subject: `[QuizzViz Feedback] ${subject}`.substring(0, 100), // Limit subject length
-      email_type: 'feedback'  
+      email_type: email_type  
     };
 
     console.log('Sending email with data:', emailData);
 
     // Send the email using the external service
-    const response = await fetch('https://quizzviz-send-emails.up.railway.app/feedback', {
+    const response = await fetch('https://quizzviz-send-emails.up.railway.app/send-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

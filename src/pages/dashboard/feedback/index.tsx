@@ -71,7 +71,7 @@ export default function FeedbackPage() {
     setSubmitStatus(null);
 
     try {
-      const response = await fetch('/api/send_email/feedback', {
+      const response = await fetch('/api/send_email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
