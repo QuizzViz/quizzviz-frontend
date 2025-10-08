@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getAuth } from '@clerk/nextjs/server';
+import { getAuth, clerkClient } from '@clerk/nextjs/server';
 
 const FEEDBACK_RECIPIENT_EMAIL = 'syedshahmirsultan@gmail.com';
 
@@ -21,9 +21,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
     
-    // For now, we'll use a placeholder email since we're having issues with clerkClient
-    // In a production environment, you should properly get the user's email
-    const userEmail = `user-${userId}@quizzviz.com`;
+    // Get user data from Clerk
+    const clerk = await clerkClient();
+    const user = await clerk.users.getUser(userId);
+    const userEmail = user.emailAddresses?.[0]?.emailAddress;
 
     // Validate request body
     const { subject, message } = req.body;
