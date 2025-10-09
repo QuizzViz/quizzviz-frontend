@@ -1,29 +1,86 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Send, CheckCircle, AlertCircle, MessageCircle, ArrowRight, HelpCircle } from 'lucide-react';
+import { Mail, Send, CheckCircle, AlertCircle, MessageCircle, ArrowRight, HelpCircle, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export default function ContactPage() {
+  const { isLoaded, user, isSignedIn } = useUser();
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     subject: '',
     message: ''
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.fullName || '',
+        email: user.primaryEmailAddress?.emailAddress || ''
+      }));
+    }
+  }, [user]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitStatus, setSubmitStatus] = useState({
     success: false,
     message: ''
   });
+
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setIsSubmitting(true);
+
+  //   try {
+  //     const response = await fetch('/api/send_email', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify(formData),
+  //     });
+
+  //     const data = await response.json();
+
+  //     if (response.ok) {
+  //       setSubmitStatus({
+  //         success: true,
+  //         message: 'Your message has been sent successfully! We\'ll get back to you soon.'
+  //       });
+  //     } else {
+  //       throw new Error(data.message || 'Failed to send message');
+  //     }
+  //   } catch (error) {
+  //     setSubmitStatus({
+  //       success: false,
+  //       message: error.message || 'An error occurred while sending your message. Please try again.'
+  //     });
+  //   } finally {
+  //     setIsSubmitting(false);
+  //     setIsModalOpen(true);
+  //   }
+  // };
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-black">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,11 +98,11 @@ export default function ContactPage() {
         success: false,
         message: 'Please fill in all required fields (Name, Email, and Message).'
       });
+      setIsModalOpen(true);
       return;
     }
 
     setIsSubmitting(true);
-    
     try {
       const response = await fetch('/api/send_email', {
         method: 'POST',
@@ -62,14 +119,13 @@ export default function ContactPage() {
       const data = await response.json();
       
       if (data.success) {
-        setIsSuccess(true);
         setSubmitStatus({
           success: true,
           message: 'Thank you! We\'ll get back to you soon.'
         });
         setFormData({
-          name: '',
-          email: '',
+          name: user?.fullName || '',
+          email: user?.primaryEmailAddress?.emailAddress || '',
           subject: '',
           message: ''
         });
@@ -80,24 +136,26 @@ export default function ContactPage() {
       console.error('Error sending message:', error);
       setSubmitStatus({
         success: false,
-        message: 'Failed to send message. Please try again later.'
+        message: error.message || 'Failed to send message. Please try again later.'
       });
     } finally {
       setIsSubmitting(false);
+      setIsModalOpen(true);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-foreground relative">
-      {/* Success Overlay */}
+      {/* Status Modal */}
       <AnimatePresence>
-        {isSuccess && (
+        {isModalOpen && (
           <motion.div 
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
+            onClick={(e) => e.target === e.currentTarget && !submitStatus.success && setIsModalOpen(false)}
           >
             <motion.div 
               className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 text-center"
@@ -110,18 +168,29 @@ export default function ContactPage() {
                 stiffness: 300
               }}
             >
-              <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
+              <div className={`w-20 h-20 ${
+                submitStatus.success 
+                  ? 'bg-green-500/10' 
+                  : 'bg-rose-500/10'
+              } rounded-full flex items-center justify-center mx-auto mb-6`}>
+                {submitStatus.success ? (
+                  <CheckCircle className="w-10 h-10 text-green-400" />
+                ) : (
+                  <AlertCircle className="w-10 h-10 text-rose-400" />
+                )}
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Message Sent!</h3>
-              <p className="text-gray-300 mb-6">We've received your message and will get back to you soon.</p>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                {submitStatus.success ? 'Message Sent!' : 'Something went wrong'}
+              </h3>
+              <p className="text-gray-300 mb-6">{submitStatus.message}</p>
               <button
-                onClick={() => setIsSuccess(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  
+                }}
                 className="px-6 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
               >
-                Got it, thanks!
+                {submitStatus.success ? 'Okay' : 'Okay, got it'}
               </button>
             </motion.div>
           </motion.div>
@@ -146,8 +215,7 @@ export default function ContactPage() {
             Get In Touch
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Have questions or feedback? We’re here to help. Send us a message, and we’ll respond promptly!
-          </p>
+          Got questions? We'd love to help! Drop us a message, and we'll get back to you as soon as we can.          </p>
         </motion.div>
 
         <motion.div
@@ -203,7 +271,7 @@ export default function ContactPage() {
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      placeholder="e.g., John Doe"
+                      placeholder={user?.fullName || 'e.g., John Doe'}
                       className="h-12 bg-gray-800/50 border-gray-700 hover:border-gray-500 focus:border-blue-500 transition-colors text-white placeholder-gray-400"
                     />
                     {!formData.name.trim() && <p className="text-xs text-red-400">Name is required.</p>}
@@ -216,19 +284,18 @@ export default function ContactPage() {
                       </span>
                     </Label>
                     <Input
-                      type="email"
                       id="email"
                       name="email"
+                      type="email"
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      placeholder="e.g., john@example.com"
+                      placeholder={user?.primaryEmailAddress?.emailAddress || 'your.email@example.com'}
                       className="h-12 bg-gray-800/50 border-gray-700 hover:border-gray-500 focus:border-blue-500 transition-colors text-white placeholder-gray-400"
                     />
                     {!formData.email.trim() && <p className="text-xs text-red-400">Email is required.</p>}
                   </div>
                 </div>
-                
                 <div className="space-y-2">
                   <Label htmlFor="subject" className="text-foreground/90 text-sm font-medium flex items-center">
                     Subject <span className="text-gray-500 text-xs">(optional)</span>
@@ -272,7 +339,7 @@ export default function ContactPage() {
                     disabled={isSubmitting || (!formData.name.trim() || !formData.email.trim() || !formData.message.trim())}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="w-full h-12 text-base font-medium bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                    className="w-full h-12 text-base font-medium bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
@@ -285,7 +352,7 @@ export default function ContactPage() {
                     ) : (
                       <>
                         Send Message
-                        <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+                        <ArrowRight className="w-5 h-5" />
                       </>
                     )}
                   </motion.button>
