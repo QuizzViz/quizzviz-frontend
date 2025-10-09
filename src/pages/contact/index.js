@@ -1,17 +1,22 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Send, CheckCircle, AlertCircle, MessageCircle, ArrowRight, HelpCircle } from 'lucide-react';
+import { Mail, Send, CheckCircle, AlertCircle, MessageCircle, ArrowRight, HelpCircle, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export default function ContactPage() {
+  const { isLoaded, user, isSignedIn } = useUser();
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,11 +24,54 @@ export default function ContactPage() {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitStatus, setSubmitStatus] = useState({
     success: false,
     message: ''
   });
+
+  // Pre-fill user's email if logged in
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.fullName || '',
+        email: user.primaryEmailAddress?.emailAddress || ''
+      }));
+    }
+  }, [isLoaded, isSignedIn, user]);
+
+  if (!isLoaded) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-foreground flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-rose-600 to-pink-600 flex items-center justify-center mb-6">
+            <LogIn className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-4">Sign In Required</h1>
+          <p className="text-gray-400 mb-8">
+            Please sign in to access the contact form. This helps us provide better support and track your inquiries.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/signin" className="w-full sm:w-auto">
+              <Button className="w-full bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/signup" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full">
+                Create an Account
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,11 +89,11 @@ export default function ContactPage() {
         success: false,
         message: 'Please fill in all required fields (Name, Email, and Message).'
       });
+      setIsModalOpen(true);
       return;
     }
 
     setIsSubmitting(true);
-    
     try {
       const response = await fetch('/api/send_email', {
         method: 'POST',
@@ -62,14 +110,13 @@ export default function ContactPage() {
       const data = await response.json();
       
       if (data.success) {
-        setIsSuccess(true);
         setSubmitStatus({
           success: true,
           message: 'Thank you! We\'ll get back to you soon.'
         });
         setFormData({
-          name: '',
-          email: '',
+          name: user?.fullName || '',
+          email: user?.primaryEmailAddress?.emailAddress || '',
           subject: '',
           message: ''
         });
@@ -80,24 +127,26 @@ export default function ContactPage() {
       console.error('Error sending message:', error);
       setSubmitStatus({
         success: false,
-        message: 'Failed to send message. Please try again later.'
+        message: error.message || 'Failed to send message. Please try again later.'
       });
     } finally {
       setIsSubmitting(false);
+      setIsModalOpen(true);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-foreground relative">
-      {/* Success Overlay */}
+      {/* Status Modal */}
       <AnimatePresence>
-        {isSuccess && (
+        {isModalOpen && (
           <motion.div 
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
+            onClick={(e) => e.target === e.currentTarget && !submitStatus.success && setIsModalOpen(false)}
           >
             <motion.div 
               className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 text-center"
@@ -110,18 +159,31 @@ export default function ContactPage() {
                 stiffness: 300
               }}
             >
-              <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
+              <div className={`w-20 h-20 ${
+                submitStatus.success 
+                  ? 'bg-green-500/10' 
+                  : 'bg-rose-500/10'
+              } rounded-full flex items-center justify-center mx-auto mb-6`}>
+                {submitStatus.success ? (
+                  <CheckCircle className="w-10 h-10 text-green-400" />
+                ) : (
+                  <AlertCircle className="w-10 h-10 text-rose-400" />
+                )}
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Message Sent!</h3>
-              <p className="text-gray-300 mb-6">We've received your message and will get back to you soon.</p>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                {submitStatus.success ? 'Message Sent!' : 'Something went wrong'}
+              </h3>
+              <p className="text-gray-300 mb-6">{submitStatus.message}</p>
               <button
-                onClick={() => setIsSuccess(false)}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  if (submitStatus.success) {
+                    router.push('/dashboard');
+                  }
+                }}
                 className="px-6 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
               >
-                Got it, thanks!
+                {submitStatus.success ? 'Back to Dashboard' : 'Okay, got it'}
               </button>
             </motion.div>
           </motion.div>
@@ -146,8 +208,7 @@ export default function ContactPage() {
             Get In Touch
           </h1>
           <p className="text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Have questions or feedback? We’re here to help. Send us a message, and we’ll respond promptly!
-          </p>
+          Got questions? We'd love to help! Drop us a message, and we'll get back to you as soon as we can.          </p>
         </motion.div>
 
         <motion.div
@@ -198,6 +259,7 @@ export default function ContactPage() {
                       </span>
                     </Label>
                     <Input
+                      disabled={!!user?.fullName}
                       id="name"
                       name="name"
                       value={formData.name}
