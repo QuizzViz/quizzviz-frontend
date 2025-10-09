@@ -15,6 +15,7 @@ import { Toaster } from 'sonner';
 import { formatTime } from '@/lib/utils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { useUser } from '@clerk/nextjs';
 
 interface Question {
   id: string | number;
@@ -54,6 +55,7 @@ type FormData = {
 export default function QuizPage({ params }: QuizPageProps) {
   const router = useRouter();
   const { username, quizId } = params;
+  const { user } = useUser();
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
   const [formData, setFormData] = useState<FormData>({ name: '', email: '', quizKey: '' });
   const [quizData, setQuizData] = useState<QuizData | null>(null);
@@ -977,7 +979,7 @@ export default function QuizPage({ params }: QuizPageProps) {
             <div className="w-full max-w-lg">
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                  Welcome to QuizzViz
+                  Welcome to {user?.firstName} Quiz
                 </h1>
                 <p className="text-gray-400">Enter your details to begin the assessment</p>
               </div>

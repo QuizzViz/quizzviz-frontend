@@ -3,9 +3,6 @@ import { ToastProvider } from '@/components/ui/toast-provider';
 
 export async function generateMetadata({ params }: { params: { username: string } }): Promise<Metadata> {
   const firstName = params.username
-    .split(/[-_]/)[0]
-    .charAt(0).toUpperCase() + 
-    params.username.split(/[-_]/)[0].slice(1).toLowerCase();
   
   return {
     title: `${firstName}'s Quiz`,
