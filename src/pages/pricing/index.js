@@ -6,6 +6,7 @@ const plans = [
     id: 'free',
     name: 'Free',
     price: '0',
+    yearlyPrice: '0',
     description: 'Perfect for trying out',
     features: [
       '2 quizzes/month',
@@ -21,9 +22,10 @@ const plans = [
     id: 'consumer',
     name: 'Consumer',
     price: '2.99',
+    yearlyPrice: '28.70',
     description: 'For regular users',
     features: [
-      '10+ quizzes/month',
+      '10 quizzes/month',
       '60 questions max',
       'View answers',
       'Basic security',
@@ -36,9 +38,10 @@ const plans = [
     id: 'consumer-elite',
     name: 'Elite',
     price: '9.99',
+    yearlyPrice: '95.90',
     description: 'For power users',
     features: [
-      '30+ quizzes/month',
+      '30 quizzes/month',
       '150 questions max',
       'View answers',
       'Advanced security',
@@ -53,6 +56,7 @@ const plans = [
     id: 'business',
     name: 'Business',
     price: '99',
+    yearlyPrice: '950',
     description: 'For teams',
     features: [
       '10 quizzes/month',
@@ -69,9 +73,10 @@ const plans = [
     id: 'business-elite',
     name: 'Business+',
     price: '199',
+    yearlyPrice: '1910',
     description: 'For growing teams',
     features: [
-      '30+ quizzes/month',
+      '30 quizzes/month',
       '200 questions max',
       'All Business features',
       'Advanced analytics',
@@ -85,6 +90,7 @@ const plans = [
     id: 'enterprise',
     name: 'Enterprise',
     price: 'Custom',
+    yearlyPrice: 'Custom',
     description: 'For organizations',
     features: [
       'Unlimited everything',
@@ -160,6 +166,9 @@ const PricingPage = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-20">
           {plans.map((plan, index) => {
             const Icon = plan.icon;
+            const displayPrice = billingCycle === 'yearly' ? plan.yearlyPrice : plan.price;
+            const displayPeriod = billingCycle === 'yearly' ? '/yr' : '/mo';
+            
             return (
               <div
                 key={plan.id}
@@ -194,19 +203,14 @@ const PricingPage = () => {
 
                   {/* Price */}
                   <div className="mb-6">
-                    {plan.price === 'Custom' ? (
+                    {displayPrice === "Custom" ? (
                       <div className="text-2xl font-bold text-white">Custom</div>
                     ) : (
                       <div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-bold text-white">${plan.price}</span>
-                          <span className="text-gray-500 text-sm">/mo</span>
+                          <span className="text-3xl font-bold text-white">${displayPrice}</span>
+                          <span className="text-gray-500 text-sm">{displayPeriod}</span>
                         </div>
-                        {billingCycle === 'yearly' && plan.price !== '0' && (
-                          <div className="text-xs text-green-400 mt-1">
-                            ${Math.round(parseFloat(plan.price) * 12 * 0.8)}/yr
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -260,10 +264,10 @@ const PricingPage = () => {
                   <tr className="hover:bg-white/5 transition-colors">
                     <td className="py-3 px-6 text-sm text-white">Monthly Quizzes</td>
                     <td className="py-3 px-4 text-sm text-center text-gray-400">2</td>
-                    <td className="py-3 px-4 text-sm text-center text-gray-400">10+</td>
-                    <td className="py-3 px-4 text-sm text-center text-purple-400 font-medium">30+</td>
                     <td className="py-3 px-4 text-sm text-center text-gray-400">10</td>
-                    <td className="py-3 px-4 text-sm text-center text-gray-400">30+</td>
+                    <td className="py-3 px-4 text-sm text-center text-purple-400 font-medium">30</td>
+                    <td className="py-3 px-4 text-sm text-center text-gray-400">10</td>
+                    <td className="py-3 px-4 text-sm text-center text-gray-400">30</td>
                     <td className="py-3 px-4 text-sm text-center text-gray-400">Unlimited</td>
                   </tr>
                   <tr className="hover:bg-white/5 transition-colors">
