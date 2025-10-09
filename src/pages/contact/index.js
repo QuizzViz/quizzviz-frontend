@@ -40,40 +40,7 @@ export default function ContactPage() {
     message: ''
   });
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setIsSubmitting(true);
-
-  //   try {
-  //     const response = await fetch('/api/send_email', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify(formData),
-  //     });
-
-  //     const data = await response.json();
-
-  //     if (response.ok) {
-  //       setSubmitStatus({
-  //         success: true,
-  //         message: 'Your message has been sent successfully! We\'ll get back to you soon.'
-  //       });
-  //     } else {
-  //       throw new Error(data.message || 'Failed to send message');
-  //     }
-  //   } catch (error) {
-  //     setSubmitStatus({
-  //       success: false,
-  //       message: error.message || 'An error occurred while sending your message. Please try again.'
-  //     });
-  //   } finally {
-  //     setIsSubmitting(false);
-  //     setIsModalOpen(true);
-  //   }
-  // };
-
+ 
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-screen bg-black">
