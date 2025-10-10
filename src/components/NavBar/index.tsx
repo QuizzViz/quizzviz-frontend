@@ -57,12 +57,12 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center text-sm whitespace-nowrap">
             <div className="flex items-center gap-6 lg:gap-8 xl:gap-10">
-              <Link href="/about"><button 
-                onClick={() => scrollToSection("about")}
+              <Link href="/mission"><button 
+                onClick={() => scrollToSection("mission")}
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
-                About
+                Mission
               </button></Link>
               <Link href="/pricing"><button 
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
@@ -132,7 +132,7 @@ export function Navbar() {
           <div id="mobile-menu" className="md:hidden glassmorphism rounded-lg mt-2 py-3" data-testid="mobile-menu">
             <div className="flex flex-col divide-y divide-border/50">
               <div className="flex flex-col py-2">
-               <Link href="/about"> <button className="px-4 py-2 text-left text-white hover:text-gray-200" data-testid="mobile-link-about">About</button></Link>
+               <Link href="/mission"> <button className="px-4 py-2 text-left text-white hover:text-gray-200" data-testid="mobile-link-about">Mission</button></Link>
                <Link href="/pricing"><button className="px-4 py-2 text-left text-white hover:text-gray-200">Pricing</button></Link>
                <Link href="/contact"><button className="px-4 py-2 text-left text-white hover:text-gray-200">Contact Us</button></Link>
                <Link href="/dashboard"><button className="px-4 py-2 text-left text-white hover:text-gray-200">Dashboard</button></Link>

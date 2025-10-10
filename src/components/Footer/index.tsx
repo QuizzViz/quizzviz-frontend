@@ -26,7 +26,7 @@ export function Footer() {
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
               data-testid="footer-link-about"
             >
-              About
+              Mission
             </button>
             <button 
               onClick={() => scrollToSection("privacy")}
