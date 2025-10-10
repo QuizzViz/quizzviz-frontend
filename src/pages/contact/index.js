@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import {Footer} from '@/components/Footer';
 
 export default function ContactPage() {
   const { isLoaded, user, isSignedIn } = useUser();
@@ -112,6 +113,7 @@ export default function ContactPage() {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-foreground relative">
       {/* Status Modal */}
       <AnimatePresence>
@@ -330,5 +332,7 @@ export default function ContactPage() {
         </motion.div>
       </main>
     </div>
+    <Footer />
+    </>
   );
 }
