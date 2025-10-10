@@ -8,8 +8,8 @@ const FeatureCard = ({ icon: Icon, title, children, className = '' }) => (
     <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center mb-6 border border-primary/10">
       <Icon className="w-6 h-6 text-primary" />
     </div>
-    <h3 className="text-2xl font-bold mb-3 text-foreground">{title}</h3>
-    <p className="text-foreground/80 leading-relaxed">{children}</p>
+    <h3 className="text-2xl font-bold mb-3 text-white">{title}</h3>
+    <p className="text-gray-300 leading-relaxed">{children}</p>
   </div>
 );
 
