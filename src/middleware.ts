@@ -24,7 +24,14 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.redirect(new URL('/not-allowed', request.url));
   }
 
-  // Continue normally
+  if (
+  userPlan === 'Elite' &&
+  isMobile &&
+  /^\/quiz\/attempt\/[^/]+$/.test(request.nextUrl.pathname)
+) {
+  return NextResponse.redirect(new URL('/not-allowed', request.url));
+}
+
   return NextResponse.next();
 });
 
