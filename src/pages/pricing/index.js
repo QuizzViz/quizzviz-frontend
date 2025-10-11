@@ -98,10 +98,10 @@ const PricingPage = () => {
     <Head>
       <title>Pricing | QuizzViz</title>
     </Head>
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background mt-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
         {/* Header */}
-        <div className="text-center mb-14">
+        <div className="text-center mb-8">
           <h1 className="text-5xl sm:text-6xl font-bold text-white mb-4 tracking-tight">
             Choose Your Plan
           </h1>
