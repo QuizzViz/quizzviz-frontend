@@ -63,6 +63,7 @@ export default function MyQuizzesPage() {
   let isFreePlan:Boolean =  PLAN_TYPE === 'Free';
   let isConsumerPlan:Boolean = PLAN_TYPE === 'Consumer';
   let isBusinessPlan:Boolean = PLAN_TYPE === 'Business';
+  let isElitePlan:Boolean = PLAN_TYPE === 'Elite';
 
   useEffect(() => {
     if (isLoaded && !user) router.push("/signin");
@@ -126,7 +127,7 @@ export default function MyQuizzesPage() {
   }
 
   // Show Free/Consumer plan UI if user is not on Business plan
-  if (isFreePlan || isConsumerPlan) {
+  if (isFreePlan || isConsumerPlan || isElitePlan) {
     return (
       <>
         <Head>
@@ -264,7 +265,7 @@ export default function MyQuizzesPage() {
                       </div>
                     )}
                     
-                    {!isConsumerPlan && (
+                    {!isConsumerPlan || !isElitePlan && (
                       <div className="mt-8 border-t border-white/10 pt-6">
                         <div className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 p-6 rounded-lg">
                           <h3 className="text-lg font-medium mb-2">Upgrade to Consumer Plan</h3>
