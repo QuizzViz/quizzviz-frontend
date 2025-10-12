@@ -16,12 +16,11 @@ export function Footer() {
           </div></Link>
           
           <div className="flex flex-wrap justify-center md:justify-end space-x-4 md:space-x-8 text-sm">
-            <button 
+           <Link href="/mission"> <button 
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
-              data-testid="footer-link-about"
             >
               Mission
-            </button>
+            </button></Link>
             <button 
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
               data-testid="footer-link-privacy"

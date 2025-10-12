@@ -58,7 +58,6 @@ export function Navbar() {
           <div className="hidden md:flex items-center text-sm whitespace-nowrap">
             <div className="flex items-center gap-6 lg:gap-8 xl:gap-10">
               <Link href="/mission"><button 
-                onClick={() => scrollToSection("mission")}
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
