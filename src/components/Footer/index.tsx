@@ -21,18 +21,18 @@ export function Footer() {
             >
               Mission
             </button></Link>
-            <button 
+            <Link href="/privacy-policy"><button 
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
               data-testid="footer-link-privacy"
             >
               Privacy Policy
-            </button>
-            <button 
+            </button></Link>
+            <Link href="/terms"><button 
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
               data-testid="footer-link-terms"
             >
               Terms
-            </button>
+            </button></Link>
            <Link href="/contact"> <button 
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
              
