@@ -34,8 +34,7 @@ export default function OurMission() {
                 <span className="text-teal-400">Hiring</span>
               </h1>
               <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-                We're on a mission to transform how skills are assessed and talent is discovered through innovative, secure, and insightful testing solutions.
-              </p>
+We’re on a mission to transform how skills are assessed              </p>
             </div>
           </div>
           
