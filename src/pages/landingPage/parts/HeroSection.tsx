@@ -157,10 +157,6 @@ const HeroSection: FC = () => {
           
           {/* Headline Section */}
           <div className="text-center mb-6 max-w-4xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-md border border-green-500/30 text-white text-sm font-medium mb-4 shadow-md">
-              <Sparkles className="w-4 h-4 text-green-300" />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-300 to-blue-300">AI-Powered Proctored Coding Assessments</span>
-            </div>
             
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-4 leading-tight">
               {headline.main}
