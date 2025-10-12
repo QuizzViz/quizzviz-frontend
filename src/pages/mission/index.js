@@ -79,20 +79,21 @@ We’re on a mission to transform how skills are assessed              </p>
               <p className="text-gray-300 leading-relaxed">
                 We believe the current hiring system is fundamentally broken. Here's how it typically works:
               </p>
-              <div className="space-y-4 ml-6 border-l-2 border-teal-500/30 pl-6">
-                <div className="space-y-2">
-                  <p className="text-gray-100 font-medium">Step 1: Resume Screening</p>
-                  <p className="text-gray-300">HR reviews hundreds of resumes, making decisions based on formatting, keywords, and presentation rather than actual skills.</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-gray-100 font-medium">Step 2: Home Assignments</p>
-                  <p className="text-gray-300">Selected candidates receive take-home tasks that can easily be copied from Stack Overflow, GitHub, or ChatGPT.</p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-gray-100 font-medium">Step 3: Interviews</p>
-                  <p className="text-gray-300">Finally, technical interviews happen—often with candidates whose actual skills don't match their submissions.</p>
-                </div>
-              </div>
+             <div className="space-y-4 ml-6 border-l-2 border-teal-500/30 pl-6">
+  <div className="space-y-2">
+    <p className="text-gray-100 font-medium">Step 1: Resume Screening</p>
+    <p className="text-gray-300">HR filters through hundreds of resumes—often judging by keywords and presentation rather than true technical skills.</p>
+  </div>
+  <div className="space-y-2">
+    <p className="text-gray-100 font-medium">Step 2: Home Assignments</p>
+    <p className="text-gray-300">Shortlisted candidates receive take-home tasks that are easy to copy from GitHub, Stack Overflow, or even ChatGPT.</p>
+  </div>
+  <div className="space-y-2">
+    <p className="text-gray-100 font-medium">Step 3: Interviews</p>
+    <p className="text-gray-300">Finally, interviews happen—often with candidates whose actual skills don’t reflect their submissions.</p>
+  </div>
+</div>
+
               <p className="text-gray-400 leading-relaxed mt-6">
                 The result? Companies waste countless hours interviewing candidates who looked good on paper but lack the technical depth needed for the role. Resume writing skills are being tested more than actual coding abilities.
               </p>
