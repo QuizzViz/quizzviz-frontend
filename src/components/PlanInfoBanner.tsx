@@ -18,7 +18,7 @@ export function PlanInfoBanner() {
     return (
       <div className="p-4 bg-blue-900/20 border border-blue-700/30 rounded-lg text-sm text-blue-200">
         <p>You're on the <Link href="/pricing" className="font-semibold underline">Consumer Plan</Link> with a limit of {currentPlan.maxQuestions} questions per quiz and 10 quizzes per month.</p>
-        <p className="mt-2">Upgrade to <Link href="/pricing" className="font-semibold underline">Elite Plan</Link> for more questions and quizzes.</p>
+        <p className="mt-2">Upgrade to <Link href="/pricing" className="font-semibold underline">Elite Plan</Link> for 150 questions per quiz and 30 quizzes per month.</p>
       </div>
     );
   }

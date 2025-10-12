@@ -64,7 +64,7 @@ export default function CreateQuizCard({ maxQuestions = currentPlan.maxQuestions
   const queryClient = useQueryClient();
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-background border-border">
       <CardContent className="p-8 space-y-6">
         <QuizHeader />
         <div className="space-y-4">
@@ -77,7 +77,7 @@ export default function CreateQuizCard({ maxQuestions = currentPlan.maxQuestions
               <Label className="text-foreground">Difficulty</Label>
               <Select value={difficulty} onValueChange={setDifficulty}>
                 <SelectTrigger className="bg-background border-border text-foreground">
-                  <SelectValue placeholder="Select difficulty" />
+                  <SelectValue placeholder="Select difficulty"/>
                 </SelectTrigger>
                 <SelectContent className="bg-background border-border text-foreground">
                   <SelectItem value="High School">High School level</SelectItem>
