@@ -3,12 +3,7 @@ import { Logo } from "../logo";
 import Link from "next/link";
 
 export function Footer() {
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
+  
 
   return (
     <footer className="bg-secondary border-t border-border py-12" data-testid="footer">
@@ -20,30 +15,26 @@ export function Footer() {
             <span className="text-muted-foreground ml-2">© 2025</span>
           </div></Link>
           
-          <div className="flex flex-wrap justify-center md:justify-end space-x-8 text-sm">
+          <div className="flex flex-wrap justify-center md:justify-end space-x-4 md:space-x-8 text-sm">
             <button 
-              onClick={() => scrollToSection("about")}
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
               data-testid="footer-link-about"
             >
               Mission
             </button>
             <button 
-              onClick={() => scrollToSection("privacy")}
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
               data-testid="footer-link-privacy"
             >
               Privacy Policy
             </button>
             <button 
-              onClick={() => scrollToSection("terms")}
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
               data-testid="footer-link-terms"
             >
               Terms
             </button>
             <button 
-              onClick={() => scrollToSection("contact")}
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
               data-testid="footer-link-contact"
             >
