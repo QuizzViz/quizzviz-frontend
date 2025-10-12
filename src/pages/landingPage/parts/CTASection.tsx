@@ -1,6 +1,7 @@
 import { FC } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 // Final call-to-action with two buttons (start trial / book demo)
 const CTASection: FC = () => {
@@ -37,14 +38,13 @@ const CTASection: FC = () => {
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-300"></div>
             </Button>
-            <Button 
+            <Link href="https://calendly.com/syedshahmirsultan/new-meeting"><Button 
               variant="outline" 
-              onClick={() => scrollTo("demo")} 
               className="inline-flex items-center px-10 py-6 bg-transparent border-2 border-white/50 text-white font-semibold rounded-xl hover:bg-white/10 hover:border-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg text-lg backdrop-blur-sm"
             >
               Book a Demo
               <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
+            </Button></Link>
           </div>
         </div>
       </div>

@@ -84,13 +84,11 @@ export function Navbar() {
               </button></Link>
             </div>
             <div className="hidden md:flex items-center gap-6 lg:gap-8 ml-6 md:ml-10 lg:ml-16 xl:ml-24">
-              <Button 
+             <Link href="https://calendly.com/syedshahmirsultan/new-meeting"><Button 
                 className="bg-white text-black hover:bg-gray-200 hover:translate-x-1 transition-all duration-150 font-medium"
-                data-testid="button-demo"
-                onClick={() => scrollToSection("demo")}
               >
                 Book a Demo <ArrowRight className=" w-9 h-5" />
-              </Button>
+              </Button></Link>
               <div className="flex items-center gap-4">
                 <Link href="/signin"><button 
                   className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
@@ -138,9 +136,9 @@ export function Navbar() {
                <Link href="/dashboard"><button className="px-4 py-2 text-left text-white hover:text-gray-200">Dashboard</button></Link>
               </div>
               <div className="flex flex-col py-2">
-                <Button onClick={() => scrollToSection("demo")} className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium hover:translate-x-2 duration-150" data-testid="mobile-button-demo">
+                <Link href="https://calendly.com/syedshahmirsultan/new-meeting"><Button className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium hover:translate-x-2 duration-150">
                   Book a Demo <ArrowRight className="ml-2" />
-                </Button>
+                </Button></Link>
                 <div className="flex items-center justify-between px-4 pt-2">
                   <Link href="/signin"><button  className="text-white hover:text-gray-200" data-testid="mobile-link-login">Login</button></Link>
                   <Link href="/signup"><button  className="text-white hover:text-gray-200" data-testid="mobile-link-signup">Sign up</button></Link>
