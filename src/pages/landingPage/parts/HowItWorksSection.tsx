@@ -85,33 +85,37 @@ const HowItWorksSection: FC = () => {
           </p>
           
           {/* User Type Toggle */}
-          <div className="flex justify-center gap-4 mt-8">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-6 sm:mt-8 w-full px-2">
             <button
               onClick={() => setSelectedUser('individual')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium transition-all duration-300 ${
                 selectedUser === 'individual'
                   ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg scale-105'
                   : 'bg-white/5 text-muted-foreground hover:bg-white/10'
               }`}
             >
-              <User className="w-5 h-5" />
-              Individual
+              <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+              <span className="whitespace-nowrap">Individual</span>
               {selectedUser === 'individual' && (
-                <span className="ml-2 px-2 py-0.5 bg-white/20 rounded-full text-xs">Selected</span>
+                <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-white/20 rounded-full text-[10px] sm:text-xs whitespace-nowrap">
+                  Selected
+                </span>
               )}
             </button>
             <button
               onClick={() => setSelectedUser('business')}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium transition-all duration-300 ${
                 selectedUser === 'business'
                   ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg scale-105'
                   : 'bg-white/5 text-muted-foreground hover:bg-white/10'
               }`}
             >
-              <Briefcase className="w-5 h-5" />
-              Business
+              <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+              <span className="whitespace-nowrap">Business</span>
               {selectedUser === 'business' && (
-                <span className="ml-2 px-2 py-0.5 bg-white/20 rounded-full text-xs">Selected</span>
+                <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-white/20 rounded-full text-[10px] sm:text-xs whitespace-nowrap">
+                  Selected
+                </span>
               )}
             </button>
           </div>
