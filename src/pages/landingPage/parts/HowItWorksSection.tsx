@@ -22,6 +22,7 @@ const HowItWorksSection: FC = () => {
     individual: [
       {
         number: "1",
+        title: "Create Quiz",
         description: "Select your coding topic, choose difficulty level, set number of questions, and adjust the theory-to-code analysis ratio to create a personalized practice quiz.",
         gradient: "from-green-500/80 to-blue-500/80",
         ring: "ring-green-500/30"
@@ -36,7 +37,7 @@ const HowItWorksSection: FC = () => {
       {
         number: "3",
         title: "Review & Learn",
-        description: "Get instant results with detailed explanations of correct answers. Track your progress with insights and identify areas for improvement.",
+        description: "View Correct answers to identify your strengths and weaknesses. Track your progress and improve your skills.",
         gradient: "from-purple-500/80 to-green-500/80",
         ring: "ring-purple-500/30"
       }
@@ -52,7 +53,7 @@ const HowItWorksSection: FC = () => {
       {
         number: "2",
         title: "Share Securely",
-        description: "Share Quiz Link with secret keys. Set maximum attempts, custom durations, and invite candidates seamlessly for controlled access.",
+        description: "Set a secret key, maximum attempts, custom duration, and share it with the candidates you want to attempt the quiz.",
         gradient: "from-blue-500/80 to-purple-500/80",
         ring: "ring-blue-500/30"
       },
