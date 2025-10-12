@@ -34,12 +34,12 @@ export function Footer() {
             >
               Terms
             </button>
-            <button 
+           <Link href="/contact"> <button 
               className="text-muted-foreground hover:text-foreground transition-colors duration-200"
-              data-testid="footer-link-contact"
+             
             >
               Contact
-            </button>
+            </button></Link>
           </div>
         </div>
       </div>

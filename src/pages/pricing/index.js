@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, X, Sparkles, Star, Crown, Building2, Rocket } from 'lucide-react';
 import Head from 'next/head';
+import Link from 'next/link';
 import {Footer} from '@/components/Footer';
 const plans = [
   {
@@ -219,20 +220,33 @@ const PricingPage = () => {
                     </div>
 
                     {/* CTA Button */}
-                    <button
-                      className={`w-full py-3 rounded-xl text-sm font-bold transition-all duration-300 mb-6 ${
-                        plan.popular
-                          ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] text-white shadow-lg shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 animate-gradient'
-                          : plan.recommended
-                          ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-black shadow-lg shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
-                          : isEnterprise
-                          ? 'bg-white text-black hover:bg-gray-100 shadow-lg hover:shadow-xl hover:scale-105'
-                          : 'bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 hover:scale-105'
-                      }`}
-                    >
-                      {isEnterprise ? 'Contact Sales' : plan.id === 'free' ? 'Get Started Free' : 'Get Started'}
-                    </button>
-
+                {isEnterprise ? (
+  <Link href="/contact">
+    <button
+      className={`w-full py-3 rounded-xl text-sm font-bold transition-all duration-300 mb-6 ${
+        plan.popular
+          ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] text-white shadow-lg shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 animate-gradient'
+          : plan.recommended
+          ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-black shadow-lg shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
+          : 'bg-white text-black hover:bg-gray-100 shadow-lg hover:shadow-xl hover:scale-105'
+      }`}
+    >
+      Contact Sales
+    </button>
+  </Link>
+) : (
+  <button
+    className={`w-full py-3 rounded-xl text-sm font-bold transition-all duration-300 mb-6 ${
+      plan.popular
+        ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] text-white shadow-lg shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 animate-gradient'
+        : plan.recommended
+        ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-black shadow-lg shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
+        : 'bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 hover:scale-105'
+    }`}
+  >
+    {plan.id === 'free' ? 'Get Started Free' : 'Get Started'}
+  </button>
+)}
                     {/* Features */}
                     <ul className="space-y-3">
                       {plan.features.map((feature, i) => (
@@ -353,9 +367,9 @@ const PricingPage = () => {
             <p className="text-base text-gray-400 mb-8 leading-relaxed">
               Our team is here to help you find the perfect plan for your organization
             </p>
-            <button className="px-8 py-3.5 bg-white text-black rounded-xl text-sm font-bold hover:bg-gray-100 transition-all hover:scale-110 shadow-lg hover:shadow-xl">
+            <Link href="/contact"><button className="px-8 py-3.5 bg-white text-black rounded-xl text-sm font-bold hover:bg-gray-100 transition-all hover:scale-110 shadow-lg hover:shadow-xl">
               Contact Sales
-            </button>
+            </button></Link>
           </div>
         </div>
       </div>

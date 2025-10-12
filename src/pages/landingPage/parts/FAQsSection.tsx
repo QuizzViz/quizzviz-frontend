@@ -8,6 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ChevronDown, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 // FAQs section with accordion
 const FAQsSection: FC = () => (
@@ -91,10 +92,10 @@ const FAQsSection: FC = () => (
       {/* CTA */}
       <div className="text-center mt-12 pt-8 border-t border-white/10">
         <p className="text-muted-foreground mb-6 text-sm opacity-80">Still have questions?</p>
-        <button className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 text-white font-medium hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-lg">
+        <Link href="/contact"><button className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 text-white font-medium hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-lg">
           Contact Us
           <ChevronDown className="w-4 h-4" />
-        </button>
+        </button></Link>
       </div>
     </div>
     <style jsx>{`
