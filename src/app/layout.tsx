@@ -5,7 +5,7 @@ import Providers from "./providers";
 import React from "react";
 import type { Metadata, Viewport } from "next";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.quizzviz.com';
+const siteUrl = 'https://quizzviz.com';
 
 // Viewport configuration
 export const viewport: Viewport = {
@@ -122,9 +122,9 @@ export default function RootLayout({
       "@type": "Organization",
       name: "QuizzViz",
       alternateName: "Quizz Viz",
-      url: "https://www.quizzviz.com",
-      logo: "https://www.quizzviz.com/QuizzViz-logo.png",
-      image: "https://www.quizzviz.com/QuizzViz-logo.png",
+      url: "https://quizzviz.com",
+      logo: "https://quizzviz.com/QuizzViz-logo.png",
+      image: "https://quizzviz.com/QuizzViz-logo.png",
       description:
         "QuizzViz is an AI-powered coding quiz generator that helps companies create professional, real-world coding quizzes in minutes.",
     }),
