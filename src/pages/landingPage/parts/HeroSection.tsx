@@ -2,7 +2,7 @@
 
 import { FC, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+// import { useUser } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowRight, 
@@ -75,7 +75,7 @@ const DIFFICULTY_LEVELS: DifficultyLevel[] = [
 ];
 
 const HeroSection: FC = () => {
-  const { user, isLoaded } = useUser();
+  // const { user, isLoaded } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -85,15 +85,15 @@ const HeroSection: FC = () => {
   const [count, setCount] = useState<number>(5);
   const [codePercentage, setCodePercentage] = useState<number>(50);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-const [isMounted, setIsMounted] = useState(false);
+// const [isMounted, setIsMounted] = useState(false);
 
 
-  useEffect(() => {
-  setIsMounted(true);
-}, []);
+//   useEffect(() => {
+//   setIsMounted(true);
+// }, []);
 
   // Determine if user is authenticated (only true when we've finished loading and have user data)
-  const isAuthenticated = isMounted && isLoaded && !!user;
+  // const isAuthenticated = isMounted && isLoaded && !!user;
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,10 +117,10 @@ const [isMounted, setIsMounted] = useState(false);
       userType
     });
 
-    if (!user) {
-      await router.push(`/signup?redirect=/dashboard&${queryParams.toString()}`);
-      return;
-    }
+    // if (!user) {
+    //   await router.push(`/signup?redirect=/dashboard&${queryParams.toString()}`);
+    //   return;
+    // }
 
     router.push(`/dashboard?${queryParams.toString()}`);
   };
@@ -322,9 +322,10 @@ const [isMounted, setIsMounted] = useState(false);
                     ) : (
                       <>
                         <Zap className="w-4 h-4 mr-2" />
-                        {isAuthenticated 
+                        {/* {isAuthenticated 
                           ? 'Generate Quiz' 
-                          : 'Generate Free Quiz'}
+                          : 'Generate Free Quiz'} */}
+                          Generate Quiz
                         <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
