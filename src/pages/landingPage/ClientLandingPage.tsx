@@ -1,69 +1,15 @@
 "use client";
-
-import dynamic from "next/dynamic";
-import { Suspense, useEffect, useState } from "react";
+import { Navbar } from "@/components/NavBar";
 import { UserTypeProvider } from "@/contexts/UserTypeContext";
-
-// Client-side only components
-const ClientOnly = ({ children }: { children: React.ReactNode }) => {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
-  return <>{children}</>;
-};
-
-// Dynamically import all sections with SSR disabled
-const Navbar = dynamic(
-  () => import("@/components/NavBar").then((mod) => mod.Navbar),
-  { ssr: false, loading: () => <div className="h-16 bg-background" /> }
-);
-
-const Footer = dynamic(
-  () => import("@/components/Footer").then((mod) => mod.Footer),
-  { ssr: false, loading: () => <div className="h-16 bg-background" /> }
-);
-
-const HeroSection = dynamic(
-  () => import("./parts/HeroSection"),
-  { ssr: false, loading: () => <div className="min-h-screen" /> }
-);
-
-const DemoSection = dynamic(
-  () => import("./parts/DemoSection"),
-  { ssr: false, loading: () => <div className="min-h-[80vh]" /> }
-);
-
-const ProblemsSection = dynamic(
-  () => import("./parts/ProblemsSection"),
-  { ssr: false, loading: () => <div className="min-h-[80vh]" /> }
-);
-
-const FeaturesSection = dynamic(
-  () => import("./parts/FeaturesSection"),
-  { ssr: false, loading: () => <div className="min-h-[80vh]" /> }
-);
-
-const HowItWorksSection = dynamic(
-  () => import("./parts/HowItWorksSection"),
-  { ssr: false, loading: () => <div className="min-h-[80vh]" /> }
-);
-
-const FAQsSection = dynamic(
-  () => import("./parts/FAQsSection"),
-  { ssr: false, loading: () => <div className="min-h-[50vh]" /> }
-);
-
-const CTASection = dynamic(
-  () => import("./parts/CTASection"),
-  { ssr: false, loading: () => <div className="min-h-[60vh]" /> }
-);
+import { Suspense } from "react";
+import CTASection from "./parts/CTASection";
+import DemoSection from "./parts/DemoSection";
+import FAQsSection from "./parts/FAQsSection";
+import FeaturesSection from "./parts/FeaturesSection";
+import HeroSection from "./parts/HeroSection";
+import HowItWorksSection from "./parts/HowItWorksSection";
+import ProblemsSection from "./parts/ProblemsSection";
+import { Footer } from "@/components/Footer";
 
 // Loading component for suspense fallback
 const LoadingFallback = () => (
@@ -74,7 +20,6 @@ const LoadingFallback = () => (
 
 const ClientLandingPage = () => {
   return (
-    <ClientOnly>
       <UserTypeProvider>
         <div className="min-h-screen mt-24 md:mt-0">
           <Suspense fallback={<LoadingFallback />}>
@@ -90,7 +35,6 @@ const ClientLandingPage = () => {
           </Suspense>
         </div>
       </UserTypeProvider>
-    </ClientOnly>
   );
 };
 

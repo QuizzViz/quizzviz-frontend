@@ -1,9 +1,7 @@
 import dynamic from "next/dynamic";
 import { UserTypeProvider } from "@/contexts/UserTypeContext";
 
-const ClientLandingPage = dynamic(() => import("./ClientLandingPage"), {
-  ssr: false,
-});
+import ClientLandingPage from "./ClientLandingPage";
 
 export default function LandingPage() {
   return (

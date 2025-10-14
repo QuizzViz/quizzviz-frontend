@@ -96,15 +96,6 @@ const HeroSection: FC = () => {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!topic.trim()) {
-      toast({
-        title: "Topic Required",
-        description: "Please enter a topic to generate your quiz.",
-        variant: "destructive",
-      });
-      return;
-    }
 
     setIsGenerating(true);
     
@@ -114,14 +105,9 @@ const HeroSection: FC = () => {
       count: count.toString(),
       codePercentage: codePercentage.toString(),
       userType
-    });
+    })
 
-    // if (!user) {
-    //   await router.push(`/signup?redirect=/dashboard&${queryParams.toString()}`);
-    //   return;
-    // }
-
-    router.push(`/dashboard?${queryParams.toString()}`);
+    router.push(`/signup`);
   };
 
   const updateCount = (value: number) => {
@@ -321,9 +307,7 @@ const HeroSection: FC = () => {
                     ) : (
                       <>
                         <Zap className="w-4 h-4 mr-2" />
-                        {/* {isAuthenticated 
-                          ? 'Generate Quiz' 
-                          : 'Generate Free Quiz'} */}
+                        
                           Generate Quiz
                         <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </>
