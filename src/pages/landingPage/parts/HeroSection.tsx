@@ -4,7 +4,6 @@ import { FC, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
 import { 
   ArrowRight, 
   Zap, 
@@ -76,7 +75,7 @@ const DIFFICULTY_LEVELS: DifficultyLevel[] = [
 ];
 
 const HeroSection: FC = () => {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -86,6 +85,9 @@ const HeroSection: FC = () => {
   const [count, setCount] = useState<number>(5);
   const [codePercentage, setCodePercentage] = useState<number>(50);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+
+  // Determine if user is authenticated (only true when we've finished loading and have user data)
+  const isAuthenticated = isLoaded && !!user;
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -314,7 +316,7 @@ const HeroSection: FC = () => {
                     ) : (
                       <>
                         <Zap className="w-4 h-4 mr-2" />
-                        {user 
+                        {isAuthenticated 
                           ? 'Generate Quiz' 
                           : 'Generate Free Quiz'}
                         <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
