@@ -5,11 +5,14 @@ import { PLAN_TYPE } from './config/plans';
 // Define public routes
 const isPublicRoute = createRouteMatcher([
     '/',
-    '/signin(.*)',
-    '/signup(.*)',
+    '/about',
+    '/pricing',
     '/not-allowed',
     '/sitemap.xml',
     '/robots.txt',
+    '/mission',
+    '/privacy-policy',
+    '/terms'
 ]);
 
 // Bot detection

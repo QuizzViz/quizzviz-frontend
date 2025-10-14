@@ -2,7 +2,6 @@
 
 import { FC, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-// import { useUser } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowRight, 
