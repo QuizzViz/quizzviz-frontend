@@ -135,7 +135,8 @@ export function Navbar() {
                <Link href="/dashboard"><button className="px-4 py-2 text-left text-white hover:text-gray-200">Dashboard</button></Link>
               </div>
               <div className="flex flex-col py-2">
-                <Link href="https://calendly.com/syedshahmirsultan/new-meeting"><Button className="mx-4 my-1 bg-white text-black hover:bg-gray-200 font-medium hover:translate-x-2 duration-150">
+                <Link href="https://calendly.com/syedshahmirsultan/new-meeting">
+                <Button className="mx-4 my-1 w-[85%] h-[40%] bg-white text-black hover:bg-gray-200 font-medium hover:translate-x-2 duration-150">
                   Book a Demo <ArrowRight className="ml-2" />
                 </Button></Link>
                 <div className="flex items-center justify-between px-4 pt-2">
