@@ -2,20 +2,20 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { PLAN_TYPE } from './config/plans';
 
-// Define public routes that don't require authentication
+// Define public routes
 const isPublicRoute = createRouteMatcher([
-    '/', 
-    '/signin(.*)', 
-    '/signup(.*)', 
+    '/',
+    '/signin(.*)',
+    '/signup(.*)',
     '/not-allowed',
     '/sitemap.xml',
-    '/robots.txt'
+    '/robots.txt',
 ]);
 
-// Comprehensive bot detection
+// Bot detection
 const searchEngineBots = [
   'googlebot',
-  'google-inspectiontool', // Google Search Console
+  'google-inspectiontool',
   'bingbot',
   'slurp',
   'duckduckbot',
@@ -34,30 +34,33 @@ export default clerkMiddleware(async (auth, request) => {
   const ua = request.headers.get('user-agent')?.toLowerCase() || '';
   const isBot = searchEngineBots.some(bot => ua.includes(bot));
 
-  // CRITICAL: Let all bots bypass Clerk completely
+  // Priority 1: Bots bypass everything
   if (isBot) {
     console.log(`Bot detected: ${ua}`);
     return NextResponse.next();
   }
 
   const { pathname } = request.nextUrl;
-  
-  // Allow public routes to bypass authentication
+
+  // Priority 2: Public routes bypass auth
   if (isPublicRoute(request)) {
+    console.log(`Public route: ${pathname}`);
     return NextResponse.next();
   }
 
-  // Get auth information (only for non-bots, non-public routes)
-  const { userId } = await auth();
-  
-  // Mobile device detection
-  const isMobile = /iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(ua);
-  
-  // Apply plan-based restrictions only for authenticated users
-  if (userId) {
+  // Priority 3: Protected routes - check auth
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      // Let Clerk handle the redirect to sign-in
+      return NextResponse.next();
+    }
+
+    // User is authenticated - apply plan restrictions
+    const isMobile = /iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(ua);
     const userPlan = PLAN_TYPE;
 
-    // Business plan mobile restrictions
     if (
       userPlan === 'Business' &&
       isMobile &&
@@ -66,7 +69,6 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL('/not-allowed', request.url));
     }
 
-    // Elite plan mobile restrictions
     if (
       userPlan === 'Elite' &&
       isMobile &&
@@ -74,9 +76,12 @@ export default clerkMiddleware(async (auth, request) => {
     ) {
       return NextResponse.redirect(new URL('/not-allowed', request.url));
     }
-  }
 
-  return NextResponse.next();
+    return NextResponse.next();
+  } catch (error) {
+    console.error('Auth error:', error);
+    return NextResponse.next();
+  }
 });
 
 export const config = {
