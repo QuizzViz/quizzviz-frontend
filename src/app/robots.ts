@@ -1,14 +1,16 @@
 import type { MetadataRoute } from 'next'
 
-const siteUrl ='https://quizzviz.com'
+const siteUrl = 'https://quizzviz.com'
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
-      allow: '/',
+      allow: '/'
     },
-    sitemap: `${siteUrl}/sitemap.xml`,
+    sitemap: [
+      `${siteUrl}/sitemap.xml`,
+    ],
     host: siteUrl,
   }
 }

@@ -85,9 +85,15 @@ const HeroSection: FC = () => {
   const [count, setCount] = useState<number>(5);
   const [codePercentage, setCodePercentage] = useState<number>(50);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+const [isMounted, setIsMounted] = useState(false);
+
+
+  useEffect(() => {
+  setIsMounted(true);
+}, []);
 
   // Determine if user is authenticated (only true when we've finished loading and have user data)
-  const isAuthenticated = isLoaded && !!user;
+  const isAuthenticated = isMounted && isLoaded && !!user;
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
