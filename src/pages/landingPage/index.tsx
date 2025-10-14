@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import { UserTypeProvider } from "@/contexts/UserTypeContext";
 
 import ClientLandingPage from "./ClientLandingPage";
