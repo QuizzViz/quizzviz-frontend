@@ -30,18 +30,17 @@ const CTASection: FC = () => {
             Join individuals and startups using QuizzViz to build skills, screen talent, and scale hiring faster with AI-powered coding quizzes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={() => scrollTo("signup")} 
-              className="group inline-flex items-center px-10 py-6 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-lg relative overflow-hidden"
-            >
+            <Link href="/pricing">
+            <Button className="group inline-flex px-14 py-6 md:px-10 md:py-6 items-center bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-lg relative overflow-hidden">
+
               <span className="relative z-10">Start Free Trial</span>
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-300"></div>
-            </Button>
+            </Button></Link>
             <Link href="https://calendly.com/syedshahmirsultan/new-meeting"><Button 
               variant="outline" 
-              className="inline-flex items-center px-10 py-6 bg-transparent border-2 border-white/50 text-white font-semibold rounded-xl hover:bg-white/10 hover:border-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg text-lg backdrop-blur-sm"
-            >
+              className="inline-flex items-center px-14 py-6 md:px-10 md:py-6 bg-transparent border-2 border-white/50 text-white font-semibold rounded-xl hover:bg-white/10 hover:border-white transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg text-lg backdrop-blur-sm"
+            > 
               Book a Demo
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button></Link>
