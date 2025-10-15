@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   publisher: "QuizzViz",
   category: "technology",
   alternates: {
-    canonical: "/",
+    canonical: siteUrl,
   },
   icons: {
     icon: "/favicon.ico",
