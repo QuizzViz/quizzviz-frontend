@@ -5,10 +5,7 @@ import Link from "next/link";
 
 // Final call-to-action with two buttons (start trial / book demo)
 const CTASection: FC = () => {
-  const scrollTo = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
+  
   return (
     <section id="cta" className="py-24 bg-gradient-to-r from-gray-900/30 to-background relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden">
       {/* Subtle background elements for elegance */}

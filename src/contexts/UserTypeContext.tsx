@@ -1,33 +1,33 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 export type UserType = 'individual' | 'business';
 
 type UserTypeContextType = {
   userType: UserType;
   setUserType: (type: UserType) => void;
-  isInitialized: boolean;
+  
+  isInitialized: boolean; 
 };
 
-const UserTypeContext = createContext<UserTypeContextType | undefined>(undefined);
+const UserTypeContext = createContext<UserTypeContextType>({
+  userType: 'individual',
+  setUserType: () => {},
+  isInitialized: false, 
+});
 
 export const UserTypeProvider = ({ children }: { children: ReactNode }) => {
   const [userType, setUserType] = useState<UserType>('individual');
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // This effect ensures we're on the client before initializing
-  useEffect(() => {
-    setIsInitialized(true);
-  }, []);
-
-  // Only provide the context after client-side hydration
-  if (!isInitialized) {
-    return <>{children}</>;
-  }
 
   return (
-    <UserTypeContext.Provider value={{ userType, setUserType, isInitialized }}>
+    <UserTypeContext.Provider 
+      value={{ 
+        userType, 
+        setUserType, 
+        isInitialized: true // Always true when used, ensuring no SSR block
+      }}
+    >
       {children}
     </UserTypeContext.Provider>
   );
@@ -36,14 +36,14 @@ export const UserTypeProvider = ({ children }: { children: ReactNode }) => {
 export const useUserType = (): UserTypeContextType => {
   const context = useContext(UserTypeContext);
   
-  // Return a default context if not in a UserTypeProvider
-  if (context === undefined) {
+  if (!context) {
+    console.error("useUserType must be used within a UserTypeProvider");
     return {
       userType: 'individual',
       setUserType: () => {},
-      isInitialized: false
+      isInitialized: false,
     };
   }
-  
+
   return context;
 };
