@@ -7,10 +7,11 @@ export type UserType = 'individual' | 'business';
 type UserTypeContextType = {
   userType: UserType;
   setUserType: (type: UserType) => void;
-  
+  // isInitialized is now always true, ensuring full content rendering during SSR
   isInitialized: boolean; 
 };
 
+// Initialize context with a defined default value
 const UserTypeContext = createContext<UserTypeContextType>({
   userType: 'individual',
   setUserType: () => {},
@@ -25,7 +26,7 @@ export const UserTypeProvider = ({ children }: { children: ReactNode }) => {
       value={{ 
         userType, 
         setUserType, 
-        isInitialized: true // Always true when used, ensuring no SSR block
+        isInitialized: true 
       }}
     >
       {children}
@@ -37,7 +38,7 @@ export const useUserType = (): UserTypeContextType => {
   const context = useContext(UserTypeContext);
   
   if (!context) {
-    console.error("useUserType must be used within a UserTypeProvider");
+    // Return a safe default if used outside the Provider
     return {
       userType: 'individual',
       setUserType: () => {},

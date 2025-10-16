@@ -1,12 +1,30 @@
-import { FC } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+"use client";
+import React, { FC, useState } from "react";
 import { Clock, CheckCircle, Zap, User, Briefcase } from "lucide-react";
-import { useUserType } from "@/contexts/UserTypeContext";
+
+
+export type UserType = 'individual' | 'business';
+
+const useUserType = () => {
+    const [userType, setUserType] = useState<UserType>('individual');
+    return { userType, setUserType };
+}
+
+const Card: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
+    <div className={`shadow-xl ${className || ''}`}>
+        {children}
+    </div>
+);
+const CardContent: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
+    <div className={`p-6 ${className || ''}`}>
+        {children}
+    </div>
+);
 
 const ProblemsSection: FC = () => {
   const { userType: selectedUser, setUserType: setSelectedUser } = useUserType();
 
-  const contentByUser = {
+  const contentByUser: Record<UserType, { speed: string, accuracy: string, efficiency: string }> = {
     individual: {
       speed: "Generate coding quizzes in minutes that test technical concepts through real-world based scenarios. Perfect for quick practice sessions and skill assessment.",
       accuracy: "Secure proctored mode with full-screen lockdown ensures honest self-evaluation. Auto-end on distractions keeps your practice focused and meaningful.",
@@ -28,9 +46,14 @@ const ProblemsSection: FC = () => {
       </div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 scroll-fade visible animate-fade-in">
+        {/* Removed external animation classes (scroll-fade, animate-fade-in) */}
+        <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6 bg-clip-text">
-            Problems We <span className="gradient-text font-medium">Solve</span>
+            Problems We 
+            {/* Custom .gradient-text replaced with pure Tailwind for transparent text effect */}
+            <span className="font-medium bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
+              Solve
+            </span>
           </h2>
           <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed opacity-90 mb-8">
             From personal skill-building to enterprise hiring, transform your coding assessments with AI-powered solutions that save time, ensure fairness, and deliver real insights.
@@ -74,7 +97,11 @@ const ProblemsSection: FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-          <Card className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 scroll-fade visible border-white/10 overflow-hidden">
+          {/* Card 1: Speed */}
+          <Card 
+            // Custom .glassmorphism/scroll-fade replaced with Tailwind: backdrop-blur-xl border border-white/10 bg-white/5
+            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 overflow-hidden"
+          >
             <CardContent className="p-8 text-center relative">
               <div className="w-20 h-20 bg-gradient-to-br from-green-500/80 to-blue-500/80 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg ring-1 ring-green-500/30 hover:animate-pulse">
                 <Clock className="w-8 h-8 text-white drop-shadow-sm" />
@@ -86,7 +113,10 @@ const ProblemsSection: FC = () => {
             </CardContent>
           </Card>
 
-          <Card className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 scroll-fade visible border-white/10 overflow-hidden">
+          {/* Card 2: Accuracy */}
+          <Card 
+            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 overflow-hidden"
+          >
             <CardContent className="p-8 text-center relative">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-500/80 to-purple-500/80 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg ring-1 ring-blue-500/30 hover:animate-pulse">
                 <CheckCircle className="w-8 h-8 text-white drop-shadow-sm" />
@@ -98,7 +128,10 @@ const ProblemsSection: FC = () => {
             </CardContent>
           </Card>
 
-          <Card className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 scroll-fade visible border-white/10 overflow-hidden">
+          {/* Card 3: Efficiency */}
+          <Card 
+            className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 overflow-hidden"
+          >
             <CardContent className="p-8 text-center relative">
               <div className="w-20 h-20 bg-gradient-to-br from-purple-500/80 to-green-500/80 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg ring-1 ring-purple-500/30 hover:animate-pulse">
                 <Zap className="w-8 h-8 text-white drop-shadow-sm" />
@@ -111,35 +144,6 @@ const ProblemsSection: FC = () => {
           </Card>
         </div>
       </div>
-      <style jsx>{`
-        .glassmorphism {
-          background: rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .gradient-text {
-          background: linear-gradient(to right, rgb(34, 197, 94), rgb(59, 130, 246));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-        .animate-fade-in {
-          animation: fadeIn 1s ease-out;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .scroll-fade {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: all 0.6s ease-out;
-        }
-        .scroll-fade.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      `}</style>
     </section>
   );
 };

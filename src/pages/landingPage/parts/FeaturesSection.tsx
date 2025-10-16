@@ -1,7 +1,26 @@
-import { FC } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Zap, CheckCircle, BarChart3, Shield, User, Briefcase, BookOpen, Share2 } from "lucide-react";
-import { useUserType, type UserType } from "@/contexts/UserTypeContext";
+"use client";
+import React, { FC, useState } from "react";
+import { Zap, CheckCircle, BarChart3,User, Briefcase, BookOpen, Share2 } from "lucide-react";
+
+
+export type UserType = 'individual' | 'business';
+
+const useUserType = () => {
+    const [userType, setUserType] = useState<UserType>('individual');
+    return { userType, setUserType };
+}
+
+
+const Card: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
+    <div className={`shadow-xl ${className || ''}`}>
+        {children}
+    </div>
+);
+const CardContent: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
+    <div className={`p-6 ${className || ''}`}>
+        {children}
+    </div>
+);
 
 interface Feature {
   icon: React.ComponentType<any>;
@@ -67,22 +86,24 @@ const FeaturesSection: FC = () => {
         gradient: "from-pink-500/80 to-orange-500/80",
         ring: "ring-pink-500/30"
       }
-      
     ]
   };
 
   return (
     <section id="features" className="py-20 relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden">
-      {/* Subtle background elements for elegance */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/4 left-0 w-80 h-80 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-gradient-to-l from-green-500/10 to-blue-500/10 rounded-full blur-3xl"></div>
       </div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 scroll-fade visible animate-fade-in">
-          <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6 bg-clip-text">
-            Features & <span className="gradient-text font-medium">Benefits</span>
+        <div className="text-center mb-16">
+          <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6">
+            Features & 
+            {/* Gradient text using Tailwind utility classes */}
+            <span className="font-medium bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
+              Benefits
+            </span>
           </h2>
           <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed opacity-90 mb-8">
             Scalable capabilities tailored for individuals, small teams, and enterprises—powering AI-driven coding assessments with proctoring, analytics, and seamless sharing.
@@ -129,7 +150,7 @@ const FeaturesSection: FC = () => {
           {features[selectedUser].map((feature, index) => (
             <Card 
               key={index}
-              className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 scroll-fade visible border-white/10 overflow-hidden"
+              className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 overflow-hidden"
             >
               <CardContent className="p-8 text-center relative">
                 <div className={`w-20 h-20 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg ring-1 ${feature.ring} hover:animate-pulse`}>
@@ -144,35 +165,6 @@ const FeaturesSection: FC = () => {
           ))}
         </div>
       </div>
-      <style jsx>{`
-        .glassmorphism {
-          background: rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .gradient-text {
-          background: linear-gradient(to right, rgb(34, 197, 94), rgb(59, 130, 246));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-        .animate-fade-in {
-          animation: fadeIn 1s ease-out;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .scroll-fade {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: all 0.6s ease-out;
-        }
-        .scroll-fade.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      `}</style>
     </section>
   );
 };

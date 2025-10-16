@@ -1,14 +1,16 @@
 import { FC } from "react";
+// Accordion components are assumed to be Client Components internally (they handle clicks/state)
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from "@/components/ui/accordion"; 
 import { ChevronDown, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 // FAQs section with accordion
+// This is now a Server Component
 const FAQsSection: FC = () => (
   <section id="faqs" className="py-20 relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden">
     {/* Subtle background elements for elegance */}
@@ -18,13 +20,16 @@ const FAQsSection: FC = () => (
     </div>
     
     <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center mb-12 scroll-fade visible animate-fade-in">
+      {/* Removed custom animation classes */}
+      <div className="text-center mb-12"> 
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-md border border-green-500/30 text-white text-sm font-medium mb-6 shadow-md">
           <Sparkles className="w-4 h-4 text-green-300" />
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-300 to-blue-300">Frequently Asked Questions</span>
         </div>
         <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-4 bg-clip-text">
-          Got <span className="gradient-text font-medium">Questions?</span>
+          Got 
+          {/* Replaced gradient-text with inline Tailwind */}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400 font-medium"> Questions?</span>
         </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed opacity-90">
           Find answers to common queries about QuizzViz, from quiz generation to proctoring and analytics.
@@ -32,7 +37,8 @@ const FAQsSection: FC = () => (
       </div>
       
       <Accordion type="single" collapsible className="w-full space-y-2" defaultValue="item-1">
-        <AccordionItem value="item-1" className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+        {/* The classes below are the Tailwind equivalent of the removed glassmorphism CSS */}
+        <AccordionItem value="item-1" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
             <h3 className="text-xl font-semibold text-foreground tracking-tight">What is QuizzViz?</h3>
           </AccordionTrigger>
@@ -41,7 +47,7 @@ const FAQsSection: FC = () => (
           </AccordionContent>
         </AccordionItem>
         
-        <AccordionItem value="item-2" className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+        <AccordionItem value="item-2" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
             <h3 className="text-xl font-semibold text-foreground tracking-tight">How does proctoring work?</h3>
           </AccordionTrigger>
@@ -50,7 +56,7 @@ const FAQsSection: FC = () => (
           </AccordionContent>
         </AccordionItem>
         
-        <AccordionItem value="item-3" className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+        <AccordionItem value="item-3" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
             <h3 className="text-xl font-semibold text-foreground tracking-tight">Can I customize quizzes?</h3>
           </AccordionTrigger>
@@ -59,7 +65,7 @@ const FAQsSection: FC = () => (
           </AccordionContent>
         </AccordionItem>
         
-        <AccordionItem value="item-4" className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+        <AccordionItem value="item-4" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
             <h3 className="text-xl font-semibold text-foreground tracking-tight">How do I share quizzes with others?</h3>
           </AccordionTrigger>
@@ -68,7 +74,7 @@ const FAQsSection: FC = () => (
           </AccordionContent>
         </AccordionItem>
         
-        <AccordionItem value="item-5" className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+        <AccordionItem value="item-5" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
             <h3 className="text-xl font-semibold text-foreground tracking-tight">What analytics are available?</h3>
           </AccordionTrigger>
@@ -77,7 +83,7 @@ const FAQsSection: FC = () => (
           </AccordionContent>
         </AccordionItem>
         
-        <AccordionItem value="item-6" className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+        <AccordionItem value="item-6" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
             <h3 className="text-xl font-semibold text-foreground tracking-tight">Do you support enterprise solutions?</h3>
           </AccordionTrigger>
@@ -96,35 +102,6 @@ const FAQsSection: FC = () => (
         </button></Link>
       </div>
     </div>
-    <style jsx>{`
-      .glassmorphism {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-      .gradient-text {
-        background: linear-gradient(to right, rgb(34, 197, 94), rgb(59, 130, 246));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-      .animate-fade-in {
-        animation: fadeIn 1s ease-out;
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .scroll-fade {
-        opacity: 0;
-        transform: translateY(30px);
-        transition: all 0.6s ease-out;
-      }
-      .scroll-fade.visible {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    `}</style>
   </section>
 );
 

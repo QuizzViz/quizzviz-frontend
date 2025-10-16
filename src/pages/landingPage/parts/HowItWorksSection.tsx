@@ -1,10 +1,29 @@
-import { FC } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+"use client";
+import React, { FC, useState } from "react";
 import { User, Briefcase } from "lucide-react";
-import { useUserType } from "@/contexts/UserTypeContext";
 
-type UserType = 'individual' | 'business';
 
+export type UserType = 'individual' | 'business';
+
+const useUserType = () => {
+    const [userType, setUserType] = useState<UserType>('individual');
+    return { userType, setUserType };
+}
+
+const Card: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
+    <div className={`shadow-xl ${className || ''}`}>
+        {children}
+    </div>
+);
+const CardContent: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
+    <div className={`p-6 ${className || ''}`}>
+        {children}
+    </div>
+);
+
+// --- END: Mock dependencies for Single File Mandate ---
+
+// Define the structure for a single step
 type Step = {
   number: string;
   title?: string; // Make title optional
@@ -14,6 +33,7 @@ type Step = {
 };
 
 const HowItWorksSection: FC = () => {
+  // Use the locally defined hook/state manager
   const { userType: selectedUser, setUserType: setSelectedUser } = useUserType();
 
   const steps: Record<UserType, Step[]> = {
@@ -74,9 +94,13 @@ const HowItWorksSection: FC = () => {
       </div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 scroll-fade visible animate-fade-in">
-          <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6 bg-clip-text">
-            How It <span className="gradient-text font-medium">Works</span>
+        <div className="text-center mb-16">
+          <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6">
+            How It 
+            {/* Gradient text using Tailwind utility classes */}
+            <span className="font-medium bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
+              Works
+            </span>
           </h2>
           <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed opacity-90 mb-8">
             Three simple steps to revolutionize your coding assessments—whether building personal skills and hiring the right candidates.
@@ -123,7 +147,8 @@ const HowItWorksSection: FC = () => {
           {steps[selectedUser].map((step: any, index: any) => (
             <Card 
               key={index}
-              className="glassmorphism rounded-2xl border-0 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 scroll-fade visible border-white/10 overflow-hidden"
+              // Tailwind classes for glassmorphism and transition
+              className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 overflow-hidden"
             >
               <CardContent className="p-8 text-center relative">
                 <div className={`w-20 h-20 bg-gradient-to-br ${step.gradient} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg ring-1 ${step.ring} hover:animate-bounce`}>
@@ -138,35 +163,6 @@ const HowItWorksSection: FC = () => {
           ))}
         </div>
       </div>
-      <style jsx>{`
-        .glassmorphism {
-          background: rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .gradient-text {
-          background: linear-gradient(to right, rgb(34, 197, 94), rgb(59, 130, 246));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-        .animate-fade-in {
-          animation: fadeIn 1s ease-out;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .scroll-fade {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: all 0.6s ease-out;
-        }
-        .scroll-fade.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      `}</style>
     </section>
   );
 };
