@@ -1,8 +1,8 @@
-"use client";
-import React, { FC, useState } from "react";
-import { Clock, CheckCircle, Zap, User, Briefcase } from "lucide-react";
-import { useUserType, type UserType } from "@/contexts/UserTypeContext";
+'use client';
 
+import React, { FC } from "react";
+import { Clock, CheckCircle, Zap, User, Briefcase } from "lucide-react";
+import { UserType, useUserType } from "@/contexts/UserTypeContext";
 
 const Card: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
     <div className={`shadow-xl ${className || ''}`}>

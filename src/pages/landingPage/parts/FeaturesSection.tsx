@@ -1,5 +1,5 @@
-"use client";
-import React, { FC, useState } from "react";
+"use client"
+import React, { FC } from "react";
 import { Zap, CheckCircle, BarChart3,User, Briefcase, BookOpen, Share2 } from "lucide-react";
 import { useUserType, type UserType } from "@/contexts/UserTypeContext";
 

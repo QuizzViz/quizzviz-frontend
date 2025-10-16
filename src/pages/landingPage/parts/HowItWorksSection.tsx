@@ -1,5 +1,5 @@
 "use client";
-import React, { FC, useState } from "react";
+import React, { FC} from "react";
 import { User, Briefcase } from "lucide-react";
 import { useUserType, type UserType } from "@/contexts/UserTypeContext";
 

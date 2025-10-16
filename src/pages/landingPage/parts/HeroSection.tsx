@@ -6,16 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowRight, 
   Zap, 
-  Users, 
   Briefcase, 
   User, 
-  Shield, 
-  Target,
-  TrendingUp,
-  CheckCircle, 
   Clock, 
-  Lock,
-  Sparkles
+  Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
