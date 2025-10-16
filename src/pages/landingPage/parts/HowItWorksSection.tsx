@@ -1,14 +1,7 @@
 "use client";
 import React, { FC, useState } from "react";
 import { User, Briefcase } from "lucide-react";
-
-
-export type UserType = 'individual' | 'business';
-
-const useUserType = () => {
-    const [userType, setUserType] = useState<UserType>('individual');
-    return { userType, setUserType };
-}
+import { useUserType, type UserType } from "@/contexts/UserTypeContext";
 
 const Card: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
     <div className={`shadow-xl ${className || ''}`}>
@@ -21,12 +14,10 @@ const CardContent: FC<{ className?: string, children: React.ReactNode }> = ({ cl
     </div>
 );
 
-// --- END: Mock dependencies for Single File Mandate ---
 
-// Define the structure for a single step
 type Step = {
   number: string;
-  title?: string; // Make title optional
+  title?: string; 
   description: string;
   gradient: string;
   ring: string;

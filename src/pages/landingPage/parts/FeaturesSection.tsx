@@ -1,14 +1,10 @@
 "use client";
 import React, { FC, useState } from "react";
 import { Zap, CheckCircle, BarChart3,User, Briefcase, BookOpen, Share2 } from "lucide-react";
+import { useUserType, type UserType } from "@/contexts/UserTypeContext";
 
 
-export type UserType = 'individual' | 'business';
 
-const useUserType = () => {
-    const [userType, setUserType] = useState<UserType>('individual');
-    return { userType, setUserType };
-}
 
 
 const Card: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
