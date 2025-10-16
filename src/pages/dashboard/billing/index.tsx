@@ -29,6 +29,7 @@ export default function BillingPage() {
   return (
     <>
       <Head>
+        <link rel="icon" href="/favicon.ico" />
         <title>Billing | QuizzViz</title>
         <meta
           name="description"

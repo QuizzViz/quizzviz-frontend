@@ -19,6 +19,7 @@ export default function OurMission() {
       <Head>
         <title>Our Mission - QuizzViz</title>
         <meta name="description" content="Learn about QuizzViz - The modern platform for skills assessment and talent discovery" />
+      <link rel="icon" href="/favicon.ico" />
       </Head>
       
       <div className="min-h-screen bg-background text-gray-100">

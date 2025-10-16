@@ -168,6 +168,7 @@ export default function ContactPage() {
       <Head>
         <title>Contact Us | QuizzViz</title>
         <meta name="description" content="Get in touch with the QuizzViz team. We'd love to hear from you!" />
+        <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className="max-w-4xl mx-auto px-4 py-16 sm:py-24">

@@ -9,6 +9,7 @@ const PrivacyPolicy = () => {
       <Head>
         <title>Privacy Policy - QuizzViz</title>
         <meta name="description" content="QuizzViz Privacy Policy" />
+      <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <Navbar />

@@ -15,6 +15,7 @@ export default function QuizLayout({ children }: QuizLayoutProps) {
     <>
       <Head>
         <title>Quiz | QuizzViz</title>
+        <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="min-h-screen bg-black text-white">
         <div className="flex min-h-screen">

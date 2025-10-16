@@ -132,6 +132,7 @@ export default function MyQuizzesPage() {
       <>
         <Head>
           <title>My Quizzes | QuizzViz</title>
+          <link rel="icon" href="/favicon.ico" />
           <meta name="description" content="View and take your quizzes" />
         </Head>
         <div className="min-h-screen bg-black text-white">
@@ -326,6 +327,8 @@ export default function MyQuizzesPage() {
     <>
       <Head>
         <title>My Quizzes | QuizzViz</title>
+        <link rel="icon" href="/favicon.ico" />
+
         <meta
           name="description"
           content="View and manage your created quizzes on QuizzViz."

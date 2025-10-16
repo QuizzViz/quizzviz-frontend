@@ -30,6 +30,8 @@ export default function ProfilePage() {
     <>
       <Head>
         <title>Profile | QuizzViz</title>
+       <link rel="icon" href="/favicon.ico" />
+
         <meta
           name="description"
           content="Manage your profile details and account information."

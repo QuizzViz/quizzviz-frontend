@@ -466,7 +466,8 @@ export default function ResultsDashboard() {
  
   return (
     <>
-      <Head><title>Quiz Analytics | Enterprise</title></Head>
+      <Head><title>Quiz Analytics | Enterprise</title>
+      <link rel="icon" href="/favicon.ico" /></Head>
       <div className="min-h-screen bg-black text-white font-sans">
         <SignedIn>
           <div className="flex min-h-screen flex-col lg:flex-row">

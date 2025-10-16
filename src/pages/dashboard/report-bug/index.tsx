@@ -287,6 +287,8 @@ ${actual}
     <>
       <Head>
         <title>Report a Bug | QuizzViz</title>
+        <link rel="icon" href="/favicon.ico" />
+
       </Head>
       <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900">
         <div className="flex min-h-screen">

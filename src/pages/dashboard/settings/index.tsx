@@ -30,6 +30,7 @@ export default function SettingsPage() {
     <>
       <Head>
         <title>Settings | QuizzViz</title>
+        <link rel="icon" href="/favicon.ico" />
         <meta
           name="description"
           content="Configure your application settings and preferences."
