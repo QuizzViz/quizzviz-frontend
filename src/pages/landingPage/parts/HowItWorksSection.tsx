@@ -87,10 +87,10 @@ const HowItWorksSection: FC = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6">
-            How It 
+            How It  
             {/* Gradient text using Tailwind utility classes */}
-            <span className="font-medium bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
-              Works
+            <span className="font-medium ml-3 bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
+               Works
             </span>
           </h2>
           <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed opacity-90 mb-8">

@@ -45,12 +45,12 @@ const ProblemsSection: FC = () => {
           <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6 bg-clip-text">
             Problems We 
             {/* Custom .gradient-text replaced with pure Tailwind for transparent text effect */}
-            <span className="font-medium bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
+            <span className="font-medium ml-3 bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
               Solve
             </span>
           </h2>
           <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed opacity-90 mb-8">
-            From personal skill-building to enterprise hiring, transform your coding assessments with AI-powered solutions that save time, ensure fairness, and deliver real insights.
+            Whether you're an individual honing your skills or a growing team building your talent pipeline, our AI-powered solutions help you create effective coding assessments with proctoring that save time, ensure fairness, and deliver real insights.
           </p>
           
           {/* User Type Toggle */}

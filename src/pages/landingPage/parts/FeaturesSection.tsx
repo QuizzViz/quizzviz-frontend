@@ -97,12 +97,12 @@ const FeaturesSection: FC = () => {
           <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6">
             Features & 
             {/* Gradient text using Tailwind utility classes */}
-            <span className="font-medium bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
+            <span className="font-medium  ml-3 bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
               Benefits
             </span>
           </h2>
           <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed opacity-90 mb-8">
-            Scalable capabilities tailored for individuals, small teams, and enterprises—powering AI-driven coding assessments with proctoring, analytics, and seamless sharing.
+            Powerful tools for individuals and growing teams to create and manage coding assessments with proctoring, analytics, and easy sharing.
           </p>
           
           {/* User Type Toggle */}

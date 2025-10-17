@@ -79,7 +79,7 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">What analytics are available?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            <strong>Individuals</strong> get instant feedback with correct answers and explanations after completing quizzes to track personal learning progress. <strong>Business users</strong> unlock powerful analytics including real-time performance graphs, comprehensive data tables with filtering options, and the ability to export results as PDF or Excel files. This enables you to rank candidates, compare performances, and make confident data-driven hiring decisions.
+            <strong>Individuals</strong> can view  the correct answers after completing quizzes to track personal learning progress. <strong>Business users</strong> unlock powerful analytics including real-time performance graphs, comprehensive data tables with filtering options, and the ability to export results as PDF or Excel files. This enables you to rank candidates, compare performances, and make confident data-driven hiring decisions.
           </AccordionContent>
         </AccordionItem>
         
