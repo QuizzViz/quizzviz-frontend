@@ -113,7 +113,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* JSON-LD Structured Data for WebSite */}
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
         <script
   type="application/ld+json"
   dangerouslySetInnerHTML={{
