@@ -20,12 +20,12 @@ const ProblemsSection: FC = () => {
 
   const contentByUser: Record<UserType, { speed: string, accuracy: string, efficiency: string }> = {
     individual: {
-      speed: "Generate coding quizzes in minutes that test technical concepts through real-world based scenarios. Perfect for quick practice sessions and skill assessment.",
+      speed: "Generate coding quizzes in minutes that test technical concepts through real-world scenario based questions. Perfect for quick practice sessions and skill assessment.",
       accuracy: "Secure proctored mode with full-screen lockdown ensures honest self-evaluation. Auto-end on distractions keeps your practice focused and meaningful.",
-      efficiency: "Get instant feedback with personalized growth insights. Track your progress over time and identify areas for improvement with detailed analytics."
+      efficiency: "After completion, you get instant access to view correct answers. Review correct answers to understand concepts and track your learning progress."
     },
     business: {
-      speed: "Generate coding quizzes in minutes that test technical concepts through real-world based scenarios. Screen candidates faster and more effectively.",
+      speed: "Generate coding quizzes in minutes that test technical concepts through real-world scenario based questions. Screen candidates faster and more effectively.",
       accuracy: "Cheat-proof hiring with secure proctored assessments. Full-screen lockdown and auto-end on distractions ensure fair evaluation of all candidates.",
       efficiency: "Make confident hiring decisions with actionable data. Download candidate results, apply filters, view performance graphs, and analyze data in comprehensive tables for smarter, faster recruitment."
     }
