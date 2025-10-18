@@ -60,7 +60,7 @@ const BugTypeCard: React.FC<{
       onClick={() => onSelect(type.id)}
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.98 }}
-      className={`p-5 rounded-xl border-2 text-center min-w-[180px] transition-all duration-200 h-full flex flex-col justify-between ${
+      className={`p-4 sm:p-5 rounded-xl border-2 text-center w-full transition-all duration-200 h-full flex flex-col justify-between ${
         isSelected
           ? `border-transparent bg-gradient-to-br ${type.gradient} text-white shadow-lg`
           : 'border-gray-700 bg-gray-800/30 hover:bg-gray-800/50 text-gray-200 hover:text-white'
@@ -302,7 +302,7 @@ ${actual}
               userEmail={user?.primaryEmailAddress?.emailAddress || ''} 
             />
             
-            <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
               <div className="max-w-6xl mx-auto">
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
@@ -322,14 +322,14 @@ ${actual}
                     <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
                       Report a Bug
                     </h1>
-                    <p className="text-base text-gray-400 max-w-xl mx-auto">
+                    <p className="text-sm sm:text-base text-gray-400 max-w-xl mx-auto px-4">
                       Help us make QuizzViz better! Tell us about the issue below—don’t worry if you’re unsure, just do your best!
                     </p>
                   </div>
 
-                  <div className="space-y-4">
-                    <h2 className="text-lg font-semibold text-gray-200">What kind of issue are you facing?</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 w-full">
+                  <div className="space-y-4 px-4 sm:px-0">
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-200">What kind of issue are you facing?</h2>
+                    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 w-full">
                       {bugTypes.map((type) => (
                         <div key={type.id} className="w-full">
                           <BugTypeCard
@@ -342,7 +342,7 @@ ${actual}
                     </div>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-6 px-4 sm:px-0">
                     {bugType === 'other' && (
                       <FormField
                         label="Issue Subject"
@@ -366,7 +366,7 @@ ${actual}
                       showHelp
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                       <FormField
                         label="What You Hoped Would Happen (Optional)"
                         id="expected"
@@ -397,7 +397,7 @@ ${actual}
                         disabled={isSubmitting || !actual.trim()}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className={`w-full md:w-auto px-8 py-3 text-base font-medium rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 ${
+                        className={`w-full sm:w-auto px-6 sm:px-8 py-3 text-sm sm:text-base font-medium rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 ${
                           isSubmitting || !actual.trim()
                             ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                             : 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl'
