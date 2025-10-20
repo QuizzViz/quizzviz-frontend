@@ -14,11 +14,21 @@ import { useEffect } from 'react'
 import { Router } from 'next/router'
 import posthog from 'posthog-js'
 import { PostHogProvider } from 'posthog-js/react'
+import Hotjar from '@hotjar/browser';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
 
    useEffect(() => {
+    if (typeof window !== "undefined") {
+      const siteId = 5134605;
+      const hotjarVersion = 6;
+      try {
+        Hotjar.init(siteId, hotjarVersion);
+      } catch (err) {
+        console.error("Hotjar init failed:", err);
+      }
+    }
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
       person_profiles: 'identified_only', 
