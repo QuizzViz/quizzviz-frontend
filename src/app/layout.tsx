@@ -1,7 +1,7 @@
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import "./globals.css";
- import Providers from "./providers";
+import Providers from "./providers";
 import React from "react";
 import type { Metadata, Viewport } from "next";
 
@@ -23,7 +23,8 @@ export const metadata: Metadata = {
     default: "QuizzViz – AI Powered Coding Quiz Generator",
     template: "%s | QuizzViz",
   },
-  description: "QuizzViz helps companies create high-quality, real-world coding quizzes in minutes. Fast, reliable, and built for professionals.",
+  description:
+    "QuizzViz helps companies create high-quality, real-world coding quizzes in minutes. Fast, reliable, and built for professionals.",
   applicationName: "QuizzViz",
   generator: "Next.js",
   keywords: [
@@ -39,10 +40,10 @@ export const metadata: Metadata = {
     "technical assessments",
     "technical interviews",
     "AI Coding Quiz Generator for technical assessments",
-    "AI Coding Quiz Generator for hiring Programmers",  
+    "AI Coding Quiz Generator for hiring Programmers",
     "coding interview",
     "react",
-    "nextjs"
+    "nextjs",
   ],
   referrer: "origin-when-cross-origin",
   authors: [{ name: "QuizzViz" }],
@@ -101,70 +102,66 @@ export const metadata: Metadata = {
     initialScale: 1,
     maximumScale: 5,
   },
-};
 
+  // 👇 Server-rendered JSON-LD schema for Google
+  other: {
+    "application/ld+json": JSON.stringify([
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: "QuizzViz",
+        alternateName: "Quizz Viz",
+        url: siteUrl,
+        logo: `${siteUrl}/QuizzViz-logo.png`,
+        image: `${siteUrl}/QuizzViz-logo.png`,
+        description:
+          "QuizzViz is an AI-powered coding quiz generator that helps companies create professional, real-world coding quizzes in minutes.",
+        sameAs: [
+          "https://www.linkedin.com/company/quizzviz",
+          "https://x.com/QuizzViz",
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "QuizzViz",
+        url: siteUrl,
+        logo: `${siteUrl}/QuizzViz-logo.png`,
+        potentialAction: {
+          "@type": "SearchAction",
+          target: `${siteUrl}/search?q={search_term_string}`,
+          "query-input": "required name=search_term_string",
+        },
+      },
+    ]),
+  },
+};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" type="image/x-icon"/>
-       <link rel="icon" type="image/png" href="/favicon.png" sizes="any" />
-       <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-      <link rel="shortcut icon" href="/favicon.ico" />
-      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-      <link rel="manifest" href="/site.manifest.json" />
-      <script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{
-    __html: JSON.stringify([
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        name: "QuizzViz",
-        alternateName: "Quizz Viz",
-        url: "https://quizzviz.com",
-        logo: "https://quizzviz.com/QuizzViz-logo.png",
-        image: "https://quizzviz.com/QuizzViz-logo.png",
-        favicon: "https://quizzviz.com/favicon.ico",
-        description:
-          "QuizzViz is an AI-powered coding quiz generator that helps companies create professional, real-world coding quizzes in minutes.",
-        sameAs: [
-          "https://www.linkedin.com/company/quizzviz",
-          "https://x.com/QuizzViz"
-        ]
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        name: "QuizzViz",
-        url: "https://quizzviz.com",
-        potentialAction: {
-          "@type": "SearchAction",
-          target: "https://quizzviz.com/search?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
-      }
-    ])
-  }}
-/>
-
-
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="icon" type="image/png" href="/favicon.png" sizes="any" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/apple-touch-icon.png"
+        />
+        <link rel="manifest" href="/site.manifest.json" />
       </head>
       <body>
-          <div className="min-h-screen bg-background text-foreground">
-            {/* <ConditionalNavbar /> */}
-            <Providers>
-            {children}
-            </Providers>
-            <Analytics />
-            <SpeedInsights />
-          </div>
+        <div className="min-h-screen bg-background text-foreground">
+          <Providers>{children}</Providers>
+          <Analytics />
+          <SpeedInsights />
+        </div>
       </body>
     </html>
   );
