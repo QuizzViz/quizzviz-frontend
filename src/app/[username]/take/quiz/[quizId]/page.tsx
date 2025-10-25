@@ -688,7 +688,11 @@ export default function QuizPage({ params }: QuizPageProps) {
 
       const currentPath = window.location.href;
       
-      const response = await fetch(`/api/verify-quiz?quizUrl=${encodeURIComponent(currentPath)}&key=${encodeURIComponent(formData.quizKey)}`, {
+      const apiUrl = new URL('/api/verify-quiz', window.location.origin);
+      apiUrl.searchParams.append('quizUrl', currentPath);
+      apiUrl.searchParams.append('key', formData.quizKey);
+      
+      const response = await fetch(apiUrl.toString(), {
         method: 'GET',
         headers: {
           'accept': 'application/json',
