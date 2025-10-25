@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAuth } from "@clerk/nextjs/server";
 
-const BACKEND_BASE_URL = 'http://107.21.87.82';
+const BACKEND_BASE_URL = 'http://34.227.93.117';
 
 // Helper function to handle API errors
 const handleApiError = (error: any, res: NextApiResponse) => {
