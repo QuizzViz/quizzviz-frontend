@@ -101,7 +101,7 @@ export default async function handler(
       } else {
         try {
           // Call the backend API directly to update the quiz status
-          const backendUrl = `http://34.227.93.117/user/${encodeURIComponent(userId)}/quizz/${encodeURIComponent(quiz_id)}`;
+          const backendUrl = `${process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL}/user/${encodeURIComponent(userId)}/quizz/${encodeURIComponent(quiz_id)}`;
           
           console.log('Updating quiz status with URL:', backendUrl);
           console.log('Using session token:', sessionToken ? '***' : 'none');
