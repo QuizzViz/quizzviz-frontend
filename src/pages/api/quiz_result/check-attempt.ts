@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { AttemptCheckResponse, ErrorResponse } from '@/types/quizResult';
 
-const API_BASE_URL = 'https://quizzviz-quiz-result-production.up.railway.app';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}`;
 
 type ResponseData = AttemptCheckResponse | ErrorResponse;
 
