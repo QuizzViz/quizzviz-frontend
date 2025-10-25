@@ -1,20 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const quizUrl = searchParams.get('quizUrl');
-  const key = searchParams.get('key');
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { quizUrl, key } = req.query;
 
   if (!quizUrl || !key) {
-    return NextResponse.json(
-      { error: 'Missing required parameters' },
-      { status: 400 }
-    );
+    return res.status(400).json({ error: 'Missing required parameters' });
   }
 
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/public/quiz/${encodeURIComponent(quizUrl)}?key=${encodeURIComponent(key)}`,
+      `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/public/quiz/${encodeURIComponent(quizUrl as string)}?key=${encodeURIComponent(key as string)}`,
       {
         method: 'GET',
         headers: {
@@ -24,12 +26,9 @@ export async function GET(request: Request) {
     );
 
     const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    return res.status(response.status).json(data);
   } catch (error) {
     console.error('Verification error:', error);
-    return NextResponse.json(
-      { error: 'Failed to verify quiz' },
-      { status: 500 }
-    );
+    return res.status(500).json({ error: 'Failed to verify quiz' });
   }
 }
