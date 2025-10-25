@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAuth } from "@clerk/nextjs/server";
 
-const BACKEND_URL = (process.env.QUIZZ_GENERATION_SERVICE_URLs as string) + '/quizz';
+const BACKEND_URL = 'http://107.21.87.82/quizz';
 
 // Helper function to handle API errors
 const handleApiError = (error: any, res: NextApiResponse) => {
