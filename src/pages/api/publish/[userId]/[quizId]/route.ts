@@ -59,7 +59,7 @@ async function handlePublishRequest(
     }
 
     // Using the exact endpoint from the curl command
-    const publishServiceUrl = `https://quizzviz-publish-quiz.up.railway.app/publish/user/${username}/quiz/${quizId}`;
+    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${username}/quiz/${quizId}`;
     console.log('Making request to:', publishServiceUrl, 'with method:', request.method);
 
     try {

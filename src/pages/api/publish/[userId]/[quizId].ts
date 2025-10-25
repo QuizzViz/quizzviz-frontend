@@ -75,7 +75,7 @@ export default async function handler(
     if (req.method === 'DELETE') {
       try {
         const deleteResponse = await fetch(
-          `https://quizzviz-publish-quiz.up.railway.app/publish/user/${paramUserId}/quiz/${quizId}`,
+          `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${paramUserId}/quiz/${quizId}`,
           {
             method: 'DELETE',
             headers: {
@@ -137,7 +137,7 @@ export default async function handler(
     
     // Fetch published quiz from external API using the username
     const response = await fetch(
-      `https://quizzviz-publish-quiz.up.railway.app/publish/public/quiz/${encodeURIComponent(`${origin}/${username}/take/quiz/${quizId}`)}`,
+      `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/public/quiz/${encodeURIComponent(`${origin}/${username}/take/quiz/${quizId}`)}`,
       {
         method: 'GET',
         headers: {
