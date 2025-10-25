@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 
-const BACKEND_BASE_URL = 'https://quizzviz-quiz-generation.up.railway.app';
 
 // Handle both POST and DELETE methods
 export async function POST(
