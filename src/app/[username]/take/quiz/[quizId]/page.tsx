@@ -688,7 +688,7 @@ export default function QuizPage({ params }: QuizPageProps) {
 
       const currentPath = window.location.href;
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/public/quiz/${encodeURIComponent(currentPath)}?key=${encodeURIComponent(formData.quizKey)}`, {
+      const response = await fetch(`/api/verify-quiz?quizUrl=${encodeURIComponent(currentPath)}&key=${encodeURIComponent(formData.quizKey)}`, {
         method: 'GET',
         headers: {
           'accept': 'application/json',
