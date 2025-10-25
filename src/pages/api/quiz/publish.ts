@@ -146,7 +146,7 @@ export default async function handler(
     }
 
     // Call the external API with proper authorization
-    const response = await fetch('https://quizzviz-publish-quiz.up.railway.app/publish/quizz', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/quizz`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
