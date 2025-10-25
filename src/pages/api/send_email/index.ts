@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('Sending email with data:', emailData);
 
     // Send the email using the external service
-    const response = await fetch('https://quizzviz-send-emails.up.railway.app/send-email', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SEND_EMAILS_SERVICE_URL}/send-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
