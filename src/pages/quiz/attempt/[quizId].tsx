@@ -849,7 +849,7 @@ if (typeof data.quiz === 'string') {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
       
       <header className="relative z-20 p-6 border-b border-gray-800/50">
-        <div className="max-w-7xl mx-auto flex items-center">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-white flex items-center">
           <Image src="/QuizzViz-logo.png" alt="QuizzViz Logo" width={50} height={50} />
            <span>QuizzViz</span>
@@ -949,10 +949,6 @@ if (typeof data.quiz === 'string') {
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                         <span>Ensure a stable internet connection</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                        <span>Your activity is being recorded and monitored</span>
                       </li>
                     </ul>
                   </div>
