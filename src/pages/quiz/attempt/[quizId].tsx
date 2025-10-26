@@ -1211,17 +1211,17 @@ if (typeof data.quiz === 'string') {
                   }`}>
                     <div className="text-center">
                       <h3 className="text-lg font-semibold text-white mb-2">
-                        {calculateScore().percentage >= 70 
+                        {calculateScore().percentage >= 90 
                           ? 'Excellent Performance!' 
-                          : calculateScore().percentage >= 50 
+                          : calculateScore().percentage >= 70 
                             ? 'Good Effort!' 
                             : 'Keep Practicing!'}
                       </h3>
                       <p className="text-gray-300">
-                        {calculateScore().percentage >= 70 
+                        {calculateScore().percentage >= 90 
                           ? 'You demonstrated strong understanding of the material. Well done!' 
-                          : calculateScore().percentage >= 50 
-                            ? 'You have a solid foundation. Review the topics you missed for improvement.' 
+                          : calculateScore().percentage >= 70
+                            ? 'You have a solid foundation.Review the topics you missed for improvement.' 
                             : 'Consider reviewing the material and practicing more to improve your understanding.'}
                       </p>
                     </div>
@@ -1253,7 +1253,7 @@ if (typeof data.quiz === 'string') {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
-                    {PLAN_TYPE === 'Consumer' ? (
+                    {PLAN_TYPE === 'Consumer' || PLAN_TYPE === 'Elite' ? (
                       <Button 
                         onClick={() => setShowCorrectAnswers(true)}
                         className="h-12 px-8 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
