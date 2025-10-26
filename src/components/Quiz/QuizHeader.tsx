@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ShareQuizModal } from "./ShareQuizModal";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useUser } from "@clerk/nextjs";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuizHeaderProps {
   quiz: QuizSummary | undefined;
@@ -32,6 +32,7 @@ export function QuizHeader({
   quizId
 }: QuizHeaderProps) {
   const { user } = useUser();
+  const { toast } = useToast();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
@@ -96,7 +97,12 @@ export function QuizHeader({
       });
       
       if (publishResponse.ok) {
-        toast.success('Quiz unpublished successfully');
+        toast({
+          title: "Success",
+          description: "Quiz Unpublished Successfully",
+          className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
+
+        });
         // Refresh the page to show the unpublished state
         window.location.reload();
       } else {
@@ -105,7 +111,11 @@ export function QuizHeader({
       }
     } catch (error) {
       console.error('Error unpublishing quiz:', error);
-      toast.error(error instanceof Error ? error.message : 'An error occurred while unpublishing the quiz');
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'An error occurred while unpublishing the quiz',
+        variant: "destructive",
+      });
     } finally {
       setIsUnpublishing(false);
       setIsUnpublishModalOpen(false);
