@@ -7,7 +7,8 @@ import Head from "next/head";
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable, { HookData } from 'jspdf-autotable';
-import { Download, RefreshCcw, Users, Trophy, CheckCircle, Zap, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, RefreshCcw, Users, Trophy, CheckCircle, Zap, BarChart3, ChevronLeft, ChevronRight, Trash2, X, Check, AlertTriangle } from "lucide-react";
+import { toast } from '@/hooks/use-toast';
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
@@ -16,7 +17,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PLAN_TYPE } from "@/config/plans";
-
 
 type QuizResult = {
   quiz_id: string;
@@ -33,8 +33,6 @@ type QuizResult = {
 };
 
 const COLORS = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#06B6D4', '#E11D48', '#C026D3', '#F97316', '#22C55E', '#3B82F6', '#6366F1', '#D946EF', '#FCD34D', '#10B981', '#06B6D4', '#7C3AED', '#DB2777', '#FBBF24'];
-
-
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
@@ -139,6 +137,10 @@ export default function ResultsDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const quizzesPerPage = 5;
   const dataFetched = useRef(false);
+  const [selectedUsers, setSelectedUsers] = useState<{ [key: string]: boolean }>({});
+  const [showDeleteQuizModal, setShowDeleteQuizModal] = useState<{show: boolean, quizId: string, quizTopic: string}>({ show: false, quizId: '', quizTopic: '' });
+  const [showDeleteUsersModal, setShowDeleteUsersModal] = useState<{show: boolean, quizId: string}>({ show: false, quizId: '' });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Check for mobile screen
   useEffect(() => {
@@ -190,6 +192,100 @@ export default function ResultsDashboard() {
     }
   };
 
+  // Reset selections when data changes
+  useEffect(() => {
+    setSelectedUsers({});
+  }, [quizData]);
+
+  // Toggle user selection
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUsers(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
+  };
+
+  // Check if any users are selected
+  const hasSelectedUsers = useMemo(() => {
+    return Object.values(selectedUsers).some(selected => selected);
+  }, [selectedUsers]);
+
+  // Delete quiz data
+  const handleDeleteQuiz = async (quizId: string) => {
+    try {
+      setIsDeleting(true);
+      const response = await fetch(`/api/quiz_result/delete?quiz_id=${quizId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete quiz data');
+      }
+
+      // Refresh data after deletion
+      await fetchResults(user, true);
+      toast({
+        title: 'Success',
+        description: 'Quiz data deleted successfully',
+        variant: 'success',
+        className: '!bg-green-600 !text-white !border-green-600',
+      });
+    } catch (error) {
+      console.error('Error deleting quiz data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete quiz data',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteQuizModal({ show: false, quizId: '', quizTopic: '' });
+    }
+  };
+
+  // Delete selected users
+  const handleDeleteSelectedUsers = async () => {
+    if (!showDeleteUsersModal.quizId) return;
+    
+    const usersToDelete = Object.entries(selectedUsers)
+      .filter(([_, selected]) => selected)
+      .map(([userId]) => {
+        const [username, email] = userId.split('|');
+        return { username, email };
+      });
+
+    try {
+      setIsDeleting(true);
+      const deletePromises = usersToDelete.map(user => 
+        fetch(`/api/quiz_result/delete?quiz_id=${showDeleteUsersModal.quizId}&username=${encodeURIComponent(user.username)}&email=${encodeURIComponent(user.email)}`, {
+          method: 'DELETE',
+        })
+      );
+
+      await Promise.all(deletePromises);
+      
+      // Refresh data after deletion
+      await fetchResults(user, true);
+      setSelectedUsers({});
+      toast({
+        title: 'Success',
+        description: 'Selected results deleted successfully',
+        variant: 'success',
+        className: '!bg-green-600 !text-white !border-green-600',
+      });
+    } catch (error) {
+      console.error('Error deleting user results:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user results',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteUsersModal({ show: false, quizId: '' });
+    }
+  };
+
   // Fetch results with caching
   const fetchResults = useCallback(async (currentUser: typeof user, forceRefresh = false) => {
     if (!dataFetched.current) {
@@ -237,7 +333,7 @@ export default function ResultsDashboard() {
       dataFetched.current = true;
     }
   }, []);
-  
+
   // Manual refresh function
   const handleRefresh = useCallback(async () => {
     if (user && !refreshing) {
@@ -563,6 +659,19 @@ export default function ResultsDashboard() {
                                 <CardTitle className="text-white text-xl sm:text-2xl md:text-3xl font-semibold">{quiz.quiz_topic} Quiz</CardTitle>
                                 <CardDescription className="text-gray-400 mt-1 text-xs sm:text-sm">Score distribution across all attempts. Click on a bar to filter results.</CardDescription>
                               </div>
+                              <Button 
+                                variant="destructive" 
+                                size="sm" 
+                                className="bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2 shadow-lg hover:shadow-red-500/30 transition-all duration-200"
+                                onClick={() => setShowDeleteQuizModal({ 
+                                  show: true, 
+                                  quizId: quiz.details[0]?.quiz_id || '', 
+                                  quizTopic: quiz.quiz_topic 
+                                })}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span>Delete Quiz Data</span>
+                              </Button>
                             </CardHeader>
 
                             <CardContent className="space-y-4">
@@ -667,6 +776,16 @@ export default function ResultsDashboard() {
                                     Candidate Details {selectedScore !== null && <span className="text-xs sm:text-sm md:text-base font-normal text-purple-400"> (Filtered)</span>}
                                   </h2>
                                   <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                                    {hasSelectedUsers && (
+                                      <Button 
+                                        onClick={() => setShowDeleteUsersModal({ show: true, quizId: quiz.details[0]?.quiz_id || '' })}
+                                        variant="destructive"
+                                        className="bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2 text-xs sm:text-sm px-3 py-2"
+                                      >
+                                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4"/>
+                                        <span>Delete ({Object.values(selectedUsers).filter(Boolean).length})</span>
+                                      </Button>
+                                    )}
                                     <Button 
                                       onClick={()=>exportExcel(filteredCandidates)} 
                                       className="bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-lg hover:shadow-purple-500/50 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2 flex-1 sm:flex-initial"
@@ -697,8 +816,18 @@ export default function ResultsDashboard() {
                                       {filteredCandidates.length > 0 ? (
                                         // Sorting by score descending for the table
                                         filteredCandidates.sort((a, b) => b.result.score - a.result.score).map((c:QuizResult, index:number)=>(
-                                        <TableRow key={c.quiz_id} className="bg-zinc-950 border-zinc-800 text-gray-300 hover:bg-zinc-800/80 transition-colors duration-200">
-                                          <TableCell className="font-medium text-xs sm:text-sm">{c.username}</TableCell>
+                                        <TableRow key={`${c.quiz_id}-${c.username}-${c.user_email}-${c.attempt}`} className="bg-zinc-950 border-zinc-800 text-gray-300 hover:bg-zinc-800/80 transition-colors duration-200">
+                                          <TableCell className="font-medium text-xs sm:text-sm">
+                                            <div className="flex items-center gap-2">
+                                              <input 
+                                                type="checkbox" 
+                                                className="h-4 w-4 rounded border-zinc-600 bg-zinc-800 text-purple-500 focus:ring-purple-500 focus:ring-offset-zinc-900"
+                                                checked={!!selectedUsers[`${c.username}|${c.user_email}`]}
+                                                onChange={() => toggleUserSelection(`${c.username}|${c.user_email}`)}
+                                              />
+                                              {c.username}
+                                            </div>
+                                          </TableCell>
                                           <TableCell className="text-xs sm:text-sm hidden md:table-cell truncate max-w-[150px]">{c.user_email}</TableCell>
                                           <TableCell>
                                             <span className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold shadow-md whitespace-nowrap ${
@@ -748,6 +877,88 @@ export default function ResultsDashboard() {
           </div>
         </SignedOut>
       </div>
+
+      {/* Delete Quiz Confirmation Modal */}
+      {showDeleteQuizModal.show && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                Delete Quiz Data
+              </h3>
+              <button 
+                onClick={() => setShowDeleteQuizModal({ show: false, quizId: '', quizTopic: '' })}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-gray-300 mb-8 text-center">
+              This will permanently delete all data for <span className="font-semibold text-white">{showDeleteQuizModal.quizTopic}</span>.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteQuizModal({ show: false, quizId: '', quizTopic: '' })}
+                className="border-zinc-700 hover:bg-zinc-800 text-white px-6"
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => handleDeleteQuiz(showDeleteQuizModal.quizId)}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 px-6 shadow-lg hover:shadow-red-500/30"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Users Confirmation Modal */}
+      {showDeleteUsersModal.show && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                Delete Selected Results
+              </h3>
+              <button 
+                onClick={() => setShowDeleteUsersModal({ show: false, quizId: '' })}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-gray-300 mb-8 text-center">
+              This will permanently delete <span className="font-semibold text-white">{Object.values(selectedUsers).filter(Boolean).length} selected result{Object.values(selectedUsers).filter(Boolean).length !== 1 ? 's' : ''}</span>.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowDeleteUsersModal({ show: false, quizId: '' })}
+                className="border-zinc-700 hover:bg-zinc-800 text-white px-6"
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteSelectedUsers}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 px-6 shadow-lg hover:shadow-red-500/30"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
