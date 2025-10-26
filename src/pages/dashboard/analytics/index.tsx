@@ -227,7 +227,8 @@ export default function ResultsDashboard() {
       toast({
         title: 'Success',
         description: 'Quiz data deleted successfully',
-        className: 'cursor-pointer hover:bg-green-500 hover:text-white hover:border-green-500 hover:shadow-lg',
+        variant: 'success',
+        className: '!bg-green-600 !text-white !border-green-600',
       });
     } catch (error) {
       console.error('Error deleting quiz data:', error);
@@ -268,7 +269,9 @@ export default function ResultsDashboard() {
       setSelectedUsers({});
       toast({
         title: 'Success',
-        description: 'Selected user results deleted successfully',
+        description: 'Selected results deleted successfully',
+        variant: 'success',
+        className: '!bg-green-600 !text-white !border-green-600',
       });
     } catch (error) {
       console.error('Error deleting user results:', error);
@@ -657,17 +660,17 @@ export default function ResultsDashboard() {
                                 <CardDescription className="text-gray-400 mt-1 text-xs sm:text-sm">Score distribution across all attempts. Click on a bar to filter results.</CardDescription>
                               </div>
                               <Button 
-                                variant="ghost" 
+                                variant="destructive" 
                                 size="sm" 
-                                className="text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                                className="bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2 shadow-lg hover:shadow-red-500/30 transition-all duration-200"
                                 onClick={() => setShowDeleteQuizModal({ 
                                   show: true, 
                                   quizId: quiz.details[0]?.quiz_id || '', 
                                   quizTopic: quiz.quiz_topic 
                                 })}
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                <span className="text-xs sm:text-sm">Delete All Data</span>
+                                <Trash2 className="h-4 w-4" />
+                                <span>Delete Quiz Data</span>
                               </Button>
                             </CardHeader>
 
@@ -777,9 +780,10 @@ export default function ResultsDashboard() {
                                       <Button 
                                         onClick={() => setShowDeleteUsersModal({ show: true, quizId: quiz.details[0]?.quiz_id || '' })}
                                         variant="destructive"
-                                        className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2 flex-1 sm:flex-initial"
+                                        className="bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2 text-xs sm:text-sm px-3 py-2"
                                       >
-                                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4"/> Delete Selected
+                                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4"/>
+                                        <span>Delete ({Object.values(selectedUsers).filter(Boolean).length})</span>
                                       </Button>
                                     )}
                                     <Button 
@@ -876,29 +880,28 @@ export default function ResultsDashboard() {
 
       {/* Delete Quiz Confirmation Modal */}
       {showDeleteQuizModal.show && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-white flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
                 Delete Quiz Data
               </h3>
               <button 
                 onClick={() => setShowDeleteQuizModal({ show: false, quizId: '', quizTopic: '' })}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to delete all data for <span className="font-semibold text-white">{showDeleteQuizModal.quizTopic}</span>? 
-              This action cannot be undone and will permanently remove all results for this quiz.
+            <p className="text-gray-300 mb-8 text-center">
+              This will permanently delete all data for <span className="font-semibold text-white">{showDeleteQuizModal.quizTopic}</span>.
             </p>
             <div className="flex justify-end gap-3">
               <Button 
                 variant="outline" 
                 onClick={() => setShowDeleteQuizModal({ show: false, quizId: '', quizTopic: '' })}
-                className="border-zinc-700 hover:bg-zinc-800"
+                className="border-zinc-700 hover:bg-zinc-800 text-white px-6"
                 disabled={isDeleting}
               >
                 Cancel
@@ -907,9 +910,9 @@ export default function ResultsDashboard() {
                 variant="destructive" 
                 onClick={() => handleDeleteQuiz(showDeleteQuizModal.quizId)}
                 disabled={isDeleting}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-red-600 hover:bg-red-700 px-6 shadow-lg hover:shadow-red-500/30"
               >
-                {isDeleting ? 'Deleting...' : 'Delete All Data'}
+                {isDeleting ? 'Deleting...' : 'Delete'}
               </Button>
             </div>
           </div>
@@ -918,29 +921,28 @@ export default function ResultsDashboard() {
 
       {/* Delete Users Confirmation Modal */}
       {showDeleteUsersModal.show && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md animate-in fade-in-0 zoom-in-95">
+            <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-white flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
                 Delete Selected Results
               </h3>
               <button 
                 onClick={() => setShowDeleteUsersModal({ show: false, quizId: '' })}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to delete the selected user results? 
-              This action cannot be undone.
+            <p className="text-gray-300 mb-8 text-center">
+              This will permanently delete <span className="font-semibold text-white">{Object.values(selectedUsers).filter(Boolean).length} selected result{Object.values(selectedUsers).filter(Boolean).length !== 1 ? 's' : ''}</span>.
             </p>
             <div className="flex justify-end gap-3">
               <Button 
                 variant="outline" 
                 onClick={() => setShowDeleteUsersModal({ show: false, quizId: '' })}
-                className="border-zinc-700 hover:bg-zinc-800"
+                className="border-zinc-700 hover:bg-zinc-800 text-white px-6"
                 disabled={isDeleting}
               >
                 Cancel
@@ -949,9 +951,9 @@ export default function ResultsDashboard() {
                 variant="destructive" 
                 onClick={handleDeleteSelectedUsers}
                 disabled={isDeleting}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-red-600 hover:bg-red-700 px-6 shadow-lg hover:shadow-red-500/30"
               >
-                {isDeleting ? 'Deleting...' : `Delete (${Object.values(selectedUsers).filter(Boolean).length})`}
+                {isDeleting ? 'Deleting...' : 'Delete'}
               </Button>
             </div>
           </div>
