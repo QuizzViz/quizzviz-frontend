@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { QuizQuestion } from "./types";
 
 interface QuestionCardProps {
@@ -17,7 +17,8 @@ export function QuestionCard({ question, questionNumber, onEdit, onDelete, isPub
       <CardHeader>
         <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
           <div className="flex items-center gap-3">
-            <Badge>{question.type.replace(/_/g, " ")}</Badge>
+            <span className="text-xl font-bold text-white">{questionNumber}.</span>
+            <Badge className="ml-2">{question.type.replace(/_/g, " ")}</Badge>
           </div>
           {!isPublished && (
             <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
