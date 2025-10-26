@@ -4,7 +4,7 @@ import { QuizSummary, PublishSettings } from "./types";
 import { Share2, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { ShareQuizModal } from "./ShareQuizModal";
-import { UnpublishQuizModal } from "./UnpublishQuizModal";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 
@@ -140,7 +140,7 @@ export function QuizHeader({
             <>
               <Button 
                 variant="outline"
-                className="text-white border-white/20 hover:bg-zinc-800 pointer-events-auto"
+                className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto"
                 onClick={() => setIsUnpublishModalOpen(true)}
               >
                 <EyeOff className="h-4 w-4 mr-2" />
@@ -180,11 +180,14 @@ export function QuizHeader({
         quizKey={settings?.secretKey || ''}
       />
       
-      <UnpublishQuizModal
+      <ConfirmationDialog
         isOpen={isUnpublishModalOpen}
         onClose={() => setIsUnpublishModalOpen(false)}
         onConfirm={handleUnpublishClick}
-        isLoading={isUnpublishing}
+        title="Unpublish Quiz"
+        description="Are you sure you want to unpublish this quiz? The quiz will no longer be accessible to others."
+        confirmText={isUnpublishing ? 'Unpublishing...' : 'Yes, Unpublish'}
+        variant="default"
       />
     </header>
   );
