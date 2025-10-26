@@ -1,7 +1,7 @@
 export type PlanType = 'Free' | 'Consumer' | 'Elite' | 'Business';
 
 // This will be replaced with an API call later
-export const PLAN_TYPE: PlanType = 'Business' ; 
+export const PLAN_TYPE: PlanType = 'Elite' ; 
 
 export const PLAN_LIMITS = {
   Free: {

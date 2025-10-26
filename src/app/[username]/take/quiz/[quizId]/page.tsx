@@ -1129,10 +1129,6 @@ export default function QuizPage({ params }: QuizPageProps) {
                         <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                         <span>Ensure a stable internet connection</span>
                       </li>
-                      <li className="flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                        <span>Your activity is being recorded and monitored</span>
-                      </li>
                     </ul>
                   </div>
                 </div>

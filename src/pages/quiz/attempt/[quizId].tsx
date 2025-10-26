@@ -849,7 +849,7 @@ if (typeof data.quiz === 'string') {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
       
       <header className="relative z-20 p-6 border-b border-gray-800/50">
-        <div className="max-w-7xl mx-auto flex items-center">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-white flex items-center">
           <Image src="/QuizzViz-logo.png" alt="QuizzViz Logo" width={50} height={50} />
            <span>QuizzViz</span>
@@ -949,10 +949,6 @@ if (typeof data.quiz === 'string') {
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                         <span>Ensure a stable internet connection</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                        <span>Your activity is being recorded and monitored</span>
                       </li>
                     </ul>
                   </div>
@@ -1215,17 +1211,17 @@ if (typeof data.quiz === 'string') {
                   }`}>
                     <div className="text-center">
                       <h3 className="text-lg font-semibold text-white mb-2">
-                        {calculateScore().percentage >= 70 
+                        {calculateScore().percentage >= 90 
                           ? 'Excellent Performance!' 
-                          : calculateScore().percentage >= 50 
+                          : calculateScore().percentage >= 70 
                             ? 'Good Effort!' 
                             : 'Keep Practicing!'}
                       </h3>
                       <p className="text-gray-300">
-                        {calculateScore().percentage >= 70 
+                        {calculateScore().percentage >= 90 
                           ? 'You demonstrated strong understanding of the material. Well done!' 
-                          : calculateScore().percentage >= 50 
-                            ? 'You have a solid foundation. Review the topics you missed for improvement.' 
+                          : calculateScore().percentage >= 70
+                            ? 'You have a solid foundation.Review the topics you missed for improvement.' 
                             : 'Consider reviewing the material and practicing more to improve your understanding.'}
                       </p>
                     </div>
@@ -1257,7 +1253,7 @@ if (typeof data.quiz === 'string') {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
-                    {PLAN_TYPE === 'Consumer' ? (
+                    {PLAN_TYPE === 'Consumer' || PLAN_TYPE === 'Elite' ? (
                       <Button 
                         onClick={() => setShowCorrectAnswers(true)}
                         className="h-12 px-8 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
