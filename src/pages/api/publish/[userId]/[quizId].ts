@@ -184,7 +184,6 @@ export default async function handler(
               },
               body: JSON.stringify({
                 is_publish: false,
-                // Keep all other fields the same by spreading the existing quiz data
                 ...quizData
               })
             }
