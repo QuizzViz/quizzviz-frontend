@@ -495,10 +495,10 @@ export default function ResultsDashboard() {
    if (loading || !isLoaded) {
     return (
       <div className="flex items-center justify-center h-screen bg-black">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-          <p className="text-gray-400 text-sm">Loading analytics...</p>
-        </div>
+        <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+
       </div>
     );
   }
@@ -661,15 +661,15 @@ export default function ResultsDashboard() {
                               </div>
                               <Button 
                                 variant="destructive" 
-                                size="sm" 
-                                className="bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2 shadow-lg hover:shadow-red-500/30 transition-all duration-200"
+                                size="default" 
+                                className="bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2  transition-all duration-200"
                                 onClick={() => setShowDeleteQuizModal({ 
                                   show: true, 
                                   quizId: quiz.details[0]?.quiz_id || '', 
                                   quizTopic: quiz.quiz_topic 
                                 })}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-6 w-6" />
                                 <span>Delete Quiz Data</span>
                               </Button>
                             </CardHeader>
@@ -788,13 +788,13 @@ export default function ResultsDashboard() {
                                     )}
                                     <Button 
                                       onClick={()=>exportExcel(filteredCandidates)} 
-                                      className="bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-lg hover:shadow-purple-500/50 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2 flex-1 sm:flex-initial"
+                                      className="bg-purple-600 hover:bg-purple-700 text-white font-semibold flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2 flex-1 sm:flex-initial"
                                     >
                                       <Download className="h-3 w-3 sm:h-4 sm:w-4"/> Excel ({filteredCandidates.length})
                                     </Button>
                                     <Button 
                                       onClick={()=>exportPDF(filteredCandidates)} 
-                                      className="bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-lg hover:shadow-purple-500/50 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2 flex-1 sm:flex-initial"
+                                      className="bg-purple-600 hover:bg-purple-700 text-white font-semibold flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-2 flex-1 sm:flex-initial"
                                     >
                                       <Download className="h-3 w-3 sm:h-4 sm:w-4"/> PDF ({filteredCandidates.length})
                                     </Button>
@@ -895,7 +895,7 @@ export default function ResultsDashboard() {
               </button>
             </div>
             <p className="text-gray-300 mb-8 text-center">
-              This will permanently delete all data for <span className="font-semibold text-white">{showDeleteQuizModal.quizTopic}</span>.
+              This will permanently delete all data for <span className="font-semibold text-white">{showDeleteQuizModal.quizTopic} Quiz</span>.
             </p>
             <div className="flex justify-end gap-3">
               <Button 
