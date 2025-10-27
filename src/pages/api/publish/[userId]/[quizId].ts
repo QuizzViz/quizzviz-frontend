@@ -23,6 +23,7 @@ type PublishedQuiz = {
   theory_questions_percentage: number;
   code_analysis_questions_percentage: number;
   quiz: any[];
+  is_publish?: boolean; // Add optional is_publish property
 };
 
 export default async function handler(
@@ -158,7 +159,69 @@ export default async function handler(
       return;
     }
 
-    const quizData: PublishedQuiz = await response.json();
+    let quizData: PublishedQuiz = await response.json();
+    
+    // Check if the quiz has expired
+    if (quizData.quiz_expiration_time) {
+      const expirationDate = new Date(quizData.quiz_expiration_time);
+      const now = new Date();
+      console.log(`Time now: ${now}`);
+      console.log(`Expiration time: ${expirationDate}`);
+      
+      if (now > expirationDate) {
+        console.log(`Quiz ${quizId} has expired, unpublishing...`);
+        
+        try {
+          // First, update the quiz in the quiz generation service
+          const updateResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL}/user/${paramUserId}/quizz/${quizId}`,
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'accept': 'application/json'
+              },
+              body: JSON.stringify({
+                is_publish: false,
+                // Keep all other fields the same by spreading the existing quiz data
+                ...quizData
+              })
+            }
+          );
+
+          if (!updateResponse.ok) {
+            console.error('Failed to update quiz generation service:', await updateResponse.text());
+          }
+
+          // Then, call the unpublish endpoint
+          const deleteResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${paramUserId}/quiz/${quizId}`,
+            {
+              method: 'DELETE',
+              headers: {
+                'accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+
+          if (deleteResponse.ok) {
+            console.log(`Successfully unpublished expired quiz ${quizId}`);
+            // Update the quiz data to reflect it's no longer published
+            quizData = {
+              ...quizData,
+              is_publish: false,
+              quiz_public_link: ''
+            };
+          } else {
+            console.error('Failed to unpublish expired quiz:', await deleteResponse.text());
+          }
+        } catch (error) {
+          console.error('Error unpublishing expired quiz:', error);
+        }
+      }
+    }
     
     res.status(200).json({
       success: true,
