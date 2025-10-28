@@ -22,7 +22,8 @@ interface CreateQuizCardProps {
 }
 
 // Main container composing all sub-parts and business logic via a hook
-export default function CreateQuizCard({ maxQuestions = currentPlan.maxQuestions }: CreateQuizCardProps) {
+export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: CreateQuizCardProps) {
+  const maxQuestions = propMaxQuestions || currentPlan().maxQuestions;
   const [codePercentage, setCodePercentage] = useState(50);
   
   const {
@@ -51,7 +52,7 @@ export default function CreateQuizCard({ maxQuestions = currentPlan.maxQuestions
   } = useCreateQuizV2();
 
   const handleGenerateWithLimit = (codePct: number) => {
-    const effectiveMax = Math.min(maxQuestions, currentPlan.maxQuestions);
+    const effectiveMax = Math.min(maxQuestions, currentPlan().maxQuestions);
     if (count > effectiveMax) {
       setError(`Maximum ${effectiveMax} questions allowed in your plan`);
       return;
