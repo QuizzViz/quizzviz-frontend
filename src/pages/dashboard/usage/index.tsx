@@ -8,7 +8,7 @@ import Head from "next/head";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 
-export default function BillingPage() {
+export default function UsagePage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -30,7 +30,7 @@ export default function BillingPage() {
     <>
       <Head>
         <link rel="icon" href="/favicon.ico" />
-        <title>Billing | QuizzViz</title>
+        <title>Usage | QuizzViz</title>
         <meta
           name="description"
           content="View and manage your billing, subscriptions, and invoices."
@@ -50,9 +50,9 @@ export default function BillingPage() {
                 userEmail={user?.emailAddresses?.[0]?.emailAddress}
               />
               <main className="flex-1 p-6 space-y-6">
-                <h1 className="text-2xl font-semibold">Billing</h1>
+                <h1 className="text-2xl font-semibold">Usage</h1>
                 <p className="text-white/70">Manage your plan and payment information.</p>
-                <div className="border border-white/10 rounded-lg p-6">Billing portal coming soon.</div>
+                <div className="border border-white/10 rounded-lg p-6">Usage portal coming soon.</div>
               </main>
             </div>
           </div>
