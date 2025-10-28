@@ -12,7 +12,7 @@ import { DashboardHeader } from "@/components/Dashboard/Header";
 import { GenerationQueue } from "@/components/Dashboard/Queue";
 import { QuizLibrary } from "@/components/Dashboard/Library";
 import { queuedQuizzes, previousQuizzes } from "@/components/Dashboard/data";
-import { currentPlan, PLAN_TYPE } from "@/config/plans";
+import { currentPlan } from "@/config/plans";
 import { PlanInfoBanner } from "@/components/PlanInfoBanner";
 
 // Dashboard route with auth guard and modular sections
@@ -54,7 +54,7 @@ export default function Dashboard() {
           <div className="flex-1 flex flex-col">
             <DashboardHeader userName={user?.fullName || user?.firstName || "User"} userEmail={user?.emailAddresses?.[0]?.emailAddress} />
             <main className="flex-1 p-6 space-y-8">
-              <CreateQuizCard maxQuestions={currentPlan.maxQuestions} />
+              <CreateQuizCard maxQuestions={currentPlan().maxQuestions} />
               {/* <GenerationQueue items={queuedQuizzes} /> */}
               {/* <QuizLibrary items={previousQuizzes} /> */}
               <PlanInfoBanner />

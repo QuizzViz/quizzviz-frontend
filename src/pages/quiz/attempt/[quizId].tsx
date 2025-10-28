@@ -14,7 +14,7 @@ import { Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, AlertCircle, Arro
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { formatTime } from '@/lib/utils';
-import { PLAN_TYPE } from '@/config/plans';
+import { useUserPlanContext } from '@/contexts/UserPlanContext';
 
 interface Question {
   id: string | number;
@@ -46,8 +46,10 @@ const QuizAttemptPage = () => {
     setIsMobile(isMobileDevice);
   }, []);
 
+  const { plan } = useUserPlanContext();
+
   // Show mobile restriction message for business plan users on mobile
-  if (isMobile && PLAN_TYPE === 'Business') {
+  if (isMobile && plan === 'Business') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4">
         <div className="max-w-md w-full bg-gray-800/80 backdrop-blur-md rounded-2xl p-8 text-center border border-white/10 shadow-2xl">
@@ -113,7 +115,7 @@ const QuizAttemptPage = () => {
     setIsMobileDevice(mobileCheck());
     
     // Show mobile restriction for business plan users
-    if (mobileCheck() && PLAN_TYPE === 'Business') {
+    if (mobileCheck() && plan === 'Business') {
       return;
     }
 
@@ -1253,7 +1255,7 @@ if (typeof data.quiz === 'string') {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
-                    {PLAN_TYPE === 'Consumer' || PLAN_TYPE === 'Elite' ? (
+                    {plan === 'Consumer' || plan === 'Elite' ? (
                       <Button 
                         onClick={() => setShowCorrectAnswers(true)}
                         className="h-12 px-8 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"

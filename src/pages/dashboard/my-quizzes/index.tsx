@@ -7,7 +7,7 @@ import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import Head from "next/head";
 import Link from "next/link";
 import { Zap, BookOpenCheck, MoreVertical, Trash2 } from "lucide-react";
-import { PLAN_TYPE } from "@/config/plans";
+import { useUserPlanContext } from "@/contexts/UserPlanContext";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
@@ -58,12 +58,13 @@ export default function MyQuizzesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
   
-  // Get user's plan type from metadata or default to Free
-
-  let isFreePlan:Boolean =  PLAN_TYPE === 'Free';
-  let isConsumerPlan:Boolean = PLAN_TYPE === 'Consumer';
-  let isBusinessPlan:Boolean = PLAN_TYPE === 'Business';
-  let isElitePlan:Boolean = PLAN_TYPE === 'Elite';
+  // Get user's plan from context
+  const { plan, isLoading: isPlanLoading } = useUserPlanContext();
+  
+  const isFreePlan = plan === 'Free';
+  const isConsumerPlan = plan === 'Consumer';
+  const isBusinessPlan = plan === 'Business';
+  const isElitePlan = plan === 'Elite';
 
   useEffect(() => {
     if (isLoaded && !user) router.push("/signin");

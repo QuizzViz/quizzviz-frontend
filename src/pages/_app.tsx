@@ -10,6 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { QuizGenerationProvider } from "@/contexts/QuizGenerationContext";
 import { GenerationStatusIndicator } from "@/components/Dashboard/GenerationStatusIndicator";
+import { UserPlanProvider } from "@/contexts/UserPlanContext";
 import { useEffect } from 'react'
 import { Router } from 'next/router'
 import posthog from 'posthog-js'
@@ -57,14 +58,18 @@ function MyApp({ Component, pageProps }: AppProps) {
     >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          {!hideNavbar && <Navbar />} {/* Hide on /dashboard and /quiz */}
-          <QuizGenerationProvider>
-                <PostHogProvider client={posthog}>
-            <Component {...pageProps} />
-            </PostHogProvider>
-            <Toaster />
-            <GenerationStatusIndicator />
-          </QuizGenerationProvider>
+          <PostHogProvider client={posthog}>
+            <UserPlanProvider>
+              <QuizGenerationProvider>
+                <div className="min-h-screen bg-background">
+                  {!hideNavbar && <Navbar />}
+                  <Component {...pageProps} />
+                  <Toaster />
+                  <GenerationStatusIndicator />
+                </div>
+              </QuizGenerationProvider>
+            </UserPlanProvider>
+          </PostHogProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ClerkProvider>

@@ -3,7 +3,8 @@ import { useRouter } from 'next/router';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/nextjs';
-import { PLAN_TYPE } from '@/config/plans';
+import { useUserPlan } from '@/hooks/useUserPlan';
+import { getPlanLimits } from '@/config/plans';
 
 interface QuizGenerationContextType {
   isGenerating: boolean;
@@ -29,6 +30,9 @@ export function QuizGenerationProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUser();
+const { data: userPlan } = useUserPlan();
+const currentPlan = getPlanLimits(userPlan?.plan_name || 'Free');
+  const maxQuizzesPerMonth = currentPlan.maxQuizzes;
 
   useEffect(() => {
     // Check for existing generation state on mount
@@ -105,7 +109,7 @@ export function QuizGenerationProvider({ children }: { children: ReactNode }) {
       if (data?.quiz_id || data?.id) {
         const quizId = data.quiz_id || data.id;
         await queryClient.invalidateQueries({ queryKey: ['quizzes'] });
-        if (PLAN_TYPE === 'Business') {
+        if (userPlan?.plan_name === 'Business') {
         let goToQuiz = () => router.push(`/quiz/${quizId}`);
         toast({
           title: "Quiz generated successfully!",

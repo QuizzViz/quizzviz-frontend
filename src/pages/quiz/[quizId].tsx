@@ -8,19 +8,26 @@ import { useToast } from "@/hooks/use-toast";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { QuizEditor } from "@/components/Quiz/QuizEditor";
-import { PLAN_TYPE } from "@/config/plans";
+import { useUserPlanContext } from "@/contexts/UserPlanContext";
 
 export default function QuizDetailsPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const { toast } = useToast();
   
+  const { plan, isLoading: isPlanLoading } = useUserPlanContext();
+
   // Redirect to 404 if not a Business plan user
   useEffect(() => {
-    if (PLAN_TYPE !== 'Business') {
-      router.push('/404');
+    if (!isPlanLoading && plan !== 'Business') {
+      toast({
+        title: 'Access Denied',
+        description: 'This feature is only available for Business plan users.',
+        variant: 'destructive',
+      });
+      router.push('/pricing');
     }
-  }, [router, toast]);
+  }, [router, toast, plan, isPlanLoading]);
   
   // Get the quiz ID from the URL
   const { quizId } = router.query as { quizId?: string };
@@ -54,8 +61,8 @@ export default function QuizDetailsPage() {
             />
             
             <main className="flex-1 p-6 pt-14 relative">
-              {!isLoaded ? (
-                <div className="flex items-center justify-center py-10">
+              {(!isLoaded || isPlanLoading) ? (
+                <div className="flex items-center justify-center h-screen">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
               ) : !quizId ? (

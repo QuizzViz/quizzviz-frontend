@@ -2,9 +2,10 @@ import { FC } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { NumberInput } from "@/components/ui/number-input";
-import { currentPlan, PLAN_TYPE } from "@/config/plans";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { getPlanLimits } from "@/config/plans";
 
 // Renders difficulty select and number-of-questions input side-by-side
 const DifficultyCountRow: FC<{
@@ -14,6 +15,9 @@ const DifficultyCountRow: FC<{
   setCount: (v: number) => void;
   maxQuestions?: number;
 }> = ({ difficulty, setDifficulty, count, setCount, maxQuestions = 100 }) => {
+  const { data: userPlan } = useUserPlan();
+  const planName = userPlan?.plan_name || 'Free';
+  const currentPlan = getPlanLimits(planName);
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
@@ -32,7 +36,7 @@ const DifficultyCountRow: FC<{
             {currentPlan.availableDifficulties.includes('Masters') && (
               <SelectItem value="Masters">Masters level</SelectItem>
             )}
-            {PLAN_TYPE === 'Free' ? (
+            {planName === 'Free' ? (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

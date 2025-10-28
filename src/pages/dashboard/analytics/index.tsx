@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { getPlanLimits } from "@/config/plans";
 import Head from "next/head";
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -16,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PLAN_TYPE } from "@/config/plans";
 
 type QuizResult = {
   quiz_id: string;
@@ -127,7 +128,11 @@ const exportPDF = (data: QuizResult[]) => {
 };
 
 export default function ResultsDashboard() {
-  const { user, isLoaded } = useUser();
+const { user } = useUser();
+const { data: userPlan, isLoading: isPlanLoading } = useUserPlan();
+const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
+  const router = useRouter();
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [quizData, setQuizData] = useState<QuizResult[]>([]);
@@ -348,12 +353,12 @@ export default function ResultsDashboard() {
 
   useEffect(() => {
     // Check if data is loaded, user is available, AND we haven't fetched yet
-    if (isLoaded && user && !dataFetched.current) {
+    if (user && !dataFetched.current) {
         dataFetched.current = true; // Mark as fetched
         fetchResults(user);
     }
   // We only run this when isLoaded or user changes. fetchResults is stable now.
-  }, [isLoaded, user, fetchResults]); 
+  }, [user, fetchResults]); 
 
   // Group and bin data by quiz topic with 5% increments (0-100%)
   const analyticsPerQuiz = useMemo(() => {
@@ -492,7 +497,7 @@ export default function ResultsDashboard() {
     );
   };
 
-   if (loading || !isLoaded) {
+   if (loading || isPlanLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-black">
         <div className="flex items-center justify-center h-screen">
@@ -503,7 +508,7 @@ export default function ResultsDashboard() {
     );
   }
 
-  if (PLAN_TYPE !== "Business") {
+  if (!canViewAdvancedAnalytics) {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <SignedIn>

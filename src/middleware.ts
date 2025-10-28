@@ -1,6 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import { PLAN_TYPE } from './config/plans';
 
 // Define public routes
 const isPublicRoute = createRouteMatcher([
@@ -60,24 +59,16 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.next();
     }
 
-    // User is authenticated - apply plan restrictions
+    // User is authenticated - check for mobile restrictions
     const isMobile = /iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(ua);
-    const userPlan = PLAN_TYPE;
-
-    if (
-      userPlan === 'Business' &&
-      isMobile &&
-      /^\/[^/]+\/take\/quiz\/[^/]+$/.test(pathname)
-    ) {
-      return NextResponse.redirect(new URL('/not-allowed', request.url));
-    }
-
-    if (
-      userPlan === 'Elite' &&
-      isMobile &&
-      /^\/quiz\/attempt\/[^/]+$/.test(pathname)
-    ) {
-      return NextResponse.redirect(new URL('/not-allowed', request.url));
+    
+    // For middleware, we'll check the plan on the client side
+    // as we can't access the user's plan in middleware directly
+    if (pathname.startsWith('/quiz/') && isMobile) {
+      // This is a mobile device trying to access a quiz
+      // We'll let it through and handle the restriction in the component
+      // where we have access to the user's plan
+      return NextResponse.next();
     }
 
     return NextResponse.next();

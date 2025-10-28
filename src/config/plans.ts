@@ -1,37 +1,65 @@
-export type PlanType = 'Free' | 'Consumer' | 'Elite' | 'Business';
+import { PlanType } from '@/hooks/useUserPlan';
 
-// This will be replaced with an API call later
-export const PLAN_TYPE: PlanType = 'Business' ; 
+export type PlanLimits = {
+  maxQuestions: number;
+  maxQuizzes: number;
+  availableDifficulties: string[];
+  hasAnalytics: boolean;
+  hasBulkGenerate: boolean;
+};
 
-export const PLAN_LIMITS = {
-  Free: {
-    maxQuestions: 10,
+type PlanLimitsMap = {
+  [K in NonNullable<PlanType>]: PlanLimits;
+};
+
+export const PLAN_LIMITS: PlanLimitsMap = {
+  'Free': {
+    maxQuestions: 5,
     maxQuizzes: 2,
+    availableDifficulties: ['Beginner', 'Intermediate'],
     hasAnalytics: false,
-    hasProctoring: true,
-    availableDifficulties: ['High School', 'Bachelors', 'Masters']
+    hasBulkGenerate: false,
   },
-  Consumer: {
-    maxQuestions: 60,
+  'Consumer': {
+    maxQuestions: 10,
     maxQuizzes: 10,
+    availableDifficulties: ['Beginner', 'Intermediate', 'Advanced'],
     hasAnalytics: false,
-    hasProctoring: true,
-    availableDifficulties: ['High School', 'Bachelors', 'Masters', 'PhD']
+    hasBulkGenerate: false,
   },
-  Elite: {
-    maxQuestions: 150,
+  'Elite': {
+    maxQuestions: 20,
     maxQuizzes: 30,
-    hasAnalytics: false,
-    hasProctoring: true,
-    availableDifficulties: ['High School', 'Bachelors', 'Masters', 'PhD']
-  },
-  Business: {
-    maxQuestions: 200,
-    maxQuizzes: 30,
+    availableDifficulties: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
     hasAnalytics: true,
-    hasProctoring: true,
-    availableDifficulties: ['High School', 'Bachelors', 'Masters', 'PhD']
+    hasBulkGenerate: true,
+  },
+  'Business': {
+    maxQuestions: 50,
+    maxQuizzes: 1000,
+    availableDifficulties: ['Beginner', 'Intermediate', 'Advanced', 'Expert', 'Masters'],
+    hasAnalytics: true,
+    hasBulkGenerate: true,
   }
 } as const;
 
-export const currentPlan = PLAN_LIMITS[PLAN_TYPE];
+// This is now a function that takes a plan type and returns the limits
+export const getPlanLimits = (plan: PlanType | null): PlanLimits => {
+  if (!plan) return PLAN_LIMITS['Free'];
+  return PLAN_LIMITS[plan];
+};
+
+// For backward compatibility with components that haven't been updated yet
+declare global {
+  // eslint-disable-next-line no-var
+  var __CURRENT_PLAN__: PlanType | null;
+}
+
+// This will be set by the _app.tsx wrapper
+export const currentPlan = (): PlanLimits => {
+  if (!globalThis.__CURRENT_PLAN__) {
+    console.warn('currentPlan called before plan was initialized. Defaulting to Free plan.');
+    return PLAN_LIMITS['Free'];
+  }
+  return PLAN_LIMITS[globalThis.__CURRENT_PLAN__];
+};
