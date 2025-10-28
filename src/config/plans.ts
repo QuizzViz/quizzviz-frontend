@@ -14,30 +14,30 @@ type PlanLimitsMap = {
 
 export const PLAN_LIMITS: PlanLimitsMap = {
   'Free': {
-    maxQuestions: 5,
+    maxQuestions: 10,
     maxQuizzes: 2,
-    availableDifficulties: ['Beginner', 'Intermediate'],
+    availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level'],
     hasAnalytics: false,
     hasBulkGenerate: false,
   },
   'Consumer': {
-    maxQuestions: 10,
+    maxQuestions: 60,
     maxQuizzes: 10,
-    availableDifficulties: ['Beginner', 'Intermediate', 'Advanced'],
+    availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level','PhD Level'],
     hasAnalytics: false,
     hasBulkGenerate: false,
   },
   'Elite': {
-    maxQuestions: 20,
+    maxQuestions: 150,
     maxQuizzes: 30,
-    availableDifficulties: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
+    availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level','PhD Level'],
     hasAnalytics: true,
     hasBulkGenerate: true,
   },
   'Business': {
-    maxQuestions: 50,
-    maxQuizzes: 1000,
-    availableDifficulties: ['Beginner', 'Intermediate', 'Advanced', 'Expert', 'Masters'],
+    maxQuestions: 200,
+    maxQuizzes: 30,
+    availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level','PhD Level'],
     hasAnalytics: true,
     hasBulkGenerate: true,
   }

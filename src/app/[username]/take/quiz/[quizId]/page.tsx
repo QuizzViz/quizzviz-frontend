@@ -10,8 +10,8 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
-import { toast } from 'sonner';
-import { Toaster } from 'sonner';
+
+import { toast } from "@/hooks/use-toast";
 import { formatTime } from '@/lib/utils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
@@ -187,13 +187,18 @@ export default function QuizPage({ params }: QuizPageProps) {
       // FIXED: Show notification with dynamic attempt numbers
       if (hasReachedMax && showToast) {
         setShowingMaxAttemptsNotification(true);
-        toast.error(`Maximum attempts reached! You've used ${currentAttempt} of ${maxAttempts} attempts.`, {
+        const toastId = toast({
+          variant: 'destructive',
+          title: 'Maximum attempts reached!',
+          description: `You've used ${currentAttempt} of ${maxAttempts} attempts.`,
           duration: 5000,
-          className: 'font-medium',
-          onAutoClose: () => {
-            setShowingMaxAttemptsNotification(false);
-          }
+          className: 'font-medium'
         });
+        
+        // Use a separate effect or timeout to handle the notification state
+        setTimeout(() => {
+          setShowingMaxAttemptsNotification(false);
+        }, 5000);
       }
       
       return !hasReachedMax;
@@ -476,21 +481,16 @@ export default function QuizPage({ params }: QuizPageProps) {
         if (document.hidden && !hasSubmittedRef.current) {
           activityMonitorRef.current.warnings = 1;
           showWarningMessage('Quiz terminated due to tab switch!');
-          toast.error('Quiz terminated due to violation!', {
-            style: { 
-              background: '#1F2937', 
-              color: '#EF4444', 
-              border: '1px solid #374151',
-              maxWidth: '500px',
-              margin: '0 auto',
-              textAlign: 'center',
-              borderRadius: '0.5rem',
-              fontSize: '0.95rem',
-              padding: '1rem',
-            },
-            duration: 10000,
-            position: 'top-center',
+          
+          // Show destructive toast for violation
+          toast({
+            variant: 'destructive',
+            title: 'Quiz Terminated',
+            description: 'The quiz has been terminated due to a violation of the test rules.',
+            duration: 5000,
+            className: 'font-medium'
           });
+          
           setSelectedAnswers(currentAnswers => {
             submitQuiz(currentAnswers);
             return currentAnswers;
@@ -746,12 +746,10 @@ export default function QuizPage({ params }: QuizPageProps) {
       console.error('Verification error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to verify quiz key';
       setVerificationError(errorMessage);
-      toast.error(errorMessage, {
-        style: { 
-          background: '#1F2937', 
-          color: '#EF4444', 
-          border: '1px solid #374151' 
-        }
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
       });
       return false;
     } finally {
@@ -787,10 +785,13 @@ export default function QuizPage({ params }: QuizPageProps) {
       
       // Show notification with dynamic attempt numbers
       if (hasReachedMax) {
-        toast.error(`Maximum attempts reached! You've used ${currentAttempt} of ${maxAttempts} attempts.`, {
-          duration: 5000,
-          className: 'font-medium',
-        });
+       toast({
+  variant: "destructive",
+  title: "Maximum attempts reached!",
+  description: `You've used ${currentAttempt} of ${maxAttempts} attempts.`,
+  duration: 5000,
+  className: 'font-medium',
+});
       }
       
       return !hasReachedMax;
@@ -818,7 +819,10 @@ export default function QuizPage({ params }: QuizPageProps) {
       // FIXED: Check with actual max_attempts from attemptsInfo
       if (attemptsInfo.current >= attemptsInfo.max) {
         setIsButtonLoading(false);
-        toast.error(`Maximum attempts reached! You've used ${attemptsInfo.current} of ${attemptsInfo.max} attempts.`, {
+        toast({
+          variant: 'destructive',
+          title: 'Maximum attempts reached!',
+          description: `You've used ${attemptsInfo.current} of ${attemptsInfo.max} attempts.`,
           duration: 5000,
           className: 'font-medium',
         });
