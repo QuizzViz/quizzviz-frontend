@@ -8,13 +8,16 @@ import { useUserPlan } from "@/hooks/useUserPlan";
 import { getPlanLimits } from "@/config/plans";
 
 // Renders difficulty select and number-of-questions input side-by-side
+// Ensure we have a default value for difficulty
+const defaultDifficulty = 'Bachelors Level';
+
 const DifficultyCountRow: FC<{
   difficulty: string;
   setDifficulty: (v: string) => void;
   count: number;
   setCount: (v: number) => void;
   maxQuestions?: number;
-}> = ({ difficulty, setDifficulty, count, setCount, maxQuestions = 100 }) => {
+}> = ({ difficulty = defaultDifficulty, setDifficulty, count, setCount, maxQuestions = 100 }) => {
   const { data: userPlan } = useUserPlan();
   const planName = userPlan?.plan_name || 'Free';
   const currentPlan = getPlanLimits(planName);
@@ -22,27 +25,25 @@ const DifficultyCountRow: FC<{
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
         <Label className="text-sm font-medium text-white block">Difficulty Level</Label>
-        <Select value={difficulty} onValueChange={setDifficulty}>
+        <Select 
+          value={difficulty || defaultDifficulty} 
+          onValueChange={setDifficulty}
+          defaultValue={defaultDifficulty}
+        >
           <SelectTrigger className="bg-background/50 border-border text-foreground h-10 w-full">
-            <SelectValue placeholder="Select difficulty" />
+            <SelectValue>{difficulty || defaultDifficulty}</SelectValue>
           </SelectTrigger>
           <SelectContent className="bg-background border-border text-foreground">
-            {currentPlan.availableDifficulties.includes('High School') && (
-              <SelectItem value="High School">High School level</SelectItem>
-            )}
-            {currentPlan.availableDifficulties.includes('Bachelors') && (
-              <SelectItem value="Bachelors">Bachelors level</SelectItem>
-            )}
-            {currentPlan.availableDifficulties.includes('Masters') && (
-              <SelectItem value="Masters">Masters level</SelectItem>
-            )}
+            <SelectItem value="High School Level">High School level</SelectItem>
+            <SelectItem value="Bachelors Level">Bachelors Level</SelectItem>
+            <SelectItem value="Masters Level">Masters level</SelectItem>
             {planName === 'Free' ? (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="relative">
                       <SelectItem 
-                        value="PhD" 
+                        value="PhD Level" 
                         disabled 
                         className="opacity-50 cursor-not-allowed"
                       >
@@ -59,7 +60,7 @@ const DifficultyCountRow: FC<{
                 </Tooltip>
               </TooltipProvider>
             ) : (
-              <SelectItem value="PhD">PhD level</SelectItem>
+              <SelectItem value="PhD Level">PhD level</SelectItem>
             )}
           </SelectContent>
         </Select>
