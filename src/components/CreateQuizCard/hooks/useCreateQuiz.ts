@@ -174,8 +174,8 @@ export function useCreateQuiz(): UseCreateQuizReturn {
         // Handle topic-related errors
         if (responseData.error.includes('not related to software')) {
           const topicError: TopicError = {
-            error: responseData.error || 'Invalid Topic',
-            message: responseData.message || 'The topic is not related to software development.',
+            error: responseData.error,
+            message: '',
             suggestions: [
               'Programming languages (e.g., Python, JavaScript, Java)',
               'Web development (e.g., React, Node.js, CSS)',
