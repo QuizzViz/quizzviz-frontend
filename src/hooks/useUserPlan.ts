@@ -8,29 +8,19 @@ export interface UserPlanResponse {
 }
 
 const fetchUserPlan = async (userId: string | null | undefined, getToken: () => Promise<string | null>): Promise<UserPlanResponse> => {
-  if (!userId) {
-    throw new Error('User not authenticated');
-  }
+  if (!userId) throw new Error('User not authenticated');
   
   const token = await getToken();
-  if (!token) {
-    throw new Error('No authentication token available');
-  }
+  if (!token) throw new Error('No auth token');
 
-  const response = await fetch(`/api/user_plan/${encodeURIComponent(userId)}`, {
+  const response = await fetch(`/api/user_plan/${userId}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
     },
-    credentials: 'include', // Ensure cookies are sent with the request
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const errorMessage = errorData?.error || 'Failed to fetch user plan';
-    const errorDetails = errorData?.details || 'Unknown error';
-    console.error(`User plan fetch failed: ${errorMessage}`, { status: response.status, details: errorDetails });
-    throw new Error(`${errorMessage}: ${errorDetails}`);
+    throw new Error('Failed to fetch user plan');
   }
 
   return response.json();
@@ -41,14 +31,9 @@ export const useUserPlan = () => {
   const { getToken } = useAuth();
   
   const fetchPlan = async () => {
-    if (!user?.id) {
-      throw new Error('No user ID available');
-    }
+    if (!user?.id) throw new Error('No user ID');
     const token = await getToken();
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-    return fetchUserPlan(user.id, () => getToken());
+    return fetchUserPlan(user.id, () => Promise.resolve(token));
   };
 
   return useQuery<UserPlanResponse, Error>({
