@@ -1,4 +1,4 @@
-import { PlanType } from '@/hooks/useUserPlan';
+import { PlanType, useUserPlan } from '@/hooks/useUserPlan';
 
 export type PlanLimits = {
   maxQuestions: number;
@@ -48,18 +48,5 @@ export const getPlanLimits = (plan: PlanType | null): PlanLimits => {
   if (!plan) return PLAN_LIMITS['Free'];
   return PLAN_LIMITS[plan];
 };
+export type { PlanType };
 
-// For backward compatibility with components that haven't been updated yet
-declare global {
-  // eslint-disable-next-line no-var
-  var __CURRENT_PLAN__: PlanType | null;
-}
-
-// This will be set by the _app.tsx wrapper
-export const currentPlan = (): PlanLimits => {
-  if (!globalThis.__CURRENT_PLAN__) {
-    console.warn('currentPlan called before plan was initialized. Defaulting to Free plan.');
-    return PLAN_LIMITS['Free'];
-  }
-  return PLAN_LIMITS[globalThis.__CURRENT_PLAN__];
-};

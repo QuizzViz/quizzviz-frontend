@@ -15,7 +15,6 @@ import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { currentPlan } from "@/config/plans";
 
 interface CreateQuizCardProps {
   maxQuestions?: number;
@@ -23,7 +22,7 @@ interface CreateQuizCardProps {
 
 // Main container composing all sub-parts and business logic via a hook
 export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: CreateQuizCardProps) {
-  const maxQuestions = propMaxQuestions || currentPlan().maxQuestions;
+  const maxQuestions = propMaxQuestions
   const [codePercentage, setCodePercentage] = useState(50);
   
   const {
@@ -52,7 +51,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
   } = useCreateQuizV2();
 
   const handleGenerateWithLimit = (codePct: number) => {
-    const effectiveMax = Math.min(maxQuestions, currentPlan().maxQuestions);
+    const effectiveMax = Math.min(maxQuestions);
     if (count > effectiveMax) {
       setError(`Maximum ${effectiveMax} questions allowed in your plan`);
       return;
