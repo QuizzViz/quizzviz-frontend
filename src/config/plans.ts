@@ -5,7 +5,6 @@ export type PlanLimits = {
   maxQuizzes: number;
   availableDifficulties: string[];
   hasAnalytics: boolean;
-  hasBulkGenerate: boolean;
 };
 
 type PlanLimitsMap = {
@@ -18,28 +17,24 @@ export const PLAN_LIMITS: PlanLimitsMap = {
     maxQuizzes: 2,
     availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level'],
     hasAnalytics: false,
-    hasBulkGenerate: false,
   },
   'Consumer': {
-    maxQuestions: 60,
+    maxQuestions: 30,
     maxQuizzes: 10,
     availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level','PhD Level'],
-    hasAnalytics: false,
-    hasBulkGenerate: false,
+    hasAnalytics: false
   },
   'Elite': {
-    maxQuestions: 150,
+    maxQuestions: 100,
     maxQuizzes: 30,
     availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level','PhD Level'],
-    hasAnalytics: true,
-    hasBulkGenerate: true,
+    hasAnalytics: true
   },
   'Business': {
     maxQuestions: 200,
     maxQuizzes: 30,
     availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level','PhD Level'],
-    hasAnalytics: true,
-    hasBulkGenerate: true,
+    hasAnalytics: true
   }
 } as const;
 
