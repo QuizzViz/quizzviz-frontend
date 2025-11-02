@@ -51,7 +51,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
   } = useCreateQuizV2();
 
   const handleGenerateWithLimit = (codePct: number) => {
-    const effectiveMax = Math.min(maxQuestions);
+    const effectiveMax = Math.min(maxQuestions as number);
     if (count > effectiveMax) {
       setError(`Maximum ${effectiveMax} questions allowed in your plan`);
       return;
