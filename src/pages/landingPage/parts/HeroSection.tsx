@@ -106,7 +106,7 @@ const HeroSection: FC = () => {
 
   const updateCount = (value: number) => {
     const min = 1;
-    const max = userType === 'individual' ? 20 : 50;
+    const max = 1000;
     setCount(Math.min(Math.max(value, min), max));
   };
 
@@ -201,7 +201,7 @@ const HeroSection: FC = () => {
                         onChange={setTopic}
                         placeholder="Search or select a topic..."
                         className="w-full h-10 text-sm text-white bg-white/5 border border-white/10 hover:bg-white/10 focus:border-green-500/50 transition-colors rounded-lg"
-                        inputClassName="h-10 text-sm bg-transparent border-0 text-white placeholder:text-gray-400 focus:ring-0 focus:ring-offset-0"
+                        inputClassName="h-10 text-sm bg-transparent border-0 text-white placeholder:text-gray-400"
                         popoverClassName="w-full max-w-none bg-gray-900 border border-white/10 rounded-lg shadow-lg"
                       />
                     </div>
@@ -214,12 +214,12 @@ const HeroSection: FC = () => {
                         Difficulty Level
                       </Label>
                       <Select value={difficulty} onValueChange={setDifficulty}>
-                        <SelectTrigger className="h-10 bg-white/5 border border-white/10 text-white text-sm focus:border-green-500/50 transition-colors rounded-lg">
+                        <SelectTrigger className="h-10 bg-white/5 border border-white/10 text-white text-sm focus:border-green-500/50 transition-colors rounded-lg focus:ring-0 focus:ring-offset-0">
                           <SelectValue placeholder="Select difficulty" />
                         </SelectTrigger>
                         <SelectContent className="bg-gray-900 border-white/10">
                           {DIFFICULTY_LEVELS.map((level) => (
-                            <SelectItem key={level.value} value={level.value} className="text-white hover:bg-green-500/20">
+                            <SelectItem key={level.value} value={level.value} className="text-white hover:bg-green-500/20 ">
                               {level.label}
                             </SelectItem>
                           ))}
@@ -231,12 +231,12 @@ const HeroSection: FC = () => {
                       <Label htmlFor="count" className="text-white font-medium text-sm">
                         Questions: {count}
                       </Label>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 ">
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="h-10 w-10 text-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 rounded-lg transition-colors"
+                          className="h-10 w-10 text-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 rounded-lg transition-colors "
                           onClick={() => updateCount(count - 1)}
                           disabled={count <= 1}
                         >
@@ -246,10 +246,10 @@ const HeroSection: FC = () => {
                           id="count"
                           type="number"
                           min="1"
-                          max={userType === 'individual' ? 20 : 50}
+                          max={1000}
                           value={count}
                           onChange={(e) => updateCount(parseInt(e.target.value) || 1)}
-                          className="text-center h-10 text-lg font-bold bg-white/5 border border-white/10 text-white focus:border-green-500/50 rounded-lg transition-colors"
+                          className="text-center h-10 text-lg font-bold bg-white/5 border border-white/10 text-white focus:border-green-500/50 focus:ring-0 focus:ring-offset-0 rounded-lg transition-colors "
                         />
                         <Button
                           type="button"
@@ -257,7 +257,7 @@ const HeroSection: FC = () => {
                           size="icon"
                           className="h-10 w-10 text-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 rounded-lg transition-colors"
                           onClick={() => updateCount(count + 1)}
-                          disabled={count >= (userType === 'individual' ? 20 : 50)}
+                          disabled={count >= 1000}
                         >
                           +
                         </Button>
