@@ -75,7 +75,7 @@ const currentPlan = getPlanLimits(userPlan?.plan_name || 'Free');
             title: data.error || 'Invalid Topic',
             description: (
               <div className="space-y-2">
-                <p>{data.message} Please try a topic related to software development, programming, or computer science.</p>
+                <p>{data.message} </p>
                 {data.suggestions && data.suggestions.length > 0 && (
                   <div className="mt-2">
                     <p className="text-sm font-medium mb-1">Suggested topics:</p>
@@ -96,7 +96,7 @@ const currentPlan = getPlanLimits(userPlan?.plan_name || 'Free');
           // For other errors
           toast({
             title: 'Error Generating Quiz',
-            description: `${data?.message || 'Failed to generate quiz.'} Please try a topic related to software industry`,
+            description: `${data?.message || 'Failed to generate quiz.'} `,
             variant: 'destructive',
             duration: 10000,
             className: 'max-w-md'
