@@ -28,7 +28,7 @@ const plans = [
     tagline: 'Perfect for individuals',
     features: [
       '10 quizzes per month',
-      '60 questions per quiz',
+      '30 questions per quiz',
       'View correct answers',
       'Intermediate Proctoring',
       'Email support',
@@ -45,7 +45,7 @@ const plans = [
     popular: true,
     features: [
       '30 quizzes per month',
-      '150 questions per quiz',
+      '100 questions per quiz',
       'View correct answers',
       'Advanced Proctoring',
       'Priority support'
@@ -63,11 +63,12 @@ const plans = [
     features: [
       '30 quizzes per month',
       '200 questions per quiz',
+      'Share quizzes with others',
       'Advanced Proctoring',
       'Advanced Analytics',
       'Data export (Excel, PDF)',
-      'Priority support',
-      'Customizable quiz settings'],
+      'Customizable quiz settings',
+      'Priority support'],
     icon: Building2,
     gradient: 'from-emerald-400 to-teal-500',
   },
