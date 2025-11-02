@@ -74,9 +74,7 @@ const DifficultyCountRow: FC<{
     min={1}
     max={Math.min(maxQuestions, currentPlan.maxQuestions)}
     showMaxIndicator={false}
-    className="w-full border border-border/50 rounded-md hover:border-border/70 [&]:!outline-none [&]:!ring-0 [&>*]:!outline-none [&>*]:!ring-0 [&>*]:!border-none [&_*]:!outline-none [&_*]:!ring-0 [&_*]:!ring-offset-0 [&_*]:!shadow-none [&_*]:!border-0 [&_input]:!outline-none [&_input]:!ring-0 [&_input]:!shadow-none [&_button]:!outline-none [&_button]:!ring-0 [&_button]:text-foreground/50 [&_button]:hover:text-foreground"
-    style={{ outline: 'none', boxShadow: 'none' }}
-  />
+    className="w-full"  />
 </div>
     </div>
   );
