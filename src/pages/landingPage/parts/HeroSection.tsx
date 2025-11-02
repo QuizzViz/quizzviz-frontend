@@ -101,7 +101,7 @@ const HeroSection: FC = () => {
       userType
     })
 
-    router.push(`/signup`);
+    router.push(`/dashboard`);
   };
 
   const updateCount = (value: number) => {

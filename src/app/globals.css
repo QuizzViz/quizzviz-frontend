@@ -279,3 +279,8 @@
     animation: slideUp 0.8s ease-out;
   }
 }
+
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}

@@ -69,7 +69,6 @@ export function NumberInput({
       <div 
         className={cn(
           "flex items-center h-10 w-full rounded-md border border-input bg-background/50 overflow-hidden transition-all",
-          isFocused ? "ring-2 ring-ring ring-offset-2" : "",
           className
         )}
         onClick={handleContainerClick}

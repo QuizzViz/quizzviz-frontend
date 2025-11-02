@@ -19,8 +19,8 @@ const TopicInput: FC<{
           value={topic}
           onChange={setTopic}
           placeholder="Search or select a topic..."
-          className="w-full h-14 text-base"
-          inputClassName="h-10 text-sm"
+          className="w-full h-14 text-base outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          inputClassName="h-10 text-sm outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
           popoverClassName="w-full max-w-none"
         />
       </div>

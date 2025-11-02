@@ -18,7 +18,7 @@ const GenerateButton: FC<{
       <motion.div whileHover={{ scale: isBusy ? 1 : 1.04 }} whileTap={{ scale: 0.97 }}>
         <Button
           onClick={onClick}
-          className="bg-foreground hover:bg-muted-foreground text-background transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center"
+          className="bg-foreground hover:bg-muted-foreground text-background transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
           disabled={isBusy}
           aria-disabled={isBusy}
           aria-busy={isBusy}

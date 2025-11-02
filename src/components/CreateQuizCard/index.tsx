@@ -77,7 +77,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
             <div className="space-y-2">
               <Label className="text-foreground">Difficulty</Label>
               <Select value={difficulty} onValueChange={setDifficulty}>
-                <SelectTrigger className="bg-background border-border text-foreground">
+                <SelectTrigger className="bg-background border-border text-foreground outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0">
                   <SelectValue placeholder="Select difficulty"/>
                 </SelectTrigger>
                 <SelectContent className="bg-background border-border text-foreground">
@@ -97,7 +97,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                 min={1}
                 max={maxQuestions}
                 showMaxIndicator={true}
-                className="w-full"
+                className="w-full [&_input]:outline-none [&_input]:focus:outline-none [&_input]:focus-visible:ring-0 [&_input]:focus-visible:ring-offset-0"
               />
             </div>
           </div>

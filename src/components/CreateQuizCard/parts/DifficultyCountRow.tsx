@@ -6,9 +6,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Info } from "lucide-react";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { getPlanLimits } from "@/config/plans";
+import Link from "next/link";
 
-// Renders difficulty select and number-of-questions input side-by-side
-// Ensure we have a default value for difficulty
 const defaultDifficulty = 'Bachelors Level';
 
 const DifficultyCountRow: FC<{
@@ -30,7 +29,7 @@ const DifficultyCountRow: FC<{
           onValueChange={setDifficulty}
           defaultValue={defaultDifficulty}
         >
-          <SelectTrigger className="bg-background/50 border-border text-foreground h-10 w-full">
+          <SelectTrigger className="bg-background/50 border border-border/50 text-foreground h-10 w-full rounded-md [&>span]:w-full [&>span]:px-3 [&>span]:py-2 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:ring-transparent">
             <SelectValue>{difficulty || defaultDifficulty}</SelectValue>
           </SelectTrigger>
           <SelectContent className="bg-background border-border text-foreground">
@@ -55,7 +54,7 @@ const DifficultyCountRow: FC<{
                     </div>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-[200px]">
-                    <p>Upgrade to a paid plan to access PhD level difficulty</p>
+                    <p>Upgrade to <Link href="/pricing" className=" underline font-semibold text-blue-500">Consumer Plan</Link> to access PhD level difficulty</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -65,19 +64,20 @@ const DifficultyCountRow: FC<{
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
-        <div className="h-[20px] flex items-center">
-          <Label className="text-sm font-medium text-white">Total Questions</Label>
-        </div>
-        <NumberInput
-          value={count}
-          onChange={setCount}
-          min={1}
-          max={Math.min(maxQuestions, currentPlan.maxQuestions)}
-          showMaxIndicator={false}
-          className="w-full"
-        />
-      </div>
+ <div className="space-y-2">
+  <div className="h-[20px] flex items-center">
+    <Label className="text-sm font-medium text-white">Total Questions</Label>
+  </div>
+  <NumberInput
+    value={count}
+    onChange={setCount}
+    min={1}
+    max={Math.min(maxQuestions, currentPlan.maxQuestions)}
+    showMaxIndicator={false}
+    className="w-full border border-border/50 rounded-md hover:border-border/70 [&]:!outline-none [&]:!ring-0 [&>*]:!outline-none [&>*]:!ring-0 [&>*]:!border-none [&_*]:!outline-none [&_*]:!ring-0 [&_*]:!ring-offset-0 [&_*]:!shadow-none [&_*]:!border-0 [&_input]:!outline-none [&_input]:!ring-0 [&_input]:!shadow-none [&_button]:!outline-none [&_button]:!ring-0 [&_button]:text-foreground/50 [&_button]:hover:text-foreground"
+    style={{ outline: 'none', boxShadow: 'none' }}
+  />
+</div>
     </div>
   );
 };

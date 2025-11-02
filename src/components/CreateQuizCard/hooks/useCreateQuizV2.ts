@@ -43,7 +43,7 @@ interface UseCreateQuizReturnV2 {
 export function useCreateQuizV2(): UseCreateQuizReturnV2 {
   // form state
   const [topic, setTopic] = useState("");
-  const [difficulty, setDifficulty] = useState("Bachelors");
+  const [difficulty, setDifficulty] = useState("Bachelors Level");
   const [count, setCount] = useState(5);
   
   // request and UX state
@@ -75,6 +75,11 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
   const quizGeneration = useQuizGeneration();
 
   const difficultyToApi = (val: string) => {
+    // If the value already contains 'Level', return it as is
+    if (val.includes('Level')) {
+      return val;
+    }
+    
     switch (val) {
       case "High School":
         return "High School Level";
