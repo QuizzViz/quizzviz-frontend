@@ -49,7 +49,7 @@ export default function UserAvatarDropdown({
         <button
           className={cn(
             "group flex items-center gap-2 p-1 rounded-full hover:bg-white/10 transition-colors duration-200",
-            "focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black",
+            "focus:outline-none ",
             "active:bg-white/20", // Better mobile touch feedback
             className
           )}
