@@ -322,6 +322,14 @@ const PricingPage = () => {
                     <td className="py-4 px-4 text-xs text-center text-emerald-400 font-semibold bg-emerald-950/10">Advanced</td>
                     <td className="py-4 px-4 text-xs text-center text-gray-400">Advanced</td>
                   </tr>
+                  <tr>
+                    <td className="py-4 px-6 text-sm font-medium text-white">Can share quiz with others</td>
+                    <td className="py-4 px-4"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-4"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-4"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-4"><Check className="w-5 h-5 mx-auto text-emerald-400" /></td>
+                    <td className="py-4 px-4"><Check className="w-5 h-5 mx-auto text-emerald-400" /></td>
+                  </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-6 text-sm font-medium text-white">Analytics Dashboard</td>
                     <td className="py-4 px-4"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
