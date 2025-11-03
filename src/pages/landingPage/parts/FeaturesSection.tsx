@@ -41,7 +41,7 @@ const FeaturesSection: FC = () => {
       {
         icon: CheckCircle,
         title: "Secure Proctoring",
-        description: "Full-screen lockdown and auto-end on tab switches ensure focused practice. Set custom quiz durations for time-bound practice.",
+        description: "Full-screen lockdown and auto-end on tab switches ensure focused practice.",
         gradient: "from-blue-500/80 to-purple-500/80",
         ring: "ring-blue-500/30"
       },

@@ -39,7 +39,7 @@ const HowItWorksSection: FC = () => {
       {
         number: "2",
         title: "Attempt Quiz",
-        description: "Practice in distraction-free full-screen mode with custom time limits. Auto-end on tab switches keeps you focused throughout the quiz.",
+        description: "Practice in distraction-free full-screen mode. Auto-end on tab switches keeps you focused throughout the quiz.",
         gradient: "from-blue-500/80 to-purple-500/80",
         ring: "ring-blue-500/30"
       },
