@@ -80,7 +80,7 @@ export function LogoWithText({ className = '' }: LogoWithTextProps) {
         }`}
       >
         <div className="flex items-center pointer-events-auto">
-          <div className="relative h-10 w-10 cursor-pointer">
+          <div className="relative h-11 w-11 cursor-pointer">
             <Image 
               src="/QuizzViz-logo.png" 
               alt="QuizzViz Logo" 
@@ -89,7 +89,7 @@ export function LogoWithText({ className = '' }: LogoWithTextProps) {
               priority
             />
           </div>
-          <span className="ml-2 text-xl font-bold tracking-tight text-foreground">
+          <span className="text-xl font-bold tracking-tight text-foreground">
             QuizzViz
           </span>
         </div>
