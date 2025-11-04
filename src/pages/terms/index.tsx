@@ -81,29 +81,25 @@ const TermsOfService = () => {
           </section>
 
           <section className="mb-10">
-            <h2 className="text-2xl font-semibold mb-4">9. Refund & Subscription Policy</h2>
-            <p className="mb-4">
-              All payments for QuizzViz services are processed through Paddle.com, which serves as our authorized payment processor. Paddle provides secure payment processing services and handles all payment-related matters on our behalf.
+            <h2 className="text-2xl font-semibold mb-6">9. Refund & Subscription Policy</h2>
+            
+            <h3 className="text-xl font-semibold mb-3">14-Day Refund Guarantee</h3>
+            <p className="mb-6">
+              All standard purchases of QuizzViz services are fully refundable within 14 days of purchase.
             </p>
 
-            <h3 className="text-xl font-semibold mb-2 mt-4">Subscription Terms</h3>
-            <p className="mb-4">
-              Subscriptions are billed according to the selected plan. By subscribing to our service, you authorize Paddle to charge the applicable subscription fees to your chosen payment method.
+            <h3 className="text-xl font-semibold mb-3">Payment Processing</h3>
+            <p className="mb-6">
+              All payments for QuizzViz services are processed through Paddle.com, our authorized payment processor and merchant of record. Paddle provides secure payment processing and handles all payment-related matters on our behalf. By subscribing, you authorize Paddle to charge the applicable subscription fees to your chosen payment method.
             </p>
 
-            <h3 className="text-xl font-semibold mb-2 mt-4">Refund Consideration</h3>
-            <p className="mb-4">
-              We review refund requests on a case-by-case basis to ensure fairness. If you believe you’re entitled to a refund, please contact our support team with your purchase details and reason for the request. We’ll do our best to evaluate each situation reasonably and transparently.
+            <h3 className="text-xl font-semibold mb-3">Subscription Terms</h3>
+            <p className="mb-6">
+              Subscriptions are billed according to the selected plan. Currently, subscriptions are non-recurring by default, meaning they will not automatically renew at the end of the billing period. If you wish to continue using premium features after your subscription expires, you must manually subscribe again.
             </p>
 
-            <h3 className="text-xl font-semibold mb-2 mt-4">Non-Refundable Items</h3>
-            <p className="mb-4">
-              While most subscriptions are non-refundable once the current billing period has started, exceptions may be made in special cases such as accidental charges or technical issues. Please reach out to our support team, and we’ll review your case individually.
-            </p>
-
-            <h3 className="text-xl font-semibold mb-2 mt-4">Payment Processing</h3>
-            <p className="mb-4">
-              All payment transactions are processed by Paddle.com. By using our services, you agree to Paddle's{' '}
+            <p className="text-sm text-muted-foreground">
+              By using our services, you agree to Paddle's{' '}
               <a href="https://paddle.com/legal/terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                 Terms of Service
               </a>{' '}
@@ -111,12 +107,6 @@ const TermsOfService = () => {
               <a href="https://paddle.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                 Privacy Policy
               </a>.
-            </p>
-
-            <h3 className="text-xl font-semibold mb-2 mt-4">Subscription Management</h3>
-            <p className="mb-4">
-              Currently, QuizzViz does not support in-app subscription management or automatic renewals. Subscriptions are non-recurring by default, meaning they will not automatically renew after the current billing period ends. 
-              If you wish to continue using premium features after your subscription expires, you will need to manually subscribe again. Partial refunds are not provided.
             </p>
           </section>
 
