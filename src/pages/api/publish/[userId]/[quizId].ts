@@ -191,6 +191,7 @@ export default async function handler(
 
           if (!updateResponse.ok) {
             console.error('Failed to update quiz generation service:', await updateResponse.text());
+            throw new Error('Failed to update quiz status');
           }
 
           // Then, call the unpublish endpoint
@@ -213,8 +214,38 @@ export default async function handler(
               is_publish: false,
               quiz_public_link: ''
             };
+
+            // Send quiz expired email notification after successful unpublish
+            try {
+              const emailResponse = await fetch(
+                `/api/send_email/quiz-expired`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    recipient_email: user.emailAddresses?.[0]?.emailAddress || '',
+                    user_name: user.firstName,
+                    quiz_title: quizData.topic,
+                    expiry_date: quizData.quiz_expiration_time
+                  })
+                }
+              );
+              
+              if (!emailResponse.ok) {
+                const error = await emailResponse.text();
+                console.error('Failed to send quiz expired email:', error);
+              } else {
+                console.log('Successfully sent quiz expired email');
+              }
+            } catch (emailError) {
+              console.error('Error sending quiz expired email:', emailError);
+            }
           } else {
-            console.error('Failed to unpublish expired quiz:', await deleteResponse.text());
+            const errorText = await deleteResponse.text();
+            console.error('Failed to unpublish expired quiz:', errorText);
+            throw new Error(`Failed to unpublish quiz: ${errorText}`);
           }
         } catch (error) {
           console.error('Error unpublishing expired quiz:', error);
