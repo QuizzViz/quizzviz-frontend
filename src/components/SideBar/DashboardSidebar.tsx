@@ -129,12 +129,13 @@ export default function DashboardSidebar({
   return (
     <>
       {/* Mobile Overlay */}
-      {isMobile && isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden transition-opacity duration-400 ${
+          isMobile && isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-hidden="true"
+        onClick={() => setIsOpen(false)}
+      />
 
       {/* Mobile Menu Button - Only visible on mobile */}
       <button
@@ -158,12 +159,20 @@ export default function DashboardSidebar({
       <div
         id="mobile-sidebar"
         className={`
-          ${isMobile ? "fixed left-0 right-0 top-0 bottom-0" : "sticky top-0 h-screen"} flex flex-col transition-transform duration-300 ease-in-out z-50
-          ${isMobile && !isOpen ? "-translate-x-full" : "translate-x-0"}
+          ${isMobile ? "fixed left-0 right-0 top-0 bottom-0" : "sticky top-0 h-screen"} flex flex-col z-50
+          transition-all duration-400 ease-[cubic-bezier(0.16, 1, 0.3, 1)]
+          ${isMobile && !isOpen ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100"}
           ${isMobile ? mobileWidthClass : isOpen ? "w-64" : "w-16"}
-          bg-black text-white border-r border-white
+          bg-black text-white border-r border-white/20
           ${isMobile ? "shadow-2xl" : ""}
+          ${isMobile ? "backdrop-blur-sm bg-black/95" : ""}
         `}
+        style={{
+          transitionProperty: 'transform, opacity, width, border-color',
+          willChange: 'transform, opacity, width',
+          transitionDuration: '400ms',
+          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
+        }}
         role={isMobile ? "dialog" : undefined}
         aria-modal={isMobile ? true : undefined}
         aria-label={isMobile ? "Navigation menu" : undefined}
@@ -201,26 +210,32 @@ export default function DashboardSidebar({
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden pt-1">
             <nav className="py-4 px-2">
-              <ul className="space-y-1">
+              <ul className="space-y-1 overflow-hidden">
                 {menuItems.map((item) => (
                   <li key={item.name}>
                     <Link
                       href={item.href}
                       onClick={handleMenuItemClick}
-                      className={`flex items-center w-full ${isMobile ? itemPaddingClass : "p-2.5"} rounded-md transition-all duration-200 ease-in-out ${
+                      className={`flex items-center w-full ${isMobile ? itemPaddingClass : "p-2.5"} rounded-md transition-all duration-300 ease-[cubic-bezier(0.16, 1, 0.3, 1)] ${
                         (isOpen || isMobile) ? "px-3" : "justify-center"
-                      } hover:bg-white/10 group relative text-white active:bg-white/20`}
+                      } hover:bg-white/10 group relative text-white active:bg-white/20 transform hover:scale-[1.02] active:scale-[0.98] will-change-transform`}
                     >
                       <span className="text-white">
                         <item.Icon className={`${isMobile ? navIconSizeClass : "w-5 h-5"}`} />
                       </span>
-                      {(isOpen || isMobile) && (
-                        <span className={`ml-3 font-medium text-white ${isMobile ? navTextSizeClass : "text-sm"}`}>
-                          {item.name}
-                        </span>
-                      )}
+                      <span 
+                        className={`ml-3 font-medium text-white ${isMobile ? navTextSizeClass : "text-sm"} transition-opacity duration-300 ${
+                          (isOpen || isMobile) ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'
+                        }`}
+                        style={{
+                          transition: 'opacity 300ms cubic-bezier(0.16, 1, 0.3, 1), width 300ms cubic-bezier(0.16, 1, 0.3, 1)',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {item.name}
+                      </span>
                       {!isOpen && !isMobile && (
-                        <span className="absolute left-full ml-2 px-2 py-1 bg-white text-black text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                        <span className="absolute left-full ml-2 px-2 py-1 bg-white text-black text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out transform -translate-x-1 group-hover:translate-x-0 pointer-events-none">
                           {item.name}
                         </span>
                       )}
