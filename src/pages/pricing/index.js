@@ -296,15 +296,15 @@ const PricingPage = () => {
                     <td className="py-4 px-4 text-sm text-center text-gray-400">10</td>
                     <td className="py-4 px-4 text-sm text-center text-gray-400">30</td>
                     <td className="py-4 px-4 text-sm text-center text-emerald-400 font-semibold bg-emerald-950/10">30</td>
-                    <td className="py-4 px-4 text-sm text-center text-gray-400">Unlimited</td>
+                    <td className="py-4 px-4 text-sm text-center text-gray-400">Custom </td>
                   </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-6 text-sm font-medium text-white">Questions per Quiz</td>
                     <td className="py-4 px-4 text-sm text-center text-gray-400">10</td>
-                    <td className="py-4 px-4 text-sm text-center text-gray-400">60</td>
-                    <td className="py-4 px-4 text-sm text-center text-gray-400">150</td>
+                    <td className="py-4 px-4 text-sm text-center text-gray-400">30</td>
+                    <td className="py-4 px-4 text-sm text-center text-gray-400">100</td>
                     <td className="py-4 px-4 text-sm text-center text-emerald-400 font-semibold bg-emerald-950/10">200</td>
-                    <td className="py-4 px-4 text-sm text-center text-gray-400">Unlimited</td>
+                    <td className="py-4 px-4 text-sm text-center text-gray-400">Custom</td>
                   </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-6 text-sm font-medium text-white">View Correct Answers</td>
