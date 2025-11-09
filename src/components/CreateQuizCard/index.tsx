@@ -87,8 +87,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     } as const;
     
     const maxQuizzes = limits[plan as keyof typeof limits] || 0;
-    // const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count || 0;
-    const currentMonthQuizzes = 10;
+    const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count || 0;
     return currentMonthQuizzes >= maxQuizzes;
   }, [planName, quizUsage]);
 
