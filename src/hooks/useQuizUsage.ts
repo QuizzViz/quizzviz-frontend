@@ -105,7 +105,7 @@ export function getUpgradeMessage(
   // If current usage is getting close to the limit (within 80%)
   if (currentUsage >= planData.max * 0.8) {
     return {
-      message: `You've used ${currentUsage} of ${planData.max} quizzes this month.`,
+      message: `You have reached your monthly quiz generation limit.`,
       upgradePlan: planData.next,
       showUpgrade: true,
     };
@@ -113,7 +113,7 @@ export function getUpgradeMessage(
 
   // Default return when no restrictions or warnings needed
   return {
-    message: `You've used ${currentUsage} of ${planData.max} quizzes this month.`,
+    message: `You have reached your monthly quiz generation limit.`,
     upgradePlan: '',
     showUpgrade: false,
   };
