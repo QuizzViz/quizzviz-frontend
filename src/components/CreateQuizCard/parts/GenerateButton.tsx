@@ -12,15 +12,18 @@ const GenerateButton: FC<{
   leftIconBusy: LucideIcon;
   leftIconIdle: LucideIcon;
   className?: string;
-}> = ({ isBusy, onClick, labelBusy, labelIdle, leftIconBusy: BusyIcon, leftIconIdle: IdleIcon, className = '' }) => {
+  disabled?: boolean;
+}> = ({ isBusy, onClick, labelBusy, labelIdle, leftIconBusy: BusyIcon, leftIconIdle: IdleIcon, className = '', disabled = false }) => {
   return (
     <div className={`flex ${className}`}>
       <motion.div whileHover={{ scale: isBusy ? 1 : 1.04 }} whileTap={{ scale: 0.97 }}>
         <Button
           onClick={onClick}
-          className="bg-foreground hover:bg-muted-foreground text-background transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-          disabled={isBusy}
-          aria-disabled={isBusy}
+          className={`bg-foreground hover:bg-muted-foreground text-background transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 ${
+            disabled ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
+          disabled={isBusy || disabled}
+          aria-disabled={isBusy || disabled}
           aria-busy={isBusy}
         >
           {isBusy ? <BusyIcon className="h-4 w-4 mr-2 animate-spin" /> : <IdleIcon className="h-4 w-4 mr-2" />}

@@ -1,8 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Send, Zap } from "lucide-react";
+import { AlertCircle, Loader2, Send, Zap, AlertTriangle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { NumberInput } from "@/components/ui/number-input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import QuizHeader from "./parts/QuizHeader";
 import TopicInput from "./parts/TopicInput";
 import DifficultyCountRow from "./parts/DifficultyCountRow";
@@ -10,11 +13,13 @@ import CodeTheorySlider from "./parts/CodeTheorySlider";
 import GenerateButton from "./parts/GenerateButton";
 import ReasoningPanel from "./parts/ReasoningPanel";
 import { useCreateQuizV2 } from "./hooks/useCreateQuizV2";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, UseQueryResult } from "@tanstack/react-query";
+import { useQuizUsage, getUpgradeMessage, QuizUsageData } from "@/hooks/useQuizUsage";
+import { useUserPlan } from "@/hooks/useUserPlan";
 
 interface CreateQuizCardProps {
   maxQuestions?: number;
@@ -22,9 +27,12 @@ interface CreateQuizCardProps {
 
 // Main container composing all sub-parts and business logic via a hook
 export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: CreateQuizCardProps) {
-  const maxQuestions = propMaxQuestions
+  const maxQuestions = propMaxQuestions;
   const [codePercentage, setCodePercentage] = useState(50);
-  
+  const { data: userPlan } = useUserPlan();
+  const quizUsage = useQuizUsage();
+  const isLoadingUsage = quizUsage?.isLoading || false;
+
   const {
     // form
     topic,
@@ -50,18 +58,51 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     handleGenerate: _handleGenerate,
   } = useCreateQuizV2();
 
+  // Get current plan info and usage
+  const { message: upgradeMessage, upgradePlan, showUpgrade } = useMemo(() => {
+    if (!userPlan?.plan_name || !quizUsage?.data) {
+      return { message: '', upgradePlan: '', showUpgrade: false };
+    }
+    const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count || 0;
+    return getUpgradeMessage(userPlan.plan_name, currentMonthQuizzes, maxQuestions || 0);
+  }, [userPlan, quizUsage, maxQuestions]);
+
+  // Check if user has reached their monthly limit
+  const hasReachedLimit = useMemo(() => {
+    if (!userPlan?.plan_name || !quizUsage?.data) return false;
+    const plan = userPlan.plan_name.toLowerCase();
+    const limits = {
+      free: 2,
+      consumer: 10,
+      elite: 30,
+      business: 30,
+    } as const;
+    
+    const maxQuizzes = limits[plan as keyof typeof limits] || 0;
+    const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count || 0;
+    return currentMonthQuizzes >= maxQuizzes;
+  }, [userPlan, quizUsage]);
+
   const handleGenerateWithLimit = (codePct: number) => {
+    // Check plan limits first
+    if (hasReachedLimit) {
+      setError(upgradeMessage);
+      return;
+    }
+
+    // Then check question count limit
     const effectiveMax = Math.min(maxQuestions as number);
     if (count > effectiveMax) {
       setError(`Maximum ${effectiveMax} questions allowed in your plan`);
       return;
     }
+
     _handleGenerate(codePct);
   };
-  
+
+  const queryClient = useQueryClient();
   const router = useRouter();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   return (
     <Card className="bg-background border-border">
@@ -69,7 +110,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
         <QuizHeader />
         <div className="space-y-4">
           <TopicInput topic={topic} setTopic={setTopic} icon={Zap} />
-          
+
           {/* Mobile: Stack difficulty and count separately, Desktop: Use DifficultyCountRow */}
           <div className="block sm:hidden space-y-4">
             {/* Difficulty - Mobile Only */}
@@ -77,7 +118,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
               <Label className="text-foreground">Difficulty</Label>
               <Select value={difficulty} onValueChange={setDifficulty}>
                 <SelectTrigger className="bg-background border-border text-foreground outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0">
-                  <SelectValue placeholder="Select difficulty"/>
+                  <SelectValue placeholder="Select difficulty" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border-border text-foreground">
                   <SelectItem value="High School">High School level</SelectItem>
@@ -87,7 +128,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                 </SelectContent>
               </Select>
             </div>
-            
+
             {/* Number of Questions - Mobile Only */}
             <div className="space-y-1">
               <NumberInput
@@ -100,33 +141,87 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
               />
             </div>
           </div>
-          
+
           {/* Desktop: Use the original DifficultyCountRow component */}
           <div className="hidden sm:block">
-            <DifficultyCountRow 
-              difficulty={difficulty} 
-              setDifficulty={setDifficulty} 
-              count={count} 
-              setCount={setCount} 
+            <DifficultyCountRow
+              difficulty={difficulty}
+              setDifficulty={setDifficulty}
+              count={count}
+              setCount={setCount}
               maxQuestions={maxQuestions}
             />
           </div>
-          
-          <CodeTheorySlider 
-            codePercentage={codePercentage} 
-            onCodePercentageChange={setCodePercentage} 
+
+          <CodeTheorySlider
+            codePercentage={codePercentage}
+            onCodePercentageChange={setCodePercentage}
           />
         </div>
-        <div className="pt-2 flex justify-end">
-          <GenerateButton
-            isBusy={isReasoning || isFetching}
-            onClick={() => handleGenerateWithLimit(codePercentage)}
-            labelBusy="Thinking..."
-            labelIdle="Generate"
-            leftIconBusy={Loader2}
-            leftIconIdle={Send}
-            className="w-full sm:w-auto"
-          />
+        <div className="pt-2 flex flex-col space-y-2">
+          {isLoadingUsage ? (
+            <div className="flex items-center justify-center p-2">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <span className="text-sm text-muted-foreground">Checking your usage...</span>
+            </div>
+          ) : (
+            quizUsage?.data?.current_month && (
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <div className="flex items-center">
+                  <span>Quizzes this month: </span>
+                  <span className="font-medium ml-1">
+                    {quizUsage.data.current_month.quiz_count}
+                    {maxQuestions ? ` / ${maxQuestions}` : ''}
+                  </span>
+                </div>
+                {showUpgrade && upgradePlan && (
+                  <Button variant="link" className="h-auto p-0 text-blue-500 hover:text-blue-600" asChild>
+                    <Link href="/pricing">
+                      Upgrade to {upgradePlan}
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            )
+          )}
+
+          <div className="flex justify-end">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={hasReachedLimit ? 'cursor-not-allowed' : ''}>
+                    <GenerateButton
+                      isBusy={isReasoning || isFetching}
+                      onClick={() => handleGenerateWithLimit(codePercentage)}
+                      labelBusy="Thinking..."
+                      labelIdle={hasReachedLimit ? 'Limit Reached' : 'Generate'}
+                      leftIconBusy={Loader2}
+                      leftIconIdle={hasReachedLimit ? AlertCircle : Send}
+                      className={`w-full sm:w-auto ${hasReachedLimit ? 'opacity-70' : ''}`}
+                      disabled={hasReachedLimit}
+                    />
+                  </div>
+                </TooltipTrigger>
+                {hasReachedLimit && (
+                  <TooltipContent className="max-w-xs">
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex items-start">
+                        <AlertTriangle className="h-4 w-4 text-yellow-500 mr-2 mt-0.5 flex-shrink-0" />
+                        <span>{upgradeMessage}</span>
+                      </div>
+                      {upgradePlan && (
+                        <Button variant="outline" size="sm" className="mt-2" asChild>
+                          <Link href="/pricing">
+                            Upgrade to {upgradePlan}
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
         {error && (
           <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-sm">
