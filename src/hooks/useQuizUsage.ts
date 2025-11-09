@@ -2,6 +2,7 @@ import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
+import {useUser} from "@clerk/nextjs";
 
 export interface QuizUsageData {
   user_id: string;
@@ -24,30 +25,19 @@ export interface QuizUsageData {
 }
 
 export function useQuizUsage() {
-  const { getToken } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
   const [errorShown, setErrorShown] = useState(false);
 
   const query = useQuery<QuizUsageData, Error>({
-    queryKey: ['quiz-usage'],
+    queryKey: ['quiz-usage', user?.id],
     queryFn: async () => {
-      const token = await getToken();
-      if (!token) throw new Error('Not authenticated');
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL}/user/${encodeURIComponent(
-          token
-        )}/quizzes/usage`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      if (!user?.id) throw new Error('User not found');
+      
+      const response = await fetch(`/api/quiz-usage?userId=${encodeURIComponent(user.id)}`);
+      
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({}));
         throw new Error(error.message || 'Failed to fetch quiz usage');
       }
 
@@ -55,6 +45,7 @@ export function useQuizUsage() {
     },
     retry: 1,
     refetchOnWindowFocus: false,
+    enabled: !!user?.id,
   });
 
   // Handle errors with toast in a separate effect

@@ -180,17 +180,26 @@ function successToast(props: Omit<Toast, 'variant'>) {
 }
 
 function useToast() {
-  const [state, setState] = React.useState<State>(memoryState)
+  const [state, setState] = React.useState<State>(() => memoryState);
+  const mounted = React.useRef(false);
 
   React.useEffect(() => {
-    listeners.push(setState)
-    return () => {
-      const index = listeners.indexOf(setState)
-      if (index > -1) {
-        listeners.splice(index, 1)
+    mounted.current = true;
+    const listener = (newState: State) => {
+      if (mounted.current) {
+        setState(newState);
       }
-    }
-  }, [state])
+    };
+
+    listeners.push(listener);
+    return () => {
+      mounted.current = false;
+      const index = listeners.indexOf(listener);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    };
+  }, [])
 
   return {
     ...state,

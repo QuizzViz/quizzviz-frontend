@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useQueryClient, UseQueryResult } from "@tanstack/react-query";
 import { useQuizUsage, getUpgradeMessage, QuizUsageData } from "@/hooks/useQuizUsage";
-import { useUserPlan } from "@/hooks/useUserPlan";
+import { useUser } from "@clerk/nextjs";
 
 interface CreateQuizCardProps {
   maxQuestions?: number;
@@ -29,9 +29,17 @@ interface CreateQuizCardProps {
 export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: CreateQuizCardProps) {
   const maxQuestions = propMaxQuestions;
   const [codePercentage, setCodePercentage] = useState(50);
-  const { data: userPlan } = useUserPlan();
+  const { user } = useUser();
   const quizUsage = useQuizUsage();
   const isLoadingUsage = quizUsage?.isLoading || false;
+  
+  // Get plan from user's public metadata
+  const planName = user?.publicMetadata?.plan as string || 'free';
+  
+  // For backward compatibility with existing code
+  const userPlan = {
+    plan_name: planName
+  };
 
   const {
     // form
@@ -60,17 +68,17 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
 
   // Get current plan info and usage
   const { message: upgradeMessage, upgradePlan, showUpgrade } = useMemo(() => {
-    if (!userPlan?.plan_name || !quizUsage?.data) {
+    if (!planName || !quizUsage?.data) {
       return { message: '', upgradePlan: '', showUpgrade: false };
     }
     const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count || 0;
-    return getUpgradeMessage(userPlan.plan_name, currentMonthQuizzes, maxQuestions || 0);
-  }, [userPlan, quizUsage, maxQuestions]);
+    return getUpgradeMessage(planName, currentMonthQuizzes, maxQuestions || 0);
+  }, [planName, quizUsage, maxQuestions]);
 
   // Check if user has reached their monthly limit
   const hasReachedLimit = useMemo(() => {
-    if (!userPlan?.plan_name || !quizUsage?.data) return false;
-    const plan = userPlan.plan_name.toLowerCase();
+    if (!planName || !quizUsage?.data) return false;
+    const plan = planName.toLowerCase();
     const limits = {
       free: 2,
       consumer: 10,
@@ -81,7 +89,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     const maxQuizzes = limits[plan as keyof typeof limits] || 0;
     const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count || 0;
     return currentMonthQuizzes >= maxQuizzes;
-  }, [userPlan, quizUsage]);
+  }, [planName, quizUsage]);
 
   const handleGenerateWithLimit = (codePct: number) => {
     // Check plan limits first
@@ -159,29 +167,31 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
           />
         </div>
         <div className="pt-2 flex flex-col space-y-2">
-          {isLoadingUsage ? (
-            <div className="flex items-center justify-center p-2">
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              <span className="text-sm text-muted-foreground">Checking your usage...</span>
-            </div>
-          ) : (
-            quizUsage?.data?.current_month && (
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <div className="flex items-center">
-                  <span>Quizzes this month: </span>
-                  <span className="font-medium ml-1">
-                    {quizUsage.data.current_month.quiz_count}
-                    {maxQuestions ? ` / ${maxQuestions}` : ''}
-                  </span>
-                </div>
-                {showUpgrade && upgradePlan && (
-                  <Button variant="link" className="h-auto p-0 text-blue-500 hover:text-blue-600" asChild>
-                    <Link href="/pricing">
-                      Upgrade to {upgradePlan}
-                    </Link>
-                  </Button>
-                )}
+          {planName.toLowerCase() !== 'free' && (
+            isLoadingUsage ? (
+              <div className="flex items-center justify-center p-2">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span className="text-sm text-muted-foreground">Checking your usage...</span>
               </div>
+            ) : (
+              quizUsage?.data?.current_month && (
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center">
+                    <span>Quizzes this month: </span>
+                    <span className="font-medium ml-1">
+                      {quizUsage.data.current_month.quiz_count}
+                      {maxQuestions ? ` / ${maxQuestions}` : ''}
+                    </span>
+                  </div>
+                  {showUpgrade && upgradePlan && (
+                    <Button variant="link" className="h-auto p-0 text-blue-500 hover:text-blue-600" asChild>
+                      <Link href="/pricing">
+                        Upgrade to {upgradePlan}
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              )
             )
           )}
 
@@ -203,16 +213,31 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                   </div>
                 </TooltipTrigger>
                 {hasReachedLimit && (
-                  <TooltipContent className="max-w-xs">
-                    <div className="flex flex-col space-y-2">
+                  <TooltipContent className="w-64 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+                    <div className="flex flex-col space-y-3">
                       <div className="flex items-start">
-                        <AlertTriangle className="h-4 w-4 text-yellow-500 mr-2 mt-0.5 flex-shrink-0" />
-                        <span>{upgradeMessage}</span>
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-yellow-100 dark:bg-yellow-900/50">
+                            <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                          </div>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Plan Limit Reached</p>
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                            {upgradeMessage}
+                          </p>
+                        </div>
                       </div>
                       {upgradePlan && (
-                        <Button variant="outline" size="sm" className="mt-2" asChild>
-                          <Link href="/pricing">
-                            Upgrade to {upgradePlan}
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="mt-2 bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200"
+                          asChild
+                        >
+                          <Link href="/pricing" className="flex items-center justify-center">
+                            <Zap className="h-4 w-4 mr-2" />
+                            Upgrade to Consumer Plan
                           </Link>
                         </Button>
                       )}
