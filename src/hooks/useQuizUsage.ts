@@ -29,8 +29,10 @@ export function useQuizUsage() {
   const { toast } = useToast();
   const [errorShown, setErrorShown] = useState(false);
 
+  const plan = (user?.publicMetadata?.plan as string) || 'Free';
+  
   const query = useQuery<QuizUsageData, Error>({
-    queryKey: ['quiz-usage', user?.id],
+    queryKey: ['quiz-usage', user?.id, plan],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not found');
       

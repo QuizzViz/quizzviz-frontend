@@ -29,17 +29,17 @@ interface CreateQuizCardProps {
 export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: CreateQuizCardProps) {
   const maxQuestions = propMaxQuestions;
   const [codePercentage, setCodePercentage] = useState(50);
-  const { user } = useUser();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const quizUsage = useQuizUsage();
-  const isLoadingUsage = quizUsage?.isLoading || false;
+  const isLoadingUsage = quizUsage?.isLoading || !isUserLoaded;
   
   // Get plan from user's public metadata
-  const planName = user?.publicMetadata?.plan as string || 'Free';
+  const planName = (user?.publicMetadata?.plan as string) || 'Free';
   
   // For backward compatibility with existing code
-  const userPlan = {
+  const userPlan = useMemo(() => ({
     plan_name: planName
-  };
+  }), [planName]);
 
   const {
     // form
@@ -77,10 +77,10 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
 
   // Check if user has reached their monthly limit
   const hasReachedLimit = useMemo(() => {
-    if (!quizUsage?.data?.current_month || !maxQuestions) return false;
+    if (!isUserLoaded || !quizUsage?.data?.current_month || !maxQuestions) return false;
     const currentMonthQuizzes = quizUsage.data.current_month.quiz_count || 0;
     return currentMonthQuizzes >= maxQuestions;
-  }, [quizUsage, maxQuestions]);
+  }, [quizUsage, maxQuestions, isUserLoaded]);
 
   const handleGenerateWithLimit = (codePct: number) => {
     // Check plan limits first
