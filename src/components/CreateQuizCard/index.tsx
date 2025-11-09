@@ -34,7 +34,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
   const isLoadingUsage = quizUsage?.isLoading || false;
   
   // Get plan from user's public metadata
-  const planName = user?.publicMetadata?.plan as string || 'free';
+  const planName = user?.publicMetadata?.plan as string || 'Free';
   
   // For backward compatibility with existing code
   const userPlan = {
@@ -87,7 +87,8 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     } as const;
     
     const maxQuizzes = limits[plan as keyof typeof limits] || 0;
-    const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count || 0;
+    // const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count || 0;
+    const currentMonthQuizzes = 10;
     return currentMonthQuizzes >= maxQuizzes;
   }, [planName, quizUsage]);
 
