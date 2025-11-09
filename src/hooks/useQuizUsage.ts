@@ -80,7 +80,7 @@ export function getUpgradeMessage(
     Free: { next: 'Consumer', max: 2 },
     Consumer: { next: 'Elite', max: 10 },
     Elite: { next: 'Business', max: 30 },
-    Business: { next: 'Enterprise', max: 30, custom: true },
+    Business: { next: 'Enterprise', max: 31, custom: true },
   };
 
   const plan = currentPlan as PlanType;
