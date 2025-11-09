@@ -77,19 +77,10 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
 
   // Check if user has reached their monthly limit
   const hasReachedLimit = useMemo(() => {
-    if (!planName || !quizUsage?.data) return false;
-    const plan = planName.toLowerCase();
-    const limits = {
-      free: 2,
-      consumer: 10,
-      elite: 30,
-      business: 30,
-    } as const;
-    
-    const maxQuizzes = limits[plan as keyof typeof limits] || 0;
-    const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count || 0;
-    return currentMonthQuizzes >= maxQuizzes;
-  }, [planName, quizUsage]);
+    if (!quizUsage?.data?.current_month || !maxQuestions) return false;
+    const currentMonthQuizzes = quizUsage.data.current_month.quiz_count || 0;
+    return currentMonthQuizzes >= maxQuestions;
+  }, [quizUsage, maxQuestions]);
 
   const handleGenerateWithLimit = (codePct: number) => {
     // Check plan limits first
