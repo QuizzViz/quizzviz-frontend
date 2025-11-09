@@ -88,25 +88,9 @@ const TermsOfService = () => {
               All standard purchases of QuizzViz services are fully refundable within 14 days of purchase.
             </p>
 
-            <h3 className="text-xl font-semibold mb-3">Payment Processing</h3>
-            <p className="mb-6">
-              All payments for QuizzViz services are processed through Paddle.com, our authorized payment processor and merchant of record. Paddle provides secure payment processing and handles all payment-related matters on our behalf. By subscribing, you authorize Paddle to charge the applicable subscription fees to your chosen payment method.
-            </p>
-
             <h3 className="text-xl font-semibold mb-3">Subscription Terms</h3>
             <p className="mb-6">
               Subscriptions are billed according to the selected plan. Currently, subscriptions are non-recurring by default, meaning they will not automatically renew at the end of the billing period. If you wish to continue using premium features after your subscription expires, you must manually subscribe again.
-            </p>
-
-            <p className="text-sm text-muted-foreground">
-              By using our services, you agree to Paddle's{' '}
-              <a href="https://paddle.com/legal/terms" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                Terms of Service
-              </a>{' '}
-              and{' '}
-              <a href="https://paddle.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                Privacy Policy
-              </a>.
             </p>
           </section>
 
