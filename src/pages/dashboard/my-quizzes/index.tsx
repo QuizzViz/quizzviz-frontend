@@ -267,7 +267,7 @@ export default function MyQuizzesPage() {
                       </div>
                     )}
                     
-                    {!isConsumerPlan || !isElitePlan && (
+                    {isFreePlan && (
                       <div className="mt-8 border-t border-white/10 pt-6">
                         <div className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 p-6 rounded-lg">
                           <h3 className="text-lg font-medium mb-2">Upgrade to Consumer Plan</h3>
