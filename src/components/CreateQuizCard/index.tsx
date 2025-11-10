@@ -60,7 +60,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     }
     
     // const currentMonthQuizzes = quizUsage.data.current_month.quiz_count || 0;
-    const currentMonthQuizzes = 10;
+    const currentMonthQuizzes = 30;
     const userLimit = planLimits.maxQuizzes;
     const isLimitReached = currentMonthQuizzes >= userLimit;
     const remainingQuizzes = Math.max(0, userLimit - currentMonthQuizzes);
@@ -108,7 +108,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
           console.log('Data refreshed:', {
             planName,
             // quizCount: quizUsage?.data?.current_month?.quiz_count || 10,
-            quizCount: 10,
+            quizCount: 30,
             limit: planLimits.maxQuizzes
           });
         }
@@ -250,13 +250,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                       {planInfo.currentMonthQuizzes} / {planInfo.userLimit}
                     </span>
                   </div>
-                  {planInfo.showUpgrade && planInfo.upgradePlan && (
-                    <Button variant="link" className="h-auto p-0 text-blue-500 hover:text-blue-600" asChild>
-                      <Link href="/pricing">
-                        Upgrade to {planInfo.upgradePlan}
-                      </Link>
-                    </Button>
-                  )}
+                  {/* Upgrade link removed as per request */}
                 </div>
               )
             )
