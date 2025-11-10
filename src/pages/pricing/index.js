@@ -174,8 +174,8 @@ const PricingPage = () => {
                     plan.popular
                       ? 'bg-gradient-to-br from-purple-950/40 via-pink-950/30 to-purple-950/40 border-purple-700/50 shadow-2xl shadow-purple-500/20 ring-2 ring-purple-500/30'
                       : plan.recommended
-                      ? 'bg-gradient-to-br from-emerald-950/50 via-teal-950/40 to-emerald-950/50 border-emerald-700/50 shadow-2xl shadow-emerald-500/20 ring-2 ring-emerald-500/30'
-                      : 'bg-zinc-900/40 border-zinc-800/50 hover:bg-zinc-900/60 hover:border-zinc-700/50 hover:shadow-xl'
+                      ? 'bg-gradient-to-br from-emerald-950/50 via-teal-950/40 to-emerald-950/50 border-emerald-700/50 shadow-2xl shadow-emerald-500/20 ring-2 ring-emerald-500/30 hover:shadow-2xl hover:shadow-emerald-500/20'
+                      : 'bg-zinc-900/40 border-zinc-800/50 hover:bg-zinc-900/60 hover:border-zinc-700/50 hover:shadow-none'
                   }`}
                 >
                   {/* Gradient overlay */}
@@ -239,10 +239,12 @@ const PricingPage = () => {
 ) : (
   <button
     className={`w-full py-3 rounded-xl text-sm font-bold transition-all duration-300 mb-6 ${
-      plan.popular
-        ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] text-white shadow-lg shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 animate-gradient'
+      plan.id === 'elite'
+        ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] text-white hover:shadow-sm shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 animate-gradient'
         : plan.recommended
-        ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-black shadow-lg shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
+        ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-black hover:shadow-md shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
+        : plan.id === 'consumer'
+        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-sm shadow-blue-700 hover:shadow-blue-500/60 hover:scale-105'
         : 'bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 hover:scale-105'
     }`}
   >
