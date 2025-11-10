@@ -242,7 +242,7 @@ const PricingPage = () => {
       plan.id === 'elite'
         ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] text-white hover:shadow-sm shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 animate-gradient'
         : plan.recommended
-        ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-black hover:shadow-md shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
+        ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-white hover:shadow-sm shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
         : plan.id === 'consumer'
         ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-sm shadow-blue-700 hover:shadow-blue-500/60 hover:scale-105'
         : 'bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 hover:scale-105'
