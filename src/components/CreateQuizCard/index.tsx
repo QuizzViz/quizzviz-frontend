@@ -67,23 +67,37 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
   } = useCreateQuizV2();
 
   // Get current plan info and usage
-  const { message: upgradeMessage, upgradePlan, showUpgrade } = useMemo(() => {
-    if (!planName || !quizUsage?.data) {
-      return { message: '', upgradePlan: '', showUpgrade: false };
+  const { message: upgradeMessage, upgradePlan, showUpgrade, hasReachedLimit } = useMemo(() => {
+    if (!planName || !quizUsage?.data?.current_month) {
+      return { 
+        message: '', 
+        upgradePlan: '', 
+        showUpgrade: false, 
+        hasReachedLimit: false 
+      };
     }
-    // const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count;
-
-    const currentMonthQuizzes = 2;
-    console.log(currentMonthQuizzes);
-    return getUpgradeMessage(planName, currentMonthQuizzes, maxQuestions || 0);
-  }, [planName, quizUsage, maxQuestions]);
-
-  // Check if user has reached their monthly limit
-  const hasReachedLimit = useMemo(() => {
-    if (!isUserLoaded || !quizUsage?.data?.current_month || !maxQuestions) return false;
+    
     const currentMonthQuizzes = quizUsage.data.current_month.quiz_count || 0;
-    return currentMonthQuizzes >= maxQuestions;
-  }, [quizUsage, maxQuestions, isUserLoaded]);
+    const planLimits = {
+      'Free': 2,
+      'Consumer': 10,
+      'Elite': 30,
+      'Business': 30,
+      'Enterprise': 1000 // High limit for enterprise
+    };
+    
+    const userLimit = planLimits[planName as keyof typeof planLimits] || 2;
+    const isLimitReached = currentMonthQuizzes >= userLimit;
+    
+    const { message, upgradePlan, showUpgrade } = getUpgradeMessage(planName, currentMonthQuizzes, userLimit);
+    
+    return {
+      message,
+      upgradePlan,
+      showUpgrade,
+      hasReachedLimit: isLimitReached
+    };
+  }, [planName, quizUsage?.data?.current_month]);
 
   const handleGenerateWithLimit = (codePct: number) => {
     // Check plan limits first
@@ -92,10 +106,28 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       return;
     }
 
-    // Then check question count limit
-    const effectiveMax = Math.min(maxQuestions as number);
+    // Get current plan limits
+    const planLimits = {
+      'Free': 2,
+      'Consumer': 10,
+      'Elite': 30,
+      'Business': 30,
+      'Enterprise': 1000
+    };
+    
+    const userLimit = planLimits[planName as keyof typeof planLimits] || 2;
+    const remainingQuizzes = userLimit - (quizUsage?.data?.current_month?.quiz_count || 0);
+    
+    // Check if requested count exceeds remaining quota
+    if (count > remainingQuizzes) {
+      setError(`You can only generate ${remainingQuizzes} more quizzes this month on your ${planName} plan.`);
+      return;
+    }
+    
+    // Check question count limit
+    const effectiveMax = maxQuestions || 10; // Default to 10 if maxQuestions is not provided
     if (count > effectiveMax) {
-      setError(`Maximum ${effectiveMax} questions allowed in your plan`);
+      setError(`Maximum ${effectiveMax} questions allowed per quiz`);
       return;
     }
 
@@ -193,17 +225,26 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className={hasReachedLimit ? 'cursor-not-allowed' : ''}>
-                    <GenerateButton
-                      isBusy={isReasoning || isFetching}
-                      onClick={() => handleGenerateWithLimit(codePercentage)}
-                      labelBusy="Thinking..."
-                      labelIdle={hasReachedLimit ? 'Limit Reached' : 'Generate'}
-                      leftIconBusy={Loader2}
-                      leftIconIdle={hasReachedLimit ? AlertCircle : Send}
-                      className={`w-full sm:w-auto ${hasReachedLimit ? 'opacity-70' : ''}`}
+                  <div>
+                    <Button
+                      className={`bg-foreground hover:bg-muted-foreground text-background transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center ${
+                        hasReachedLimit ? 'opacity-70 cursor-not-allowed' : ''
+                      }`}
                       disabled={hasReachedLimit}
-                    />
+                      onClick={() => handleGenerateWithLimit(codePercentage)}
+                    >
+                      {hasReachedLimit ? (
+                        <>
+                          <AlertTriangle className="h-4 w-4 mr-2" />
+                          Limit Reached
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-4 w-4 mr-2" />
+                          Generate Quiz
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </TooltipTrigger>
                 {hasReachedLimit && (
