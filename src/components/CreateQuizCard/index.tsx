@@ -59,8 +59,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       };
     }
     
-    // const currentMonthQuizzes = quizUsage.data.current_month.quiz_count || 0;
-    const currentMonthQuizzes = 30;
+    const currentMonthQuizzes = quizUsage.data.current_month.quiz_count || 0;
     const userLimit = planLimits.maxQuizzes;
     const isLimitReached = currentMonthQuizzes >= userLimit;
     const remainingQuizzes = Math.max(0, userLimit - currentMonthQuizzes);
@@ -107,8 +106,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
         if (isMounted && process.env.NODE_ENV !== 'production') {
           console.log('Data refreshed:', {
             planName,
-            // quizCount: quizUsage?.data?.current_month?.quiz_count || 10,
-            quizCount: 30,
+            quizCount: quizUsage?.data?.current_month?.quiz_count || 0,
             limit: planLimits.maxQuizzes
           });
         }
