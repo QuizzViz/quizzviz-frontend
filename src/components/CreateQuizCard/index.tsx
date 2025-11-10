@@ -13,7 +13,7 @@ import CodeTheorySlider from "./parts/CodeTheorySlider";
 import GenerateButton from "./parts/GenerateButton";
 import ReasoningPanel from "./parts/ReasoningPanel";
 import { useCreateQuizV2 } from "./hooks/useCreateQuizV2";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
@@ -29,12 +29,40 @@ interface CreateQuizCardProps {
 export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: CreateQuizCardProps) {
   const maxQuestions = propMaxQuestions;
   const [codePercentage, setCodePercentage] = useState(50);
+  // Get user data from Clerk
   const { user, isLoaded: isUserLoaded } = useUser();
-  const quizUsage = useQuizUsage();
+  
+  // Get quiz usage data
+  const quizUsage = useQuizUsage({
+    refetchOnMount: 'always', 
+    refetchOnWindowFocus: true,
+  });
+  
   const isLoadingUsage = quizUsage?.isLoading || !isUserLoaded;
   
-  // Get plan from user's public metadata
-  const planName = (user?.publicMetadata?.plan as string) || 'Free';
+  // Get plan from user's public metadata with proper type safety
+  const planName = useMemo(() => {
+    // Add type assertion for publicMetadata
+    const publicMetadata = user?.publicMetadata as { plan?: string } | undefined;
+    const plan = publicMetadata?.plan || 'Free';
+    console.log('Current plan from Clerk:', plan);
+    return plan;
+  }, [user?.publicMetadata]);
+  
+  // Force a refetch of user data when component mounts
+  useEffect(() => {
+    // This will trigger a refetch of user data
+    const refetchUserData = async () => {
+      try {
+        await user?.reload();
+        console.log('User data reloaded');
+      } catch (error) {
+        console.error('Error reloading user data:', error);
+      }
+    };
+    
+    refetchUserData();
+  }, []);
   
   // For backward compatibility with existing code
   const userPlan = useMemo(() => ({
