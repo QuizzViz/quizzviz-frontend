@@ -41,30 +41,44 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
   const maxQuestions = propMaxQuestions;
   const [codePercentage, setCodePercentage] = useState(50);
   
-  // Hooks
+  // Get user data from Clerk
   const { user, isLoaded: isUserLoaded } = useUser();
+  
+  // Get quiz usage data with forced refresh
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const { toast } = useToast();
   const quizUsage = useQuizUsage();
+  
+  // Manually refetch to ensure fresh data
+  useEffect(() => {
+    if (quizUsage.refetch) {
+      quizUsage.refetch();
+    }
+  }, []);
   
   const isLoadingUsage = quizUsage?.isLoading || !isUserLoaded;
   
   // Get plan from user's public metadata with proper type safety
   const planName = useMemo(() => {
-    if (!user) return 'Free';
-    
-    const publicMetadata = user.publicMetadata as Record<string, unknown>;
-    const plan = (publicMetadata?.plan as string) || 'Free';
-    
-    // Normalize plan name (capitalize first letter)
-    const normalizedPlan = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase();
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Current plan from Clerk:', normalizedPlan);
+    if (!user) {
+      console.debug('[DEBUG] No user found, using default Free plan');
+      return 'Free';
     }
     
-    return normalizedPlan as PlanName;
+    // Safely access publicMetadata with type safety
+    const publicMetadata = user.publicMetadata as Record<string, unknown>;
+    const plan = (publicMetadata?.plan as string) || 'Free';
+    const normalizedPlan = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase();
+    
+    // Always log plan information for debugging
+    console.debug('[DEBUG] User plan info:', {
+      rawPlan: plan,
+      normalizedPlan,
+      userId: user.id,
+      lastSignIn: user.lastSignInAt,
+      updatedAt: user.updatedAt
+    });
+    
+    return normalizedPlan;
   }, [user]);
 
   // Calculate plan limits and upgrade info - SINGLE SOURCE OF TRUTH
@@ -82,19 +96,12 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     }
     
     const currentMonthQuizzes = quizUsage.data.current_month.quiz_count || 0;
-    const userLimit = PLAN_LIMITS[planName] || PLAN_LIMITS['Free'];
+    // Ensure planName is a valid key of PLAN_LIMITS
+    const userLimit = (PLAN_LIMITS[planName as PlanName] !== undefined 
+      ? PLAN_LIMITS[planName as PlanName] 
+      : PLAN_LIMITS.Free);
     const isLimitReached = currentMonthQuizzes >= userLimit;
     const remainingQuizzes = Math.max(0, userLimit - currentMonthQuizzes);
-    
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Plan Info:', {
-        plan: planName,
-        current: currentMonthQuizzes,
-        limit: userLimit,
-        remaining: remainingQuizzes,
-        isLimitReached
-      });
-    }
     
     // Get upgrade message based on current plan
     const { message, upgradePlan, showUpgrade } = getUpgradeMessage(
@@ -114,33 +121,61 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     };
   }, [planName, quizUsage?.data?.current_month]);
   
-  // Handle user data refresh on mount
+  // Handle user data refresh on mount and plan changes
   useEffect(() => {
     let isMounted = true;
     
-    const refetchUserData = async () => {
+    const refetchAllData = async () => {
       if (!user) return;
       
       try {
+        // Force reload user data
+        console.debug('[DEBUG] Refreshing user data...');
         await user.reload();
-        await queryClient.invalidateQueries({ queryKey: ['quiz-usage'] });
         
-        if (isMounted && process.env.NODE_ENV !== 'production') {
-          console.log('User data and quiz usage refreshed');
+        // Invalidate all queries and force refetch
+        console.debug('[DEBUG] Invalidating and refetching quiz usage...');
+        await Promise.all([
+          queryClient.invalidateQueries({ 
+            queryKey: ['quiz-usage'],
+            refetchType: 'active',
+          }),
+          queryClient.refetchQueries({
+            queryKey: ['quiz-usage'],
+            type: 'active',
+          })
+        ]);
+        
+        // Log current state after refresh
+        if (isMounted) {
+          const currentUsage = quizUsage?.data?.current_month?.quiz_count || 0;
+          console.debug('[DEBUG] Data refresh complete:', {
+            planName,
+            quizCount: currentUsage,
+            limit: PLAN_LIMITS[planName as PlanName] || 0,
+            timestamp: new Date().toISOString()
+          });
         }
       } catch (error) {
-        if (isMounted) {
-          console.error('Error refreshing user data:', error);
-        }
+        console.error('[ERROR] Failed to refresh data:', {
+          error,
+          userId: user?.id,
+          timestamp: new Date().toISOString()
+        });
       }
     };
     
-    refetchUserData();
+    // Initial fetch
+    refetchAllData();
+    
+    // Set up periodic refresh (every 5 minutes)
+    const refreshInterval = setInterval(refetchAllData, 5 * 60 * 1000);
     
     return () => {
       isMounted = false;
+      clearInterval(refreshInterval);
     };
-  }, [user, queryClient]);
+  }, [user, queryClient, planName, quizUsage?.data]);
 
   const {
     // form
