@@ -19,8 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserPlan } from "@/hooks/useUserPlan";
-import { getPlanLimits, getUpgradeMessage } from "@/config/plans";
-import { useQuizUsage } from "@/hooks/useQuizUsage";
+import { getPlanLimits, PLAN_LIMITS } from "@/config/plans";
+import { useQuizUsage, getUpgradeMessage } from "@/hooks/useQuizUsage";
 import { useUser } from "@clerk/nextjs";
 
 interface CreateQuizCardProps {
@@ -38,32 +38,12 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
   const planName = userPlan?.plan_name || 'Free';
   const planLimits = getPlanLimits(planName);
   
-  // Get quiz usage data with forced refresh
+  // Get quiz usage data
   const quizUsage = useQuizUsage();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const { toast } = useToast();
   const isLoadingUsage = quizUsage?.isLoading || isLoadingPlan || !isUserLoaded;
-  
-  // Manually refetch to ensure fresh data
-  useEffect(() => {
-    const refetchData = async () => {
-      try {
-        if (quizUsage.refetch) {
-          await quizUsage.refetch();
-        }
-        if (user) {
-          await user.reload();
-        }
-      } catch (error) {
-        console.error('Error refreshing data:', error);
-      }
-    };
-
-    refetchData();
-    
-    // Set up periodic refresh every 5 minutes
-    const interval = setInterval(refetchData, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, [quizUsage, user]);
   
   // Get current plan info and usage
   const planInfo = useMemo(() => {
@@ -101,90 +81,9 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       remainingQuizzes 
     };
   }, [planName, quizUsage?.data?.current_month, planLimits]);
-  
-  const { message: upgradeMessage, upgradePlan, showUpgrade, hasReachedLimit, userLimit, currentMonthQuizzes, remainingQuizzes } = planInfo;
 
-  // Add the return statement with the component's JSX
-  return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardContent className="p-6">
-        <QuizHeader />
-        
-        <div className="space-y-6">
-          <TopicInput value={topic} onChange={setTopic} />
-          
-          <DifficultyCountRow 
-            difficulty={difficulty}
-            onDifficultyChange={setDifficulty}
-            count={count}
-            onCountChange={setCount}
-            maxCount={maxQuestions}
-          />
-          
-          <CodeTheorySlider 
-            value={codePercentage}
-            onChange={setCodePercentage}
-          />
-          
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500">
-              {isLoadingUsage ? (
-                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-              ) : (
-                <span>
-                  {currentMonthQuizzes} of {userLimit} quizzes used this month
-                </span>
-              )}
-            </div>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <GenerateButton 
-                      onClick={() => handleGenerateWithLimit(codePercentage)}
-                      disabled={isFetching || hasReachedLimit}
-                      isBusy={isFetching}
-                    >
-                      {hasReachedLimit ? 'Limit Reached' : 'Generate Quiz'}
-                    </GenerateButton>
-                  </div>
-                </TooltipTrigger>
-                {hasReachedLimit && (
-                  <TooltipContent>
-                    <p className="max-w-xs">
-                      {upgradeMessage} <Link href="/pricing" className="font-medium text-blue-500 hover:underline">Upgrade now</Link>
-                    </p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm flex items-start">
-              <AlertCircle className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-          
-          {quizData && (
-            <ReasoningPanel 
-              isOpen={isReasoning}
-              onClose={() => setIsReasoning(false)}
-              steps={steps}
-              stepIcons={stepIcons}
-              stepIndex={stepIndex}
-              typedText={typedText}
-              progress={progress}
-            />
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-  }, [planName, quizUsage?.data?.current_month, planLimits]);
-  
+  // Handle data refresh on mount and periodically
+  useEffect(() => {
     let isMounted = true;
     
     const refetchAllData = async () => {
@@ -192,38 +91,29 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       
       try {
         // Force reload user data
-        console.debug('[DEBUG] Refreshing user data...');
         await user.reload();
         
-        // Invalidate all queries and force refetch
-        console.debug('[DEBUG] Invalidating and refetching quiz usage...');
-        await Promise.all([
-          queryClient.invalidateQueries({ 
-            queryKey: ['quiz-usage'],
-            refetchType: 'active',
-          }),
-          queryClient.refetchQueries({
-            queryKey: ['quiz-usage'],
-            type: 'active',
-          })
-        ]);
+        // Invalidate and refetch quiz usage
+        await queryClient.invalidateQueries({ 
+          queryKey: ['quiz-usage'],
+          refetchType: 'active',
+        });
         
-        // Log current state after refresh
-        if (isMounted) {
-          const currentUsage = quizUsage?.data?.current_month?.quiz_count || 0;
-          console.debug('[DEBUG] Data refresh complete:', {
+        if (quizUsage?.refetch) {
+          await quizUsage.refetch();
+        }
+        
+        if (isMounted && process.env.NODE_ENV !== 'production') {
+          console.log('Data refreshed:', {
             planName,
-            quizCount: currentUsage,
-            limit: PLAN_LIMITS[planName as PlanName] || 0,
-            timestamp: new Date().toISOString()
+            quizCount: quizUsage?.data?.current_month?.quiz_count || 0,
+            limit: planLimits.maxQuizzes
           });
         }
       } catch (error) {
-        console.error('[ERROR] Failed to refresh data:', {
-          error,
-          userId: user?.id,
-          timestamp: new Date().toISOString()
-        });
+        if (isMounted) {
+          console.error('Error refreshing data:', error);
+        }
       }
     };
     
@@ -237,7 +127,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       isMounted = false;
       clearInterval(refreshInterval);
     };
-  }, [user, queryClient, planName, quizUsage?.data]);
+  }, [user, queryClient, planName, quizUsage, planLimits.maxQuizzes]);
 
   const {
     // form
