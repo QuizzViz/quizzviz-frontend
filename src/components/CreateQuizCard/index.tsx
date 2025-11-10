@@ -71,7 +71,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     if (!planName || !quizUsage?.data) {
       return { message: '', upgradePlan: '', showUpgrade: false };
     }
-    const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count || 0;
+    const currentMonthQuizzes = quizUsage.data?.current_month?.quiz_count;
     return getUpgradeMessage(planName, currentMonthQuizzes, maxQuestions || 0);
   }, [planName, quizUsage, maxQuestions]);
 
