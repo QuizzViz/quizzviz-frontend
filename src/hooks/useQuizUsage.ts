@@ -24,7 +24,7 @@ export interface QuizUsageData {
   total_quizzes: number;
 }
 
-export function useQuizUsage() {
+export function useQuizUsage(p0?: { refetchOnMount: string; refetchOnWindowFocus: boolean; }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [errorShown, setErrorShown] = useState(false);
