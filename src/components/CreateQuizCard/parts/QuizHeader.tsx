@@ -7,7 +7,7 @@ const QuizHeader: FC = () => {
       <h2 className="text-3xl font-semibold tracking-tight text-foreground mb-2">
         Create Your Quiz
       </h2>
-      <p className="text-base text-muted-foreground leading-relaxed">From Idea to Quiz</p>
+      <p className="text-base text-muted-foreground leading-relaxed">From Topic to Quiz</p>
     </div>
   );
 };
