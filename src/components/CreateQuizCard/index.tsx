@@ -18,88 +18,69 @@ import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { useQuizUsage, getUpgradeMessage } from "@/hooks/useQuizUsage";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { getPlanLimits, getUpgradeMessage } from "@/config/plans";
+import { useQuizUsage } from "@/hooks/useQuizUsage";
 import { useUser } from "@clerk/nextjs";
 
 interface CreateQuizCardProps {
   maxQuestions?: number;
 }
 
-// Plan limits configuration
-const PLAN_LIMITS = {
-  'Free': 2,
-  'Consumer': 10,
-  'Elite': 30,
-  'Business': 30,
-  'Enterprise': 1000
-} as const;
-
-type PlanName = keyof typeof PLAN_LIMITS;
-
 // Main container composing all sub-parts and business logic via a hook
 export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: CreateQuizCardProps) {
   const maxQuestions = propMaxQuestions;
   const [codePercentage, setCodePercentage] = useState(50);
   
-  // Get user data from Clerk
+  // Get user data
   const { user, isLoaded: isUserLoaded } = useUser();
+  const { data: userPlan, isLoading: isLoadingPlan } = useUserPlan();
+  const planName = userPlan?.plan_name || 'Free';
+  const planLimits = getPlanLimits(planName);
   
   // Get quiz usage data with forced refresh
-  const queryClient = useQueryClient();
   const quizUsage = useQuizUsage();
+  const isLoadingUsage = quizUsage?.isLoading || isLoadingPlan || !isUserLoaded;
   
   // Manually refetch to ensure fresh data
   useEffect(() => {
-    if (quizUsage.refetch) {
-      quizUsage.refetch();
-    }
-  }, []);
-  
-  const isLoadingUsage = quizUsage?.isLoading || !isUserLoaded;
-  
-  // Get plan from user's public metadata with proper type safety
-  const planName = useMemo(() => {
-    if (!user) {
-      console.debug('[DEBUG] No user found, using default Free plan');
-      return 'Free';
-    }
-    
-    // Safely access publicMetadata with type safety
-    const publicMetadata = user.publicMetadata as Record<string, unknown>;
-    const plan = (publicMetadata?.plan as string) || 'Free';
-    const normalizedPlan = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase();
-    
-    // Always log plan information for debugging
-    console.debug('[DEBUG] User plan info:', {
-      rawPlan: plan,
-      normalizedPlan,
-      userId: user.id,
-      lastSignIn: user.lastSignInAt,
-      updatedAt: user.updatedAt
-    });
-    
-    return normalizedPlan;
-  }, [user]);
+    const refetchData = async () => {
+      try {
+        if (quizUsage.refetch) {
+          await quizUsage.refetch();
+        }
+        if (user) {
+          await user.reload();
+        }
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+      }
+    };
 
-  // Calculate plan limits and upgrade info - SINGLE SOURCE OF TRUTH
+    refetchData();
+    
+    // Set up periodic refresh every 5 minutes
+    const interval = setInterval(refetchData, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [quizUsage, user]);
+  
+  // Get current plan info and usage
   const planInfo = useMemo(() => {
     if (!planName || !quizUsage?.data?.current_month) {
       return { 
         message: '', 
         upgradePlan: '', 
         showUpgrade: false, 
-        hasReachedLimit: false,
-        userLimit: PLAN_LIMITS['Free'],
+        hasReachedLimit: false, 
+        userLimit: planLimits.maxQuizzes,
         currentMonthQuizzes: 0,
-        remainingQuizzes: PLAN_LIMITS['Free']
+        remainingQuizzes: planLimits.maxQuizzes
       };
     }
     
     const currentMonthQuizzes = quizUsage.data.current_month.quiz_count || 0;
-    // Ensure planName is a valid key of PLAN_LIMITS
-    const userLimit = (PLAN_LIMITS[planName as PlanName] !== undefined 
-      ? PLAN_LIMITS[planName as PlanName] 
-      : PLAN_LIMITS.Free);
+    const userLimit = planLimits.maxQuizzes;
     const isLimitReached = currentMonthQuizzes >= userLimit;
     const remainingQuizzes = Math.max(0, userLimit - currentMonthQuizzes);
     
@@ -110,19 +91,100 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       userLimit
     );
     
-    return {
-      message,
-      upgradePlan,
-      showUpgrade,
-      hasReachedLimit: isLimitReached,
-      userLimit,
-      currentMonthQuizzes,
-      remainingQuizzes
+    return { 
+      message, 
+      upgradePlan, 
+      showUpgrade, 
+      hasReachedLimit: isLimitReached, 
+      userLimit, 
+      currentMonthQuizzes, 
+      remainingQuizzes 
     };
-  }, [planName, quizUsage?.data?.current_month]);
+  }, [planName, quizUsage?.data?.current_month, planLimits]);
   
-  // Handle user data refresh on mount and plan changes
-  useEffect(() => {
+  const { message: upgradeMessage, upgradePlan, showUpgrade, hasReachedLimit, userLimit, currentMonthQuizzes, remainingQuizzes } = planInfo;
+
+  // Add the return statement with the component's JSX
+  return (
+    <Card className="w-full max-w-3xl mx-auto">
+      <CardContent className="p-6">
+        <QuizHeader />
+        
+        <div className="space-y-6">
+          <TopicInput value={topic} onChange={setTopic} />
+          
+          <DifficultyCountRow 
+            difficulty={difficulty}
+            onDifficultyChange={setDifficulty}
+            count={count}
+            onCountChange={setCount}
+            maxCount={maxQuestions}
+          />
+          
+          <CodeTheorySlider 
+            value={codePercentage}
+            onChange={setCodePercentage}
+          />
+          
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              {isLoadingUsage ? (
+                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <span>
+                  {currentMonthQuizzes} of {userLimit} quizzes used this month
+                </span>
+              )}
+            </div>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <GenerateButton 
+                      onClick={() => handleGenerateWithLimit(codePercentage)}
+                      disabled={isFetching || hasReachedLimit}
+                      isBusy={isFetching}
+                    >
+                      {hasReachedLimit ? 'Limit Reached' : 'Generate Quiz'}
+                    </GenerateButton>
+                  </div>
+                </TooltipTrigger>
+                {hasReachedLimit && (
+                  <TooltipContent>
+                    <p className="max-w-xs">
+                      {upgradeMessage} <Link href="/pricing" className="font-medium text-blue-500 hover:underline">Upgrade now</Link>
+                    </p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm flex items-start">
+              <AlertCircle className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+          
+          {quizData && (
+            <ReasoningPanel 
+              isOpen={isReasoning}
+              onClose={() => setIsReasoning(false)}
+              steps={steps}
+              stepIcons={stepIcons}
+              stepIndex={stepIndex}
+              typedText={typedText}
+              progress={progress}
+            />
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+  }, [planName, quizUsage?.data?.current_month, planLimits]);
+  
     let isMounted = true;
     
     const refetchAllData = async () => {
