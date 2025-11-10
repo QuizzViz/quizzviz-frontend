@@ -77,7 +77,10 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       };
     }
     
+    // Ensure plan name is properly capitalized
+    const normalizedPlanName = planName.charAt(0).toUpperCase() + planName.slice(1).toLowerCase();
     const currentMonthQuizzes = quizUsage.data.current_month.quiz_count || 0;
+    
     const planLimits = {
       'Free': 2,
       'Consumer': 10,
@@ -86,10 +89,22 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       'Enterprise': 1000 // High limit for enterprise
     };
     
-    const userLimit = planLimits[planName as keyof typeof planLimits] || 2;
+    console.log('Current Plan:', normalizedPlanName, 'Quizzes:', currentMonthQuizzes);
+    
+    // Get the limit for the current plan, default to Free plan if not found
+    const userLimit = normalizedPlanName in planLimits 
+      ? planLimits[normalizedPlanName as keyof typeof planLimits] 
+      : planLimits['Free'];
+      
     const isLimitReached = currentMonthQuizzes >= userLimit;
     
-    const { message, upgradePlan, showUpgrade } = getUpgradeMessage(planName, currentMonthQuizzes, userLimit);
+    console.log('User Limit:', userLimit, 'Is Limit Reached:', isLimitReached);
+    
+    const { message, upgradePlan, showUpgrade } = getUpgradeMessage(
+      normalizedPlanName, 
+      currentMonthQuizzes, 
+      userLimit
+    );
     
     return {
       message,
