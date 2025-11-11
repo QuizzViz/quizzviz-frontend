@@ -100,7 +100,9 @@ const TermsOfService = () => {
               If you have any questions about these Terms, please contact us at{' '}
               <a href="mailto:syedshahmirsultan@gmail.com" className="text-blue-600 hover:underline">
                 syedshahmirsultan@gmail.com
-              </a>.
+              </a>  or  <a href="mailto:haidersultan0000000000@gmail.com
+" className="text-blue-600 hover:underline">haidersultan0000000000@gmail.com
+</a>.
             </p>
           </section>
         </div>

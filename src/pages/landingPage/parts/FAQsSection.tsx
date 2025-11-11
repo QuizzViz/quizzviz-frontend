@@ -88,7 +88,9 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">Do you support enterprise solutions?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            Currently, QuizzViz is designed for individuals and businesses. However, if you're an enterprise looking for a custom assessment solution with advanced features like team management, API integrations, and unlimited scale, we'd love to hear from you! Please reach out to us at <a href="mailto:syedshahmirsultan@gmail.com" className="text-green-400 hover:text-green-300 underline transition-colors">syedshahmirsultan@gmail.com</a> and we can build a tailored solution for your organization.
+            Currently, QuizzViz is designed for individuals and businesses. However, if you're an enterprise looking for a custom assessment solution with advanced features like team management, API integrations, and unlimited scale, we'd love to hear from you! Please reach out to us at <a href="mailto:syedshahmirsultan@gmail.com" className="text-blue-600 hover:underline transition-colors">syedshahmirsultan@gmail.com</a>  or  <a href="mailto:haidersultan0000000000@gmail.com
+" className="text-blue-600 hover:underline">haidersultan0000000000@gmail.com
+</a> and we can build a tailored solution for your organization.
           </AccordionContent>
         </AccordionItem>
       </Accordion>
