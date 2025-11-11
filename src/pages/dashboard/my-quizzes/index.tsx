@@ -275,7 +275,7 @@ export default function MyQuizzesPage() {
                             Get access to view correct answers after completing quizzes and more advanced features.
                           </p>
                           <Button 
-                            onClick={() => router.push('/dashboard/billing')}
+                            onClick={() => router.push('/pricing')}
                             className="bg-blue-600 hover:bg-blue-700 text-white"
                           >
                             Upgrade Now
