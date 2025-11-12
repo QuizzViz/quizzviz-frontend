@@ -8,7 +8,6 @@ const plans = [
     id: 'free',
     name: 'Free',
     price: '0',
-    yearlyPrice: '0',
     tagline: 'Get started for free',
     features: [
       '2 quizzes per month',
@@ -25,6 +24,8 @@ const plans = [
     name: 'Consumer',
     price: '2.99',
     yearlyPrice: '28.70',
+    monthlyLink:"https://quizzviz1.lemonsqueezy.com/buy/c3dcb5c3-cb9a-42d1-86e8-1b71a6455df6",
+    yearlyLink:"https://quizzviz1.lemonsqueezy.com/buy/16333614-67ed-4a89-b7e2-d5b118fabcd6",
     tagline: 'Perfect for individuals',
     features: [
       '10 quizzes per month',
@@ -41,6 +42,8 @@ const plans = [
     name: 'Elite',
     price: '9.99',
     yearlyPrice: '95.90',
+    monthlyLink: "https://quizzviz1.lemonsqueezy.com/buy/d045fa10-8743-4c68-a12f-32abc7b685dc",
+    yearlyLink: "https://quizzviz1.lemonsqueezy.com/buy/baf0e6c5-637b-42e3-b2c9-22589cbb4ab7",
     tagline: 'Best for power users',
     // popular: true, // Removed until we have actual user data
     features: [
@@ -59,6 +62,8 @@ const plans = [
     price: '99',
     yearlyPrice: '959',
     tagline: 'Most value for teams',
+    monthlyLink:"https://quizzviz1.lemonsqueezy.com/buy/1339e755-d028-4b6e-adbb-8b048f7c8018",
+    yearlyLink:"https://quizzviz1.lemonsqueezy.com/buy/efce1477-8c02-4490-b0b5-babd2730657c",
     recommended: true,
     features: [
       '30 quizzes per month',
@@ -198,59 +203,56 @@ const PricingPage = () => {
                     <p className="text-sm text-gray-400 mb-6">{plan.tagline}</p>
 
                     {/* Price */}
-                    <div className="mb-6">
-                      {isEnterprise ? (
-                        <div>
-                          <div className="text-4xl font-bold text-white mb-1">Custom</div>
-                          <div className="text-xs text-gray-500">Contact for pricing</div>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="flex items-baseline gap-1 mb-1">
-                            <span className="text-4xl font-bold text-white">${displayPrice}</span>
-                            <span className="text-base text-gray-400">
-                              {billingCycle === 'yearly' ? '/yr' : '/mo'}
-                            </span>
-                          </div>
-                          {billingCycle === 'yearly' && !isEnterprise && (
-                            <div className="text-sm text-emerald-400">
-                              ${(parseFloat(displayPrice) / 12).toFixed(2)}/month billed yearly
-                            </div>
-                          )}
-                        </div>
-                      )}
+                    <div className="mb-8">
+                      <div className="flex items-baseline">
+                        <span className="text-4xl font-extrabold text-white">
+                          ${plan.id === 'free' ? plan.price : (billingCycle === 'yearly' ? plan.yearlyPrice : plan.price)}
+                        </span>
+                      </div>
                     </div>
 
                     {/* CTA Button */}
-                {isEnterprise ? (
-  <Link href="/contact">
-    <button
-      className={`w-full py-3 rounded-xl text-sm font-bold transition-all duration-300 mb-6 ${
-        plan.popular
-          ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] text-white shadow-lg shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 animate-gradient'
-          : plan.recommended
-          ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-black shadow-lg shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
-          : 'bg-white text-black hover:bg-gray-100 shadow-lg hover:shadow-xl hover:scale-105'
-      }`}
-    >
-      Contact Sales
-    </button>
-  </Link>
-) : (
-  <button
-    className={`w-full py-3 rounded-xl text-sm font-bold transition-all duration-300 mb-6 ${
-      plan.id === 'elite'
-        ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] text-white hover:shadow-sm shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 animate-gradient'
-        : plan.recommended
-        ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-white hover:shadow-sm shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
-        : plan.id === 'consumer'
-        ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-sm shadow-blue-700 hover:shadow-blue-500/60 hover:scale-105'
-        : 'bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 hover:scale-105'
-    }`}
-  >
-    {plan.id === 'free' ? 'Get Started Free' : 'Get Started'}
-  </button>
-)}
+                    {isEnterprise ? (
+                      <Link href="/contact">
+                        <button
+                          className={`w-full py-3 rounded-xl text-sm font-bold transition-all duration-300 mb-6 ${
+                            plan.popular
+                              ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] text-white shadow-lg shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 animate-gradient'
+                              : plan.recommended
+                              ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-black shadow-lg shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
+                              : 'bg-white text-black hover:bg-gray-100 shadow-lg hover:shadow-xl hover:scale-105'
+                          }`}
+                        >
+                          Contact Sales
+                        </button>
+                      </Link>
+                    ) : plan.id === 'free' ? (
+                      <Link href="/dashboard">
+                        <button
+                          className="w-full py-3 rounded-xl text-sm font-bold transition-all duration-300 mb-6 bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 hover:scale-105"
+                        >
+                          Get Started Free
+                        </button>
+                      </Link>
+                    ) : (
+                      <Link 
+                        href={billingCycle === 'yearly' ? plan.yearlyLink : plan.monthlyLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <button
+                          className={`w-full py-3 rounded-xl text-sm font-bold transition-all duration-300 mb-6 ${
+                            plan.id === 'elite'
+                              ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] text-white hover:shadow-sm shadow-purple-500/40 hover:shadow-purple-500/60 hover:scale-105 animate-gradient'
+                              : plan.recommended
+                              ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-white hover:shadow-sm shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
+                              : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-sm shadow-blue-700 hover:shadow-blue-500/60 hover:scale-105'
+                          }`}
+                        >
+                          Subscribe Now
+                        </button>
+                      </Link>
+                    )}
                     {/* Features */}
                     <ul className="space-y-3">
                       {plan.features.map((feature, i) => (
