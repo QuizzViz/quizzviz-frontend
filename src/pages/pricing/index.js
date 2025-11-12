@@ -286,74 +286,74 @@ const PricingPage = () => {
                 <thead className='w-full'>
                   <tr className="border-b border-zinc-800 ">
                     <th className="py-5 px-4 text-left text-sm font-bold text-white bg-zinc-900/60 w-1/5">Features</th>
-                    <th className="py-5 px-2 text-center text-sm font-semibold text-gray-300 bg-zinc-900/40 w-1/5">Free</th>
-                    <th className="py-5 px-2 text-center text-sm font-semibold text-gray-300 bg-zinc-900/40 w-1/5">Consumer</th>
-                    <th className="py-5 px-2 text-center text-sm font-semibold text-gray-300 bg-zinc-900/40 w-1/5">Elite</th>
+                    <th className="py-5 px-2 text-center text-sm font-semibold bg-zinc-900/40 w-1/5">Free</th>
+                    <th className="py-5 px-2 text-center text-sm font-semibold text-blue-400 bg-blue-950/20 w-1/5">Consumer</th>
+                    <th className="py-5 px-2 text-center text-sm font-semibold text-pink-400 bg-pink-950/20 w-1/5">Elite</th>
                     <th className="py-5 px-2 text-center text-sm font-semibold text-emerald-400 bg-emerald-950/20 w-1/5">Business</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/50 w-full">
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-4 text-sm font-medium text-white">Monthly Quizzes</td>
-                    <td className="py-4 px-2 text-sm text-center text-gray-400">2</td>
-                    <td className="py-4 px-2 text-sm text-center text-gray-400">10</td>
-                    <td className="py-4 px-2 text-sm text-center text-gray-400">30</td>
+                    <td className="py-4 px-2 text-sm text-center text-zinc-400 bg-zinc-900/40 font-semibold">2</td>
+                    <td className="py-4 px-2 text-sm text-center text-blue-400 font-semibold bg-blue-950/10">10</td>
+                    <td className="py-4 px-2 text-sm text-center text-pink-400 font-semibold bg-pink-950/10">30</td>
                     <td className="py-4 px-2 text-sm text-center text-emerald-400 font-semibold bg-emerald-950/10">30</td>
                   </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-4 text-sm font-medium text-white">Questions per Quiz</td>
-                    <td className="py-4 px-2 text-sm text-center text-gray-400">10</td>
-                    <td className="py-4 px-2 text-sm text-center text-gray-400">30</td>
-                    <td className="py-4 px-2 text-sm text-center text-gray-400">100</td>
+                    <td className="py-4 px-2 text-sm text-center text-zinc-400  font-semibold bg-zinc-900/40">10</td>
+                    <td className="py-4 px-2 text-sm text-center text-blue-400 font-semibold bg-blue-950/10">30</td>
+                    <td className="py-4 px-2 text-sm text-center text-pink-400 font-semibold bg-pink-950/10">100</td>
                     <td className="py-4 px-2 text-sm text-center text-emerald-400 font-semibold bg-emerald-950/10">200</td>
                   </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-4 text-sm font-medium text-white">View Correct Answers</td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
-                    <td className="py-4 px-2"><Check className="w-5 h-5 mx-auto text-green-400" /></td>
-                    <td className="py-4 px-2"><Check className="w-5 h-5 mx-auto text-green-400" /></td>
+                    <td className="py-4 px-2 bg-zinc-900/40"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-2 bg-blue-950/10"><Check className="w-5 h-5 mx-auto text-blue-400" /></td>
+                    <td className="py-4 px-2 bg-pink-950/10"><Check className="w-5 h-5 mx-auto text-pink-400" /></td>
                     <td className="py-4 px-2 bg-emerald-950/10"><Check className="w-5 h-5 mx-auto text-emerald-400" /></td>
                   </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-4 text-sm font-medium text-white">Proctoring Level</td>
-                    <td className="py-4 px-2 text-xs text-center text-gray-500">Intermediate</td>
-                    <td className="py-4 px-2 text-xs text-center text-gray-500">Intermediate</td>
-                    <td className="py-4 px-2 text-xs text-center text-gray-400">Advanced</td>
+                    <td className="py-4 px-2 text-xs text-center text-zinc-400 bg-zinc-900/40 font-semibold">Intermediate</td>
+                    <td className="py-4 px-2 text-xs text-center text-blue-400 font-semibold bg-blue-950/10">Intermediate</td>
+                    <td className="py-4 px-2 text-xs text-center text-pink-400 font-semibold bg-pink-950/10">Advanced</td>
                     <td className="py-4 px-2 text-xs text-center text-emerald-400 font-semibold bg-emerald-950/10">Advanced</td>
                   </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-4 text-sm font-medium text-white">Can share quiz with others</td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-2 bg-zinc-900/40"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-2 bg-blue-950/10"><X className="w-5 h-5 mx-auto text-blue-400/60" /></td>
+                    <td className="py-4 px-2 bg-pink-950/10"><X className="w-5 h-5 mx-auto text-pink-400/60" /></td>
                     <td className="py-4 px-2 bg-emerald-950/10"><Check className="w-5 h-5 mx-auto text-emerald-400" /></td>
                   </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-4 text-sm font-medium text-white">Analytics Dashboard</td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-2 bg-zinc-900/40"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-2 bg-blue-950/10"><X className="w-5 h-5 mx-auto text-blue-400/60" /></td>
+                    <td className="py-4 px-2 bg-pink-950/10"><X className="w-5 h-5 mx-auto text-pink-400/60" /></td>
                     <td className="py-4 px-2 text-sm text-center text-emerald-400 font-semibold bg-emerald-950/10">Advanced</td>
                   </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-4 text-sm font-medium text-white">Data Export</td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-2 bg-zinc-900/40"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-2 bg-blue-950/10"><X className="w-5 h-5 mx-auto text-blue-400/60" /></td>
+                    <td className="py-4 px-2 bg-pink-950/10"><X className="w-5 h-5 mx-auto text-pink-400/60" /></td>
                     <td className="py-4 px-2 bg-emerald-950/10"><Check className="w-5 h-5 mx-auto text-emerald-400" /></td>
                   </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-4 text-sm font-medium text-white">Customizable Settings</td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
-                    <td className="py-4 px-2"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-2 bg-zinc-900/40"><X className="w-5 h-5 mx-auto text-red-400/60" /></td>
+                    <td className="py-4 px-2 bg-blue-950/10"><X className="w-5 h-5 mx-auto text-blue-400/60" /></td>
+                    <td className="py-4 px-2 bg-pink-950/10"><X className="w-5 h-5 mx-auto text-pink-400/60" /></td>
                     <td className="py-4 px-2 bg-emerald-950/10"><Check className="w-5 h-5 mx-auto text-emerald-400" /></td>
                   </tr>
                   <tr className="hover:bg-zinc-900/30 transition-colors">
                     <td className="py-4 px-4 text-sm font-medium text-white">Support Response</td>
-                    <td className="py-4 px-2 text-xs text-center text-gray-500">Community</td>
-                    <td className="py-4 px-2 text-xs text-center text-gray-500">Email</td>
-                    <td className="py-4 px-2 text-xs text-center text-gray-400">Priority</td>
+                    <td className="py-4 px-2 text-xs text-center text-zinc-400 bg-zinc-900/40  font-semibold">Community</td>
+                    <td className="py-4 px-2 text-xs text-center text-blue-400 font-semibold bg-blue-950/10">Email</td>
+                    <td className="py-4 px-2 text-xs text-center text-pink-400 font-semibold bg-pink-950/10">Priority</td>
                     <td className="py-4 px-2 text-xs text-center text-emerald-400 font-semibold bg-emerald-950/10">Priority</td>
                   </tr>
                 </tbody>
