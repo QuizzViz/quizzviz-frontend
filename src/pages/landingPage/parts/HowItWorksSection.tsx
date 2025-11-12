@@ -94,7 +94,7 @@ const HowItWorksSection: FC = () => {
             </span>
           </h2>
           <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed opacity-90 mb-8">
-            Three simple steps to revolutionize your coding assessments—whether building personal skills and hiring the right candidates.
+            Three simple steps to revolutionize your coding assessments,whether building personal skills and hiring the right candidates.
           </p>
           
           {/* User Type Toggle */}

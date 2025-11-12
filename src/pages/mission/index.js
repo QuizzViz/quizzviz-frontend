@@ -46,7 +46,7 @@ We’re on a mission to transform how skills are assessed              </p>
                 We believe that true understanding isn't about memorizing syntax or reciting definitions. Real-world scenario-based questions test your concepts in depth, challenging you to apply what you know in practical situations that mirror actual development challenges.
               </p>
               <p className="text-gray-400 leading-relaxed">
-                Quizzes aren't just about getting the right answers—they're about revealing how deeply you understand a concept. They show you exactly where you stand with a particular language, framework, or tool.
+                Quizzes aren't just about getting the right answers,they're about revealing how deeply you understand a concept. They show you exactly where you stand with a particular language, framework, or tool.
               </p>
             </div>
 
@@ -56,7 +56,7 @@ We’re on a mission to transform how skills are assessed              </p>
                 We believe in attempting quizzes in a distraction-free, no-cheating environment. Why? Because only then can you see a clear, honest reflection of your knowledge. 
               </p>
               <p className="text-gray-400 leading-relaxed">
-                When there are no shortcuts, no Google searches, no AI assistants in the background—that's when you truly discover what you know and what you need to learn. This honest assessment is the foundation for real growth.
+                When there are no shortcuts, no Google searches, no AI assistants in the background,that's when you truly discover what you know and what you need to learn. This honest assessment is the foundation for real growth.
               </p>
               <div className="mt-6 p-6 bg-gray-800/50 border border-gray-700/50 rounded-xl">
                 <p className="text-gray-200 italic">
@@ -83,7 +83,7 @@ We’re on a mission to transform how skills are assessed              </p>
              <div className="space-y-4 ml-6 border-l-2 border-teal-500/30 pl-6">
   <div className="space-y-2">
     <p className="text-gray-100 font-medium">Step 1: Resume Screening</p>
-    <p className="text-gray-300">HR filters through hundreds of resumes—often judging by keywords and presentation rather than true technical skills.</p>
+    <p className="text-gray-300">HR filters through hundreds of resumes,often judging by keywords and presentation rather than true technical skills.</p>
   </div>
   <div className="space-y-2">
     <p className="text-gray-100 font-medium">Step 2: Home Assignments</p>
@@ -91,7 +91,7 @@ We’re on a mission to transform how skills are assessed              </p>
   </div>
   <div className="space-y-2">
     <p className="text-gray-100 font-medium">Step 3: Interviews</p>
-    <p className="text-gray-300">Finally, interviews happen—often with candidates whose actual skills don’t reflect their submissions.</p>
+    <p className="text-gray-300">Finally, interviews happen,often with candidates whose actual skills don’t reflect their submissions.</p>
   </div>
 </div>
 
@@ -109,7 +109,7 @@ We’re on a mission to transform how skills are assessed              </p>
               <div className="grid md:grid-cols-2 gap-6 mt-6">
                 <div className="p-6 bg-gray-800/50 border border-gray-700/50 rounded-xl">
                   <h4 className="text-xl font-semibold mb-3 text-gray-100">Instant Filtering</h4>
-                  <p className="text-gray-300">Candidates who score higher demonstrate genuine technical knowledge. No guesswork, no assumptions—just data.</p>
+                  <p className="text-gray-300">Candidates who score higher demonstrate genuine technical knowledge. No guesswork, no assumptions,just data.</p>
                 </div>
                 <div className="p-6 bg-gray-800/50 border border-gray-700/50 rounded-xl">
                   <h4 className="text-xl font-semibold mb-3 text-gray-100">Time Savings</h4>
@@ -121,7 +121,7 @@ We’re on a mission to transform how skills are assessed              </p>
                 </div>
                 <div className="p-6 bg-gray-800/50 border border-gray-700/50 rounded-xl">
                   <h4 className="text-xl font-semibold mb-3 text-gray-100">Complete Analytics</h4>
-                  <p className="text-gray-300">Download comprehensive candidate data from quiz analytics. Every answer, every score, every insight—at your fingertips.</p>
+                  <p className="text-gray-300">Download comprehensive candidate data from quiz analytics. Every answer, every score, every insight,at your fingertips.</p>
                 </div>
               </div>
             </div>
@@ -136,7 +136,7 @@ We’re on a mission to transform how skills are assessed              </p>
                 </div>
                 <h2 className="text-4xl font-bold text-gray-100">What We Stand For</h2>
                 <p className="text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto">
-                  We believe in a better way—where skills speak louder than resumes, where assessments are fair and cheat-proof, and where both candidates and companies can trust the process.
+                  We believe in a better way,where skills speak louder than resumes, where assessments are fair and cheat-proof, and where both candidates and companies can trust the process.
                 </p>
                 <p className="text-xl font-semibold text-teal-400 mt-6">
                   That's why we built QuizzViz.

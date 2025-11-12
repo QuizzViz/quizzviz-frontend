@@ -323,7 +323,7 @@ ${actual}
                       Report a Bug
                     </h1>
                     <p className="text-sm sm:text-base text-gray-400 max-w-xl mx-auto px-4">
-                      Help us make QuizzViz better! Tell us about the issue below—don’t worry if you’re unsure, just do your best!
+                      Help us make QuizzViz better! Tell us about the issue below,don’t worry if you’re unsure, just do your best!
                     </p>
                   </div>
 

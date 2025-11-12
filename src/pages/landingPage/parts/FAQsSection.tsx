@@ -70,7 +70,7 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">How do I share quizzes with others?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            Quiz sharing is <strong>exclusively available for Business plan users</strong>. After generating a quiz, you can publish it and get the shareable link. Set a secret key to control access, configure custom duration and expiration dates, and define maximum attempts per candidate. Share the link with candidates who can then access and complete the quiz in proctored mode—perfect for remote screening.
+            Quiz sharing is <strong>exclusively available for Business plan users</strong>. After generating a quiz, you can publish it and get the shareable link. Set a secret key to control access, configure custom duration and expiration dates, and define maximum attempts per candidate. Share the link with candidates who can then access and complete the quiz in proctored mode,perfect for remote screening.
           </AccordionContent>
         </AccordionItem>
         

@@ -78,7 +78,7 @@ const FeaturesSection: FC = () => {
       {
         icon: Share2,
         title: "Flexible & Secure Sharing",
-        description: "Easily share assessments using secure links or direct invitations. Maintain full control with secret keys, attempt restrictions, and customizable time limits—ensuring a smooth and protected candidate experience.",
+        description: "Easily share assessments using secure links or direct invitations. Maintain full control with secret keys, attempt restrictions, and customizable time limits,ensuring a smooth and protected candidate experience.",
         gradient: "from-pink-500/80 to-orange-500/80",
         ring: "ring-pink-500/30"
       }

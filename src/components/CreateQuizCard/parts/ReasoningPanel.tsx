@@ -41,7 +41,7 @@ export const ReasoningPanel: FC<{
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-foreground/90 mb-1">
-                {steps[stepIndex]?.replace(/^.*?[—:]/, "").trim() || "Processing..."}
+                {steps[stepIndex]?.replace(/^.*?[,:]/, "").trim() || "Processing..."}
               </div>
               <div className="text-sm text-muted-foreground">
                 <motion.span 
