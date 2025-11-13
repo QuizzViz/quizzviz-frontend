@@ -208,6 +208,9 @@ const PricingPage = () => {
                         <span className="text-4xl font-extrabold text-white">
                           ${plan.id === 'free' ? plan.price : (billingCycle === 'yearly' ? plan.yearlyPrice : plan.price)}
                         </span>
+                        {plan.id !== 'free' && (
+                          <span className="ml-1 text-sm text-gray-400">{billingCycle === 'yearly' ? '/yr' : '/mo'}</span>
+                        )}
                       </div>
                     </div>
 
