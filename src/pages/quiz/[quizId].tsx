@@ -16,18 +16,6 @@ export default function QuizDetailsPage() {
   const { toast } = useToast();
   
   const { plan, isLoading: isPlanLoading } = useUserPlanContext();
-
-  // Redirect to 404 if not a Business plan user
-  useEffect(() => {
-    if (!isPlanLoading && plan !== 'Business') {
-      toast({
-        title: 'Access Denied',
-        description: 'This feature is only available for Business plan users.',
-        variant: 'destructive',
-      });
-      router.push('/pricing');
-    }
-  }, [router, toast, plan, isPlanLoading]);
   
   // Get the quiz ID from the URL
   const { quizId } = router.query as { quizId?: string };
