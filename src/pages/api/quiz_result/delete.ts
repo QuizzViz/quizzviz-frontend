@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-const API_BASE_URL = 'http://54.237.94.192/result';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}`;
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,10 +17,10 @@ export default async function handler(
     
     if (username && email) {
       // Delete specific user result
-      url = `${API_BASE_URL}/quiz/${quiz_id}/username/${encodeURIComponent(username as string)}/email/${encodeURIComponent(email as string)}`;
+      url = `${API_BASE_URL}/result/quiz/${quiz_id}/username/${encodeURIComponent(username as string)}/email/${encodeURIComponent(email as string)}`;
     } else if (quiz_id) {
       // Delete all results for a quiz
-      url = `${API_BASE_URL}/quiz/${quiz_id}`;
+      url = `${API_BASE_URL}/result/quiz/${quiz_id}`;
     } else {
       return res.status(400).json({ message: 'Missing required parameters' });
     }
