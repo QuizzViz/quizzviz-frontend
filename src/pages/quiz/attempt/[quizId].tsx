@@ -1275,7 +1275,7 @@ if (typeof data.quiz === 'string') {
                         <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 hidden group-hover:block w-64 bg-black/95 border border-gray-700 text-gray-100 text-sm rounded-lg p-3 shadow-2xl shadow-black/50 text-center transition-all duration-200 ease-in-out">
                           <div className="flex items-center justify-center space-x-1">
                             <Zap className="w-4 h-4 text-blue-400" />
-                            <span>Upgrade to <span className="font-semibold text-blue-400">Consumer</span> plan to see correct answers</span>
+                            <span>Upgrade to <Link href="/pricing" className="font-semibold text-blue-500 underline">Consumer Plan</Link> to see correct answers</span>
                           </div>
                           <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-black/95 border-b border-r border-gray-700 rotate-45"></div>
                         </div>
