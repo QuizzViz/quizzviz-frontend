@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/router';
 import { Check, X, Sparkles, Star, Crown, Building2, Rocket } from 'lucide-react';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -100,6 +102,8 @@ const plans = [
 
 const PricingPage = () => {
   const [billingCycle, setBillingCycle] = useState('monthly');
+  const { isSignedIn } = useUser();
+  const router = useRouter();
 
   return (
     <>
@@ -226,6 +230,7 @@ const PricingPage = () => {
                               ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-black shadow-lg shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
                               : 'bg-white text-black hover:bg-gray-100 shadow-lg hover:shadow-xl hover:scale-105'
                           }`}
+                          onClick={(e) => { if (!isSignedIn) { e.preventDefault(); router.push('/signup'); } }}
                         >
                           Contact Sales
                         </button>
@@ -234,6 +239,7 @@ const PricingPage = () => {
                       <Link href="/dashboard">
                         <button
                           className="w-full py-3 rounded-xl text-sm font-bold transition-all duration-300 mb-6 bg-zinc-800 text-white hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 hover:scale-105"
+                          onClick={(e) => { if (!isSignedIn) { e.preventDefault(); router.push('/signup'); } }}
                         >
                           Get Started Free
                         </button>
@@ -252,6 +258,7 @@ const PricingPage = () => {
                               ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 bg-[length:200%_100%] text-white hover:shadow-sm shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:scale-105 animate-gradient'
                               : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-sm shadow-blue-700 hover:shadow-blue-500/60 hover:scale-105'
                           }`}
+                          onClick={(e) => { if (!isSignedIn) { e.preventDefault(); router.push('/signup'); } }}
                         >
                           Subscribe Now
                         </button>
