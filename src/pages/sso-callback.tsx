@@ -11,7 +11,7 @@ export default function SSOCallback() {
           </span>
         </div>
         <h1 className="mt-4 text-xl font-medium text-gray-100 sm:text-2xl">
-          Redirecting to dashboard...
+          Redirecting...
         </h1>
         <p className="mt-2 text-gray-100">
           Please wait while we log you in.
@@ -19,7 +19,7 @@ export default function SSOCallback() {
       </div>
       <div className="invisible">
         {/* This is the actual redirect component that will do the work */}
-        <AuthenticateWithRedirectCallback redirectUrl="/dashboard" />
+        <AuthenticateWithRedirectCallback redirectUrl="/pricing" />
       </div>
     </div>
   );
