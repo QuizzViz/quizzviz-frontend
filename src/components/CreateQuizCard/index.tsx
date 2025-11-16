@@ -161,12 +161,6 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       return;
     }
     
-    // Check if requested count exceeds remaining quota
-    if (count > planInfo.remainingQuizzes) {
-      setError(`You can only generate ${planInfo.remainingQuizzes} more quiz${planInfo.remainingQuizzes === 1 ? '' : 'es'} this month on your ${planName} plan.`);
-      return;
-    }
-    
     // Check question count limit
     const effectiveMax = maxQuestions || 10;
     if (count > effectiveMax) {
