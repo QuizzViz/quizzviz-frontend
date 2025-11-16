@@ -432,8 +432,8 @@ const QuizAttemptPage = () => {
           showWarningMessage('Quiz terminated due to tab switch!');
           toast({
             variant: "destructive",
-            title: "Error",
-            description: "Quiz terminated due to violation!",
+            title: "Quiz terminated due to tab switch!",
+            description: "The quiz has been terminated due to a violation of the test rules.",
             className: "max-w-[500px] mx-auto text-center rounded-lg text-sm p-4"
           });
           setSelectedAnswers(currentAnswers => {

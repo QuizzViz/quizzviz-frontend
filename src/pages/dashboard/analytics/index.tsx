@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
-import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import { useUserPlan } from "@/hooks/useUserPlan";
-import { getPlanLimits } from "@/config/plans";
 import Head from "next/head";
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable, { HookData } from 'jspdf-autotable';
-import { Download, RefreshCcw, Users, Trophy, CheckCircle, Zap, BarChart3, ChevronLeft, ChevronRight, Trash2, X, Check, AlertTriangle } from "lucide-react";
+import { Download, RefreshCcw, Users, Trophy, CheckCircle, Zap, BarChart3, ChevronLeft, ChevronRight, Trash2, X, AlertTriangle } from "lucide-react";
 import { toast } from '@/hooks/use-toast';
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
@@ -131,7 +129,6 @@ export default function ResultsDashboard() {
 const { user } = useUser();
 const { data: userPlan, isLoading: isPlanLoading } = useUserPlan();
 const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
-  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -497,74 +494,6 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
     );
   };
 
-   if (loading || isPlanLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-black">
-        <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-
-      </div>
-    );
-  }
-
-  if (!canViewAdvancedAnalytics) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <SignedIn>
-          <div className="flex min-h-screen flex-col lg:flex-row">
-            {/* Sidebar */}
-            <div className="bg-background border-r border-border shrink-0">
-              <DashboardSideBar />
-            </div>
-            
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col">
-              {/* Header */}
-              <DashboardHeader 
-                userName={user?.fullName || 'User'} 
-                userEmail={user?.primaryEmailAddress?.emailAddress} 
-              />
-              
-              {/* Upgrade Message */}
-              <main className="flex-1 p-6">
-                <div className="max-w-4xl mx-auto bg-card rounded-xl p-8 mt-12 text-center border border-border shadow-sm">
-                  <div className="mb-6">
-                    <svg className="w-16 h-16 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                  </div>
-                  
-                  <h1 className="text-2xl md:text-3xl font-bold mb-3">
-                    Advanced Analytics
-                  </h1>
-                  
-                  <p className="text-muted-foreground mb-2">
-                    This feature is available with our <span className="font-semibold text-blue-500">Business plan</span>.
-                  </p>
-                  
-                  <p className="text-muted-foreground/80 mb-8">
-                    Upgrade to unlock powerful analytics and insights for your quizzes.
-                  </p>
-                  
-                  <Button 
-                    onClick={() => {
-                      // Add your upgrade navigation logic here
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 shadow-lg"
-                  >
-                    <Zap className="w-4 h-4 mr-2" />
-                    Upgrade to Business Plan
-                  </Button>
-                </div>
-              </main>
-            </div>
-          </div>
-        </SignedIn>
-      </div>
-    );
-  }
- 
   return (
     <>
       <Head><title>Quiz Analytics | Enterprise</title>
@@ -581,13 +510,48 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
               
               <main className="flex-1 overflow-y-auto bg-black">
                 <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6 space-y-6 sm:space-y-8">
-                   {/* Header Section */}
-                   <div className="w-full">
-                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
-                       <div>
-                         <h1 className="text-xl sm:text-2xl font-bold text-white">
-                           Quiz Analytics
-                         </h1>
+                  {/* Loading State for content only */}
+                  {(isPlanLoading || loading) && (
+                    <div className="flex items-center justify-center py-24">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  )}
+                  {/* Plan Gate - show upgrade message when not loading and not eligible */}
+                  {!(isPlanLoading || loading) && !canViewAdvancedAnalytics && (
+                    <div className="max-w-4xl mx-auto bg-card rounded-xl p-8 mt-12 text-center border border-border shadow-sm">
+                      <div className="mb-6">
+                        <svg className="w-16 h-16 mx-auto text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                      </div>
+                      <h1 className="text-2xl md:text-3xl font-bold mb-3">Advanced Analytics</h1>
+                      <p className="text-muted-foreground mb-2">
+                        This feature is available with our <span className="font-semibold text-blue-500">Business plan</span>.
+                      </p>
+                      <p className="text-muted-foreground/80 mb-8">
+                        Upgrade to unlock powerful analytics and insights for your quizzes.
+                      </p>
+                      <Button 
+                        onClick={() => {
+                          // Add your upgrade navigation logic here
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 shadow-lg"
+                      >
+                        <Zap className="w-4 h-4 mr-2" />
+                        Upgrade to Business Plan
+                      </Button>
+                    </div>
+                  )}
+                  {/* Main analytics content - render only when loaded and eligible */}
+                  {!(isPlanLoading || loading) && canViewAdvancedAnalytics && (
+                  <div>
+                  {/* Header Section */}
+                  <div className="w-full">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
+                      <div>
+                        <h1 className="text-xl sm:text-2xl font-bold text-white">
+                          Quiz Analytics
+                        </h1>
                          <p className="text-sm sm:text-lg text-gray-400 mt-1">
                            Analyze candidate performance and identify top talent.
                          </p>
@@ -750,13 +714,14 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                                     <Bar 
                                       dataKey="count" 
                                       radius={[6, 6, 0, 0]}
-                                      onClick={(data)=>setSelectedScores({...selectedScores, [quiz.quiz_topic]: Number(data.name.split('-')[0])})}>
-                                      {quiz.scoreDistribution.map((entry, index)=>(
-                                          <Cell 
-                                              key={index} 
-                                              fill={selectedScore !== null && Number(entry.name.split('-')[0]) === selectedScore ? '#FFFFFF' : COLORS[index%COLORS.length]} 
-                                              className="transition-all duration-300 cursor-pointer hover:opacity-80"
-                                          />
+                                      onClick={(data)=>setSelectedScores({...selectedScores, [quiz.quiz_topic]: Number(data.name.split('-')[0])})}
+                                    >
+                                      {quiz.scoreDistribution.map((entry, index)=> (
+                                        <Cell 
+                                          key={index}
+                                          fill={selectedScore !== null && Number(entry.name.split('-')[0]) === selectedScore ? '#FFFFFF' : COLORS[index % COLORS.length]}
+                                          className="transition-all duration-300 cursor-pointer hover:opacity-80"
+                                        />
                                       ))}
                                     </Bar>
                                   </BarChart>
@@ -764,12 +729,12 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                                 {/* Reset filter button - Responsive positioning */}
                                 {selectedScore !== null && (
                                   <div className="mt-2 sm:mt-2 flex justify-center lg:justify-start">
-                                      <Button 
-                                        onClick={()=>setSelectedScores({...selectedScores, [quiz.quiz_topic]: null})} 
-                                        className="flex items-center gap-2 text-purple-400 hover:bg-zinc-800 bg-transparent hover:text-white text-xs sm:text-sm px-3 py-2"
-                                      >
-                                          <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4"/> Reset Filter ({selectedScore}-{selectedScore+5}%)
-                                      </Button>
+                                    <Button 
+                                      onClick={()=>setSelectedScores({...selectedScores, [quiz.quiz_topic]: null})} 
+                                      className="flex items-center gap-2 text-purple-400 hover:bg-zinc-800 bg-transparent hover:text-white text-xs sm:text-sm px-3 py-2"
+                                    >
+                                      <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4"/> Reset Filter ({selectedScore}-{selectedScore+5}%)
+                                    </Button>
                                   </div>
                                 )}
                               </div>
@@ -866,12 +831,13 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                         );
                       })}
                       
-                      {/* Bottom Pagination */}
-                      <BottomPaginationControls />
-                    </>
+                       
+                          <BottomPaginationControls />
+                        </>
+                      )}
+                    </div>
                   )}
-                </div>
-              </main>
+                </div>                </main>
             </div>
           </div>
         </SignedIn>

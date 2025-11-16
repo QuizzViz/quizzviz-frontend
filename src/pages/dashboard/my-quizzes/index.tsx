@@ -150,7 +150,7 @@ export default function MyQuizzesPage() {
                   userEmail={user?.emailAddresses?.[0]?.emailAddress} 
                 />
                 <main className="flex-1 p-6">
-                  <div className="max-w-5xl mx-auto">
+                  <div>
                     <div className="mb-6">
                       <h1 className="text-2xl font-bold mb-2">My Quizzes</h1>
                       <p className="text-white/70">Click on any quiz below to attempt it</p>
