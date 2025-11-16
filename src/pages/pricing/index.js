@@ -64,8 +64,9 @@ const plans = [
     price: '99',
     yearlyPrice: '959',
     tagline: 'Most value for teams',
-    monthlyLink:"https://quizzviz1.lemonsqueezy.com/buy/18300c31-94d2-44b1-9963-5fa31617fc0c",
-    // monthlyLink:"https://quizzviz1.lemonsqueezy.com/buy/1339e755-d028-4b6e-adbb-8b048f7c8018",
+    //monthlyLink:"https://quizzviz1.lemonsqueezy.com/buy/1339e755-d028-4b6e-adbb-8b048f7c8018",
+   // Test Link Below
+   monthlyLink:"https://quizzviz1.lemonsqueezy.com/buy/18300c31-94d2-44b1-9963-5fa31617fc0c",
     yearlyLink:"https://quizzviz1.lemonsqueezy.com/buy/efce1477-8c02-4490-b0b5-babd2730657c",
     recommended: true,
     features: [
