@@ -15,6 +15,7 @@ interface ComboboxProps {
   inputClassName?: string
   popoverClassName?: string
   emptyText?: string
+  strict?: boolean
 }
 
 const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(({
@@ -25,7 +26,8 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(({
   className,
   inputClassName,
   popoverClassName,
-  emptyText = "No results found."
+  emptyText = "No results found.",
+  strict = false
 }, forwardedRef) => {
   const [isOpen, setIsOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
@@ -65,8 +67,18 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(({
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value)
+    const next = e.target.value
+    setInputValue(next)
     if (!isOpen) setIsOpen(true)
+    // In strict mode, clear selection when typed text doesn't match any option
+    if (strict) {
+      const exactMatch = options.find(
+        (o) => o.label.toLowerCase() === next.toLowerCase() || o.value.toLowerCase() === next.toLowerCase()
+      )
+      if (!exactMatch) {
+        if (value) onChange("")
+      }
+    }
   }
 
   // Handle input click
@@ -82,7 +94,13 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(({
   // Handle key down
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && inputValue && !filteredOptions.length) {
-      onChange(inputValue)
+      if (strict) {
+        // prevent setting arbitrary values
+        onChange("")
+        setInputValue("")
+      } else {
+        onChange(inputValue)
+      }
       setIsOpen(false)
     } else if (e.key === 'Escape') {
       setIsOpen(false)

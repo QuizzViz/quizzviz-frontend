@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, ReactNode } from "react";
 import { Cpu, Code, Sparkles, CheckCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useQuizGeneration } from "@/contexts/QuizGenerationContext";
+import { TOPICS } from "@/constants/topics";
 
 interface TopicError {
   error: string;
@@ -120,6 +121,13 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
     });
     if (!topic.trim()) {
       setError("Topic is required");
+      return;
+    }
+    // Ensure topic is one of the allowed topics
+    const trimmedTopic = topic.trim();
+    const isTopicValid = TOPICS.some(t => t.value === trimmedTopic);
+    if (!isTopicValid) {
+      setError("Please select a valid topic from the list");
       return;
     }
     if (!difficulty) {

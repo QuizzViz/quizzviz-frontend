@@ -22,6 +22,7 @@ import { useUserPlan } from "@/hooks/useUserPlan";
 import { getPlanLimits, PLAN_LIMITS } from "@/config/plans";
 import { useQuizUsage, getUpgradeMessage } from "@/hooks/useQuizUsage";
 import { useUser } from "@clerk/nextjs";
+import { TOPICS } from "@/constants/topics";
 
 interface CreateQuizCardProps {
   maxQuestions?: number;
@@ -85,7 +86,9 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
   // Handle data refresh on mount and periodically
   useEffect(() => {
     let isMounted = true;
-    
+    // capture refetch function once to avoid adding entire query object as dependency
+    const refetchQuizUsage = quizUsage?.refetch;
+
     const refetchAllData = async () => {
       if (!user) return;
       
@@ -99,8 +102,8 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
           refetchType: 'active',
         });
         
-        if (quizUsage?.refetch) {
-          await quizUsage.refetch();
+        if (refetchQuizUsage) {
+          await refetchQuizUsage();
         }
         
         if (isMounted && process.env.NODE_ENV !== 'production') {
@@ -127,7 +130,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       isMounted = false;
       clearInterval(refreshInterval);
     };
-  }, [user, queryClient, planName, quizUsage, planLimits.maxQuizzes]);
+  }, [user, queryClient, planName, planLimits.maxQuizzes]);
 
   const {
     // form
@@ -154,7 +157,17 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     handleGenerate: _handleGenerate,
   } = useCreateQuizV2();
 
+  const isTopicValid = useMemo(() => {
+    const trimmed = (topic || "").trim();
+    if (!trimmed) return false;
+    return TOPICS.some(t => t.value === trimmed);
+  }, [topic]);
+
   const handleGenerateWithLimit = (codePct: number) => {
+    if (!isTopicValid) {
+      setError("Please select a valid topic from the list");
+      return;
+    }
     // Check plan limits first
     if (planInfo.hasReachedLimit) {
       setError(planInfo.message);
@@ -255,9 +268,9 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                   <div>
                     <Button
                       className={`bg-foreground hover:bg-muted-foreground text-background transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center ${
-                        planInfo.hasReachedLimit ? 'opacity-70 cursor-not-allowed' : ''
+                        planInfo.hasReachedLimit || !isTopicValid ? 'opacity-70 cursor-not-allowed' : ''
                       }`}
-                      disabled={planInfo.hasReachedLimit}
+                      disabled={planInfo.hasReachedLimit || !isTopicValid}
                       onClick={() => handleGenerateWithLimit(codePercentage)}
                     >
                       {planInfo.hasReachedLimit ? (
@@ -268,28 +281,29 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                       ) : (
                         <>
                           <Zap className="h-4 w-4 mr-2" />
-                          Generate Quiz
+                          {isTopicValid ? 'Generate Quiz' : 'Select a valid topic'}
                         </>
                       )}
                     </Button>
                   </div>
                 </TooltipTrigger>
-                {planInfo.hasReachedLimit && (
+                {(planInfo.hasReachedLimit || !isTopicValid) && (
                   <TooltipContent className="w-64 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
                     <div className="space-y-2">
                       <div className="flex items-start">
                         <div className="flex-shrink-0">
                           <svg className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a 1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                           </svg>
                         </div>
                         <div className="ml-3">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Plan Limit Reached</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{planInfo.hasReachedLimit ? 'Plan Limit Reached' : 'Invalid Topic'}</p>
                           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {planInfo.message}
+                            {planInfo.hasReachedLimit ? planInfo.message : 'Please select a topic from the suggestions list before generating.'}
                           </p>
                         </div>
                       </div>
+                      {planInfo.hasReachedLimit && (
                       <div className="mt-4">
                         <Link 
                           href="/pricing" 
@@ -298,6 +312,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                           {planInfo.upgradePlan ? `Upgrade to ${planInfo.upgradePlan} Plan` : 'Upgrade Plan'}
                         </Link>
                       </div>
+                      )}
                     </div>
                   </TooltipContent>
                 )}

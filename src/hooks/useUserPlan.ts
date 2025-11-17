@@ -20,7 +20,8 @@ const fetchUserPlan = async (userId: string | null | undefined, getToken: () => 
   });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch user plan');
+    console.log('Failed to fetch user plan');
+    return { plan_name: 'Free' };
   }
 
   return response.json();

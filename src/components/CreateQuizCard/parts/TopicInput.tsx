@@ -18,6 +18,7 @@ const TopicInput: FC<{
           options={TOPICS}
           value={topic}
           onChange={setTopic}
+          strict
           placeholder="Search or select a topic..."
           className="w-full h-14 text-base outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
           inputClassName="h-10 text-sm outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
