@@ -7,7 +7,7 @@ const DemoSection: FC = () => (
       <div className="glassmorphism rounded-2xl p-1">
         <div className="aspect-video rounded-xl overflow-hidden">
           <iframe
-            src="https://www.youtube.com/embed/LM683z0glJM"
+            src="https://www.youtube.com/embed/HXFt8WFOZG4?si=TU0e_617BACLSgRV"
             title="QuizzViz Demo"
             frameBorder={0}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
