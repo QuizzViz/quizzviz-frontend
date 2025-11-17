@@ -966,10 +966,8 @@ if (typeof data.quiz === 'string') {
                       <p className="text-sm text-red-300">This quiz cannot be attempted on mobile devices. Please use a desktop or laptop computer to continue.</p>
                       <Button 
                         variant="outline" 
-                        className="mt-2 text-red-300 border-red-500/50 hover:bg-red-900/30"
-                        onClick={() => window.close()}
-                      >
-                        Close Page
+                        className="mt-2 text-red-300 border-red-500/50 hover:bg-red-900/30">
+                        <Link className='text-red-300' href="/dashboard/my-quizzes">Close Page</Link>
                       </Button>
                     </div>
                   </div>

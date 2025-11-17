@@ -43,7 +43,7 @@ We’re on a mission to transform how skills are assessed              </p>
             <div className="bg-gray-900/50 rounded-2xl p-8 md:p-10 space-y-6 transition-all border border-gray-800/50 hover:border-teal-500/30 hover:shadow-lg hover:shadow-teal-500/10">
               <h3 className="text-2xl font-semibold text-gray-100">The Real Test of Knowledge</h3>
               <p className="text-gray-300 leading-relaxed">
-                We believe that true understanding isn't about memorizing syntax or reciting definitions. Real-world scenario-based questions test your concepts in depth, challenging you to apply what you know in practical situations that mirror actual development challenges.
+                We believe that true understanding isn't about memorizing syntax or reciting definitions. Real-world scenario-based questions test your concepts in depth.
               </p>
               <p className="text-gray-400 leading-relaxed">
                 Quizzes aren't just about getting the right answers,they're about revealing how deeply you understand a concept. They show you exactly where you stand with a particular language, framework, or tool.
