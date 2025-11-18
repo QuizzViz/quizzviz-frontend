@@ -119,8 +119,8 @@ const HeroSection: FC = () => {
 
   const getHeadlineText = (): { main: string; sub: string } => {
     const common = {
-      main: "AI-Powered Coding Quiz Generation",
-      sub: "with Proctoring in Minutes"
+      main: "Generate and Proctor Coding Quizzes",
+      sub: "for Faster Hiring and Learning"
     };
     
     switch(userType) {

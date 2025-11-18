@@ -31,8 +31,8 @@ export default function OurMission() {
                 Our Mission
               </span>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-100">
-                Empowering <span className="text-teal-400">Learning</span> and{' '}
-                <span className="text-teal-400">Hiring</span>
+                Empowering <span className="text-teal-400">Hiring</span> and{' '}
+                <span className="text-teal-400">Learning</span>
               </h1>
               <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
 We’re on a mission to transform how skills are assessed              </p>
