@@ -33,7 +33,7 @@ export default function Dashboard() {
   const maxQuestions = planLimits.maxQuestions;
 
   useEffect(() => {
-    if (isUserLoaded && !user) router.push("/signin");
+    if (isUserLoaded && !user) router.push("/signup");
     else if (isUserLoaded) setIsLoading(false);
   }, [isUserLoaded, user, router]);
 
