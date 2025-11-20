@@ -71,10 +71,7 @@ export default function ProfilePage() {
 
                   {/* Additional Info */}
                   <div className="w-full mt-4 space-y-2">
-                    <div className="flex justify-between border-b border-white/20 pb-2">
-                      <span className="text-white/50">Username:</span>
-                      <span>{user?.username || "Not set"}</span>
-                    </div>
+                   
                     <div className="flex justify-between border-b border-white/20 pb-2">
                       <span className="text-white/50">Joined:</span>
                       <span>
