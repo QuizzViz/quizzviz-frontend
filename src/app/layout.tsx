@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "QuizzViz – AI Powered Coding Quiz Generator",
+    default: "QuizzViz – Generate and Proctor Coding Quizzes for Faster Hiring and Learning",
     template: "%s | QuizzViz",
   },
   description:
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "QuizzViz – AI Powered Coding Quiz Generator",
+    title: "QuizzViz – Generate and Proctor Coding Quizzes for Faster Hiring and Learning",
     description:
       "Build enterprise-grade coding quizzes in minutes with QuizzViz. Intelligent, fast, and professional quiz generation.",
     url: siteUrl,
@@ -75,7 +75,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "QuizzViz – AI Powered Coding Quiz Generator",
+    title: "QuizzViz – Generate and Proctor Coding Quizzes for Faster Hiring and Learning",
     description:
       "Build enterprise-grade coding quizzes in minutes with QuizzViz. Intelligent, fast, and professional quiz generation.",
     images: [`${siteUrl}/QuizzViz-logo.png`],
