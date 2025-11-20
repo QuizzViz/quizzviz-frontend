@@ -535,7 +535,7 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                       <Button 
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 shadow-lg"
                       >
-                        <Link href="/pricing">
+                        <Link href="/pricing" className="flex items-center gap-2">
                         <Zap className="w-4 h-4 mr-2" />
                         Upgrade to Business Plan
                         </Link>
