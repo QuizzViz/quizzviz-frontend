@@ -120,7 +120,7 @@ const HeroSection: FC = () => {
   const getHeadlineText = (): { main: string; sub: string } => {
     const common = {
       main: "Generate and Proctor Coding Quizzes",
-      sub: "for Faster Hiring and Learning"
+      sub: "for Faster Hiring and Learning "
     };
     
     switch(userType) {

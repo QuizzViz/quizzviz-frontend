@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import Link from "next/link";
 
 type QuizResult = {
   quiz_id: string;
@@ -532,13 +533,12 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                         Upgrade to unlock powerful analytics and insights for your quizzes.
                       </p>
                       <Button 
-                        onClick={() => {
-                          // Add your upgrade navigation logic here
-                        }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-200 ease-in-out transform hover:scale-105 shadow-lg"
                       >
+                        <Link href="/pricing">
                         <Zap className="w-4 h-4 mr-2" />
                         Upgrade to Business Plan
+                        </Link>
                       </Button>
                     </div>
                   )}
