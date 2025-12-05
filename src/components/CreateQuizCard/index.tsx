@@ -20,6 +20,7 @@ import { useUserPlan } from "@/hooks/useUserPlan";
 import { getPlanLimits } from "@/config/plans";
 import { useQuizUsage, getUpgradeMessage } from "@/hooks/useQuizUsage";
 import { useUser } from "@clerk/nextjs";
+import { TOPICS } from "@/constants/topics";
 import { RoleSelect } from "./parts/RoleSelect";
 import { TechStackInput } from "./parts/TechStackInput";
 import { TECHNOLOGIES } from "@/constants/technologies";
@@ -144,17 +145,13 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     setCount,
     // request
     isReasoning,
-    isFetching,
     error,
     setError,
-    quizData,
-    setQuizData,
     // progress
     steps,
     stepIcons,
     stepIndex,
     typedText,
-    progress,
     // actions
     handleGenerate: _handleGenerate,
   } = useCreateQuizV2();
@@ -192,17 +189,9 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       return;
     }
 
-    // Prepare the payload with role and tech stack
-    const payload = {
-      role,
-      techStack,
-      codePercentage: codePct,
-      difficulty,
-      count,
-      topic: role // For backward compatibility, using role as topic
-    };
-
-    _handleGenerate(payload);
+    // Just pass the code percentage to the handler
+    // The hook will handle the rest of the state
+    _handleGenerate(codePct);
   };
 
   return (
@@ -223,7 +212,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
             <TechStackInput 
               value={techStack}
               onChange={setTechStack}
-              availableTechs={TECHNOLOGIES}
+              availableTechs={TECHNOLOGIES.map(tech => ({ value: tech, label: tech }))}
             />
           </div>
 
@@ -252,7 +241,6 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                 onChange={setCount}
                 min={1}
                 max={maxQuestions}
-                showMaxIndicator={true}
                 className="w-full [&_input]:outline-none [&_input]:focus:outline-none [&_input]:focus-visible:ring-0 [&_input]:focus-visible:ring-offset-0"
               />
             </div>

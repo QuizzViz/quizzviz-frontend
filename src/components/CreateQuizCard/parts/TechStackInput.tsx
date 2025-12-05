@@ -19,6 +19,7 @@ export interface TechStackItem {
 interface TechStackInputProps {
   value: TechStackItem[];
   onChange: (value: TechStackItem[]) => void;
+  availableTechs?: Array<{ value: string; label: string }>;
 }
 
 // Convert topics to the format expected by Combobox
@@ -27,18 +28,21 @@ const topicOptions = TOPICS.map(topic => ({
   label: topic.label
 }));
 
-export function TechStackInput({ value, onChange }: TechStackInputProps) {
+export function TechStackInput({ value, onChange, availableTechs: externalAvailableTechs }: TechStackInputProps) {
   const { toast } = useToast();
   const [selectedTech, setSelectedTech] = useState('');
   const maxTechs = 5; // Reduced for better UX
   
   // Get available topics that haven't been selected yet
-  const availableTechs = useMemo(() => {
+  const internalAvailableTechs = useMemo(() => {
     const selectedTechs = new Set(value.map(item => item.name));
     return TOPICS
       .filter(tech => !selectedTechs.has(tech.value))
       .map(tech => ({ value: tech.value, label: tech.label }));
   }, [value]);
+
+  // Use provided availableTechs if available, otherwise use internal ones
+  const availableTechs = externalAvailableTechs || internalAvailableTechs;
 
   const addTech = useCallback((techName: string) => {
     if (!techName) return;
