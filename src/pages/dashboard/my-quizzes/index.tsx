@@ -34,7 +34,8 @@ import {
 interface QuizSummary {
   quiz_id: string;
   user_id: string;
-  topic: string;
+  role: string;
+  techStack: Array<{name: string; weight: number }>;
   difficulty: string;
   num_questions: number;
   theory_questions_percentage: number;
@@ -226,13 +227,13 @@ export default function MyQuizzesPage() {
                                     <div className="relative group">
                                       <CardTitle 
                                         className="text-xl font-semibold text-white truncate max-w-[200px]"
-                                        title={q.topic}
+                                        title={q.role}
                                       >
-                                        {q.topic}
+                                        {q.role}
                                       </CardTitle>
-                                      {q.topic.length > 30 && (
+                                      {q.role.length > 30 && (
                                         <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2 text-sm text-white bg-gray-800 rounded shadow-lg z-10">
-                                          {q.topic}
+                                          {q.role}
                                         </div>
                                       )}
                                     </div>
@@ -377,13 +378,13 @@ export default function MyQuizzesPage() {
                               <div className="relative group">
                                 <CardTitle 
                                   className="text-xl font-semibold text-white truncate max-w-[200px]"
-                                  title={q.topic}
+                                  title={q.role}
                                 >
-                                  {q.topic}
+                                  {q.role}
                                 </CardTitle>
-                                {q.topic.length > 30 && (
+                                {q.role.length > 30 && (
                                   <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2 text-sm text-white bg-gray-800 rounded shadow-lg z-10">
-                                    {q.topic}
+                                    {q.role}
                                   </div>
                                 )}
                               </div>

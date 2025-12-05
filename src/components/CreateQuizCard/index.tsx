@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Loader2, Send, Zap, AlertTriangle } from "lucide-react";
+import { AlertCircle, Loader2, Send, Zap, AlertTriangle, Code, BookOpen } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { NumberInput } from "@/components/ui/number-input";
@@ -7,7 +7,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import QuizHeader from "./parts/QuizHeader";
-import TopicInput from "./parts/TopicInput";
 import DifficultyCountRow from "./parts/DifficultyCountRow";
 import CodeTheorySlider from "./parts/CodeTheorySlider";
 import GenerateButton from "./parts/GenerateButton";
@@ -16,13 +15,15 @@ import { useCreateQuizV2 } from "./hooks/useCreateQuizV2";
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUserPlan } from "@/hooks/useUserPlan";
-import { getPlanLimits, PLAN_LIMITS } from "@/config/plans";
+import { getPlanLimits } from "@/config/plans";
 import { useQuizUsage, getUpgradeMessage } from "@/hooks/useQuizUsage";
 import { useUser } from "@clerk/nextjs";
 import { TOPICS } from "@/constants/topics";
+import { RoleSelect } from "./parts/RoleSelect";
+import { TechStackInput } from "./parts/TechStackInput";
+import { TECHNOLOGIES } from "@/constants/technologies";
 
 interface CreateQuizCardProps {
   maxQuestions?: number;
@@ -32,6 +33,8 @@ interface CreateQuizCardProps {
 export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: CreateQuizCardProps) {
   const maxQuestions = propMaxQuestions;
   const [codePercentage, setCodePercentage] = useState(50);
+  const [role, setRole] = useState('Software Engineer');
+  const [techStack, setTechStack] = useState<Array<{ id: string; name: string; weight: number }>>([]);
   
   // Get user data
   const { user, isLoaded: isUserLoaded } = useUser();
@@ -142,17 +145,13 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     setCount,
     // request
     isReasoning,
-    isFetching,
     error,
     setError,
-    quizData,
-    setQuizData,
     // progress
     steps,
     stepIcons,
     stepIndex,
     typedText,
-    progress,
     // actions
     handleGenerate: _handleGenerate,
   } = useCreateQuizV2();
@@ -164,11 +163,20 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
   }, [topic]);
 
   const handleGenerateWithLimit = (codePct: number) => {
-    if (!isTopicValid) {
-      setError("Please select a valid topic from the list");
+    // Validate tech stack
+    if (techStack.length === 0) {
+      setError("Please add at least one technology to your tech stack");
       return;
     }
-    // Check plan limits first
+    
+    // Check if tech stack weights sum to 100%
+    const totalWeight = techStack.reduce((sum, tech) => sum + tech.weight, 0);
+    if (Math.abs(totalWeight - 100) > 1) { // Allow for small floating point errors
+      setError("Tech stack weights must sum to 100%");
+      return;
+    }
+    
+    // Check plan limits
     if (planInfo.hasReachedLimit) {
       setError(planInfo.message);
       return;
@@ -181,15 +189,31 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       return;
     }
 
-    _handleGenerate(codePct);
+    // Pass the code percentage, tech stack, and role to the handler
+    _handleGenerate(codePct, techStack, role);
   };
 
   return (
     <Card className="bg-background border-border">
       <CardContent className="p-8 space-y-6">
         <QuizHeader />
-        <div className="space-y-4">
-          <TopicInput topic={topic} setTopic={setTopic} icon={Zap} />
+        <div className="space-y-6">
+          {/* Role Selection */}
+          <div className="space-y-2">
+            <RoleSelect 
+              value={role} 
+              onChange={setRole} 
+            />
+          </div>
+          
+          {/* Tech Stack */}
+          <div className="space-y-2">
+            <TechStackInput 
+              value={techStack}
+              onChange={setTechStack}
+              availableTechs={TECHNOLOGIES.map(tech => ({ value: tech, label: tech }))}
+            />
+          </div>
 
           {/* Mobile: Stack difficulty and count separately */}
           <div className="block sm:hidden space-y-4">
@@ -216,7 +240,6 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                 onChange={setCount}
                 min={1}
                 max={maxQuestions}
-                showMaxIndicator={true}
                 className="w-full [&_input]:outline-none [&_input]:focus:outline-none [&_input]:focus-visible:ring-0 [&_input]:focus-visible:ring-offset-0"
               />
             </div>
@@ -233,10 +256,16 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
             />
           </div>
 
-          <CodeTheorySlider
-            codePercentage={codePercentage}
-            onCodePercentageChange={setCodePercentage}
-          />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-foreground">Question Distribution</Label>
+              
+            </div>
+            <CodeTheorySlider
+              codePercentage={codePercentage}
+              onCodePercentageChange={setCodePercentage}
+            />
+          </div>
         </div>
         
         <div className="pt-2 flex flex-col space-y-2">

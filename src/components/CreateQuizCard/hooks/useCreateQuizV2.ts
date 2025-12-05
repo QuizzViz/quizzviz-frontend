@@ -37,13 +37,13 @@ interface UseCreateQuizReturnV2 {
   progress: number;
   
   // Actions
-  handleGenerate: (codePercentage: number) => Promise<void>;
+  handleGenerate: (codePercentage: number, techStack: Array<{ id: string; name: string; weight: number }>, role: string) => Promise<void>;
 }
 
 // Updated version of useCreateQuiz that properly handles codePercentage
 export function useCreateQuizV2(): UseCreateQuizReturnV2 {
   // form state
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useState(""); // Keeping this for backward compatibility, but not used in the payload
   const [difficulty, setDifficulty] = useState("Bachelors Level");
   const [count, setCount] = useState(5);
   
@@ -105,7 +105,7 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
   }, [quizGeneration]);
 
   // API call + animation toggles
-  const handleGenerate = useCallback(async (codePercentage: number): Promise<void> => {
+  const handleGenerate = useCallback(async (codePercentage: number, techStack: Array<{ id: string; name: string; weight: number }>, role: string): Promise<void> => {
     if (isReasoning || isFetching) return;
 
     const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
@@ -160,14 +160,20 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
 
       // Prepare the payload with the validated percentages
       const payload = {
-        topic: topic.trim(),
+        role: role || 'Software Engineer',
+        techStack: techStack.map(tech => ({
+          name: tech.name,
+          weight: tech.weight
+        })),
         difficulty: difficultyToApi(difficulty),
         num_questions: numQuestions,
         theory_questions_percentage: 100 - validatedCodePercentage, // Ensure they sum to 100
         code_analysis_questions_percentage: validatedCodePercentage,
         user_id: user?.id,
-        timestamp: Date.now()
+        isPublished: false
       };
+      
+      console.log('Sending payload:', payload);
       
       console.log('Quiz generation payload with percentages:', {
         codePercentage: validatedCodePercentage,
