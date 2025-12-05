@@ -260,12 +260,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-foreground">Question Distribution</Label>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <BookOpen className="h-4 w-4" />
-                <span>{(100 - codePercentage)}% Theory</span>
-                <Code className="h-4 w-4 ml-2" />
-                <span>{codePercentage}% Code Analysis</span>
-              </div>
+              
             </div>
             <CodeTheorySlider
               codePercentage={codePercentage}
