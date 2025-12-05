@@ -27,7 +27,8 @@ interface Question {
 
 interface QuizData {
   quiz_id: string;
-  topic: string;
+  role: string;
+  techStack: Array<{name: string; weight: number }>;
   difficulty: string;
   num_questions: number;
   questions: Question[];
@@ -747,7 +748,8 @@ if (typeof data.quiz === 'string') {
         
         const quizData: QuizData = {
           quiz_id: data.quiz_id || data.id,
-          topic: data.topic,
+          role: data.role,
+          techStack: data.techStack,
           difficulty: data.difficulty,
           num_questions: data.num_questions || parsedQuiz.length,
           questions: parsedQuiz,
@@ -814,7 +816,7 @@ if (typeof data.quiz === 'string') {
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
       <Head>
-        <title>{quizData?.topic || 'Quiz'} | Quiz Attempt | QuizzViz</title>
+        <title>{quizData?.role || 'Quiz'} | Quiz Attempt | QuizzViz</title>
       </Head>
       {showExitConfirm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -907,7 +909,7 @@ if (typeof data.quiz === 'string') {
                   <BookOpen className="w-8 h-8 text-white" />
                 </div>
                 <h1 className="text-3xl font-bold text-white mb-2">
-                  {quizData?.topic || 'Quiz'}
+                  {quizData?.role || 'Quiz'}
                 </h1>
                 <p className="text-gray-400">
                   {quizData?.difficulty ? `${quizData.difficulty.charAt(0).toUpperCase() + quizData.difficulty.slice(1)}` : 'Quiz'}
@@ -1235,7 +1237,7 @@ if (typeof data.quiz === 'string') {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                         <span className="text-gray-400">Topic:</span>
-                        <span className="text-white font-medium">{quizData.topic}</span>
+                        <span className="text-white font-medium">{quizData.role}</span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                         <span className="text-gray-400">Difficulty:</span>
