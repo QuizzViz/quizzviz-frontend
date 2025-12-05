@@ -87,7 +87,8 @@ async function handlePost(userId: string, token: string, body: any) {
     
     // Prepare the request payload according to backend's QuizRequest model
     const payload = {
-      topic: body.topic,
+      role: body.role || 'Software Engineer', // Default role if not provided
+      techStack: body.techStack || [], // Array of {name: string, weight: number}
       difficulty: body.difficulty || 'Bachelors Level',
       num_questions: body.num_questions || 25,
       theory_questions_percentage: theoryPercentage,
@@ -95,6 +96,23 @@ async function handlePost(userId: string, token: string, body: any) {
       user_id: userIdStr,
       isPublished: false 
     };
+    
+    // Validate techStack
+    if (!Array.isArray(payload.techStack) || payload.techStack.length === 0) {
+      return { 
+        status: 400, 
+        data: { error: 'At least one technology is required in the tech stack' } 
+      };
+    }
+    
+    // Validate techStack weights sum to 100
+    const totalWeight = payload.techStack.reduce((sum, tech) => sum + (tech.weight || 0), 0);
+    if (Math.abs(totalWeight - 100) > 1) { // Allow for small floating point errors
+      return { 
+        status: 400, 
+        data: { error: 'Tech stack weights must sum to 100%' } 
+      };
+    }
     
     // Log the outgoing request for debugging
     console.log('Sending quiz generation request:', {
