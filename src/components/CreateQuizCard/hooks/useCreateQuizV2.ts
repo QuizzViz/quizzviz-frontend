@@ -119,15 +119,14 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
       theoryPercentage: validatedTheoryPercentage,
       totalQuestions: numQuestions
     });
-    if (!topic.trim()) {
-      setError("Topic is required");
+    // Validate role and tech stack
+    if (!role || !role.trim()) {
+      setError("Please select a role");
       return;
     }
-    // Ensure topic is one of the allowed topics
-    const trimmedTopic = topic.trim();
-    const isTopicValid = TOPICS.some(t => t.value === trimmedTopic);
-    if (!isTopicValid) {
-      setError("Please select a valid topic from the list");
+    
+    if (!techStack || techStack.length === 0) {
+      setError("Please add at least one technology to your tech stack");
       return;
     }
     if (!difficulty) {
@@ -147,7 +146,7 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
     
     // Notify other tabs that generation has started
     if (quizGeneration?.startGeneration) {
-      quizGeneration.startGeneration(topic.trim());
+      quizGeneration.startGeneration(role);
     }
 
     try {
