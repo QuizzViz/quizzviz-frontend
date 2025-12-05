@@ -297,9 +297,9 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                   <div>
                     <Button
                       className={`bg-foreground hover:bg-muted-foreground text-background transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center ${
-                        planInfo.hasReachedLimit || !isTopicValid ? 'opacity-70 cursor-not-allowed' : ''
+                        planInfo.hasReachedLimit || !role || techStack.length === 0 ? 'opacity-70 cursor-not-allowed' : ''
                       }`}
-                      disabled={planInfo.hasReachedLimit || !isTopicValid}
+                      disabled={planInfo.hasReachedLimit || !role || techStack.length === 0}
                       onClick={() => handleGenerateWithLimit(codePercentage)}
                     >
                       {planInfo.hasReachedLimit ? (
@@ -310,13 +310,13 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                       ) : (
                         <>
                           <Zap className="h-4 w-4 mr-2" />
-                          {isTopicValid ? 'Generate Quiz' : 'Select a valid topic'}
+                          {!role || techStack.length === 0 ? 'Role and Tech Stack are required' : 'Generate Quiz'}
                         </>
                       )}
                     </Button>
                   </div>
                 </TooltipTrigger>
-                {(planInfo.hasReachedLimit || !isTopicValid) && (
+                {(planInfo.hasReachedLimit || !role || techStack.length === 0) && (
                   <TooltipContent className="w-64 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
                     <div className="space-y-2">
                       <div className="flex items-start">
@@ -326,9 +326,16 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                           </svg>
                         </div>
                         <div className="ml-3">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{planInfo.hasReachedLimit ? 'Plan Limit Reached' : 'Invalid Topic'}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {planInfo.hasReachedLimit ? 'Plan Limit Reached' : 'Missing Information'}
+                          </p>
                           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {planInfo.hasReachedLimit ? planInfo.message : 'Please select a topic from the suggestions list before generating.'}
+                            {planInfo.hasReachedLimit 
+                              ? planInfo.message 
+                              : !role 
+                                ? 'Please select a role before generating.'
+                                : 'Please add at least one technology to your tech stack.'
+                            }
                           </p>
                         </div>
                       </div>
