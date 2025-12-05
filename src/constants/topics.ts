@@ -39,13 +39,6 @@ export const TOPICS = [
   { value: "Tailwind CSS", label: "Tailwind CSS" },
   { value: "jQuery", label: "jQuery" },
   
-  // Stacks
-  { value: "MERN Stack", label: "MERN Stack" },
-  { value: "MEAN Stack", label: "MEAN Stack" },
-  { value: "LAMP Stack", label: "LAMP Stack" },
-  { value: "JAMStack", label: "JAMStack" },
-  { value: "MEVN Stack", label: "MEVN Stack" },
-  
   // DevOps / Tools
   { value: "Docker", label: "Docker" },
   { value: "Kubernetes", label: "Kubernetes" },
