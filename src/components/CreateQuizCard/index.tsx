@@ -189,9 +189,8 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       return;
     }
 
-    // Just pass the code percentage to the handler
-    // The hook will handle the rest of the state
-    _handleGenerate(codePct);
+    // Pass the code percentage, tech stack, and role to the handler
+    _handleGenerate(codePct, techStack, role);
   };
 
   return (
