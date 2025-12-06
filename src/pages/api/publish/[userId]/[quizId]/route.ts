@@ -120,3 +120,14 @@ async function handlePublishRequest(
     );
   }
 }
+
+// Add default export with HTTP methods
+export default {
+  POST,
+  DELETE,
+  config: {
+    api: {
+      bodyParser: false, // Disable default body parser to handle raw body if needed
+    },
+  },
+};
