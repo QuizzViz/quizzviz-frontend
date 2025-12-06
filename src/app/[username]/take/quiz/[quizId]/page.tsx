@@ -38,15 +38,10 @@ interface QuizData {
   max_attempts?: number;
 }
 
-interface PageProps {
-  params: {
-    username: string;
-    quizId: string;
-  };
-  searchParams?: { [key: string]: string | string[] | undefined };
-}
-
-type QuizPageProps = PageProps;
+type QuizPageProps = {
+  params: any;
+  searchParams?: any;
+};
 
 type FormData = {
   name: string;
@@ -54,7 +49,7 @@ type FormData = {
   quizKey: string;
 };
 
-export default async function QuizPage({ params }: PageProps) {
+export default async function QuizPage({ params }: QuizPageProps) {
   const { username, quizId } = await params;
   const router = useRouter();
   const { user } = useUser();
