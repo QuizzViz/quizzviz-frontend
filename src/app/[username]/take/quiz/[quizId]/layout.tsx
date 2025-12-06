@@ -21,11 +21,18 @@ export const viewport: Viewport = {
   ],
 }
 
+interface QuizLayoutProps {
+  children: React.ReactNode;
+  params: {
+    username: string;
+    quizId: string;
+  };
+}
+
 export default function QuizLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+  params
+}: QuizLayoutProps) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {children}
