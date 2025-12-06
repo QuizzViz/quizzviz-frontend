@@ -218,7 +218,7 @@ export default async function handler(
             // Send quiz expired email notification after successful unpublish
             try {
               const emailResponse = await fetch(
-                `/api/send_email/quiz-expired`,
+                `/app/api/send_email/quiz-expired`,
                 {
                   method: 'POST',
                   headers: {

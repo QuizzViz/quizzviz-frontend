@@ -1,41 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 
-interface RouteParams {
-  params: {
-    userId: string;
-    quizId: string;
-  };
-}
-
 export async function POST(
   request: NextRequest,
-  context: RouteParams
+  { params }: { params: { userId: string; quizId: string } }
 ) {
-  return handlePublishRequest(request, context.params);
+  return handlePublishRequest(request, params);
 }
 
 export async function DELETE(
   request: NextRequest,
-  context: RouteParams
+  { params }: { params: { userId: string; quizId: string } }
 ) {
-  return handlePublishRequest(request, context.params);
+  return handlePublishRequest(request, params);
 }
 
 async function handlePublishRequest(
   request: NextRequest,
   params: { userId: string; quizId: string }
 ) {
-  const { userId: username, quizId } = params;
-
   try {
-    if (!username || !quizId) {
-      return NextResponse.json({ status: 400 }, { status: 400 });
+    const { userId: username, quizId } = params;
+
+    if (!quizId) {
+      return NextResponse.json(
+        { error: 'Quiz ID is required' },
+        { status: 400 }
+      );
     }
 
-    const { userId, getToken } = getAuth(request);
+    const { userId: authUserId, getToken } = getAuth(request);
 
-    if (!userId) {
+    if (!authUserId) {
       return NextResponse.json(
         { error: 'Unauthorized', status: 401 },
         { status: 401 }
@@ -51,22 +47,48 @@ async function handlePublishRequest(
       );
     }
 
-    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${username}/quiz/${quizId}`;
+    // Use the authenticated user's ID from Clerk
+    const effectiveUserId = username || authUserId;
+    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${effectiveUserId}/quiz/${quizId}`;
+
+    // Include user ID in the request body for POST requests
+    let requestBody = {};
+    if (request.method === 'POST') {
+      requestBody = { user_id: authUserId };
+    }
 
     const response = await fetch(publishServiceUrl, {
       method: request.method,
       headers: {
-        accept: 'application/json',
-        Authorization: `Bearer ${token}`,
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: request.method === 'POST' ? '{}' : undefined
+      body: request.method === 'POST' ? JSON.stringify(requestBody) : undefined
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown');
+      let errorDetails;
+      try {
+        const errorData = await response.json();
+        errorDetails = errorData.detail || errorData.message || 'Unknown error';
+      } catch (e) {
+        errorDetails = await response.text().catch(() => 'Unknown error');
+      }
+      
+      console.error('Publish service error:', {
+        status: response.status,
+        statusText: response.statusText,
+        details: errorDetails,
+        url: publishServiceUrl,
+        method: request.method
+      });
+
       return NextResponse.json(
-        { error: 'Service failed', details: errorText },
+        { 
+          error: 'Failed to process publish request',
+          details: errorDetails 
+        },
         { status: response.status }
       );
     }
@@ -75,8 +97,12 @@ async function handlePublishRequest(
       status: request.method === 'DELETE' ? 204 : 200
     });
   } catch (error: any) {
+    console.error('Publish request failed:', error);
     return NextResponse.json(
-      { error: 'Internal error', details: error.message },
+      { 
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
       { status: 500 }
     );
   }
