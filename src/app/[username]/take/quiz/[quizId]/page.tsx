@@ -39,10 +39,10 @@ interface QuizData {
 }
 
 interface PageProps {
-  params: Promise<{
+  params: {
     username: string;
     quizId: string;
-  }>;
+  };
   searchParams?: { [key: string]: string | string[] | undefined };
 }
 
