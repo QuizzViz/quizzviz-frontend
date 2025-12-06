@@ -1,7 +1,12 @@
 import { Metadata, Viewport } from 'next';
 import { ToastProvider } from '@/components/ui/toast-provider';
 
-export async function generateMetadata({ params }: { params: { username: string } }): Promise<Metadata> {
+interface PageParams {
+  username: string;
+  quizId: string;
+}
+
+export async function generateMetadata({ params }: { params: PageParams }): Promise<Metadata> {
   const firstName = params.username
   
   return {
