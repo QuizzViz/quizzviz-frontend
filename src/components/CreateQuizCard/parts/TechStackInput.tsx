@@ -122,74 +122,88 @@ export function TechStackInput({ value, onChange, availableTechs: externalAvaila
   }, [value, onChange]);
 
   const updateWeight = useCallback((id: string, newWeight: number) => {
-    // Find the item being changed
-    const changedItem = value.find(item => item.id === id);
-    if (!changedItem) return;
-
-    const oldWeight = changedItem.weight;
-    const weightDiff = newWeight - oldWeight;
-
-    // Get other items that can be adjusted
-    const otherItems = value.filter(item => item.id !== id);
+    const items = [...value];
+    const changedIndex = items.findIndex(item => item.id === id);
     
-    if (otherItems.length === 0) {
-      // Only one item, set it to 100
-      onChange([{ ...changedItem, weight: 100 }]);
+    if (changedIndex === -1) return;
+    
+    // If this is the only item, set it to 100%
+    if (items.length === 1) {
+      onChange([{ ...items[0], weight: 100 }]);
       return;
     }
-
-    // Calculate total weight of other items
-    const othersTotalWeight = otherItems.reduce((sum, item) => sum + item.weight, 0);
     
-    // Check if we can make this change
-    const newOthersTotalWeight = othersTotalWeight - weightDiff;
+    // Clamp the new weight between 0 and 100
+    let clampedWeight = Math.max(0, Math.min(100, Math.round(newWeight)));
     
-    if (newOthersTotalWeight < 0) {
-      // Can't reduce others enough, set changed item to maximum possible
-      const maxPossible = 100 - otherItems.length * 0; // Each other item can go to 0
-      const updatedItems = value.map(item => 
-        item.id === id ? { ...item, weight: Math.min(newWeight, maxPossible) } : { ...item, weight: 0 }
-      );
-      onChange(updatedItems);
+    // Set the new weight for the changed item
+    items[changedIndex].weight = clampedWeight;
+    
+    // Calculate remaining weight to distribute among other items
+    let remainingWeight = 100 - clampedWeight;
+    
+    // Get other items (excluding the one being changed)
+    const otherIndices = items.map((_, i) => i).filter(i => i !== changedIndex);
+    
+    // If no weight left or only one item, set all others to 0
+    if (remainingWeight <= 0 || otherIndices.length === 0) {
+      otherIndices.forEach(i => { items[i].weight = 0; });
+      items[changedIndex].weight = 100;
+      onChange([...items]);
       return;
     }
-
-    // Distribute the weight difference proportionally among other items
-    const updatedItems = value.map(item => {
-      if (item.id === id) {
-        return { ...item, weight: newWeight };
-      }
+    
+    // Calculate the total current weight of other items
+    const totalOtherWeight = otherIndices.reduce((sum, i) => sum + items[i].weight, 0);
+    
+    if (totalOtherWeight <= 0) {
+      // If other items have no weight, distribute remaining weight equally
+      const baseWeight = Math.floor(remainingWeight / otherIndices.length);
+      let distributed = 0;
       
-      // Calculate proportional adjustment
-      if (othersTotalWeight > 0) {
-        const proportion = item.weight / othersTotalWeight;
-        const adjustment = weightDiff * proportion;
-        const newItemWeight = Math.max(0, item.weight - adjustment);
-        return { ...item, weight: newItemWeight };
-      } else {
-        // If others are all 0, distribute equally
-        return { ...item, weight: (100 - newWeight) / otherItems.length };
-      }
-    });
-
-    // Final adjustment to ensure total is exactly 100
-    const total = updatedItems.reduce((sum, item) => sum + item.weight, 0);
-    if (Math.abs(total - 100) > 0.01) {
-      const diff = 100 - total;
-      // Apply difference to first item that's not being changed and is not at 0
-      const adjustableItem = updatedItems.find(item => item.id !== id && item.weight > 0);
-      if (adjustableItem) {
-        adjustableItem.weight = Math.max(0, adjustableItem.weight + diff);
-      } else if (updatedItems.length > 1) {
-        // If all others are 0, adjust the changed item
-        const changedInUpdated = updatedItems.find(item => item.id === id);
-        if (changedInUpdated) {
-          changedInUpdated.weight = 100;
+      otherIndices.forEach((i, idx) => {
+        if (idx === otherIndices.length - 1) {
+          // Last item gets whatever is left to ensure total is exactly 100
+          items[i].weight = remainingWeight - distributed;
+        } else {
+          items[i].weight = baseWeight;
+          distributed += baseWeight;
+        }
+      });
+    } else {
+      // Distribute remaining weight proportionally based on current weights
+      let distributed = 0;
+      
+      otherIndices.forEach((i, idx) => {
+        if (idx === otherIndices.length - 1) {
+          // Last item gets whatever is left to ensure total is exactly 100
+          items[i].weight = remainingWeight - distributed;
+        } else {
+          // Distribute proportionally and round
+          const proportion = items[i].weight / totalOtherWeight;
+          const newWeight = Math.round(proportion * remainingWeight);
+          items[i].weight = newWeight;
+          distributed += newWeight;
+        }
+      });
+    }
+    
+    // Final safety check: ensure total is exactly 100
+    const total = items.reduce((sum, item) => sum + item.weight, 0);
+    if (total !== 100) {
+      // Adjust the first non-changed item to compensate
+      const adjustIndex = otherIndices[0];
+      if (adjustIndex !== undefined) {
+        items[adjustIndex].weight += (100 - total);
+        // Ensure it doesn't go negative
+        if (items[adjustIndex].weight < 0) {
+          items[adjustIndex].weight = 0;
+          items[changedIndex].weight += items[adjustIndex].weight;
         }
       }
     }
     
-    onChange(updatedItems);
+    onChange([...items]);
   }, [value, onChange]);
 
   const handleTechSelect = (techValue: string) => {
@@ -220,12 +234,12 @@ export function TechStackInput({ value, onChange, availableTechs: externalAvaila
   const isValidTotal = Math.abs(totalWeight - 100) < 0.1;
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-4">
+    <div className="space-y-3">
+      <div className="space-y-2">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Label className="text-foreground text-lg font-semibold">Tech Stack</Label>
+            <Label className="text-foreground text-sm">Tech Stack</Label>
           </div>
           <Badge variant="outline" className="text-xs">
             {value.length}/{maxTechs} technologies
@@ -233,7 +247,7 @@ export function TechStackInput({ value, onChange, availableTechs: externalAvaila
         </div>
         
         {/* Add Technology Combobox */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           {value.length < maxTechs && (
             <div className="relative">
               <Combobox
@@ -247,14 +261,14 @@ export function TechStackInput({ value, onChange, availableTechs: externalAvaila
                 }}
                 placeholder="Search and add technology..."
                 className="w-full"
-                inputClassName="h-11 text-base"
+                inputClassName="h-9 text-sm"
               />
             </div>
           )}
           
           {value.length >= maxTechs && (
-            <div className="text-sm text-muted-foreground flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-              <AlertCircle className="h-4 w-4" />
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 p-2 bg-muted/50 rounded-md">
+              <AlertCircle className="h-3.5 w-3.5" />
               Maximum number of technologies reached
             </div>
           )}
@@ -262,22 +276,22 @@ export function TechStackInput({ value, onChange, availableTechs: externalAvaila
         
         {/* Technology Pills */}
         {value.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg border border-border/50">
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-1.5 p-2 bg-muted/20 rounded-md border border-border/30">
               {value.map((tech) => (
                 <Badge
                   key={tech.id}
                   variant="secondary"
-                  className="px-4 py-2 text-sm font-medium flex items-center gap-2 hover:bg-secondary/80 transition-all shadow-sm"
+                  className="px-2.5 py-1 text-xs font-normal flex items-center gap-1 hover:bg-secondary/80 transition-all"
                 >
                   <span>{tech.name}</span>
-                  <span className="text-xs opacity-70">({Math.round(tech.weight)}%)</span>
+                  <span className="text-[11px] opacity-70">({Math.round(tech.weight)}%)</span>
                   <button
                     type="button"
                     onClick={() => removeTech(tech.id)}
-                    className="hover:text-destructive transition-colors ml-1 hover:scale-110"
+                    className="hover:text-destructive transition-colors -mr-1 hover:scale-110"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3" />
                   </button>
                 </Badge>
               ))}

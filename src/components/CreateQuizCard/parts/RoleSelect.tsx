@@ -39,7 +39,7 @@ export function RoleSelect({ value, onChange, className }: RoleSelectProps) {
 
   return (
     <div className="space-y-2 w-full">
-      <Label className="text-foreground">Role</Label>
+      <Label className="text-sm text-white ">Role</Label>
       <Combobox
         options={roleOptions}
         value={value}
