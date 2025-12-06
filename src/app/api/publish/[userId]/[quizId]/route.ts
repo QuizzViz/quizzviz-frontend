@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 
+interface RouteParams {
+  params: {
+    userId: string;
+    quizId: string;
+  };
+}
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: { userId: string; quizId: string } }
+  context: RouteParams
 ) {
-  return handlePublishRequest(request, params);
+  return handlePublishRequest(request, context.params);
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { userId: string; quizId: string } }
+  context: RouteParams
 ) {
-  return handlePublishRequest(request, params);
+  return handlePublishRequest(request, context.params);
 }
 
 async function handlePublishRequest(
