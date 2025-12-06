@@ -215,48 +215,17 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
             />
           </div>
 
-          {/* Mobile: Stack difficulty and count separately */}
-          <div className="block sm:hidden space-y-4">
-            {/* Difficulty - Mobile Only */}
-            <div className="space-y-2">
-              <Label className="text-foreground">Difficulty</Label>
-              <Select value={difficulty} onValueChange={setDifficulty}>
-                <SelectTrigger className="bg-background border-border text-foreground outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0">
-                  <SelectValue placeholder="Select difficulty" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border text-foreground">
-                  <SelectItem value="High School">High School level</SelectItem>
-                  <SelectItem value="Bachelors">Bachelors level</SelectItem>
-                  <SelectItem value="Masters">Masters level</SelectItem>
-                  <SelectItem value="PhD">PhD level</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Number of Questions - Mobile Only */}
-            <div className="space-y-1">
-              <NumberInput
-                value={count}
-                onChange={setCount}
-                min={1}
-                max={maxQuestions}
-                className="w-full [&_input]:outline-none [&_input]:focus:outline-none [&_input]:focus-visible:ring-0 [&_input]:focus-visible:ring-offset-0"
-              />
-            </div>
-          </div>
-
-          {/* Desktop: Use the original DifficultyCountRow component */}
-          <div className="hidden sm:block">
-            <DifficultyCountRow
+          {/* Use the same DifficultyCountRow for both mobile and desktop */}
+          <DifficultyCountRow
               difficulty={difficulty}
               setDifficulty={setDifficulty}
               count={count}
               setCount={setCount}
               maxQuestions={maxQuestions}
+              className="pt-4"
             />
-          </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 pt-4">
             <div className="flex items-center justify-between">
               <Label className="text-foreground">Question Distribution</Label>
               
