@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 
-
-// Handle both POST and DELETE methods
 export async function POST(
   request: NextRequest,
   { params }: { params: { userId: string; quizId: string } }
@@ -22,112 +20,69 @@ async function handlePublishRequest(
   params: { userId: string; quizId: string }
 ) {
   const { userId: username, quizId } = params;
-  console.log('Publish delete API called with params:', { username, quizId });
-  
+  console.log('API hit with:', { username, quizId, method: request.method });
+
   try {
-    
     if (!username || !quizId) {
-      console.error('Missing username or quizId');
-      return NextResponse.json(
-        { status: 400 }
-      );
+      return NextResponse.json({ status: 400 }, { status: 400 });
     }
-    
-    // Get the authenticated user's ID and token
+
     const { userId, getToken } = getAuth(request);
-    
+
     if (!userId) {
-      console.error('No authenticated user ID found');
       return NextResponse.json(
-        { 
-          error: `Unauthorized - Not authenticated for ${request.method} request`,
-          status: 401 
+        {
+          error: `Unauthorized - Not authenticated for ${request.method}`,
+          status: 401,
         },
         { status: 401 }
       );
     }
 
-    // Get the session token
     const token = await getToken();
-    
+
     if (!token) {
-      console.error('No session token found');
       return NextResponse.json(
         { error: 'Unauthorized - No session token' },
         { status: 401 }
       );
     }
 
-    // Using the exact endpoint from the curl command
     const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${username}/quiz/${quizId}`;
-    console.log('Making request to:', publishServiceUrl, 'with method:', request.method);
 
-    try {
-      console.log(`Sending ${request.method} request to:`, publishServiceUrl, 'with token:', token ? 'Token exists' : 'No token');
-      
-      console.log('Sending request to backend service:', publishServiceUrl, 'with method:', request.method);
-      const response = await fetch(publishServiceUrl, {
-        method: request.method, // Use the same method as the incoming request
-        headers: {
-          'accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: request.method === 'POST' ? JSON.stringify({}) : undefined // Only include body for POST
-      });
-      
-      console.log('Response status:', response.status);
+    console.log('Calling backend:', publishServiceUrl);
 
-      if (!response.ok) {
-        const error = await response.text().catch(() => 'Unknown error');
-        console.error('Publish service error:', error);
-        return NextResponse.json(
-          { 
-            error: `Failed to process ${request.method} request to publish service`,
-            details: error,
-            method: request.method
-          },
-          { status: response.status }
-        );
-      }
+    const response = await fetch(publishServiceUrl, {
+      method: request.method,
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: request.method === 'POST' ? '{}' : undefined,
+    });
 
-      console.log(`Successfully processed ${request.method} request to publish service`);
-      // Return appropriate status based on the method
-      return new NextResponse(null, { 
-        status: request.method === 'DELETE' ? 204 : 200 
-      });
-      
-    } catch (error) {
-      console.error('Error calling publish service:', error);
+    if (!response.ok) {
+      const error = await response.text().catch(() => 'Unknown');
       return NextResponse.json(
-        { 
-          error: `Failed to process ${request.method} request to publish service`,
-          details: error instanceof Error ? error.message : 'Unknown error',
-          method: request.method
+        {
+          error: `Publish service failed for ${request.method}`,
+          details: error,
         },
-        { status: 500 }
+        { status: response.status }
       );
     }
+
+    return new NextResponse(null, {
+      status: request.method === 'DELETE' ? 204 : 200,
+    });
   } catch (error) {
-    console.error('Error in publish delete API:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        status: 500
+        details: error instanceof Error ? error.message : 'Unknown',
       },
       { status: 500 }
     );
   }
 }
-
-// Add default export with HTTP methods
-export default {
-  POST,
-  DELETE,
-  config: {
-    api: {
-      bodyParser: false, // Disable default body parser to handle raw body if needed
-    },
-  },
-};
