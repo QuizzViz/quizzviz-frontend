@@ -157,16 +157,168 @@ export async function POST() {
   });
 }
 
-export async function PUT() {
-  return new NextResponse(null, { 
-    status: 405,
-    headers: { 'Allow': 'GET, DELETE' }
-  });
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { userId } = getAuth(request);
+  
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const { id: quizId } = await context.params;
+    const token = request.cookies.get('__session')?.value || '';
+    const payload = await request.json();
+
+    if (!quizId) {
+      return NextResponse.json(
+        { error: 'Quiz ID is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No session token' },
+        { status: 401 }
+      );
+    }
+
+    const response = await fetch(
+      `${BACKEND_BASE_URL}/user/${userId}/quizz/${encodeURIComponent(quizId)}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: error.message || 'Failed to update quiz' },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
-export async function PATCH() {
-  return new NextResponse(null, { 
-    status: 405,
-    headers: { 'Allow': 'GET, DELETE' }
-  });
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: quizId } = await context.params;
+    const { userId, getToken } = getAuth(request);
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized - User not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    if (!quizId) {
+      return NextResponse.json(
+        { error: 'Quiz ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const token = await getToken();
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No session token' },
+        { status: 401 }
+      );
+    }
+
+    // First, unpublish the quiz from the publish service
+    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${userId}/quiz/${quizId}`;
+    const unpublishResponse = await fetch(publishServiceUrl, {
+      method: 'DELETE',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!unpublishResponse.ok) {
+      const errorData = await unpublishResponse.json().catch(() => ({}));
+      console.error('Failed to unpublish quiz:', {
+        status: unpublishResponse.status,
+        statusText: unpublishResponse.statusText,
+        error: errorData
+      });
+
+      return NextResponse.json(
+        { 
+          error: 'Failed to unpublish quiz',
+          details: errorData.detail || errorData.message || 'Unknown error'
+        },
+        { status: unpublishResponse.status }
+      );
+    }
+
+    // Then update the quiz to mark it as unpublished
+    const backendUrl = `${process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL}/user/${encodeURIComponent(userId)}/quizz/${encodeURIComponent(quizId)}`;
+    const updateResponse = await fetch(backendUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-user-id': userId
+      },
+      body: JSON.stringify({
+        is_publish: false,
+        public_link: null,
+        quiz_key: null
+      })
+    });
+
+    if (!updateResponse.ok) {
+      const errorData = await updateResponse.json().catch(() => ({}));
+      console.error('Failed to update quiz status:', {
+        status: updateResponse.status,
+        statusText: updateResponse.statusText,
+        error: errorData
+      });
+
+      return NextResponse.json(
+        { 
+          error: 'Failed to update quiz status',
+          details: errorData.detail || errorData.message || 'Unknown error'
+        },
+        { status: updateResponse.status }
+      );
+    }
+
+    return NextResponse.json(
+      { success: true, message: 'Quiz unpublished successfully' },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Error in PATCH /api/quiz/[id]:', error);
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
+      { status: 500 }
+    );
+  }
 }

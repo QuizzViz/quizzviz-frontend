@@ -20,8 +20,8 @@ const fetchUserPlan = async (userId: string | null | undefined, getToken: () => 
   });
 
   if (!response.ok) {
-    console.log('Failed to fetch user plan');
-    return { plan_name: 'Free' };
+    console.log('Failed to fetch user plan, defaulting to Business for testing');
+    return { plan_name: 'Business' };
   }
 
   return response.json();
