@@ -38,13 +38,10 @@ interface QuizData {
   max_attempts?: number;
 }
 
-interface QuizPageProps {
-  params: {
-    username: string;
-    quizId: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
+type QuizPageProps = {
+  params: any;
+  searchParams?: any;
+};
 
 type FormData = {
   name: string;
@@ -52,9 +49,9 @@ type FormData = {
   quizKey: string;
 };
 
-export default function QuizPage({ params }: QuizPageProps) {
+export default async function QuizPage({ params }: QuizPageProps) {
+  const { username, quizId } = await params;
   const router = useRouter();
-  const { username, quizId } = params;
   const { user } = useUser();
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
   const [formData, setFormData] = useState<FormData>({ name: '', email: '', quizKey: '' });
@@ -124,11 +121,6 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
-  interface AttemptsInfo {
-    current: number;
-    max: number;
-  }
-
   const [attemptsInfo, setAttemptsInfo] = useState<{ current: number; max: number }>({ current: 0, max: 1 });
   const [showingMaxAttemptsNotification, setShowingMaxAttemptsNotification] = useState(false);
 
@@ -270,7 +262,7 @@ export default function QuizPage({ params }: QuizPageProps) {
       
       const submissionData = {
         quiz_id: quizData.quiz_id,
-        owner_id: params.username,
+        owner_id: username,
         username: formData.name,
         user_email: formData.email,
         user_answers: userAnswers,
@@ -318,7 +310,7 @@ export default function QuizPage({ params }: QuizPageProps) {
       setIsSubmitting(false);
       setStep('results');
     }
-  }, [quizData, formData, attemptsInfo, timeLeft, params.username]);
+  }, [quizData, formData, attemptsInfo, timeLeft, username]);
 
   const getCurrentAnswer = useCallback((questionIndex: number) => {
     if (selectedAnswers[questionIndex] !== undefined) {
