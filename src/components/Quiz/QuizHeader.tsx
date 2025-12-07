@@ -47,9 +47,9 @@ export function QuizHeader({
     try {
       setIsUnpublishing(true);
       
-      // Only update the is_publish field to false
-      const updateResponse = await fetch(`/api/quiz/${quizId}`, {
-        method: 'PATCH',  // Using PATCH to do a partial update
+      // Use PUT to update the quiz status and handle unpublishing
+      const response = await fetch(`/api/quiz/${quizId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -58,28 +58,23 @@ export function QuizHeader({
         })
       });
 
-      if (!updateResponse.ok) {
-        const error = await updateResponse.text();
-        throw new Error(`Failed to update quiz status: ${error}`);
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to unpublish quiz: ${error}`);
       }
 
-      // Then delete from publish service
-      const publishResponse = await fetch(`/api/publish/${user?.id}/${quizId}`, {
-        method: 'DELETE',
-      });
+      const result = await response.json();
       
-      if (publishResponse.ok) {
+      if (result.success) {
         toast({
           title: "Success",
-          description: "Quiz Unpublished Successfully",
+          description: result.message || "Quiz unpublished successfully",
           className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
-
         });
         // Refresh the page to show the unpublished state
         window.location.reload();
       } else {
-        const error = await publishResponse.text();
-        throw new Error(`Failed to unpublish quiz: ${error}`);
+        throw new Error(result.error || 'Failed to unpublish quiz');
       }
     } catch (error) {
       console.error('Error unpublishing quiz:', error);

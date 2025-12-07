@@ -15,11 +15,30 @@ const handleApiError = (error: any) => {
   );
 };
 
+// Helper function to authenticate and get user info
+const authenticateRequest = async (request: NextRequest) => {
+  const { userId, getToken } = getAuth(request);
+  const token = await getToken() || request.cookies.get('__session')?.value;
+  
+  if (!userId || !token) {
+    return { 
+      error: NextResponse.json(
+        { error: 'Unauthorized - No valid session' },
+        { status: 401 }
+      )
+    };
+  }
+  
+  return { userId, token };
+};
+
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string  }> }
+  context: { params: Promise<{ id: string }> }
 ) {
-    const {userId} = getAuth(request)
+  const auth = await authenticateRequest(request);
+  if ('error' in auth) return auth.error;
+  const { userId } = auth;
   try {
     const { id: quizId} = await context.params; 
 // ✅ await it
@@ -100,24 +119,17 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
- const {userId} = getAuth(request)
+  const auth = await authenticateRequest(request);
+  if ('error' in auth) return auth.error;
+  const { userId, token } = auth;
 
   try {
-    const { id: quizId } = await context.params; // ✅ await it
+    const { id: quizId } = await context.params;
 
     if (!quizId) {
       return NextResponse.json(
         { error: 'Quiz ID is required' },
         { status: 400 }
-      );
-    }
-
-    const token = request.cookies.get('__session')?.value || '';
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No session token' },
-        { status: 401 }
       );
     }
 
@@ -161,18 +173,12 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { userId } = getAuth(request);
-  
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
+  const auth = await authenticateRequest(request);
+  if ('error' in auth) return auth.error;
+  const { userId, token } = auth;
 
   try {
     const { id: quizId } = await context.params;
-    const token = request.cookies.get('__session')?.value || '';
     const payload = await request.json();
 
     if (!quizId) {
@@ -220,16 +226,12 @@ export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const auth = await authenticateRequest(request);
+  if ('error' in auth) return auth.error;
+  const { userId, token } = auth;
+  
   try {
     const { id: quizId } = await context.params;
-    const { userId, getToken } = getAuth(request);
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized - User not authenticated' },
-        { status: 401 }
-      );
-    }
 
     if (!quizId) {
       return NextResponse.json(
@@ -238,13 +240,7 @@ export async function PUT(
       );
     }
 
-    const token = await getToken();
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No session token' },
-        { status: 401 }
-      );
-    }
+    // Token is already validated in authenticateRequest
 
     // First, unpublish the quiz from the publish service
     const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${userId}/quiz/${quizId}`;
