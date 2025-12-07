@@ -1,6 +1,6 @@
 'use client';
 import { use } from 'react';
-import { notFound, useParams, useRouter } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -38,15 +38,13 @@ interface QuizData {
   max_attempts?: number;
 }
 
-type RouteParams = {
-  username: string;
-  quizId: string;
-};
-
-type QuizPageProps = {
-  params: RouteParams;
-  searchParams?: Record<string, string>;
-};
+interface PageProps {
+  params: {
+    username: string;
+    quizId: string;
+  };
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
 
 type FormData = {
   name: string;
@@ -54,7 +52,7 @@ type FormData = {
   quizKey: string;
 };
 
-export default function QuizPage({ params }: QuizPageProps) {
+export default function QuizPage({ params }: PageProps) {
   const { username, quizId } = params;
   const router = useRouter();
   const { user } = useUser();
