@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
@@ -188,14 +188,21 @@ export function QuizEditor() {
     setCurrentPage(1);
   }, [localQuestions.length]);
 
+  // Get auth token function
+  const { getToken } = useAuth();
+
   // Persist quiz to the server
   const persistQuiz = async (questions: QuizQuestion[]) => {
     if (!quiz || !user) return;
 
     try {
+      // Get the authentication token
+      const token = await getToken();
+      if (!token) throw new Error('No authentication token found');
+      
       const payload = {
         role: quiz.role,
-        techStack:quiz.techStack,
+        techStack: quiz.techStack,
         difficulty: quiz.difficulty,
         num_questions: questions.length,
         theory_questions_percentage: quiz.theory_questions_percentage,
@@ -205,12 +212,13 @@ export function QuizEditor() {
       };
 
       const res = await fetch(`/api/quiz/${encodeURIComponent(quiz.quiz_id)}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user.id,
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload),
+        credentials: 'include'
       });
 
       if (!res.ok) {
@@ -392,22 +400,31 @@ export function QuizEditor() {
       toast({
         title: "Error",
         description: "Missing quiz or user information",
-        variant: 'destructive'
       });
       return;
     }
 
-    console.log('Starting quiz deletion for quiz ID:', quiz.quiz_id);
+    setIsPublishing(true);
+    
+    console.log('Deleting quiz...', {
+      quizId: quiz.quiz_id,
+      isPublished
+    });
     console.log('Is published:', isPublished);
 
     try {
+      // Get the authentication token
+    const token = await getToken();
+      
       // First, delete the quiz from our database
       console.log('Deleting quiz from database...');
       const res = await fetch(`/api/quiz/${encodeURIComponent(quiz.quiz_id)}`, {
         method: 'DELETE',
         headers: {
-          'x-user-id': user.id,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
+        credentials: 'include'
       });
 
       const responseData = await res.json().catch(() => ({}));
