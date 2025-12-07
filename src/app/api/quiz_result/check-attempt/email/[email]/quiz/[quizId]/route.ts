@@ -12,10 +12,10 @@ type ResponseData = {
 };
 
 type RouteParams = {
-  params: {
+  params:Promise<{
     email: string;
     quizId: string;
-  };
+  }>;
 };
 
 export async function GET(
@@ -23,7 +23,7 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const {email:encodedEmail,quizId} = params
+    const {email:encodedEmail,quizId} = use(params)
     const email = decodeURIComponent(encodedEmail);
 
     if (!email || !quizId) {
