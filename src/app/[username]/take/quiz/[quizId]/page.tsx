@@ -1,6 +1,6 @@
 'use client';
-
-import { notFound, useRouter } from 'next/navigation';
+import { use } from 'react';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -38,9 +38,14 @@ interface QuizData {
   max_attempts?: number;
 }
 
+type RouteParams = {
+  username: string;
+  quizId: string;
+};
+
 type QuizPageProps = {
-  params: any;
-  searchParams?: any;
+  params: RouteParams;
+  searchParams?: Record<string, string>;
 };
 
 type FormData = {
@@ -49,8 +54,8 @@ type FormData = {
   quizKey: string;
 };
 
-export default async function QuizPage({ params }: QuizPageProps) {
-  const { username, quizId } = await params;
+export default function QuizPage({ params }: QuizPageProps) {
+  const { username, quizId } = params;
   const router = useRouter();
   const { user } = useUser();
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
@@ -156,7 +161,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
 
     try {
       const response = await fetch(
-        `/api/quiz_result/check-attempt?email=${encodeURIComponent(formData.email)}&quiz_id=${quizId}`
+        `/api/quiz_result/check-attempt/email/${encodeURIComponent(formData.email)}/quiz/${quizId}`
       );
       
       if (!response.ok) {
@@ -680,14 +685,15 @@ export default async function QuizPage({ params }: QuizPageProps) {
 
       const currentPath = window.location.href;
       
-      const apiUrl = new URL('/api/verify-quiz', window.location.origin);
-      apiUrl.searchParams.append('quizUrl', currentPath);
-      apiUrl.searchParams.append('key', formData.quizKey);
+      const apiUrl = new URL(
+        `/api/verify-quiz?quizUrl=${encodeURIComponent(currentPath)}&key=${encodeURIComponent(formData.quizKey)}`,
+        window.location.origin
+      );
       
       const response = await fetch(apiUrl.toString(), {
         method: 'GET',
         headers: {
-          'accept': 'application/json',
+          'accept': 'application/json'
         },
       });
 
@@ -757,7 +763,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
 
     try {
       const response = await fetch(
-        `/api/quiz_result/check-attempt?email=${encodeURIComponent(formData.email)}&quiz_id=${quizId}`
+        `/api/quiz_result/check-attempt/email/${encodeURIComponent(formData.email)}/quiz/${quizId}`
       );
       
       if (!response.ok) {
