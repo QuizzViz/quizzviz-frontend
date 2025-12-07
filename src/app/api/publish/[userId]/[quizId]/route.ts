@@ -3,16 +3,18 @@ import { getAuth } from '@clerk/nextjs/server';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: {quizId: string } }
+  { params }: { params: Promise<{ quizId: string }> }
 ) {
-  return handlePublishRequest(request, params);
+  const resolvedParams = await params;
+  return handlePublishRequest(request, resolvedParams);
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: {quizId: string } }
+  { params }: { params: Promise<{ quizId: string }> }
 ) {
-  return handlePublishRequest(request, params);
+  const resolvedParams = await params;
+  return handlePublishRequest(request, resolvedParams);
 }
 
 async function handlePublishRequest(

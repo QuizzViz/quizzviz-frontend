@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getAuth } from "@clerk/nextjs/server";
-import { NextApiRequest, NextApiResponse } from 'next';
 
 const BACKEND_BASE_URL = `${process.env.NEXT_PUBLIC_USER_PLAN_SERVICE_URL}`;
 
@@ -18,11 +17,11 @@ const handleApiError = (error: any) => {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const userId = params.userId;
-    const { getToken } = getAuth(request);
+    // Await params first (Next.js 15+ requirement)
+    const { userId } = await params;
     
     if (!userId) {
       return NextResponse.json(
@@ -31,8 +30,15 @@ export async function GET(
       );
     }
 
-    // Get the token with the correct template for the backend service
+    // Get auth from request
+    const { getToken } = getAuth(request);
+    
+    // Get the token with a custom template if your backend expects it
+    // Option 1: Use default Clerk token
     const token = await getToken();
+    
+    // Option 2: If your backend needs a specific JWT template, use:
+    // const token = await getToken({ template: "your-template-name" });
     
     if (!token) {
       console.error('No session token available');
@@ -45,6 +51,8 @@ export async function GET(
     const url = `${process.env.NEXT_PUBLIC_USER_PLAN_SERVICE_URL}/plan/${encodeURIComponent(userId)}`;
     
     console.log('Making request to:', url);
+    console.log('Token preview:', token.substring(0, 20) + '...');
+    
     const response = await fetch(url, {
       method: 'GET',
       headers: {
