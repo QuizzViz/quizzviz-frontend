@@ -3,24 +3,24 @@ import { getAuth } from '@clerk/nextjs/server';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { userId: string; quizId: string } }
+  { params }: { params: {quizId: string } }
 ) {
   return handlePublishRequest(request, params);
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { userId: string; quizId: string } }
+  { params }: { params: {quizId: string } }
 ) {
   return handlePublishRequest(request, params);
 }
 
 async function handlePublishRequest(
   request: NextRequest,
-  params: { userId: string; quizId: string }
+  params: { quizId: string }
 ) {
   try {
-    const { userId: username, quizId } = params;
+    const { quizId } = params;
 
     if (!quizId) {
       return NextResponse.json(
@@ -48,7 +48,7 @@ async function handlePublishRequest(
     }
 
     // Use the authenticated user's ID from Clerk
-    const effectiveUserId = username || authUserId;
+    const effectiveUserId = authUserId;
     const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${effectiveUserId}/quiz/${quizId}`;
 
     // Include user ID in the request body for POST requests
