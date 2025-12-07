@@ -29,6 +29,7 @@ type QuizResult = {
     total_questions: number;
   };
   attempt: number;
+  role: string;
   created_at: string;
 };
 
@@ -62,7 +63,7 @@ const exportPDF = (data: QuizResult[]) => {
   if (data.length === 0) return;
   
   const preparedData = prepareExportData(data);
-  const quizTopic = data[0].result.quiz_topic;
+  const quizRole = data[0].role || 'Quiz';
   const totalQuestions = data[0].result.total_questions;
   
   const doc = new jsPDF();
@@ -70,7 +71,7 @@ const exportPDF = (data: QuizResult[]) => {
   
   // Add title
   doc.setFontSize(20);
-  doc.text(`${quizTopic} Quiz Results`, 14, 20);
+  doc.text(`${quizRole} Quiz Results`, 14, 20);
   
   // Add total questions
   doc.setFontSize(12);
@@ -123,7 +124,7 @@ const exportPDF = (data: QuizResult[]) => {
     }
   });
   
-  doc.save(`${quizTopic.toLowerCase().replace(/\s+/g, '-')}-results-${new Date().toISOString().split('T')[0]}.pdf`);
+  doc.save(`${quizRole.toLowerCase().replace(/\s+/g, '-')}-results-${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
 export default function ResultsDashboard() {
@@ -134,14 +135,14 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [quizData, setQuizData] = useState<QuizResult[]>([]);
-  const [selectedScores, setSelectedScores] = useState<{[quiz:string]: number|null}>({});
+  const [selectedScores, setSelectedScores] = useState<{[role:string]: number|null}>({});
   const [isMobile, setIsMobile] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const quizzesPerPage = 5;
   const dataFetched = useRef(false);
   const [selectedUsers, setSelectedUsers] = useState<{ [key: string]: boolean }>({});
-  const [showDeleteQuizModal, setShowDeleteQuizModal] = useState<{show: boolean, quizId: string, quizTopic: string}>({ show: false, quizId: '', quizTopic: '' });
+  const [showDeleteQuizModal, setShowDeleteQuizModal] = useState<{show: boolean, quizId: string, role: string}>({ show: false, quizId: '', role: '' });
   const [showDeleteUsersModal, setShowDeleteUsersModal] = useState<{show: boolean, quizId: string}>({ show: false, quizId: '' });
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -222,7 +223,8 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete quiz data');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to delete quiz data');
       }
 
       // Refresh data after deletion
@@ -237,12 +239,12 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
       console.error('Error deleting quiz data:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete quiz data',
+        description: error instanceof Error ? error.message : 'Failed to delete quiz data',
         variant: 'destructive',
       });
     } finally {
       setIsDeleting(false);
-      setShowDeleteQuizModal({ show: false, quizId: '', quizTopic: '' });
+      setShowDeleteQuizModal({ show: false, quizId: '', role: '' });
     }
   };
 
@@ -259,13 +261,21 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
 
     try {
       setIsDeleting(true);
-      const deletePromises = usersToDelete.map(user => 
-        fetch(`/api/quiz_result/delete?quiz_id=${showDeleteUsersModal.quizId}&username=${encodeURIComponent(user.username)}&email=${encodeURIComponent(user.email)}`, {
+      const deletePromises = usersToDelete.map(user => {
+        const encodedEmail = encodeURIComponent(user.email);
+        return fetch(`/api/quiz_result/delete?quiz_id=${showDeleteUsersModal.quizId}&email=${encodedEmail}`, {
           method: 'DELETE',
-        })
-      );
+        });
+      });
 
-      await Promise.all(deletePromises);
+      const results = await Promise.all(deletePromises);
+      
+      // Check if any of the requests failed
+      const failedResults = results.filter(response => !response.ok);
+      if (failedResults.length > 0) {
+        const errorData = await Promise.all(failedResults.map(r => r.json().catch(() => ({}))));
+        throw new Error(`Failed to delete some results: ${errorData.map(e => e.message).join(', ')}`);
+      }
       
       // Refresh data after deletion
       await fetchResults(user, true);
@@ -280,7 +290,7 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
       console.error('Error deleting user results:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete user results',
+        description: error instanceof Error ? error.message : 'Failed to delete user results',
         variant: 'destructive',
       });
     } finally {
@@ -314,22 +324,27 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
       
       // Fetch fresh data from API
       const res = await fetch(`/api/quiz_result?owner_id=${ownerId}`);
-      const data = await res.json();
+      const responseData = await res.json();
+      
+      // Extract the results array from the response
+      const quizResults = responseData.results || [];
       
       // Save to cache and update state
-      saveToCache(cacheKey, data);
-      setQuizData(data);
+      saveToCache(cacheKey, quizResults);
+      setQuizData(quizResults);
       setLastUpdated(new Date());
-      console.log("Data successfully loaded from API and cached.");
+      console.log("Data successfully loaded from API and cached.", quizResults);
       
     } catch (err) {
       console.error("Failed to fetch data from API:", err);
       // If there's an error, try to use cached data if available
       const cachedData = getCachedData(`quiz_results_${currentUser?.firstName?.toLowerCase().replace(/\s+/g, '')}`);
       if (cachedData) {
-        setQuizData(cachedData);
+        // Make sure to handle both old and new cache formats
+        const quizResults = Array.isArray(cachedData) ? cachedData : (cachedData.results || []);
+        setQuizData(quizResults);
         setLastUpdated(new Date());
-        console.log("Using cached data after API error");
+        console.log("Using cached data after API error", quizResults);
       }
     } finally {
       setLoading(false);
@@ -361,14 +376,27 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
   // Group and bin data by quiz topic with 5% increments (0-100%)
   const analyticsPerQuiz = useMemo(() => {
     const map = new Map<string, {scores: number[], details: QuizResult[] }>();
+    
+    if (!quizData || !Array.isArray(quizData)) {
+    return [];
+  }
     quizData.forEach(q => {
-      const topic = q.result.quiz_topic;
-      if (!map.has(topic)) map.set(topic, {scores: [], details: []});
-      map.get(topic)!.scores.push(q.result.score);
-      map.get(topic)!.details.push(q);
+      const role = q.role;
+      if (!map.has(role)) map.set(role, {scores: [], details: []});
+      map.get(role)!.scores.push(q.result.score);
+      map.get(role)!.details.push(q);
     });
 
-    const result: {quiz_topic:string, scoreDistribution:any[], details:QuizResult[]}[] = [];
+    interface GroupedQuizData {
+      role: string;
+      scoreDistribution: Array<{
+        name: string;
+        count: number;
+        candidates: QuizResult[];
+      }>;
+      details: QuizResult[];
+    }
+    const result: GroupedQuizData[] = [];
     map.forEach((value, key) => {
       const bins: {[key:string]: QuizResult[]} = {};
       // Define 5% bins (0-5, 5-10, ..., 95-100)
@@ -388,7 +416,7 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
       });
       
       const distribution = Object.entries(bins).map(([name, candidates])=>({name, count: candidates.length, candidates}));
-      result.push({quiz_topic: key, scoreDistribution: distribution, details: value.details});
+      result.push({role: key, scoreDistribution: distribution, details: value.details});
     });
 
     return result;
@@ -591,7 +619,7 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                     <>
                       {/* Quiz Cards */}
                       {paginatedQuizzes.map((quiz, idx) => {
-                        const selectedScore = selectedScores[quiz.quiz_topic] ?? null;
+                        const selectedScore = selectedScores[quiz.role] ?? null;
                         
                         // Filter candidates based on the selected score range (showing ALL attempts in that range)
                         const selectedRange = quiz.scoreDistribution.find(d => Number(d.name.split('-')[0]) === selectedScore);
@@ -625,7 +653,7 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                           <Card key={idx} className="bg-zinc-950 border-zinc-800 shadow-2xl rounded-xl p-3 sm:p-4 transition-all duration-500 hover:shadow-purple-500/10">
                             <CardHeader className="flex flex-col sm:flex-row justify-between items-start border-b border-zinc-800 pb-3 mb-4 space-y-2 sm:space-y-0">
                               <div>
-                                <CardTitle className="text-white text-xl sm:text-2xl md:text-3xl font-semibold">{quiz.quiz_topic} Quiz</CardTitle>
+                                <CardTitle className="text-white text-xl sm:text-2xl md:text-3xl font-semibold">{quiz.role} Quiz</CardTitle>
                                 <CardDescription className="text-gray-400 mt-1 text-xs sm:text-sm">Score distribution across all attempts. Click on a bar to filter results.</CardDescription>
                               </div>
                               <Button 
@@ -635,7 +663,7 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                                 onClick={() => setShowDeleteQuizModal({ 
                                   show: true, 
                                   quizId: quiz.details[0]?.quiz_id || '', 
-                                  quizTopic: quiz.quiz_topic 
+                                  role: quiz.role 
                                 })}
                               >
                                 <Trash2 className="h-6 w-6" />
@@ -714,7 +742,7 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                                     <Bar 
                                       dataKey="count" 
                                       radius={[6, 6, 0, 0]}
-                                      onClick={(data)=>setSelectedScores({...selectedScores, [quiz.quiz_topic]: Number(data.name.split('-')[0])})}
+                                      onClick={(data)=>setSelectedScores({...selectedScores, [quiz.role]: Number(data.name.split('-')[0])})}
                                     >
                                       {quiz.scoreDistribution.map((entry, index)=> (
                                         <Cell 
@@ -730,7 +758,7 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                                 {selectedScore !== null && (
                                   <div className="mt-2 sm:mt-2 flex justify-center lg:justify-start">
                                     <Button 
-                                      onClick={()=>setSelectedScores({...selectedScores, [quiz.quiz_topic]: null})} 
+                                      onClick={()=>setSelectedScores({...selectedScores, [quiz.role]: null})} 
                                       className="flex items-center gap-2 text-purple-400 hover:bg-zinc-800 bg-transparent hover:text-white text-xs sm:text-sm px-3 py-2"
                                     >
                                       <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4"/> Reset Filter ({selectedScore}-{selectedScore+5}%)
@@ -859,19 +887,19 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                 Delete Quiz Data
               </h3>
               <button 
-                onClick={() => setShowDeleteQuizModal({ show: false, quizId: '', quizTopic: '' })}
+                onClick={() => setShowDeleteQuizModal({ show: false, quizId: '', role: '' })}
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             <p className="text-gray-300 mb-8 text-center">
-              This will permanently delete all data for <span className="font-semibold text-white">{showDeleteQuizModal.quizTopic} Quiz</span>.
+              This will permanently delete all data for <span className="font-semibold text-white">{showDeleteQuizModal.role} Quiz</span>.
             </p>
             <div className="flex justify-end gap-3">
               <Button 
                 variant="outline" 
-                onClick={() => setShowDeleteQuizModal({ show: false, quizId: '', quizTopic: '' })}
+                onClick={() => setShowDeleteQuizModal({ show: false, quizId: '', role: '' })}
                 className="border-zinc-700 hover:bg-zinc-800 text-white px-6"
                 disabled={isDeleting}
               >
