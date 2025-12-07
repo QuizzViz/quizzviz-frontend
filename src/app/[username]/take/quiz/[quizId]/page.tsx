@@ -39,11 +39,11 @@ interface QuizData {
 }
 
 interface PageProps {
-  params: {
+  params: Promise<{
     username: string;
     quizId: string;
-  };
-  searchParams?: { [key: string]: string | string[] | undefined };
+  }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 type FormData = {
@@ -53,7 +53,7 @@ type FormData = {
 };
 
 export default function QuizPage({ params }: PageProps) {
-  const { username, quizId } = params;
+  const { username, quizId } = use(params);
   const router = useRouter();
   const { user } = useUser();
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
