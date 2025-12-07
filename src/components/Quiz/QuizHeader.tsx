@@ -47,43 +47,15 @@ export function QuizHeader({
     try {
       setIsUnpublishing(true);
       
-      // First, get the current quiz data
-      const getResponse = await fetch(`/api/quiz/${quizId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!getResponse.ok) {
-        const error = await getResponse.text();
-        throw new Error(`Failed to fetch quiz data: ${error}`);
-      }
-
-      const currentQuizData = await getResponse.json();
-      
-      // Prepare the update data with all required fields
-      const updateData = {
-        topic: currentQuizData.topic || '',
-        difficulty: currentQuizData.difficulty || 'High School Level',
-        num_questions: currentQuizData.questions?.length || 0,
-        theory_questions_percentage: currentQuizData.theory_questions_percentage || 50,
-        code_analysis_questions_percentage: currentQuizData.code_analysis_questions_percentage || 50,
-        quiz: currentQuizData.questions || [],
-        is_publish: false,  // Update only this field
-        quiz_time: currentQuizData.quiz_time || 1800,
-        quiz_expiration_time: currentQuizData.quiz_expiration_time || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        max_attempts: currentQuizData.max_attempts,
-        quiz_key: currentQuizData.quiz_key || ''
-      };
-      
-      // Update only the is_publish status while preserving all other data
+      // Only update the is_publish field to false
       const updateResponse = await fetch(`/api/quiz/${quizId}`, {
-        method: 'PUT',
+        method: 'PATCH',  // Using PATCH to do a partial update
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updateData)
+        body: JSON.stringify({
+          is_publish: false
+        })
       });
 
       if (!updateResponse.ok) {
@@ -127,7 +99,7 @@ export function QuizHeader({
       <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">
-            {quiz.topic} Quiz
+            {quiz.role} Quiz
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-white/70">
             <Badge variant="secondary">{quiz.difficulty}</Badge>

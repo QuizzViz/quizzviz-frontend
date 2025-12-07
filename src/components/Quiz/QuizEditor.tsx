@@ -194,7 +194,8 @@ export function QuizEditor() {
 
     try {
       const payload = {
-        topic: quiz.topic,
+        role: quiz.role,
+        techStack:quiz.techStack,
         difficulty: quiz.difficulty,
         num_questions: questions.length,
         theory_questions_percentage: quiz.theory_questions_percentage,
@@ -270,7 +271,8 @@ export function QuizEditor() {
         settings: updatedSettings,
         publicLink,
         slug,
-        topic: quiz?.topic,
+        role: quiz?.role,
+        tech_stack: quiz?.techStack,
         difficulty: quiz?.difficulty,
         timeLimit: updatedSettings.timeLimit,
         maxAttempts: updatedSettings.maxAttempts,
@@ -280,14 +282,17 @@ export function QuizEditor() {
       
       const response = await fetch('/api/quiz/publish', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           quiz_id: quizId,
           settings: updatedSettings,
           questions: localQuestions,
           publicLink,
           slug: slug,
-          topic: quiz?.topic,
+          role: quiz?.role,
+          tech_stack: quiz?.techStack,
           difficulty: quiz?.difficulty,
           timeLimit: updatedSettings.timeLimit,
           maxAttempts: updatedSettings.maxAttempts,
@@ -300,25 +305,21 @@ export function QuizEditor() {
       console.log('Publish API response:', result);
       
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to publish quiz');
+        throw new Error(result.message || result.error || 'Failed to publish quiz');
       }
       
       // Update the public URL with the one from the server response if available
-      if (result.quiz_public_link) {
-        setPublicUrl(result.quiz_public_link);
-      } else if (result.publicUrl) {
-        // Fallback to publicUrl if quiz_public_link is not available
-        setPublicUrl(result.publicUrl);
-      } else {
-        // Fallback to the client-side generated link if server doesn't return one
-        setPublicUrl(publicLink);
-      }
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to publish quiz');
-      }
-
-      handlePublishSuccess(result);
+      const finalPublicUrl = result.quiz_public_link || result.publicUrl || publicLink;
+      setPublicUrl(finalPublicUrl);
+      
+      // Update the local state to reflect it's now published
+      setIsPublished(true);
+      setIsPublishModalOpen(false);
+      setIsShareModalOpen(true);
+      
+      // Invalidate queries to refresh the UI
+      await queryClient.invalidateQueries({ queryKey: ['publishedQuiz', quizId] });
+      await queryClient.invalidateQueries({ queryKey: ['quizzes', user.id] });
       
       toast({
         title: 'Success!',

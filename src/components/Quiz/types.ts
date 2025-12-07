@@ -1,7 +1,8 @@
 export interface QuizSummary {
+  role: any;
+  techStack: any;
   quiz_id: string;
   user_id: string;
-  topic: string;
   difficulty: string;
   num_questions: number;
   theory_questions_percentage: number;
