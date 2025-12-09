@@ -39,6 +39,7 @@ const QuizView: FC<{
           publicLink: settings.publicLink,
           topic: data?.role || 'General Knowledge',
           difficulty: data?.difficulty || 'Medium',
+          role: data?.role
         }),
       });
 

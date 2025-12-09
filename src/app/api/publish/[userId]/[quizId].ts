@@ -227,7 +227,7 @@ export default async function handler(
                   body: JSON.stringify({
                     recipient_email: user.emailAddresses?.[0]?.emailAddress || '',
                     user_name: user.firstName,
-                    quiz_title: quizData.role,
+                    quiz_title: quizData.topic,
                     expiry_date: quizData.quiz_expiration_time
                   })
                 }

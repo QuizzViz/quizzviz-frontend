@@ -25,7 +25,7 @@ type QuizResult = {
   user_email: string;
   result: {
     score: number;
-    quiz_topic: string;
+    role: string;
     total_questions: number;
   };
   attempt: number;
@@ -45,7 +45,7 @@ const prepareExportData = (data: QuizResult[]) => {
     Email: q.user_email,
     Score: q.result.score,
     'Total Questions': q.result.total_questions,
-    'Quiz Topic': q.result.quiz_topic,
+    'Role': q.result.role,
     Attempt: q.attempt,
     'Date Attempted': formatDate(q.created_at)
   }));

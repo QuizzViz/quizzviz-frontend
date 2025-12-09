@@ -160,7 +160,7 @@ export default async function handler(
           // Transform the response to match the expected frontend format
           const quizData = {
             quiz_id: response.quiz_id || quizId,
-            topic: response.role || 'Untitled Quiz',
+            role: response.role,
             difficulty: response.difficulty || 'Medium',
             questions: questions,
             quiz_key: response.quiz_key || '',
@@ -191,7 +191,7 @@ export default async function handler(
         
         // Prepare the request body according to the required format
         const updateData = {
-          topic: req.body.role || '',
+          topic: req.body.topic,
           difficulty: req.body.difficulty || 'High School Level',
           num_questions: req.body.num_questions || 0,
           theory_questions_percentage: req.body.theory_questions_percentage || 0,
