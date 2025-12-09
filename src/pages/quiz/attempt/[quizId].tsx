@@ -816,7 +816,7 @@ if (typeof data.quiz === 'string') {
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
       <Head>
-        <title>{quizData?.role || 'Quiz'} | Quiz Attempt | QuizzViz</title>
+        <title>{quizData?.role } Quiz | Quiz Attempt | QuizzViz</title>
       </Head>
       {showExitConfirm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -909,7 +909,7 @@ if (typeof data.quiz === 'string') {
                   <BookOpen className="w-8 h-8 text-white" />
                 </div>
                 <h1 className="text-3xl font-bold text-white mb-2">
-                  {quizData?.role || 'Quiz'}
+                  {quizData?.role } Quiz
                 </h1>
                 <p className="text-gray-400">
                   {quizData?.difficulty ? `${quizData.difficulty.charAt(0).toUpperCase() + quizData.difficulty.slice(1)}` : 'Quiz'}
@@ -1236,7 +1236,7 @@ if (typeof data.quiz === 'string') {
                     </h4>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
-                        <span className="text-gray-400">Topic:</span>
+                        <span className="text-gray-400">Role:</span>
                         <span className="text-white font-medium">{quizData.role}</span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
@@ -1247,10 +1247,30 @@ if (typeof data.quiz === 'string') {
                         <span className="text-gray-400">Questions:</span>
                         <span className="text-white font-medium">{quizData.questions.length}</span>
                       </div>
-                      <div className="flex items-center justify-between py-2">
+                      <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                         <span className="text-gray-400">Time Limit:</span>
-                        <span className="text-white font-medium">{quizData.questions.length * 3} min</span>
+                        <span className="text-white font-medium">{quizData.quiz_time / 60} min</span>
                       </div>
+                      {quizData.techStack && quizData.techStack.length > 0 && (
+                        <div className="pt-2">
+                          <div className="text-gray-400 mb-2">Tech Stack:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {quizData.techStack.map((tech, index) => (
+                              <span 
+                                key={index}
+                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-blue-200 border border-blue-800/50"
+                              >
+                                {tech.name}
+                                {tech.weight && (
+                                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-blue-800/50 text-blue-200 text-xs">
+                                    {tech.weight}%
+                                  </span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
