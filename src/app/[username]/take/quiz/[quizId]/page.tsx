@@ -1433,7 +1433,7 @@ export default function QuizPage({ params }: PageProps) {
                         <span className="text-gray-400">Time Limit:</span>
                         <span className="text-white font-medium">{quizData.quiz_time} min</span>
                       </div>
-                      <div className="pt-2">
+                      <div className="p-2 flex justify-between">
                         <div className="text-gray-400 mb-2">Tech Stack:</div>
                         <div className="flex flex-wrap gap-2">
                           {quizData.tech_stack?.length ? (
