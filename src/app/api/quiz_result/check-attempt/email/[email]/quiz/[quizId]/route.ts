@@ -11,10 +11,10 @@ type ResponseData = {
 };
 
 interface Context {
-  params: {
+  params: Promise<{
     email: string;
     quizId: string;
-  };
+  }>;
 }
 
 export async function GET(
@@ -22,7 +22,8 @@ export async function GET(
   context: Context
 ) {
   try {
-    const { email: encodedEmail, quizId } = context.params;
+    // Await the params promise
+    const { email: encodedEmail, quizId } = await context.params;
     const email = decodeURIComponent(encodedEmail);
 
     if (!email || !quizId) {
