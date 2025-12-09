@@ -26,6 +26,11 @@ interface Question {
   correct_answer: string;
 }
 
+interface TechStackItem {
+  name: string;
+  weight: number;
+}
+
 interface QuizData {
   quiz_id: string;
   topic: string;
@@ -36,7 +41,8 @@ interface QuizData {
   quiz_time: number;
   quiz_expiration_time: string;
   max_attempts?: number;
-  role:string;
+  role: string;
+  tech_stack?: TechStackItem[];
 }
 
 interface PageProps {
@@ -1313,7 +1319,7 @@ export default function QuizPage({ params }: PageProps) {
                 <h1 className="text-3xl font-bold text-white mb-2">
                   {calculateScore().percentage >= 70 ? 'Congratulations!' : 'Quiz Complete!'}
                 </h1>
-                <p className="text-gray-400">Here are your results</p>
+                <p className="text-gray-400">Here is your results</p>
               </div>
 
               <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl">
@@ -1412,7 +1418,7 @@ export default function QuizPage({ params }: PageProps) {
                     </h4>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
-                        <span className="text-gray-400">Topic:</span>
+                        <span className="text-gray-400">Role:</span>
                         <span className="text-white font-medium">{quizData.role}</span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
@@ -1423,9 +1429,31 @@ export default function QuizPage({ params }: PageProps) {
                         <span className="text-gray-400">Questions:</span>
                         <span className="text-white font-medium">{quizData.quiz.length}</span>
                       </div>
-                      <div className="flex items-center justify-between py-2">
+                      <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                         <span className="text-gray-400">Time Limit:</span>
                         <span className="text-white font-medium">{quizData.quiz_time} min</span>
+                      </div>
+                      <div className="pt-2">
+                        <div className="text-gray-400 mb-2">Tech Stack:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {quizData.tech_stack?.length ? (
+                            quizData.tech_stack.map((tech, index) => (
+                              <span 
+                                key={index}
+                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-blue-200 border border-blue-800/50"
+                              >
+                                {tech.name}
+                                {tech.weight && (
+                                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-blue-800/50 text-blue-200 text-xs">
+                                    {tech.weight}%
+                                  </span>
+                                )}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-gray-500 text-sm">No tech stack specified</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -15,20 +15,80 @@ export async function POST(request: NextRequest) {
     const requestData = await request.json();
     console.log('Received publish request data:', JSON.stringify(requestData, null, 2));
     
-    // Handle tech_stack - convert to the format expected by the API
+    // Handle tech_stack - ensure it's an array of {name: string, weight: number}
     const tech_stack = requestData.tech_stack || requestData.techStack || [];
-    const techStackArray = typeof tech_stack === 'string' 
-      ? tech_stack.split(',').map((item: string) => ({ 
-          name: item.trim(), 
-          weight: 1 
-        })).filter((item: any) => item.name)
-      : Array.isArray(tech_stack) 
-        ? tech_stack.map((item: any) => 
-            typeof item === 'string' 
-              ? { name: item, weight: 1 }
-              : { name: item.name || item, weight: item.weight || 1 }
-          ).filter((item: any) => item.name)
-        : [];
+    let techStackArray: Array<{name: string, weight: number}> = [];
+
+    try {
+      // If it's a string, try to parse it as JSON
+      if (typeof tech_stack === 'string') {
+        try {
+          const parsed = JSON.parse(tech_stack);
+          if (Array.isArray(parsed)) {
+            techStackArray = parsed.map(item => ({
+              name: String(item.name || item.value || '').trim(),
+              weight: Math.max(0, Math.min(100, Number(item.weight) || 0))
+            })).filter(item => item.name);
+          }
+        } catch (e) {
+          // If parsing fails, treat as comma-separated list with equal weights
+          techStackArray = tech_stack.split(',')
+            .map((item: string) => ({
+              name: item.trim(),
+              weight: 0
+            }))
+            .filter((item: any) => item.name);
+        }
+      } 
+      // If it's already an array
+      else if (Array.isArray(tech_stack)) {
+        techStackArray = tech_stack.map(item => {
+          if (typeof item === 'string') {
+            return { 
+              name: item.trim(), 
+              weight: 0 
+            };
+          }
+          return {
+            name: String(item?.name || item?.value || '').trim(),
+            weight: Math.max(0, Math.min(100, Number(item?.weight) || 0))
+          };
+        }).filter(item => item.name);
+      }
+
+      // Normalize weights to sum to 100 if there are any non-zero weights
+      const totalWeight = techStackArray.reduce((sum, item) => sum + item.weight, 0);
+      if (totalWeight > 0) {
+        const scale = 100 / totalWeight;
+        techStackArray = techStackArray.map(item => ({
+          ...item,
+          weight: Math.round(item.weight * scale * 100) / 100 // Round to 2 decimal places
+        }));
+      } else if (techStackArray.length > 0) {
+        // If all weights are 0, distribute equally
+        const equalWeight = 100 / techStackArray.length;
+        techStackArray = techStackArray.map(item => ({
+          ...item,
+          weight: Math.round(equalWeight * 100) / 100
+        }));
+      }
+      
+      // Adjust last item to ensure total is exactly 100 due to rounding
+      if (techStackArray.length > 0) {
+        const finalTotal = techStackArray.reduce((sum, item) => sum + item.weight, 0);
+        if (Math.abs(finalTotal - 100) > 0.01) { // Allow for floating point imprecision
+          techStackArray[techStackArray.length - 1].weight += 100 - finalTotal;
+          techStackArray[techStackArray.length - 1].weight = 
+            Math.round(techStackArray[techStackArray.length - 1].weight * 100) / 100;
+        }
+      }
+
+    } catch (error) {
+      console.error('Error processing tech stack:', error);
+      techStackArray = [];
+    }
+
+    console.log('Processed tech stack:', JSON.stringify(techStackArray, null, 2));
 
     const {
       quiz_id,
