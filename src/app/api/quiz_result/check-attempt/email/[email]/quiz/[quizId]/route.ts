@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { use } from 'react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL || 'https://quizzviz-quiz-result-service-slwv.onrender.com';
 
 type ResponseData = {
   attempts: number;
@@ -12,10 +11,10 @@ type ResponseData = {
 };
 
 type RouteParams = {
-  params:Promise<{
+  params: {
     email: string;
     quizId: string;
-  }>;
+  };
 };
 
 export async function GET(
@@ -23,7 +22,7 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const {email:encodedEmail,quizId} = use(params)
+    const { email: encodedEmail, quizId } = params;
     const email = decodeURIComponent(encodedEmail);
 
     if (!email || !quizId) {
@@ -33,15 +32,13 @@ export async function GET(
       );
     }
 
-    // Decode the email from the URL
-    const decodedEmail = decodeURIComponent(email);
-
     const response = await fetch(
-      `${API_BASE_URL}/check/attempt/email/${encodeURIComponent(decodedEmail)}/quiz/${encodeURIComponent(quizId)}`,
+      `${API_BASE_URL}/check/attempt/email/${encodeURIComponent(email)}/quiz/${encodeURIComponent(quizId)}`,
       {
         headers: {
           'accept': 'application/json',
         },
+        cache: 'no-store' // Ensure we don't get cached responses
       }
     );
 
