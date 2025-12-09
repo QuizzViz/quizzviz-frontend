@@ -178,8 +178,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the external API with proper authorization
-    console.log(`Path: ${process.env.PUBLISH_QUIZZ_SERVICE_URL}/publish/quizz`)
-    const response = await fetch(`${process.env.PUBLISH_QUIZZ_SERVICE_URL}/publish/quizz`, {
+    console.log(`Path: ${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/quizz`)
+    const response = await fetch(`${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/quizz`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
