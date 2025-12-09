@@ -10,16 +10,9 @@ type ResponseData = {
   detail: string;
 };
 
-type RouteParams = {
-  params: {
-    email: string;
-    quizId: string;
-  };
-};
-
 export async function GET(
   request: NextRequest,
-  { params }: RouteParams
+  { params }: { params: { email: string; quizId: string } }
 ) {
   try {
     const { email: encodedEmail, quizId } = params;
