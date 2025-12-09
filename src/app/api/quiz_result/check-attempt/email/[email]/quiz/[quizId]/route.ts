@@ -10,12 +10,19 @@ type ResponseData = {
   detail: string;
 };
 
+interface Context {
+  params: {
+    email: string;
+    quizId: string;
+  };
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { email: string; quizId: string } }
+  context: Context
 ) {
   try {
-    const { email: encodedEmail, quizId } = params;
+    const { email: encodedEmail, quizId } = context.params;
     const email = decodeURIComponent(encodedEmail);
 
     if (!email || !quizId) {
