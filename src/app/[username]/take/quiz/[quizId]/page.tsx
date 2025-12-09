@@ -36,6 +36,7 @@ interface QuizData {
   quiz_time: number;
   quiz_expiration_time: string;
   max_attempts?: number;
+  role:string;
 }
 
 interface PageProps {
