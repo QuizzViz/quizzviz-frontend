@@ -113,7 +113,7 @@ const currentPlan = getPlanLimits(userPlan?.plan_name || 'Free');
         let goToQuiz = () => router.push(`/quiz/${quizId}`);
         toast({
           title: "Quiz generated successfully!",
-          description: `${data.topic || 'Your quiz'} is ready. Click to view it now.`,
+          description: `${data.role || 'Your quiz'} is ready. Click to view it now.`,
           duration: 10000,
           onClick: goToQuiz,
           className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
@@ -135,7 +135,7 @@ const currentPlan = getPlanLimits(userPlan?.plan_name || 'Free');
         let goToQuiz = () => router.push(`/dashboard/my-quizzes`);
         toast({
           title: "Quiz generated successfully!",
-          description: `${data.topic || 'Your quiz'} is ready. Click to view it now.`,
+          description: `${data.role || 'Your quiz'} is ready. Click to view it now.`,
           duration: 10000,
           onClick: goToQuiz,
           className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',

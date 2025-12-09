@@ -273,7 +273,7 @@ export default function QuizPage({ params }: PageProps) {
           score: percentage,
           total_questions: total,
           correct_answers: correct,
-          quiz_topic: quizData.topic,
+          quiz_topic: quizData.role,
           quiz_difficulty: quizData.difficulty,
           time_taken: Math.max(1, Math.ceil((quizData.quiz_time * 60 - timeLeft) / 60))
         },
@@ -1084,7 +1084,7 @@ export default function QuizPage({ params }: PageProps) {
                   <BookOpen className="w-8 h-8 text-white" />
                 </div>
                 <h1 className="text-3xl font-bold text-white mb-2">
-                  {quizData?.topic || 'Quiz'}
+                  {quizData?.role || 'Quiz'}
                 </h1>
                 <p className="text-gray-400">
                   {quizData?.difficulty ? `${quizData.difficulty.charAt(0).toUpperCase() + quizData.difficulty.slice(1)}` : 'Quiz'}
@@ -1412,7 +1412,7 @@ export default function QuizPage({ params }: PageProps) {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                         <span className="text-gray-400">Topic:</span>
-                        <span className="text-white font-medium">{quizData.topic}</span>
+                        <span className="text-white font-medium">{quizData.role}</span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                         <span className="text-gray-400">Difficulty:</span>

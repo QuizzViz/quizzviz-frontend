@@ -37,7 +37,7 @@ const QuizView: FC<{
           },
           questions: data?.quiz || [],
           publicLink: settings.publicLink,
-          topic: data?.topic || 'General Knowledge',
+          topic: data?.role || 'General Knowledge',
           difficulty: data?.difficulty || 'Medium',
         }),
       });
