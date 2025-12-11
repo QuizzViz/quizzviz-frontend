@@ -699,71 +699,68 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                         const totalQuestions = topCandidate?.result.total_questions || 0;
                         
                         const totalAttempts = quiz.details.length;
-                        const totalUniqueCandidates = Array.from(new Set(quiz.details.map(d=>d.user_email))).length;
-                        const maxCount = Math.max(...quiz.scoreDistribution.map(d=>d.count), 1);
+                        const totalUniqueCandidates = new Set(quiz.details.map(d => d.username)).size;
 
-                        return (
-                          <Card key={idx} className="bg-zinc-950 border-zinc-800 shadow-2xl rounded-xl p-3 sm:p-4 transition-all duration-500 hover:shadow-purple-500/10">
-                            <CardHeader className="flex flex-col sm:flex-row justify-between items-start border-b border-zinc-800 pb-3 mb-4 space-y-2 sm:space-y-0">
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <CardTitle className="text-white text-xl sm:text-2xl md:text-3xl font-semibold">{quiz.role}</CardTitle>
-                                  <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded-full">ID: {quiz.quiz_id.substring(0, 8)}...</span>
-                                </div>
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                  <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded-full">{quiz.quiz_difficulty}</span>
-                                  <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded-full">{quiz.total_questions} Questions</span>
-                                  <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded-full">
-                                    {new Date(quiz.created_at).toLocaleDateString()}
-                                  </span>
-                                </div>
-                                <CardDescription className="text-gray-400 mt-2 text-xs sm:text-sm">
-                                  Score distribution across all attempts. Click on a bar to filter results.
-                                </CardDescription>
-                              </div>
-                              <Button 
-                                variant="destructive" 
-                                size="default" 
-                                className="bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2  transition-all duration-200"
-                                onClick={() => setShowDeleteQuizModal({ 
-                                  show: true, 
-                                  quizId: quiz.details[0]?.quiz_id || '', 
-                                  role: quiz.role 
-                                })}
-                              >
-                                <Trash2 className="h-6 w-6" />
-                                <span>Delete Quiz Data</span>
-                              </Button>
-                            </CardHeader>
+return (
+<Card key={idx} className="bg-zinc-950 border-zinc-800 shadow-2xl rounded-xl p-3 sm:p-4 transition-all duration-500 hover:shadow-purple-500/10">
+<CardHeader className="flex flex-col sm:flex-row justify-between items-start border-b border-zinc-800 pb-3 mb-4 space-y-2 sm:space-y-0">
+<div>
+<div className="flex items-center gap-3">
+<CardTitle className="text-white text-xl sm:text-2xl md:text-3xl font-semibold">
+{quiz.role}
+</CardTitle>
+<span className="text-sm bg-zinc-800 text-zinc-300 px-3 py-1 rounded-full flex items-center gap-1.5">
+<Zap className="w-3.5 h-3.5 text-yellow-400" />
+{quiz.quiz_difficulty}
+</span>
+</div>
+<CardDescription className="text-gray-400 mt-2 text-xs sm:text-sm">
+Score distribution across all attempts. Click on a bar to filter results.
+</CardDescription>
+</div>
+<Button 
+variant="destructive" 
+size="default" 
+className="bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2  transition-all duration-200"
+onClick={() => setShowDeleteQuizModal({ 
+show: true, 
+quizId: quiz.details[0]?.quiz_id || '', 
+role: quiz.role 
+})}
+>
+<Trash2 className="h-6 w-6" />
+<span>Delete Quiz Data</span>
+</Button>
+</CardHeader>
 
-                            <CardContent className="space-y-4">
+<CardContent className="space-y-4">
                               
-                              {/* ELEGANT TEXT KPI DISPLAY - Responsive Grid */}
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 pb-4 border-b border-zinc-900">
-                                  <div className="flex items-center space-x-2">
-                                      <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 flex-shrink-0"/>
-                                      <p className="text-gray-300 text-xs sm:text-sm">
-                                          <span className="font-bold text-white text-base sm:text-lg">{totalAttempts}</span> Total Attempts 
-                                          <span className="text-xs text-gray-500"> ({totalUniqueCandidates} unique)</span>
-                                      </p>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                      <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 flex-shrink-0"/>
-                                      <p className="text-gray-300 text-xs sm:text-sm">
-                                          <span className="font-bold text-white text-base sm:text-lg">{highestScore.toFixed(2)}%</span> Highest Score
-                                      </p>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                      <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0"/>
-                                      <p className="text-gray-300 text-xs sm:text-sm">
-                                          <span className="font-bold text-white text-base sm:text-lg">{topCandidateCorrectAnswers}/{totalQuestions}</span> Correct Answers
-                                          <span className="text-xs text-gray-500"> (top scorer)</span>
-                                      </p>
-                                  </div>
-                              </div>
+{/* ELEGANT TEXT KPI DISPLAY - Responsive Grid */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 pb-4 border-b border-zinc-900">
+<div className="flex items-center space-x-2">
+<Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 flex-shrink-0"/>
+<p className="text-gray-300 text-xs sm:text-sm">
+<span className="font-bold text-white text-base sm:text-lg">{totalAttempts}</span> Attempts 
+<span className="text-xs text-gray-500">({totalUniqueCandidates} candidates)</span>
+</p>
+</div>
+<div className="flex items-center space-x-2">
+<Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 flex-shrink-0"/>
+<p className="text-gray-300 text-xs sm:text-sm">
+<span className="font-bold text-white text-base sm:text-lg">{highestScore.toFixed(2)}%</span> Top Score
+</p>
+</div>
+<div className="flex items-center space-x-2">
+<CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0"/>
+<p className="text-gray-300 text-xs sm:text-sm">
+<span className="font-bold text-white text-base sm:text-lg">{topCandidateCorrectAnswers}/{totalQuestions}</span> Correct Answers
+<span className="text-xs text-gray-500 ml-1">(top scorer)</span>
+</p>
+</div>
+</div>
 
                               {/* CHART SECTION - Responsive Height and Margins */}
-                              <div className="h-[300px] sm:h-[350px] md:h-[400px] w-full">
+                              <div className="h-[280px] sm:h-[320px] w-full mt-2">
                                 <ResponsiveContainer width="100%" height="100%">
                                   <BarChart 
                                     data={quiz.scoreDistribution} 
@@ -788,7 +785,7 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                                     <YAxis 
                                       stroke="#71717a" 
                                       allowDecimals={false} 
-                                      domain={[0, maxCount]}
+                                      domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.1)]}
                                       tick={{ fontSize: 10 }}
                                       width={40}
                                     /> 
