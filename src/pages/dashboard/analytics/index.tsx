@@ -136,6 +136,7 @@ const { user } = useUser();
 const { data: userPlan, isLoading: isPlanLoading } = useUserPlan();
 const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
 
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [quizData, setQuizData] = useState<QuizResult[]>([]);
@@ -700,6 +701,8 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                         
                         const totalAttempts = quiz.details.length;
                         const totalUniqueCandidates = new Set(quiz.details.map(d => d.username)).size;
+                        const maxCount = Math.max(...quiz.scoreDistribution.map(d=>d.count), 1);
+
 
 return (
 <Card key={idx} className="bg-zinc-950 border-zinc-800 shadow-2xl rounded-xl p-3 sm:p-4 transition-all duration-500 hover:shadow-purple-500/10">
@@ -760,104 +763,99 @@ role: quiz.role
 </div>
 
                               {/* CHART SECTION - Responsive Height and Margins */}
-                              <div className="h-[350px] sm:h-[400px] md:h-[450px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <BarChart 
-                                    data={quiz.scoreDistribution} 
-                                    margin={{ 
-                                      top: 30, 
-                                      right: 15, 
-                                      left: 15, 
-                                      bottom: isMobile ? 100 : 60 
-                                    }}
-                                    barCategoryGap="10%"
-                                    barGap={2}
-                                    barSize={25}
-                                  >
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a"/>
-                                    <XAxis 
-                                      dataKey="name" 
-                                      stroke="#71717a" 
-                                      interval={isMobile ? 1 : 0} 
-                                      angle={isMobile ? -90 : -45} 
-                                      textAnchor="end"
-                                      height={isMobile ? 100 : 80}
-                                      tick={{ fill: '#a1a1aa', fontSize: isMobile ? 8 : 9 }}
-                                      className="text-[8px] sm:text-[10px]"
-                                    />
-                                    <YAxis 
-                                      stroke="#71717a" 
-                                      allowDecimals={false} 
-                                      domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.1)]}
-                                      tick={{ fontSize: 11 }}
-                                      width={35}
-                                    /> 
-                                    <Tooltip 
-                                      content={({payload}) => {
-                                        if (!payload || !payload.length) return null;
-                                        const candidates = payload[0].payload.candidates;
-                                        return (
-                                          <div className="bg-zinc-800/95 backdrop-blur-sm text-white p-3 rounded-lg border border-zinc-700 max-w-[200px] sm:max-w-xs shadow-2xl">
-                                            <p className="font-bold text-sm sm:text-base text-purple-300">{payload[0].name}</p>
-                                            <p className="text-xs sm:text-sm mt-1">Attempts: <span className="font-semibold">{payload[0].value}</span></p>
-                                            {candidates.slice(0,2).map((c:QuizResult) => (
-                                              <p key={c.quiz_id} className="text-[10px] sm:text-xs text-gray-300 mt-0.5 truncate">
-                                                {c.username} ({c.result.score.toFixed(1)}%)
-                                              </p>
-                                            ))}
-                                            {candidates.length > 2 && (
-                                              <p className="text-[10px] sm:text-xs text-purple-400 mt-1">
-                                                +{candidates.length-2} more...
-                                              </p>
-                                            )}
-                                          </div>
-                                        );
-                                      }}
-                                      cursor={false}
-                                    />
-                                    <Bar 
-                                      dataKey="count" 
-                                      radius={[6, 6, 0, 0]}
-                                      barSize={18}
-                                      onClick={(data) => {
-                                        const scoreRange = data.name.split('-');
-                                        const startScore = parseInt(scoreRange[0]);
-                                        setSelectedScores({
-                                          ...selectedScores,
-                                          [quiz.quiz_id]: startScore
-                                        });
-                                      }}
-                                    >
-                                      {quiz.scoreDistribution.map((entry, index) => (
-                                        <Cell 
-                                          key={index}
-                                          fill={
-                                            selectedScore !== null && 
-                                            Number(entry.name.split('-')[0]) === selectedScore 
-                                              ? '#FFFFFF' 
-                                              : COLORS[index % COLORS.length]
-                                          }
-                                          className="transition-all duration-300 cursor-pointer hover:opacity-80"
-                                        />
-                                      ))}
-                                    </Bar>
-                                  </BarChart>
-                                </ResponsiveContainer>
-                                {/* Reset filter button - Responsive positioning */}
-                                {selectedScore !== null && (
-                                  <div className="mt-2 sm:mt-2 flex justify-center lg:justify-start">
-                                    <Button 
-                                      onClick={() => setSelectedScores({
-                                        ...selectedScores,
-                                        [quiz.quiz_id]: null
-                                      })} 
-                                      className="flex items-center gap-2 text-purple-400 hover:bg-zinc-800 bg-transparent hover:text-white text-xs sm:text-sm px-3 py-2"
-                                    >
-                                      <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4"/> Reset Filter ({selectedScore}-{selectedScore+5}%)
-                                    </Button>
-                                  </div>
-                                )}
-                              </div>
+                             <div className="h-[300px] sm:h-[350px] md:h-[400px] w-full">
+  <ResponsiveContainer width="100%" height="100%">
+    <BarChart 
+      data={quiz.scoreDistribution} 
+      margin={{ 
+        top: 10, 
+        right: 10, 
+        left: -10, 
+        bottom: isMobile ? 100 : 80 
+      }}
+    >
+      <CartesianGrid strokeDasharray="3 3" stroke="#27272a"/>
+      <XAxis 
+        dataKey="name" 
+        stroke="#71717a" 
+        interval={isMobile ? 1 : 0} 
+        angle={isMobile ? -90 : -45} 
+        textAnchor="end"
+        height={isMobile ? 100 : 80}
+        tick={{ fill: '#a1a1aa', fontSize: isMobile ? 8 : 9 }}
+        className="text-[8px] sm:text-[10px]"
+      />
+      <YAxis 
+        stroke="#71717a" 
+        allowDecimals={false} 
+        domain={[0, maxCount]}
+        tick={{ fontSize: 10 }}
+        width={40}
+      /> 
+      <Tooltip 
+        content={({payload}) => {
+          if (!payload || !payload.length) return null;
+          const candidates = payload[0].payload.candidates;
+          return (
+            <div className="bg-zinc-800/95 backdrop-blur-sm text-white p-3 rounded-lg border border-zinc-700 max-w-[200px] sm:max-w-xs shadow-2xl">
+              <p className="font-bold text-sm sm:text-base text-purple-300">{payload[0].name}</p>
+              <p className="text-xs sm:text-sm mt-1">Attempts: <span className="font-semibold">{payload[0].value}</span></p>
+              {candidates.slice(0,2).map((c:QuizResult) => (
+                <p key={c.quiz_id} className="text-[10px] sm:text-xs text-gray-300 mt-0.5 truncate">
+                  {c.username} ({c.result.score.toFixed(1)}%)
+                </p>
+              ))}
+              {candidates.length > 2 && (
+                <p className="text-[10px] sm:text-xs text-purple-400 mt-1">
+                  +{candidates.length-2} more...
+                </p>
+              )}
+            </div>
+          );
+        }}
+      />
+      <Bar 
+        dataKey="count" 
+        radius={[6, 6, 0, 0]}
+        onClick={(data) => {
+          const scoreRange = data.name.split('-');
+          const startScore = parseInt(scoreRange[0]);
+          setSelectedScores({
+            ...selectedScores,
+            [quiz.quiz_id]: startScore
+          });
+        }}
+      >
+        {quiz.scoreDistribution.map((entry, index) => (
+          <Cell 
+            key={index}
+            fill={
+              selectedScore !== null && 
+              Number(entry.name.split('-')[0]) === selectedScore 
+                ? '#FFFFFF' 
+                : COLORS[index % COLORS.length]
+            }
+            className="transition-all duration-300 cursor-pointer hover:opacity-80"
+          />
+        ))}
+      </Bar>
+    </BarChart>
+  </ResponsiveContainer>
+  {/* Reset filter button - Responsive positioning */}
+  {selectedScore !== null && (
+    <div className="mt-2 sm:mt-2 flex justify-center lg:justify-start">
+      <Button 
+        onClick={() => setSelectedScores({
+          ...selectedScores,
+          [quiz.quiz_id]: null
+        })} 
+        className="flex items-center gap-2 text-purple-400 hover:bg-zinc-800 bg-transparent hover:text-white text-xs sm:text-sm px-3 py-2"
+      >
+        <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4"/> Reset Filter ({selectedScore}-{selectedScore+5}%)
+      </Button>
+    </div>
+  )}
+</div>
 
                               {/* TABLE SECTION - Responsive */}
                               <div className="space-y-4 pt-2 sm:pt-2 border-t border-zinc-900">
