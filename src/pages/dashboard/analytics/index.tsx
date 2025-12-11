@@ -760,18 +760,19 @@ role: quiz.role
 </div>
 
                               {/* CHART SECTION - Responsive Height and Margins */}
-                              <div className="h-[300px] sm:h-[350px] md:h-[400px] w-full">
+                              <div className="h-[350px] sm:h-[400px] md:h-[450px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                   <BarChart 
                                     data={quiz.scoreDistribution} 
                                     margin={{ 
-                                      top: 10, 
-                                      right: 10, 
-                                      left: -10, 
-                                      bottom: isMobile ? 100 : 80 
+                                      top: 20, 
+                                      right: 20, 
+                                      left: 5, 
+                                      bottom: isMobile ? 100 : 60 
                                     }}
-                                    barCategoryGap="15%"
-                                    barGap={1}
+                                    barCategoryGap="10%"
+                                    barGap={2}
+                                    barSize={25}
                                   >
                                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a"/>
                                     <XAxis 
@@ -788,8 +789,8 @@ role: quiz.role
                                       stroke="#71717a" 
                                       allowDecimals={false} 
                                       domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.1)]}
-                                      tick={{ fontSize: 10 }}
-                                      width={40}
+                                      tick={{ fontSize: 11 }}
+                                      width={35}
                                     /> 
                                     <Tooltip 
                                       content={({payload}) => {
