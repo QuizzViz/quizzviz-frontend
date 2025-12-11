@@ -765,9 +765,9 @@ role: quiz.role
                                   <BarChart 
                                     data={quiz.scoreDistribution} 
                                     margin={{ 
-                                      top: 20, 
-                                      right: 20, 
-                                      left: 5, 
+                                      top: 30, 
+                                      right: 15, 
+                                      left: 15, 
                                       bottom: isMobile ? 100 : 60 
                                     }}
                                     barCategoryGap="10%"
