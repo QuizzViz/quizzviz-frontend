@@ -63,7 +63,7 @@ const exportPDF = (data: QuizResult[]) => {
   if (data.length === 0) return;
   
   const preparedData = prepareExportData(data);
-  const quizRole = data[0].role || 'Quiz';
+  const quizRole = data[0].role + ' Quiz';
   const totalQuestions = data[0].result.total_questions;
   
   const doc = new jsPDF();
