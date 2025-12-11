@@ -27,10 +27,14 @@ type QuizResult = {
     score: number;
     role: string;
     total_questions: number;
+    quiz_difficulty?: string;
+    [key: string]: any; // For any additional dynamic properties
   };
   attempt: number;
   role: string;
   created_at: string;
+  quiz_difficulty?: string;
+  total_questions?: number;
 };
 
 const COLORS = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#06B6D4', '#E11D48', '#C026D3', '#F97316', '#22C55E', '#3B82F6', '#6366F1', '#D946EF', '#FCD34D', '#10B981', '#06B6D4', '#7C3AED', '#DB2777', '#FBBF24'];
@@ -373,22 +377,47 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
   // We only run this when isLoaded or user changes. fetchResults is stable now.
   }, [user, fetchResults]); 
 
-  // Group and bin data by quiz topic with 5% increments (0-100%)
+  // Group and bin data by quiz_id with 5% score increments (0-100%)
   const analyticsPerQuiz = useMemo(() => {
-    const map = new Map<string, {scores: number[], details: QuizResult[] }>();
+    const map = new Map<string, {
+      quiz_id: string;
+      role: string;
+      quiz_difficulty: string;
+      total_questions: number;
+      created_at: string;
+      scores: number[];
+      details: QuizResult[];
+    }>();
     
     if (!quizData || !Array.isArray(quizData)) {
-    return [];
-  }
+      return [];
+    }
+
+    // Group by quiz_id
     quizData.forEach(q => {
-      const role = q.role;
-      if (!map.has(role)) map.set(role, {scores: [], details: []});
-      map.get(role)!.scores.push(q.result.score);
-      map.get(role)!.details.push(q);
+      const quizId = q.quiz_id;
+      if (!map.has(quizId)) {
+        map.set(quizId, {
+          quiz_id: quizId,
+          role: q.result.role || q.role,
+          quiz_difficulty: q.result.quiz_difficulty || 'Not Specified',
+          total_questions: q.result.total_questions || 0,
+          created_at: q.created_at,
+          scores: [],
+          details: []
+        });
+      }
+      const quiz = map.get(quizId)!;
+      quiz.scores.push(q.result.score);
+      quiz.details.push(q);
     });
 
     interface GroupedQuizData {
+      quiz_id: string;
       role: string;
+      quiz_difficulty: string;
+      total_questions: number;
+      created_at: string;
       scoreDistribution: Array<{
         name: string;
         count: number;
@@ -396,30 +425,52 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
       }>;
       details: QuizResult[];
     }
+
     const result: GroupedQuizData[] = [];
-    map.forEach((value, key) => {
-      const bins: {[key:string]: QuizResult[]} = {};
+    
+    // Process each quiz
+    map.forEach((quizData, quizId) => {
+      const bins: {[key: string]: QuizResult[]} = {};
       // Define 5% bins (0-5, 5-10, ..., 95-100)
-      for(let i=0;i<100;i+=5){ bins[`${i}-${i+5}%`] = []; }
+      for (let i = 0; i < 100; i += 5) { 
+        bins[`${i}-${i+5}%`] = [];
+      }
       
-      value.details.forEach(c => {
-        const score = c.result.score;
-        // Determine the bucket index (0-19)
-        const bucketStart = Math.min(Math.floor(score / 5) * 5, 95); 
-        const bucket = `${bucketStart}-${bucketStart+5}%`;
+      // Distribute candidates into score bins
+      quizData.details.forEach(candidate => {
+        const score = candidate.result.score;
+        const bucketStart = Math.min(Math.floor(score / 5) * 5, 95);
+        const bucket = score === 100 ? '95-100%' : `${bucketStart}-${bucketStart+5}%`;
         
-        if (score === 100) {
-             bins['95-100%'].push(c);
-        } else if (bins[bucket]) {
-            bins[bucket].push(c);
+        if (bins[bucket]) {
+          bins[bucket].push(candidate);
         }
       });
       
-      const distribution = Object.entries(bins).map(([name, candidates])=>({name, count: candidates.length, candidates}));
-      result.push({role: key, scoreDistribution: distribution, details: value.details});
+      // Convert bins to distribution array
+      const distribution = Object.entries(bins)
+        .map(([name, candidates]) => ({
+          name,
+          count: candidates.length,
+          candidates
+        }))
+        .filter(d => d.count > 0); // Only include non-empty buckets
+      
+      result.push({
+        quiz_id: quizId,
+        role: quizData.role,
+        quiz_difficulty: quizData.quiz_difficulty,
+        total_questions: quizData.total_questions,
+        created_at: quizData.created_at,
+        scoreDistribution: distribution,
+        details: quizData.details
+      });
     });
 
-    return result;
+    // Sort by most recent first
+    return result.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   }, [quizData]);
 
   // Calculate pagination
@@ -619,10 +670,12 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                     <>
                       {/* Quiz Cards */}
                       {paginatedQuizzes.map((quiz, idx) => {
-                        const selectedScore = selectedScores[quiz.role] ?? null;
+                        const selectedScore = selectedScores[quiz.quiz_id] ?? null;
                         
                         // Filter candidates based on the selected score range (showing ALL attempts in that range)
-                        const selectedRange = quiz.scoreDistribution.find(d => Number(d.name.split('-')[0]) === selectedScore);
+                        const selectedRange = selectedScore !== null 
+                          ? quiz.scoreDistribution.find(d => Number(d.name.split('-')[0]) === selectedScore)
+                          : null;
                         
                         const filteredCandidates = selectedScore === null 
                           ? quiz.details // Show all attempts if no filter
@@ -653,8 +706,20 @@ const canViewAdvancedAnalytics = userPlan?.plan_name === 'Business';
                           <Card key={idx} className="bg-zinc-950 border-zinc-800 shadow-2xl rounded-xl p-3 sm:p-4 transition-all duration-500 hover:shadow-purple-500/10">
                             <CardHeader className="flex flex-col sm:flex-row justify-between items-start border-b border-zinc-800 pb-3 mb-4 space-y-2 sm:space-y-0">
                               <div>
-                                <CardTitle className="text-white text-xl sm:text-2xl md:text-3xl font-semibold">{quiz.role} Quiz</CardTitle>
-                                <CardDescription className="text-gray-400 mt-1 text-xs sm:text-sm">Score distribution across all attempts. Click on a bar to filter results.</CardDescription>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <CardTitle className="text-white text-xl sm:text-2xl md:text-3xl font-semibold">{quiz.role}</CardTitle>
+                                  <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded-full">ID: {quiz.quiz_id.substring(0, 8)}...</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded-full">{quiz.quiz_difficulty}</span>
+                                  <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded-full">{quiz.total_questions} Questions</span>
+                                  <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-1 rounded-full">
+                                    {new Date(quiz.created_at).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <CardDescription className="text-gray-400 mt-2 text-xs sm:text-sm">
+                                  Score distribution across all attempts. Click on a bar to filter results.
+                                </CardDescription>
                               </div>
                               <Button 
                                 variant="destructive" 
