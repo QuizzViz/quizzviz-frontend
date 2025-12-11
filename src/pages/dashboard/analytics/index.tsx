@@ -762,42 +762,36 @@ role: quiz.role
 </div>
 
                               {/* CHART SECTION - Responsive Height and Margins */}
-                             <div className="h-[380px] w-full bg-zinc-900/50 rounded-lg p-4 border border-zinc-800">
+                             <div className="h-[350px] sm:h-[400px] w-full">
   <ResponsiveContainer width="100%" height="100%">
     <BarChart 
-      data={quiz.scoreDistribution}
-      margin={{
-        top: 15,
-        right: 15,
-        left: 5,
-        bottom: 80
+      data={quiz.scoreDistribution} 
+      margin={{ 
+        top: 10, 
+        right: 10, 
+        left: 10, 
+        bottom: 100
       }}
-      barCategoryGap={0}
+      barCategoryGap="5%"
       barGap={0}
-      barSize={20}
     >
-      <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#2d3748" />
+      <CartesianGrid strokeDasharray="3 3" stroke="#27272a"/>
       <XAxis 
-        dataKey="name"
-        axisLine={false}
-        tickLine={false}
-        interval={0}
-        angle={-45}
+        dataKey="name" 
+        stroke="#71717a" 
+        interval={0} 
+        angle={-30} 
         textAnchor="end"
-        height={70}
-        tick={{ fill: '#a0aec0', fontSize: 10 }}
-        tickMargin={10}
-        className="text-xs"
-      />  
+        height={100}
+        tick={{ fill: '#a1a1aa', fontSize: 10 }}
+        className="text-[10px]"
+      />
       <YAxis 
-        axisLine={false}
-        tickLine={false}
-        stroke="#4a5568"
-        allowDecimals={false}
+        stroke="#71717a" 
+        allowDecimals={false} 
         domain={[0, maxCount]}
-        tick={{ fill: '#a0aec0', fontSize: 11 }}
-        width={30}
-        tickMargin={10}
+        tick={{ fontSize: 10 }}
+        width={40}
       /> 
       <Tooltip 
         content={({payload}) => {
@@ -822,10 +816,9 @@ role: quiz.role
         }}
       />
       <Bar 
-        dataKey="count"
-        radius={[2, 2, 0, 0]}
-        barSize={12}
-        animationDuration={1500}
+        dataKey="count" 
+        radius={[4, 4, 0, 0]}
+        barSize={15}
         onClick={(data) => {
           const scoreRange = data.name.split('-');
           const startScore = parseInt(scoreRange[0]);
@@ -841,10 +834,10 @@ role: quiz.role
             fill={
               selectedScore !== null && 
               Number(entry.name.split('-')[0]) === selectedScore 
-                ? '#8b5cf6' 
-                : `url(#colorGradient${index % 3}`
+                ? '#FFFFFF' 
+                : COLORS[index % COLORS.length]
             }
-            className="transition-all duration-300 cursor-pointer hover:opacity-90 shadow-md"
+            className="transition-all duration-300 cursor-pointer hover:opacity-80"
           />
         ))}
       </Bar>
@@ -852,16 +845,15 @@ role: quiz.role
   </ResponsiveContainer>
   {/* Reset filter button - Responsive positioning */}
   {selectedScore !== null && (
-    <div className="mt-4 flex justify-center">
+    <div className="mt-2 flex justify-center lg:justify-start">
       <Button 
         onClick={() => setSelectedScores({
           ...selectedScores,
           [quiz.quiz_id]: null
         })} 
-        variant="outline"
-        className="flex items-center gap-2 text-purple-400 hover:bg-purple-500/10 border-purple-500/30 hover:border-purple-400/50 text-xs sm:text-sm px-4 py-1.5 rounded-full transition-all duration-200"
+        className="flex items-center gap-2 text-purple-400 hover:bg-zinc-800 bg-transparent hover:text-white text-xs sm:text-sm px-3 py-1.5"
       >
-        <RefreshCcw className="w-3.5 h-3.5" /> 
+        <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4"/> 
         Reset Filter ({selectedScore}-{selectedScore+5}%)
       </Button>
     </div>
