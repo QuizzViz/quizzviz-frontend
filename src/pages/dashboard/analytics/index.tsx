@@ -760,7 +760,7 @@ role: quiz.role
 </div>
 
                               {/* CHART SECTION - Responsive Height and Margins */}
-                              <div className="h-[280px] sm:h-[320px] w-full mt-2">
+                              <div className="h-[300px] sm:h-[350px] md:h-[400px] w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                   <BarChart 
                                     data={quiz.scoreDistribution} 
@@ -770,6 +770,8 @@ role: quiz.role
                                       left: -10, 
                                       bottom: isMobile ? 100 : 80 
                                     }}
+                                    barCategoryGap="15%"
+                                    barGap={1}
                                   >
                                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a"/>
                                     <XAxis 
@@ -789,27 +791,51 @@ role: quiz.role
                                       tick={{ fontSize: 10 }}
                                       width={40}
                                     /> 
-                                    <Tooltip content={({payload}) => {
-                                      if (!payload || !payload.length) return null;
-                                      const candidates = payload[0].payload.candidates;
-                                      return (
-                                        <div className="bg-zinc-800/95 backdrop-blur-sm text-white p-3 rounded-lg border border-zinc-700 max-w-[200px] sm:max-w-xs shadow-2xl">
-                                          <p className="font-bold text-sm sm:text-base text-purple-300">{payload[0].name}</p>
-                                          <p className="text-xs sm:text-sm mt-1">Attempts: <span className="font-semibold">{payload[0].value}</span></p>
-                                          {candidates.slice(0,2).map((c:QuizResult)=> <p key={c.quiz_id} className="text-[10px] sm:text-xs text-gray-300 mt-0.5 truncate">{c.username} ({c.result.score.toFixed(1)}%)</p>)}
-                                          {candidates.length > 2 && <p className="text-[10px] sm:text-xs text-purple-400 mt-1">+{candidates.length-2} more...</p>}
-                                        </div>
-                                      );
-                                    }}/>
+                                    <Tooltip 
+                                      content={({payload}) => {
+                                        if (!payload || !payload.length) return null;
+                                        const candidates = payload[0].payload.candidates;
+                                        return (
+                                          <div className="bg-zinc-800/95 backdrop-blur-sm text-white p-3 rounded-lg border border-zinc-700 max-w-[200px] sm:max-w-xs shadow-2xl">
+                                            <p className="font-bold text-sm sm:text-base text-purple-300">{payload[0].name}</p>
+                                            <p className="text-xs sm:text-sm mt-1">Attempts: <span className="font-semibold">{payload[0].value}</span></p>
+                                            {candidates.slice(0,2).map((c:QuizResult) => (
+                                              <p key={c.quiz_id} className="text-[10px] sm:text-xs text-gray-300 mt-0.5 truncate">
+                                                {c.username} ({c.result.score.toFixed(1)}%)
+                                              </p>
+                                            ))}
+                                            {candidates.length > 2 && (
+                                              <p className="text-[10px] sm:text-xs text-purple-400 mt-1">
+                                                +{candidates.length-2} more...
+                                              </p>
+                                            )}
+                                          </div>
+                                        );
+                                      }}
+                                      cursor={false}
+                                    />
                                     <Bar 
                                       dataKey="count" 
                                       radius={[6, 6, 0, 0]}
-                                      onClick={(data)=>setSelectedScores({...selectedScores, [quiz.role]: Number(data.name.split('-')[0])})}
+                                      barSize={18}
+                                      onClick={(data) => {
+                                        const scoreRange = data.name.split('-');
+                                        const startScore = parseInt(scoreRange[0]);
+                                        setSelectedScores({
+                                          ...selectedScores,
+                                          [quiz.quiz_id]: startScore
+                                        });
+                                      }}
                                     >
-                                      {quiz.scoreDistribution.map((entry, index)=> (
+                                      {quiz.scoreDistribution.map((entry, index) => (
                                         <Cell 
                                           key={index}
-                                          fill={selectedScore !== null && Number(entry.name.split('-')[0]) === selectedScore ? '#FFFFFF' : COLORS[index % COLORS.length]}
+                                          fill={
+                                            selectedScore !== null && 
+                                            Number(entry.name.split('-')[0]) === selectedScore 
+                                              ? '#FFFFFF' 
+                                              : COLORS[index % COLORS.length]
+                                          }
                                           className="transition-all duration-300 cursor-pointer hover:opacity-80"
                                         />
                                       ))}
@@ -820,7 +846,10 @@ role: quiz.role
                                 {selectedScore !== null && (
                                   <div className="mt-2 sm:mt-2 flex justify-center lg:justify-start">
                                     <Button 
-                                      onClick={()=>setSelectedScores({...selectedScores, [quiz.role]: null})} 
+                                      onClick={() => setSelectedScores({
+                                        ...selectedScores,
+                                        [quiz.quiz_id]: null
+                                      })} 
                                       className="flex items-center gap-2 text-purple-400 hover:bg-zinc-800 bg-transparent hover:text-white text-xs sm:text-sm px-3 py-2"
                                     >
                                       <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4"/> Reset Filter ({selectedScore}-{selectedScore+5}%)
