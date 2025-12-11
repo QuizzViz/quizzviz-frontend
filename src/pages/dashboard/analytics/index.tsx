@@ -762,7 +762,7 @@ role: quiz.role
 </div>
 
                               {/* CHART SECTION - Responsive Height and Margins */}
-                             <div className="h-[350px] sm:h-[400px] w-full">
+                             <div className="h-[450px] sm:h-[400px] w-full">
   <ResponsiveContainer width="100%" height="100%">
     <BarChart 
       data={quiz.scoreDistribution} 
