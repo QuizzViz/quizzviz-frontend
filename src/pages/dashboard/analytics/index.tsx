@@ -68,7 +68,7 @@ const exportPDF = (data: QuizResult[]) => {
   
   const preparedData = prepareExportData(data);
   // Safely get the quiz role with fallbacks
-  const quizRole = (data[0]?.result?.role || data[0]?.role || 'Quiz') + ' Quiz';
+  const quizRole = (data[0]?.result?.role || data[0]?.role);
   const totalQuestions = data[0]?.result?.total_questions || 0;
   
   const doc = new jsPDF();
