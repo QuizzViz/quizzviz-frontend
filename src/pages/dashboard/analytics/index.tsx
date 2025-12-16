@@ -67,8 +67,9 @@ const exportPDF = (data: QuizResult[]) => {
   if (data.length === 0) return;
   
   const preparedData = prepareExportData(data);
-  const quizRole = data[0].role + ' Quiz';
-  const totalQuestions = data[0].result.total_questions;
+  // Safely get the quiz role with fallbacks
+  const quizRole = (data[0]?.result?.role || data[0]?.role || 'Quiz') + ' Quiz';
+  const totalQuestions = data[0]?.result?.total_questions || 0;
   
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
