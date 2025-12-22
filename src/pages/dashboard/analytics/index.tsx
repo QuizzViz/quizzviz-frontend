@@ -777,14 +777,6 @@ role: quiz.role
       barGap={0}
     >
       <defs>
-        <linearGradient id={`colorGradient-${idx}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.95}/>
-          <stop offset="100%" stopColor="#6D28D9" stopOpacity={0.85}/>
-        </linearGradient>
-        <linearGradient id="colorGradient-selected" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#10B981" stopOpacity={0.95}/>
-          <stop offset="100%" stopColor="#059669" stopOpacity={0.85}/>
-        </linearGradient>
         <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="2" result="blur"/>
           <feComposite in="SourceGraphic" in2="blur" operator="over"/>
@@ -881,28 +873,25 @@ role: quiz.role
           return (
             <Cell 
               key={`cell-${i}`}
-              fill="transparent"
+              fill={isSelected ? '#10B981' : (hasData ? '#8B5CF6' : 'rgba(39, 39, 42, 0.3)')}
               style={{
-                fill: isSelected 
-                  ? '#10B981' 
-                  : hasData 
-                    ? '#8B5CF6' 
-                    : 'rgba(39, 39, 42, 0.3)',
                 opacity: isSelected ? 1 : (hasData ? 1 : 0.3),
-                filter: isSelected ? 'url(#glow)' : 'none',
+                filter: isSelected ? 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.7))' : 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
               onMouseEnter={(e) => {
                 if (hasData) {
                   e.currentTarget.style.filter = isSelected 
-                    ? 'url(#glow)' 
+                    ? 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.7))' 
                     : 'drop-shadow(0 4px 12px rgba(139, 92, 246, 0.5)) brightness(1.1)';
                   e.currentTarget.style.transform = 'translateY(-4px)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (hasData) {
-                  e.currentTarget.style.filter = isSelected ? 'url(#glow)' : 'none';
+                  e.currentTarget.style.filter = isSelected 
+                    ? 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.7))' 
+                    : 'none';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }
               }}
