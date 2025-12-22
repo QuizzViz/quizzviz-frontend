@@ -881,19 +881,16 @@ role: quiz.role
           return (
             <Cell 
               key={`cell-${i}`}
-              fill={
-                isSelected 
-                  ? 'url(#colorGradient-selected)' 
-                  : hasData 
-                    ? `url(#colorGradient-${idx})` 
-                    : 'rgba(39, 39, 42, 0.3)'
-              }
+              fill="transparent"
               style={{
+                fill: isSelected 
+                  ? '#10B981' 
+                  : hasData 
+                    ? '#8B5CF6' 
+                    : 'rgba(39, 39, 42, 0.3)',
                 opacity: isSelected ? 1 : (hasData ? 1 : 0.3),
                 filter: isSelected ? 'url(#glow)' : 'none',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                // Fallback solid colors
-                fill: isSelected ? '#10B981' : (hasData ? '#8B5CF6' : 'rgba(39, 39, 42, 0.3)')
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
               onMouseEnter={(e) => {
                 if (hasData) {
