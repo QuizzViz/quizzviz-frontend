@@ -778,9 +778,13 @@ role: quiz.role
     >
       <defs>
         <linearGradient id={`colorGradient-${idx}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.9}/>
-          <stop offset="100%" stopColor="#6D28D9" stopOpacity={0.7}/>
+          <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.95}/>
+          <stop offset="100%" stopColor="#6D28D9" stopOpacity={0.85}/>
         </linearGradient>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
       </defs>
       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} opacity={0.5}/>
       <XAxis 
@@ -793,15 +797,21 @@ role: quiz.role
         tick={{ fill: '#9ca3af', fontSize: 11, fontWeight: 500 }}
         tickLine={{ stroke: '#52525b' }}
         axisLine={{ stroke: '#52525b' }}
+        tickFormatter={(value) => {
+          // Format as "5-10%" instead of "5-10%"
+          const [start, end] = value.replace('%', '').split('-').map(Number);
+          return `${start}-${end}%`;
+        }}
       />
       <YAxis 
         stroke="#71717a" 
         allowDecimals={false} 
-        domain={[0, 'auto']}
+        domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.1)]} // Add 10% padding on top
         tick={{ fill: '#9ca3af', fontSize: 11 }}
         tickLine={{ stroke: '#52525b' }}
         axisLine={{ stroke: '#52525b' }}
         width={35}
+        tickFormatter={(value) => Number.isInteger(value) ? value.toString() : ''} // Only show whole numbers
       /> 
       <Tooltip 
         cursor={{ fill: 'rgba(139, 92, 246, 0.08)' }}
@@ -865,30 +875,29 @@ role: quiz.role
               key={index}
               fill={
                 isSelected 
-                  ? '#FFFFFF' 
+                  ? 'url(#colorGradient-selected)' 
                   : hasData 
                     ? `url(#colorGradient-${idx})` 
-                    : '#27272a'
+                    : 'rgba(39, 39, 42, 0.3)'
               }
               className={`transition-all duration-300 ${hasData ? 'cursor-pointer' : 'cursor-default'}`}
               style={{
                 opacity: hasData ? 1 : 0.3,
-                filter: isSelected 
-                  ? 'drop-shadow(0 0 12px rgba(255, 255, 255, 0.7))' 
-                  : 'none'
+                filter: isSelected ? 'url(#glow)' : 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
               onMouseEnter={(e) => {
                 if (hasData) {
                   e.currentTarget.style.filter = isSelected 
-                    ? 'drop-shadow(0 0 12px rgba(255, 255, 255, 0.7))' 
-                    : 'drop-shadow(0 4px 8px rgba(139, 92, 246, 0.6)) brightness(1.2)';
+                    ? 'url(#glow)' 
+                    : 'drop-shadow(0 4px 12px rgba(139, 92, 246, 0.5)) brightness(1.1)';
+                  e.currentTarget.style.transform = 'translateY(-4px)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (hasData) {
-                  e.currentTarget.style.filter = isSelected 
-                    ? 'drop-shadow(0 0 12px rgba(255, 255, 255, 0.7))' 
-                    : 'none';
+                  e.currentTarget.style.filter = isSelected ? 'url(#glow)' : 'none';
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }
               }}
             />
