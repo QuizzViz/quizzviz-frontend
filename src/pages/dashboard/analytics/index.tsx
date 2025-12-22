@@ -1829,7 +1829,7 @@ role: quiz.role
                        <div className="h-[380px] sm:h-[350px] w-full">
   <ResponsiveContainer width="100%" height="100%">
     <BarChart 
-      data={quiz.scoreDistribution} 
+      data={quiz.scoreDistribution.filter(item => item.count > 0)} 
       margin={{ 
         top: 20,
         right: 10,
