@@ -1847,7 +1847,7 @@ role: quiz.role
         angle={-45} 
         textAnchor="end"
         height={90}
-        tick={{ fill: 'transparent', fontSize: 11, fontWeight: 500 }}
+        tick={{ fill: '#9ca3af', fontSize: 11, fontWeight: 500 }}
         tickLine={{ stroke: '#52525b' }}
         axisLine={{ stroke: '#52525b' }}
       />
