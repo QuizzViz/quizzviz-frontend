@@ -763,59 +763,80 @@ role: quiz.role
 </div>
 
                               {/* CHART SECTION - Responsive Height and Margins */}
-                       <div className="h-[450px] sm:h-[400px] w-full">
+                       <div className="h-[380px] sm:h-[350px] w-full">
   <ResponsiveContainer width="100%" height="100%">
     <BarChart 
       data={quiz.scoreDistribution} 
       margin={{ 
         top: 20,
-        right: 20,
-        bottom: 60,
-        left: 10
+        right: 10,
+        bottom: 70,
+        left: 0
       }}
-      barCategoryGap="15%"
+      barCategoryGap="8%"
       barGap={0}
     >
-      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false}/>
+      <defs>
+        <linearGradient id={`colorGradient-${idx}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.9}/>
+          <stop offset="100%" stopColor="#6D28D9" stopOpacity={0.7}/>
+        </linearGradient>
+      </defs>
+      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} opacity={0.5}/>
       <XAxis 
         dataKey="name" 
         stroke="#71717a" 
         interval={0} 
         angle={-45} 
         textAnchor="end"
-        height={80}
-        tick={{ fill: '#9ca3af', fontSize: 12, fontWeight: 500 }}
-        tickLine={{ stroke: '#71717a' }}
+        height={90}
+        tick={{ fill: '#9ca3af', fontSize: 11, fontWeight: 500 }}
+        tickLine={{ stroke: '#52525b' }}
+        axisLine={{ stroke: '#52525b' }}
       />
       <YAxis 
         stroke="#71717a" 
         allowDecimals={false} 
-        domain={[0, maxCount]}
-        tick={{ fill: '#9ca3af', fontSize: 12 }}
-        tickLine={{ stroke: '#71717a' }}
-        width={50}
+        domain={[0, 'auto']}
+        tick={{ fill: '#9ca3af', fontSize: 11 }}
+        tickLine={{ stroke: '#52525b' }}
+        axisLine={{ stroke: '#52525b' }}
+        width={35}
       /> 
       <Tooltip 
-        cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
-        content={({payload}) => {
-          if (!payload || !payload.length) return null;
-          const candidates = payload[0].payload.candidates;
+        cursor={{ fill: 'rgba(139, 92, 246, 0.08)' }}
+        content={({payload, active}) => {
+          if (!active || !payload || !payload.length) return null;
+          const data = payload[0].payload;
+          const candidates = data.candidates;
+          const hasData = candidates.length > 0;
+          
           return (
-            <div className="bg-zinc-900/98 backdrop-blur-md text-white p-4 rounded-xl border border-zinc-700 max-w-[200px] sm:max-w-xs shadow-2xl">
-              <p className="font-bold text-base sm:text-lg text-purple-300 mb-2">{payload[0].name}</p>
-              <p className="text-sm sm:text-base mb-2">Attempts: <span className="font-bold text-white">{payload[0].value}</span></p>
-              <div className="border-t border-zinc-700 pt-2 mt-2">
-                {candidates.slice(0,2).map((c:QuizResult) => (
-                  <p key={c.quiz_id} className="text-xs sm:text-sm text-gray-300 mt-1 truncate">
-                    • {c.username} <span className="text-purple-400 font-semibold">({c.result.score.toFixed(1)}%)</span>
-                  </p>
-                ))}
-                {candidates.length > 2 && (
-                  <p className="text-xs sm:text-sm text-purple-400 mt-2 font-medium">
-                    +{candidates.length-2} more candidate{candidates.length-2 !== 1 ? 's' : ''}
-                  </p>
-                )}
+            <div className="bg-zinc-900/98 backdrop-blur-md text-white p-4 rounded-xl border-2 border-purple-500/50 shadow-2xl shadow-purple-500/20 min-w-[220px]">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-zinc-700">
+                <p className="font-bold text-lg text-purple-300">{data.name}</p>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${hasData ? 'bg-purple-600' : 'bg-zinc-700'}`}>
+                  {data.count}
+                </span>
               </div>
+              {hasData ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400 font-medium mb-2">Candidates:</p>
+                  {candidates.slice(0, 3).map((c:QuizResult, i:number) => (
+                    <div key={i} className="flex items-start justify-between gap-2 bg-zinc-800/50 rounded-lg p-2">
+                      <span className="text-xs text-gray-300 truncate flex-1">{c.username}</span>
+                      <span className="text-xs font-bold text-purple-400 whitespace-nowrap">{c.result.score.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                  {candidates.length > 3 && (
+                    <p className="text-xs text-purple-400 mt-2 font-semibold text-center pt-2 border-t border-zinc-700">
+                      +{candidates.length - 3} more
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-2">No attempts in this range</p>
+              )}
             </div>
           );
         }}
@@ -823,47 +844,70 @@ role: quiz.role
       <Bar 
         dataKey="count" 
         radius={[8, 8, 0, 0]}
-        maxBarSize={60}
+        maxBarSize={45}
         onClick={(data) => {
-          const scoreRange = data.name.split('-');
-          const startScore = parseInt(scoreRange[0]);
-          setSelectedScores({
-            ...selectedScores,
-            [quiz.quiz_id]: startScore
-          });
+          if (data.count > 0) {
+            const scoreRange = data.name.split('-');
+            const startScore = parseInt(scoreRange[0]);
+            setSelectedScores({
+              ...selectedScores,
+              [quiz.quiz_id]: startScore
+            });
+          }
         }}
       >
-        {quiz.scoreDistribution.map((entry, index) => (
-          <Cell 
-            key={index}
-            fill={
-              selectedScore !== null && 
-              Number(entry.name.split('-')[0]) === selectedScore 
-                ? '#FFFFFF' 
-                : COLORS[index % COLORS.length]
-            }
-            className="transition-all duration-300 cursor-pointer hover:opacity-90 hover:brightness-110"
-            style={{
-              filter: selectedScore !== null && Number(entry.name.split('-')[0]) === selectedScore 
-                ? 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.6))' 
-                : 'none'
-            }}
-          />
-        ))}
+        {quiz.scoreDistribution.map((entry, index) => {
+          const isSelected = selectedScore !== null && Number(entry.name.split('-')[0]) === selectedScore;
+          const hasData = entry.count > 0;
+          
+          return (
+            <Cell 
+              key={index}
+              fill={
+                isSelected 
+                  ? '#FFFFFF' 
+                  : hasData 
+                    ? `url(#colorGradient-${idx})` 
+                    : '#27272a'
+              }
+              className={`transition-all duration-300 ${hasData ? 'cursor-pointer' : 'cursor-default'}`}
+              style={{
+                opacity: hasData ? 1 : 0.3,
+                filter: isSelected 
+                  ? 'drop-shadow(0 0 12px rgba(255, 255, 255, 0.7))' 
+                  : 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (hasData) {
+                  e.currentTarget.style.filter = isSelected 
+                    ? 'drop-shadow(0 0 12px rgba(255, 255, 255, 0.7))' 
+                    : 'drop-shadow(0 4px 8px rgba(139, 92, 246, 0.6)) brightness(1.2)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (hasData) {
+                  e.currentTarget.style.filter = isSelected 
+                    ? 'drop-shadow(0 0 12px rgba(255, 255, 255, 0.7))' 
+                    : 'none';
+                }
+              }}
+            />
+          );
+        })}
       </Bar>
     </BarChart>
   </ResponsiveContainer>
-  {/* Reset filter button - Responsive positioning */}
+  {/* Reset filter button */}
   {selectedScore !== null && (
-    <div className="mt-3 flex justify-center lg:justify-start">
+    <div className="mt-4 flex justify-center">
       <Button 
         onClick={() => setSelectedScores({
           ...selectedScores,
           [quiz.quiz_id]: null
         })} 
-        className="flex items-center gap-2 text-purple-400 hover:bg-zinc-800 bg-zinc-900 border border-zinc-700 hover:text-white text-xs sm:text-sm px-4 py-2 rounded-lg transition-all duration-200 hover:border-purple-500"
+        className="flex items-center gap-2 bg-zinc-900 border-2 border-purple-500/50 hover:border-purple-400 hover:bg-zinc-800 text-purple-300 hover:text-purple-200 text-sm px-5 py-2.5 rounded-lg transition-all duration-200 shadow-lg shadow-purple-500/10 hover:shadow-purple-500/30"
       >
-        <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4"/> 
+        <RefreshCcw className="w-4 h-4"/> 
         Clear Filter ({selectedScore}-{selectedScore+5}%)
       </Button>
     </div>
