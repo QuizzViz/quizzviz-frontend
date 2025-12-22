@@ -768,56 +768,62 @@ role: quiz.role
     <BarChart 
       data={quiz.scoreDistribution} 
       margin={{ 
-        top: 10,
-        bottom: 40
+        top: 20,
+        right: 20,
+        bottom: 60,
+        left: 10
       }}
-      barCategoryGap="5%"
+      barCategoryGap="15%"
       barGap={0}
     >
-      <CartesianGrid strokeDasharray="3 3" stroke="#27272a"/>
+      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false}/>
       <XAxis 
         dataKey="name" 
         stroke="#71717a" 
         interval={0} 
-        angle={-30} 
+        angle={-45} 
         textAnchor="end"
-        height={100}
-        tick={{ fill: '#a1a1aa', fontSize: 10 }}
-        className="text-[10px]"
+        height={80}
+        tick={{ fill: '#9ca3af', fontSize: 12, fontWeight: 500 }}
+        tickLine={{ stroke: '#71717a' }}
       />
       <YAxis 
         stroke="#71717a" 
         allowDecimals={false} 
         domain={[0, maxCount]}
-        tick={{ fontSize: 10 }}
-        width={40}
+        tick={{ fill: '#9ca3af', fontSize: 12 }}
+        tickLine={{ stroke: '#71717a' }}
+        width={50}
       /> 
       <Tooltip 
+        cursor={{ fill: 'rgba(139, 92, 246, 0.1)' }}
         content={({payload}) => {
           if (!payload || !payload.length) return null;
           const candidates = payload[0].payload.candidates;
           return (
-            <div className="bg-zinc-800/95 backdrop-blur-sm text-white p-3 rounded-lg border border-zinc-700 max-w-[200px] sm:max-w-xs shadow-2xl">
-              <p className="font-bold text-sm sm:text-base text-purple-300">{payload[0].name}</p>
-              <p className="text-xs sm:text-sm mt-1">Attempts: <span className="font-semibold">{payload[0].value}</span></p>
-              {candidates.slice(0,2).map((c:QuizResult) => (
-                <p key={c.quiz_id} className="text-[10px] sm:text-xs text-gray-300 mt-0.5 truncate">
-                  {c.username} ({c.result.score.toFixed(1)}%)
-                </p>
-              ))}
-              {candidates.length > 2 && (
-                <p className="text-[10px] sm:text-xs text-purple-400 mt-1">
-                  +{candidates.length-2} more...
-                </p>
-              )}
+            <div className="bg-zinc-900/98 backdrop-blur-md text-white p-4 rounded-xl border border-zinc-700 max-w-[200px] sm:max-w-xs shadow-2xl">
+              <p className="font-bold text-base sm:text-lg text-purple-300 mb-2">{payload[0].name}</p>
+              <p className="text-sm sm:text-base mb-2">Attempts: <span className="font-bold text-white">{payload[0].value}</span></p>
+              <div className="border-t border-zinc-700 pt-2 mt-2">
+                {candidates.slice(0,2).map((c:QuizResult) => (
+                  <p key={c.quiz_id} className="text-xs sm:text-sm text-gray-300 mt-1 truncate">
+                    • {c.username} <span className="text-purple-400 font-semibold">({c.result.score.toFixed(1)}%)</span>
+                  </p>
+                ))}
+                {candidates.length > 2 && (
+                  <p className="text-xs sm:text-sm text-purple-400 mt-2 font-medium">
+                    +{candidates.length-2} more candidate{candidates.length-2 !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
             </div>
           );
         }}
       />
       <Bar 
         dataKey="count" 
-        radius={[4, 4, 0, 0]}
-        barSize={15}
+        radius={[8, 8, 0, 0]}
+        maxBarSize={60}
         onClick={(data) => {
           const scoreRange = data.name.split('-');
           const startScore = parseInt(scoreRange[0]);
@@ -836,7 +842,12 @@ role: quiz.role
                 ? '#FFFFFF' 
                 : COLORS[index % COLORS.length]
             }
-            className="transition-all duration-300 cursor-pointer hover:opacity-80"
+            className="transition-all duration-300 cursor-pointer hover:opacity-90 hover:brightness-110"
+            style={{
+              filter: selectedScore !== null && Number(entry.name.split('-')[0]) === selectedScore 
+                ? 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.6))' 
+                : 'none'
+            }}
           />
         ))}
       </Bar>
@@ -844,21 +855,20 @@ role: quiz.role
   </ResponsiveContainer>
   {/* Reset filter button - Responsive positioning */}
   {selectedScore !== null && (
-    <div className="mt-2 flex justify-center lg:justify-start">
+    <div className="mt-3 flex justify-center lg:justify-start">
       <Button 
         onClick={() => setSelectedScores({
           ...selectedScores,
           [quiz.quiz_id]: null
         })} 
-        className="flex items-center gap-2 text-purple-400 hover:bg-zinc-800 bg-transparent hover:text-white text-xs sm:text-sm px-3 py-1.5"
+        className="flex items-center gap-2 text-purple-400 hover:bg-zinc-800 bg-zinc-900 border border-zinc-700 hover:text-white text-xs sm:text-sm px-4 py-2 rounded-lg transition-all duration-200 hover:border-purple-500"
       >
         <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4"/> 
-        Reset Filter ({selectedScore}-{selectedScore+5}%)
+        Clear Filter ({selectedScore}-{selectedScore+5}%)
       </Button>
     </div>
   )}
 </div>
-
                               {/* TABLE SECTION - Responsive */}
                               <div className="space-y-4 pt-2 sm:pt-2 border-t border-zinc-900">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
