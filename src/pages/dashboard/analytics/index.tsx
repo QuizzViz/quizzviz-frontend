@@ -797,11 +797,17 @@ role: quiz.role
         tick={{ fill: '#9ca3af', fontSize: 11, fontWeight: 500 }}
         tickLine={{ stroke: '#52525b' }}
         axisLine={{ stroke: '#52525b' }}
-        ticks={Array.from({length: 20}, (_, i) => i * 5).map(n => `${n}-${n+5}%`)}
+        domain={[0, 100]}
+        type="number"
+        tickCount={21}
         tickFormatter={(value) => {
-          const [start, end] = value.replace('%', '').split('-').map(Number);
-          return `${start}-${end}%`;
+          // Show every 10% to avoid overcrowding
+          if (value % 10 === 0) {
+            return `${value}%`;
+          }
+          return '';
         }}
+        ticks={Array.from({length: 21}, (_, i) => i * 5)}
       />
       <YAxis 
         stroke="#71717a" 
@@ -856,23 +862,24 @@ role: quiz.role
         radius={[8, 8, 0, 0]}
         maxBarSize={45}
         onClick={(data) => {
-          if (data.count > 0) {
-            const scoreRange = data.name.split('-');
-            const startScore = parseInt(scoreRange[0]);
-            setSelectedScores({
-              ...selectedScores,
-              [quiz.quiz_id]: startScore
-            });
-          }
+          const scoreRange = data.name.split('-');
+          const startScore = parseInt(scoreRange[0]);
+          setSelectedScores({
+            ...selectedScores,
+            [quiz.quiz_id]: selectedScore === startScore ? null : startScore
+          });
         }}
       >
-        {quiz.scoreDistribution.map((entry, index) => {
-          const isSelected = selectedScore !== null && Number(entry.name.split('-')[0]) === selectedScore;
-          const hasData = entry.count > 0;
+        {Array.from({length: 21}, (_, i) => {
+          const range = `${i * 5}-${i * 5 + 5}%`;
+          const existingData = quiz.scoreDistribution.find(d => d.name === range);
+          const rangeStart = i * 5;
+          const isSelected = selectedScore !== null && rangeStart === selectedScore;
+          const hasData = existingData && existingData.count > 0;
           
           return (
             <Cell 
-              key={index}
+              key={i}
               fill={
                 isSelected 
                   ? 'url(#colorGradient-selected)' 
@@ -881,7 +888,6 @@ role: quiz.role
                     : 'rgba(39, 39, 42, 0.3)'
               }
               style={{
-                display: hasData || isSelected ? 'block' : 'none',
                 opacity: isSelected ? 1 : (hasData ? 1 : 0.3),
                 filter: isSelected ? 'url(#glow)' : 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
