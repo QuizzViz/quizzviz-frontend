@@ -1836,7 +1836,7 @@ role: quiz.role
                        <div className="h-[380px] sm:h-[350px] w-full">
   <ResponsiveContainer width="100%" height="100%">
     <BarChart 
-      data={quiz.scoreDistribution.filter(item => item.count > 0)} 
+      data={quiz.scoreDistribution} 
       margin={{ 
         top: 20,
         right: 10,
@@ -1922,33 +1922,36 @@ role: quiz.role
           }
         }}
       >
-        {quiz.scoreDistribution
-          .filter(entry => entry.count > 0)
-          .map((entry, index) => {
-            const start = parseInt(entry.name.split('-')[0]);
-            const isSelected = selectedScores[quiz.quiz_id] === start;
+        {quiz.scoreDistribution.map((entry, index) => {
+          const start = parseInt(entry.name.split('-')[0]);
+          const isSelected = selectedScores[quiz.quiz_id] === start;
+          const hasData = entry.count > 0;
 
-            return (
-              <Cell 
-                key={`cell-${index}`}
-                fill={isSelected ? '#10B981' : '#8B5CF6'}
-                style={{
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
+          return (
+            <Cell 
+              key={`cell-${index}`}
+              fill={hasData ? (isSelected ? '#10B981' : '#8B5CF6') : 'transparent'}
+              style={{
+                cursor: hasData ? 'pointer' : 'default',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (hasData) {
                   e.currentTarget.style.opacity = '0.9';
                   if (!isSelected) {
                     e.currentTarget.style.filter = 'brightness(1.3)';
                   }
-                }}
-                onMouseLeave={(e) => {
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (hasData) {
                   e.currentTarget.style.opacity = isSelected ? '1' : '1';
                   e.currentTarget.style.filter = isSelected ? 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))' : 'none';
-                }}
-              />
-            );
-          })}
+                }
+              }}
+            />
+          );
+        })}
       </Bar>
     </BarChart>
   </ResponsiveContainer>
