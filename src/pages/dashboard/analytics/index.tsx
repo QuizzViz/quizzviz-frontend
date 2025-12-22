@@ -856,23 +856,27 @@ role: quiz.role
         radius={[8, 8, 0, 0]}
         maxBarSize={45}
         onClick={(data) => {
-          if (data.count > 0) {
+          if (data && data.count > 0) {
             const scoreRange = data.name.split('-');
             const startScore = parseInt(scoreRange[0]);
             setSelectedScores({
               ...selectedScores,
-              [quiz.quiz_id]: startScore
+              [quiz.quiz_id]: selectedScores[quiz.quiz_id] === startScore ? null : startScore
             });
           }
         }}
       >
-        {quiz.scoreDistribution.map((entry, index) => {
-          const isSelected = selectedScore !== null && Number(entry.name.split('-')[0]) === selectedScore;
+        {Array.from({length: 20}, (_, i) => {
+          const start = i * 5;
+          const end = start + 5;
+          const rangeKey = `${start}-${end}%`;
+          const entry = quiz.scoreDistribution.find(d => d.name === rangeKey) || { name: rangeKey, count: 0 };
+          const isSelected = selectedScores[quiz.quiz_id] === start;
           const hasData = entry.count > 0;
           
           return (
             <Cell 
-              key={index}
+              key={`cell-${i}`}
               fill={
                 isSelected 
                   ? 'url(#colorGradient-selected)' 
@@ -881,7 +885,6 @@ role: quiz.role
                     : 'rgba(39, 39, 42, 0.3)'
               }
               style={{
-                display: hasData || isSelected ? 'block' : 'none',
                 opacity: isSelected ? 1 : (hasData ? 1 : 0.3),
                 filter: isSelected ? 'url(#glow)' : 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
