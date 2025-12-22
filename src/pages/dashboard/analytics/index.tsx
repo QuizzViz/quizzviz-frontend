@@ -1847,10 +1847,9 @@ role: quiz.role
         angle={-45} 
         textAnchor="end"
         height={90}
-        tick={{ fill: '#9ca3af', fontSize: 11, fontWeight: 500 }}
+        tick={{ fill: 'transparent', fontSize: 11, fontWeight: 500 }}
         tickLine={{ stroke: '#52525b' }}
         axisLine={{ stroke: '#52525b' }}
-        tickFormatter={(value) => value.replace('%', '')}
       />
       <YAxis 
         stroke="#71717a" 
@@ -1932,7 +1931,6 @@ role: quiz.role
               onMouseEnter={(e) => {
                 if (hasData) {
                   e.currentTarget.style.opacity = '0.9';
-                  e.currentTarget.style.transform = 'translateY(-6px)';
                   if (!isSelected) {
                     e.currentTarget.style.filter = 'brightness(1.3)';
                   }
@@ -1941,7 +1939,6 @@ role: quiz.role
               onMouseLeave={(e) => {
                 if (hasData) {
                   e.currentTarget.style.opacity = isSelected ? '1' : '1';
-                  e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.filter = isSelected ? 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))' : 'none';
                 }
               }}
