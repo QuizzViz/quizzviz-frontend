@@ -1539,9 +1539,16 @@ export default function ResultsDashboard() {
 
       // Ensure all 20 bins exist in the data array (important for consistent bar rendering)
       const fullDistribution = [];
+      // Create non-overlapping ranges (0-5%, 6-10%, etc.)
       for (let i = 0; i < 100; i += 5) {
-        const range = i === 95 ? '95-100%' : `${i}-${i+5}%`;
-        const existing = distribution.find(d => d.name === range);
+        const start = i === 0 ? 0 : i + 1; // Start next range at next number
+        const end = i + 5;
+        const range = end === 100 ? '96-100%' : `${start}-${end}%`;
+        // Find if there's data for this range
+        const existing = distribution.find(d => {
+          const [min, max] = d.name.replace('%','').split('-').map(Number);
+          return start >= min && end <= (max + 1);
+        });
         fullDistribution.push(existing || { name: range, count: 0, candidates: [] });
       }
       
@@ -1919,28 +1926,26 @@ role: quiz.role
           const isSelected = selectedScores[quiz.quiz_id] === start;
           const hasData = entry.count > 0;
 
+          // Don't render cells for empty data points
+          if (!hasData) return null;
+
           return (
             <Cell 
               key={`cell-${index}`}
-              fill={isSelected ? '#10B981' : hasData ? '#8B5CF6' : '#27272a'}
-              opacity={hasData || isSelected ? 1 : 0.4}
+              fill={isSelected ? '#10B981' : '#8B5CF6'}
               style={{
-                cursor: hasData ? 'pointer' : 'default',
+                cursor: 'pointer',
                 transition: 'all 0.3s ease',
               }}
               onMouseEnter={(e) => {
-                if (hasData) {
-                  e.currentTarget.style.opacity = '0.9';
-                  if (!isSelected) {
-                    e.currentTarget.style.filter = 'brightness(1.3)';
-                  }
+                e.currentTarget.style.opacity = '0.9';
+                if (!isSelected) {
+                  e.currentTarget.style.filter = 'brightness(1.3)';
                 }
               }}
               onMouseLeave={(e) => {
-                if (hasData) {
-                  e.currentTarget.style.opacity = isSelected ? '1' : '1';
-                  e.currentTarget.style.filter = isSelected ? 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))' : 'none';
-                }
+                e.currentTarget.style.opacity = isSelected ? '1' : '1';
+                e.currentTarget.style.filter = isSelected ? 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.6))' : 'none';
               }}
             />
           );
