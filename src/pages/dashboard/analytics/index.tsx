@@ -788,7 +788,7 @@ role: quiz.role
       </defs>
       <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} opacity={0.5}/>
       <XAxis 
-        dataKey="name" 
+        dataKey="name"
         stroke="#71717a" 
         interval={0} 
         angle={-45} 
@@ -797,8 +797,8 @@ role: quiz.role
         tick={{ fill: '#9ca3af', fontSize: 11, fontWeight: 500 }}
         tickLine={{ stroke: '#52525b' }}
         axisLine={{ stroke: '#52525b' }}
+        ticks={Array.from({length: 20}, (_, i) => i * 5).map(n => `${n}-${n+5}%`)}
         tickFormatter={(value) => {
-          // Format as "5-10%" instead of "5-10%"
           const [start, end] = value.replace('%', '').split('-').map(Number);
           return `${start}-${end}%`;
         }}
@@ -880,9 +880,9 @@ role: quiz.role
                     ? `url(#colorGradient-${idx})` 
                     : 'rgba(39, 39, 42, 0.3)'
               }
-              className={`transition-all duration-300 ${hasData ? 'cursor-pointer' : 'cursor-default'}`}
               style={{
-                opacity: hasData ? 1 : 0.3,
+                display: hasData || isSelected ? 'block' : 'none',
+                opacity: isSelected ? 1 : (hasData ? 1 : 0.3),
                 filter: isSelected ? 'url(#glow)' : 'none',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
