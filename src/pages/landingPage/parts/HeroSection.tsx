@@ -6,8 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   ArrowRight, 
   Zap, 
-  Briefcase, 
-  User, 
   Clock, 
   Lock
 } from "lucide-react";
@@ -28,32 +26,8 @@ import {
   SelectItem 
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { useUserType, UserType } from "@/contexts/UserTypeContext";
 import { TOPICS } from "@/constants/topics";
 import { Combobox } from "@/components/ui/combobox";
-
-export interface UserTypeConfig {
-  id: UserType;
-  label: string;
-  icon: FC<{ className?: string }>;
-  description: string;
-}
-
-export const USER_TYPES: UserTypeConfig[] = [
-  { 
-    id: 'individual', 
-    label: 'Individual', 
-    icon: User, 
-    description: 'Practice, Learn & Evaluate' 
-  },
-  { 
-    id: 'business', 
-    label: 'Business', 
-    icon: Briefcase, 
-    description: 'Hire Smarter & Faster'
-  }
- 
-];
 
 interface DifficultyLevel {
   value: string;
@@ -72,7 +46,6 @@ const HeroSection: FC = () => {
   const router = useRouter();
   const { toast } = useToast();
   
-  const { userType, setUserType } = useUserType();
   const [topic, setTopic] = useState<string>('');
   const [difficulty, setDifficulty] = useState<string>('Bachelors Level');
   const [count, setCount] = useState<number>(5);
@@ -98,7 +71,6 @@ const HeroSection: FC = () => {
       difficulty,
       count: count.toString(),
       codePercentage: codePercentage.toString(),
-      userType
     })
 
     router.push(`/dashboard`);
@@ -117,21 +89,10 @@ const HeroSection: FC = () => {
     }
   }, [isGenerating]);
 
-  const getHeadlineText = (): { main: string; sub: string } => {
-    const common = {
-      main: "Generate and Proctor Coding Quizzes",
-      sub: "for Faster Hiring and Learning "
-    };
-    
-    switch(userType) {
-      case 'individual':
-      case 'business':
-      default:
-        return common;
-    }
+  const headline = {
+    main: "Stop Interviewing Devs who can't code",
+    sub: "Send a quiz. Only interview devs who pass."
   };
-
-  const headline = getHeadlineText();
 
   return (
     <section id="hero" className="relative overflow-hidden pt-8 sm:pt-10 md:pt-16 lg:pt-20 pb-6 min-h-[80vh] scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
@@ -143,47 +104,26 @@ const HeroSection: FC = () => {
         <div className="flex flex-col items-center justify-center min-h-[calc(80vh-6rem)] py-6">
           
           {/* Headline Section */}
-          <div className="text-center mb-6 max-w-4xl">
-            
+          <div className="text-center mb-10 max-w-4xl">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-4 leading-tight">
               {headline.main}
-              <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-400">{headline.sub}</span>
             </h1>
-          </div>
-
-          {/* User Type Selector */}
-          <div className="flex flex-wrap gap-3 justify-center mb-6">
-            {USER_TYPES.map(({ id, label, icon: Icon, description }) => (
-              <button
-                key={id}
-                onClick={() => setUserType(id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 shadow-sm ${
-                  userType === id
-                    ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-md scale-105'
-                    : 'bg-white/5 backdrop-blur-md border border-white/10 text-white hover:bg-white/10 hover:border-white/20'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <div className="text-left">
-                  <div className="font-semibold text-sm">{label}</div>
-                  <div className="text-xs opacity-80">{description}</div>
-                </div>
-              </button>
-            ))}
+            <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent max-w-3xl mx-auto">
+              {headline.sub}
+            </p>
           </div>
 
           {/* Quiz Generator Card - Full Width */}
           <div className="w-full max-w-5xl">
             <Card className="bg-black/30 backdrop-blur-lg border border-white/10 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader className="pb-3 border-b border-white/10">
-                <CardTitle className="text-xl font-bold text-white text-center">
-                  {userType === 'individual' ? 'Generate Your Practice Coding Quiz' : 'Create Your Coding Assessment'}
+                <CardTitle className="text-xl font-bold text-center">
+                  <span className="bg-gradient-to-r from-teal-300 via-blue-400 to-blue-500 bg-clip-text text-transparent">
+                    Create a Technical Assessment
+                  </span>
                 </CardTitle>
                 <CardDescription className="text-gray-300 text-center text-sm">
-                  {userType === 'individual' 
-                    ? 'Start practicing'
-                    : 'Build secure assessments and evaluate candidates effectively'}
+                  Design secure coding tests to identify top technical talent
                 </CardDescription>
               </CardHeader>
               

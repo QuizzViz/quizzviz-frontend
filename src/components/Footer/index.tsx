@@ -18,7 +18,8 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground max-w-sm">
-We empower HR teams to assess programmers and help learners evaluate their own skill sets.            </p>
+              We empower teams to streamline their technical hiring process
+            </p>
           </div>
 
           {/* Quick Links */}

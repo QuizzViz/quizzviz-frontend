@@ -1,7 +1,5 @@
 "use client";
-import React, { FC} from "react";
-import { User, Briefcase } from "lucide-react";
-import { useUserType, type UserType } from "@/contexts/UserTypeContext";
+import React, { FC } from "react";
 
 const Card: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
     <div className={`shadow-xl ${className || ''}`}>
@@ -24,57 +22,29 @@ type Step = {
 };
 
 const HowItWorksSection: FC = () => {
-  // Use the locally defined hook/state manager
-  const { userType: selectedUser, setUserType: setSelectedUser } = useUserType();
-
-  const steps: Record<UserType, Step[]> = {
-    individual: [
-      {
-        number: "1",
-        title: "Create Quiz",
-        description: "Select your coding topic, choose difficulty level, set number of questions, and adjust the theory-to-code analysis ratio to create a personalized practice quiz.",
-        gradient: "from-green-500/80 to-blue-500/80",
-        ring: "ring-green-500/30"
-      },
-      {
-        number: "2",
-        title: "Attempt Quiz",
-        description: "Practice in distraction-free full-screen mode. Auto-end on tab switches keeps you focused throughout the quiz.",
-        gradient: "from-blue-500/80 to-purple-500/80",
-        ring: "ring-blue-500/30"
-      },
-      {
-        number: "3",
-        title: "Review & Learn",
-        description: "View Correct answers to identify your strengths and weaknesses. Track your progress and improve your skills.",
-        gradient: "from-purple-500/80 to-green-500/80",
-        ring: "ring-purple-500/30"
-      }
-    ],
-    business: [
-      {
-        number: "1",
-        title: "Create Assessment",
-        description: "Select coding topics relevant to the role, choose difficulty level, set number of questions, and balance theory-to-code analysis questions to match job requirements.",
-        gradient: "from-green-500/80 to-blue-500/80",
-        ring: "ring-green-500/30"
-      },
-      {
-        number: "2",
-        title: "Share Securely",
-        description: "Set a secret key, maximum attempts, custom duration, and share it with the candidates you want to attempt the quiz.",
-        gradient: "from-blue-500/80 to-purple-500/80",
-        ring: "ring-blue-500/30"
-      },
-      {
-        number: "3",
-        title: "Analyze & Hire",
-        description: "View real-time performance graphs, filter candidates in comprehensive tables, download PDF/Excel reports, and make confident data-driven hiring decisions.",
-        gradient: "from-purple-500/80 to-pink-500/80",
-        ring: "ring-purple-500/30"
-      }
-    ]
-  };
+  const steps = [
+    {
+      number: "1",
+      title: "Create Assessment",
+      description: "Select coding topics relevant to the role, choose difficulty level, and set the number of questions to match your job requirements.",
+      gradient: "from-green-500/80 to-blue-500/80",
+      ring: "ring-green-500/30"
+    },
+    {
+      number: "2",
+      title: "Share Securely",
+      description: "Configure test settings including time limits and maximum attempts, then share the assessment link with candidates via email or your ATS.",
+      gradient: "from-blue-500/80 to-purple-500/80",
+      ring: "ring-blue-500/30"
+    },
+    {
+      number: "3",
+      title: "Analyze & Hire",
+      description: "Review detailed performance metrics, compare candidates side-by-side, and download comprehensive reports to make confident hiring decisions.",
+      gradient: "from-purple-500/80 to-pink-500/80",
+      ring: "ring-purple-500/30"
+    }
+  ];
 
   return (
     <section id="how-it-works" className="py-20 relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden">
@@ -86,56 +56,21 @@ const HowItWorksSection: FC = () => {
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6">
-            How It  
-            {/* Gradient text using Tailwind utility classes */}
-            <span className="font-medium ml-3 bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
-               Works
-            </span>
-          </h2>
-          <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed opacity-90 mb-8">
-            Three simple steps to revolutionize your coding assessments,whether building personal skills and hiring the right candidates.
-          </p>
-          
-          {/* User Type Toggle */}
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-6 sm:mt-8 w-full px-2">
-            <button
-              onClick={() => setSelectedUser('individual')}
-              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium transition-all duration-300 ${
-                selectedUser === 'individual'
-                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg scale-105'
-                  : 'bg-white/5 text-muted-foreground hover:bg-white/10'
-              }`}
-            >
-              <User className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              <span className="whitespace-nowrap">Individual</span>
-              {selectedUser === 'individual' && (
-                <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-white/20 rounded-full text-[10px] sm:text-xs whitespace-nowrap">
-                  Selected
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setSelectedUser('business')}
-              className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium transition-all duration-300 ${
-                selectedUser === 'business'
-                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg scale-105'
-                  : 'bg-white/5 text-muted-foreground hover:bg-white/10'
-              }`}
-            >
-              <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              <span className="whitespace-nowrap">Business</span>
-              {selectedUser === 'business' && (
-                <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-white/20 rounded-full text-[10px] sm:text-xs whitespace-nowrap">
-                  Selected
-                </span>
-              )}
-            </button>
+          <div className="text-center">
+            <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6">
+              Streamline Your 
+              <span className="font-medium ml-3 bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
+                Hiring Process
+              </span>
+            </h2>
+            <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Three simple steps to find and hire the best technical talent efficiently and effectively.
+            </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-          {steps[selectedUser].map((step: any, index: any) => (
+          {steps.map((step, index) => (
             <Card 
               key={index}
               // Tailwind classes for glassmorphism and transition

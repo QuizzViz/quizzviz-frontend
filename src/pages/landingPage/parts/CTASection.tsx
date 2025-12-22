@@ -17,10 +17,10 @@ const CTASection: FC = () => {
         
         <div> 
           <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6 leading-tight">
-            Ready to Transform Your <span className="gradient-text font-medium">Assessments?</span>
+            Ready to Transform Your <span className="gradient-text font-medium">Hiring Process?</span>
           </h2>
           <p className="text-lg lg:text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed opacity-90">
-            Join individuals and startups using QuizzViz to build skills, screen talent, and scale hiring faster with AI-powered coding quizzes.
+            Join leading companies using QuizzViz to streamline technical hiring, reduce time-to-hire, and identify top talent with AI-powered coding assessments.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/pricing">

@@ -28,22 +28,20 @@ const FAQsSection: FC = () => (
         </div>
         <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-4 bg-clip-text">
           Got 
-          {/* Replaced gradient-text with inline Tailwind */}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400 font-medium"> Questions?</span>
         </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed opacity-90">
-          Find answers to common queries about QuizzViz, from quiz generation to proctoring and analytics.
+          Find answers to common queries about QuizzViz's hiring assessment platform.
         </p>
       </div>
       
       <Accordion type="single" collapsible className="w-full space-y-2" defaultValue="item-1">
-        {/* The classes below are the Tailwind equivalent of the removed glassmorphism CSS */}
         <AccordionItem value="item-1" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
-            <h3 className="text-xl font-semibold text-foreground tracking-tight">What is QuizzViz?</h3>
+            <h3 className="text-xl font-semibold text-foreground tracking-tight">What is QuizzViz ?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            QuizzViz is an AI-powered platform for generating secure, real-world scenario-based coding quizzes. For <strong>individuals</strong>, it provides instant practice sessions with immediate answer reviews to track learning progress. For <strong>businesses</strong>, it offers advanced hiring tools including secure sharing, smart analytics, and downloadable reports to filter the right candidates efficiently.
+            QuizzViz is a pre-screening technical assessment platform that helps companies efficiently evaluate candidates through coding quizzes. By automatically filtering out unqualified candidates, it saves valuable interview time by ensuring only the most competent candidates progress to the interview stage. It's designed specifically for hiring teams to assess technical skills quickly and effectively.
           </AccordionContent>
         </AccordionItem>
         
@@ -52,45 +50,37 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">How does proctoring work?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            Proctoring is available for <strong>both individuals and businesses</strong>. It enforces full-screen mode during quizzes. If anyone escapes full-screen or switches tabs, a modal appears prompting them to return or end the quiz. Unauthorized exits automatically end the session, ensuring fair and cheat-proof assessments whether you're practicing individually or evaluating candidates.
+            Our proctoring system automatically terminates the quiz if the candidate switches tabs or windows during the assessment. This ensures test integrity by preventing candidates from looking up answers.
           </AccordionContent>
         </AccordionItem>
         
         <AccordionItem value="item-3" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
-            <h3 className="text-xl font-semibold text-foreground tracking-tight">Can I customize quizzes?</h3>
+            <h3 className="text-xl font-semibold text-foreground tracking-tight">How do I share a quiz with candidates?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            <strong>Both plans</strong> let you select topics, difficulty levels (High School to PhD), question count, and the theory-to-code analysis ratio during quiz generation. However, <strong>only Business plan users</strong> can add, update, or remove individual questions after the quiz is generated, giving you complete control to fine-tune assessments for specific roles or requirements.
+            Simply generate a shareable link and a secret key for your quiz. Share both with candidates, who can then access and attempt the assessment.
           </AccordionContent>
         </AccordionItem>
         
         <AccordionItem value="item-4" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
-            <h3 className="text-xl font-semibold text-foreground tracking-tight">How do I share quizzes with others?</h3>
-          </AccordionTrigger>
-          <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            Quiz sharing is <strong>exclusively available for Business plan users</strong>. After generating a quiz, you can publish it and get the shareable link. Set a secret key to control access, configure custom duration and expiration dates, and define maximum attempts per candidate. Share the link with candidates who can then access and complete the quiz in proctored mode,perfect for remote screening.
-          </AccordionContent>
-        </AccordionItem>
-        
-        <AccordionItem value="item-5" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
-          <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
             <h3 className="text-xl font-semibold text-foreground tracking-tight">What analytics are available?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            <strong>Individuals</strong> can view  the correct answers after completing quizzes to track personal learning progress. <strong>Business users</strong> unlock powerful analytics including real-time performance graphs, comprehensive data tables with filtering options, and the ability to export results as PDF or Excel files. This enables you to rank candidates, compare performances, and make confident data-driven hiring decisions.
-          </AccordionContent>
-        </AccordionItem>
-        
-        <AccordionItem value="item-6" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
-          <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
-            <h3 className="text-xl font-semibold text-foreground tracking-tight">Do you support enterprise solutions?</h3>
-          </AccordionTrigger>
-          <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            Currently, QuizzViz is designed for individuals and businesses. However, if you're an enterprise looking for a custom assessment solution with advanced features like team management, API integrations, and unlimited scale, we'd love to hear from you! Please reach out to us at <a href="mailto:syedshahmirsultan@gmail.com" className="text-blue-600 hover:underline transition-colors">syedshahmirsultan@gmail.com</a>  or  <a href="mailto:haidersultan0000000000@gmail.com
-" className="text-blue-600 hover:underline">haidersultan0000000000@gmail.com
-</a> and we can build a tailored solution for your organization.
+            The comprehensive analytics dashboard provides:
+            <ul className="list-disc pl-5 mt-2 space-y-1">
+              <li>Interactive performance graphs and score distributions</li>
+              <li>Top performing candidates with highest scores</li>
+              <li>Detailed table of all candidates including emails and scores</li>
+              <li>Advanced filtering options to sort and analyze candidate results</li>
+              <li>Export functionality to download candidate data in:
+                <ul className="list-[circle] pl-5 mt-1 space-y-1">
+                  <li>PDF format for reports</li>
+                  <li>Excel format for further analysis</li>
+                </ul>
+              </li>
+            </ul>
           </AccordionContent>
         </AccordionItem>
       </Accordion>
