@@ -1833,7 +1833,7 @@ role: quiz.role
 </div>
 </div>
 
-                       <div className="h-[380px] sm:h-[350px] w-full">
+  <div className="h-[380px] sm:h-[350px] w-full">
   <ResponsiveContainer width="100%" height="100%">
     <BarChart 
       data={quiz.scoreDistribution} 

@@ -28,7 +28,7 @@ export function useSignUpController() {
       await signUp.authenticateWithRedirect({
         strategy: provider,
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/pricing",
+        redirectUrlComplete: "/onboarding", // Update to redirect to onboarding
       });
     } catch (err: any) {
       const msg = (err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "").toString();
@@ -62,7 +62,7 @@ export function useSignUpController() {
       const res = await signUp.attemptEmailAddressVerification({ code });
       if (res.status === "complete") {
         await setActive({ session: res.createdSessionId });
-        router.push("/pricing");
+        router.push("/onboarding"); // Redirect to onboarding after successful verification
       } else {
         setError("Verification incomplete. Please try again.");
       }
