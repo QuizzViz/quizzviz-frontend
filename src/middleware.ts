@@ -11,7 +11,10 @@ const isPublicRoute = createRouteMatcher([
     '/robots.txt',
     '/mission',
     '/privacy-policy',
-    '/terms'
+    '/terms',
+    '/signin',
+    '/signup',
+    '/api(.*)'
 ]);
 
 // Bot detection
@@ -35,14 +38,14 @@ const searchEngineBots = [
 export default clerkMiddleware(async (auth, request) => {
   const ua = request.headers.get('user-agent')?.toLowerCase() || '';
   const isBot = searchEngineBots.some(bot => ua.includes(bot));
+  const { pathname } = request.nextUrl;
+  const url = request.nextUrl.clone();
 
   // Priority 1: Bots bypass everything
   if (isBot) {
     console.log(`Bot detected: ${ua}`);
     return NextResponse.next();
   }
-
-  const { pathname } = request.nextUrl;
 
   // Priority 2: Public routes bypass auth
   if (isPublicRoute(request)) {
@@ -52,11 +55,30 @@ export default clerkMiddleware(async (auth, request) => {
 
   // Priority 3: Protected routes - check auth
   try {
-    const { userId } = await auth();
+    const { userId, sessionClaims } = await auth();
     
+    // If user is not signed in and the route is not public, redirect to sign-in
     if (!userId) {
-      // Let Clerk handle the redirect to sign-in
-      return NextResponse.next();
+      return NextResponse.redirect(new URL('/signin', request.url));
+    }
+
+    // If user is signed in and tries to access sign-in/up, redirect to onboarding
+    if (userId && (pathname === '/signin' || pathname === '/signup')) {
+      return NextResponse.redirect(new URL('/onboarding', request.url));
+    }
+
+    // Safely access metadata with type assertion
+    const metadata = sessionClaims?.metadata as { onboardingComplete?: boolean } | undefined;
+    const onboardingComplete = metadata?.onboardingComplete ?? false;
+
+    // If user is signed in but hasn't completed onboarding, redirect to onboarding
+    if (userId && !onboardingComplete && !pathname.startsWith('/onboarding')) {
+      return NextResponse.redirect(new URL('/onboarding', request.url));
+    }
+
+    // If user has completed onboarding and tries to access onboarding, redirect to dashboard
+    if (userId && onboardingComplete && pathname === '/onboarding') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
     // User is authenticated - check for mobile restrictions
@@ -74,7 +96,7 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.next();
   } catch (error) {
     console.error('Auth error:', error);
-    return NextResponse.next();
+    return NextResponse.redirect(new URL('/auth/sign-in', request.url));
   }
 });
 
