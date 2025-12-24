@@ -62,24 +62,13 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL('/signin', request.url));
     }
 
-    // If user is signed in and tries to access sign-in/up, redirect to onboarding
+    // If user is signed in and tries to access sign-in/up, redirect to dashboard
     if (userId && (pathname === '/signin' || pathname === '/signup')) {
-      return NextResponse.redirect(new URL('/onboarding', request.url));
-    }
-
-    // Safely access metadata with type assertion
-    const metadata = sessionClaims?.metadata as { onboardingComplete?: boolean } | undefined;
-    const onboardingComplete = metadata?.onboardingComplete ?? false;
-
-    // If user is signed in but hasn't completed onboarding, redirect to onboarding
-    if (userId && !onboardingComplete && !pathname.startsWith('/onboarding')) {
-      return NextResponse.redirect(new URL('/onboarding', request.url));
-    }
-
-    // If user has completed onboarding and tries to access onboarding, redirect to dashboard
-    if (userId && onboardingComplete && pathname === '/onboarding') {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
+
+    // Let the dashboard handle the onboarding state and redirections
+    // No more automatic redirects based on onboarding status
 
     // User is authenticated - check for mobile restrictions
     const isMobile = /iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(ua);
