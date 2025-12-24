@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth } from '@clerk/nextjs';
+import { useUser, useAuth, useClerk } from '@clerk/nextjs';
 import { Loader2, ArrowRight, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -29,13 +29,66 @@ const companySizes = [
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isSignedIn } = useUser();
   const { getToken } = useAuth();
+  const { signOut, redirectToSignIn } = useClerk();
   const [formData, setFormData] = useState({
     companyName: '',
     companySize: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
+  const { toast } = useToast();
+
+  // Check if user is signed in and has a company
+  useEffect(() => {
+    const checkAuthAndCompany = async () => {
+      try {
+        if (!isSignedIn) {
+          redirectToSignIn();
+          return;
+        }
+
+        const token = await getToken();
+        console.log('Making request to check company with owner_id:', user.id);
+        const response = await fetch(`/api/company/check?owner_id=${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        if (data.exists && data.companies && data.companies.length > 0) {
+          router.push('/pricing');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking company:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to check company status',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+        setIsChecking(false);
+      }
+    };
+
+    checkAuthAndCompany();
+  }, [isSignedIn, router, getToken, user?.id, redirectToSignIn, toast]);
+
+  if (isChecking) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

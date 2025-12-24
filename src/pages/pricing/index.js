@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Check, Building2, Sparkles, Zap, Users, Shield, BarChart3, Download } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useUser, useAuth } from '@clerk/nextjs';
+import { Check, Building2, Sparkles, Zap, Users, Shield, BarChart3, Download, Loader2 } from 'lucide-react';
 import Head from 'next/head';
 import { Footer } from '@/components/Footer';
+import { useToast } from '@/hooks/use-toast';
 
 const plans = [{
   id: 'basic',
@@ -24,6 +27,11 @@ const plans = [{
 }];
 
 const PricingPage = () => {
+  const router = useRouter();
+  const { user, isSignedIn } = useUser();
+  const { getToken } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -32,10 +40,48 @@ const PricingPage = () => {
   const yearlySavings = Math.round(((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100);
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    const checkAuthAndCompany = async () => {
+      try {
+        if (!isSignedIn) {
+          router.push('/signin');
+          return;
+        }
 
-  if (!isMounted) return null;
+        const token = await getToken();
+        const response = await fetch(`/api/company/check?owner_id=${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const data = await response.json();
+        if (!data.exists || !data.companies || data.companies.length === 0) {
+          router.push('/onboarding');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking company:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to verify company status',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+        setIsMounted(true);
+      }
+    };
+
+    checkAuthAndCompany();
+  }, [isSignedIn, router, getToken, user?.id, toast]);
+
+  if (!isMounted || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <>
