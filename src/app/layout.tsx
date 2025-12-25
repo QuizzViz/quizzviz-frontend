@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "QuizzViz – Generate and Proctor Coding Quizzes for Faster Hiring and Learning",
+    default: "QuizzViz – Skip Resumes And Interview The Best Devs",
     template: "%s | QuizzViz",
   },
   description:
@@ -57,10 +57,9 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "QuizzViz – Generate and Proctor Coding Quizzes for Faster Hiring and Learning",
+    title: "QuizzViz – Skip Resumes And Interview The Best Devs  "   ,     
     description:
-      "Build enterprise-grade coding quizzes in minutes with QuizzViz. Intelligent, fast, and professional quiz generation.",
-    url: siteUrl,
+"QuizzViz helps companies skip resumes and interview the best devs",    url: siteUrl,
     siteName: "QuizzViz",
     images: [
       {
@@ -75,10 +74,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "QuizzViz – Generate and Proctor Coding Quizzes for Faster Hiring and Learning",
+    title: "QuizzViz – Skip Resumes And Interview The Best Devs",
     description:
-      "Build enterprise-grade coding quizzes in minutes with QuizzViz. Intelligent, fast, and professional quiz generation.",
-    images: [`${siteUrl}/QuizzViz-logo.png`],
+"QuizzViz helps companies skip resumes and interview the best devs",    images: [`${siteUrl}/QuizzViz-logo.png`],
     creator: "@QuizzViz",
     site: "@QuizzViz",
   },
@@ -115,7 +113,7 @@ export const metadata: Metadata = {
         logo: `${siteUrl}/QuizzViz-logo.png`,
         image: `${siteUrl}/QuizzViz-logo.png`,
         description:
-          "QuizzViz is an AI-powered coding quiz generator that helps companies create professional, real-world coding quizzes in minutes.",
+          "QuizzViz helps companies skip resumes and interview the best devs",
         sameAs: [
           "https://www.linkedin.com/company/quizzviz",
           "https://x.com/QuizzViz",
