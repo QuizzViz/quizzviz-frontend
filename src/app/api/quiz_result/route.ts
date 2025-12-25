@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { QuizResult, ErrorResponse } from '@/types/quizResult';
+import { getCompanyId } from '@/lib/company';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}`;
 
@@ -12,22 +13,31 @@ interface QuizResultResponse {
   limit: number;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    // Get company ID first
+    const companyResult = await getCompanyId(request);
+    if ('error' in companyResult) {
+      return companyResult.error;
+    }
+    const { company_id } = companyResult;
+
     const { searchParams } = new URL(request.url);
-    const ownerId = searchParams.get('owner_id');
+    const quizId = searchParams.get('quiz_id');
     const skip = parseInt(searchParams.get('skip') || '0', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
 
-    if (!ownerId) {
-      return NextResponse.json(
-        { detail: 'owner_id is required' },
-        { status: 400 }
-      );
-    }
-
     // Build the URL with query parameters
-    const url = new URL(`${API_BASE_URL}/result/owner/${encodeURIComponent(ownerId)}`);
+    let url: URL;
+    
+    if (quizId) {
+      // Get results for a specific quiz
+      url = new URL(`${API_BASE_URL}/result/owner/${encodeURIComponent(company_id)}/quiz/${encodeURIComponent(quizId)}`);
+    } else {
+      // Get all results for the company
+      url = new URL(`${API_BASE_URL}/result/owner/${encodeURIComponent(company_id)}`);
+    }
+    
     if (skip) url.searchParams.append('skip', skip.toString());
     if (limit) url.searchParams.append('limit', limit.toString());
 
@@ -63,14 +73,21 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { quiz_id, owner_id, username, user_email, user_answers, result, attempt } = await request.json();
+    // Get company ID first
+    const companyResult = await getCompanyId(request);
+    if ('error' in companyResult) {
+      return companyResult.error;
+    }
+    const { company_id } = companyResult;
+
+    const { quiz_id, username, user_email, user_answers, result, attempt } = await request.json();
 
     // Validate required fields
-    if (!quiz_id || !owner_id || !username || !user_email || !user_answers || !result || attempt === undefined) {
+    if (!quiz_id || !username || !user_email || !user_answers || !result || attempt === undefined) {
       return NextResponse.json(
-        { detail: 'Missing required fields: quiz_id, owner_id, username, user_email, user_answers, result, and attempt are required' },
+        { detail: 'Missing required fields: quiz_id, company_id, username, user_email, user_answers, result, and attempt are required' },
         { status: 400 }
       );
     }
@@ -83,7 +100,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         quiz_id,
-        owner_id,
+        company_id,
         username,
         user_email,
         user_answers,

@@ -4,7 +4,7 @@ import { getAuth } from '@clerk/nextjs/server';
 // GET - Fetch published quiz
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string; quizId: string }> }
+  { params }: { params: Promise<{ quizId: string; company_id: string }> }
 ) {
   const resolvedParams = await params;
   return handleGetPublishedQuiz(request, resolvedParams);
@@ -13,7 +13,7 @@ export async function GET(
 // POST - Publish quiz (kept for compatibility)
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string; quizId: string }> }
+  { params }: { params: Promise<{ quizId: string; company_id: string }> }
 ) {
   const resolvedParams = await params;
   return handlePublishRequest(request, resolvedParams, 'POST');
@@ -22,7 +22,7 @@ export async function POST(
 // DELETE - Unpublish/delete quiz
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string; quizId: string }> }
+  { params }: { params: Promise<{ quizId: string; company_id: string }> }
 ) {
   const resolvedParams = await params;
   return handlePublishRequest(request, resolvedParams, 'DELETE');
@@ -31,14 +31,14 @@ export async function DELETE(
 // Handle GET request to fetch published quiz
 async function handleGetPublishedQuiz(
   request: NextRequest,
-  params: { userId: string; quizId: string }
+  params: { quizId: string; company_id: string }
 ) {
   try {
-    const { userId, quizId } = params;
+    const { quizId, company_id } = params;
 
-    if (!userId || !quizId) {
+    if (!quizId || !company_id) {
       return NextResponse.json(
-        { error: 'User ID and Quiz ID are required' },
+        { error: 'Quiz ID and Company ID are required' },
         { status: 400 }
       );
     }
@@ -62,8 +62,8 @@ async function handleGetPublishedQuiz(
       );
     }
 
-    // Construct the URL to fetch the published quiz
-    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${userId}/quiz/${quizId}`;
+    // Construct the URL to fetch the published quiz using company_id
+    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/company/${company_id}/quiz/${quizId}`;
 
     console.log('Fetching published quiz from:', publishServiceUrl);
 
@@ -138,15 +138,15 @@ async function handleGetPublishedQuiz(
 // Handle POST and DELETE requests
 async function handlePublishRequest(
   request: NextRequest,
-  params: { userId: string; quizId: string },
+  params: { quizId: string; company_id: string },
   method: 'POST' | 'DELETE'
 ) {
   try {
-    const { userId, quizId } = params;
+    const { quizId, company_id } = params;
 
-    if (!userId || !quizId) {
+    if (!quizId || !company_id) {
       return NextResponse.json(
-        { error: 'User ID and Quiz ID are required' },
+        { error: 'Quiz ID and Company ID are required' },
         { status: 400 }
       );
     }
@@ -155,18 +155,13 @@ async function handlePublishRequest(
 
     if (!authUserId) {
       return NextResponse.json(
-        { error: 'Unauthorized', status: 401 },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
     // Verify the authenticated user matches the userId in the URL
-    if (authUserId !== userId) {
-      return NextResponse.json(
-        { error: 'Forbidden: You can only access your own quizzes' },
-        { status: 403 }
-      );
-    }
+    // Removed this check as it's not relevant with company_id
 
     const token = await getToken();
 
@@ -177,14 +172,15 @@ async function handlePublishRequest(
       );
     }
 
-    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${userId}/quiz/${quizId}`;
+    // Construct the URL to publish/unpublish quiz using company_id
+    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/company/${company_id}/quiz/${quizId}`;
 
     console.log(`${method} request to:`, publishServiceUrl);
 
-    // Include user ID in the request body for POST requests
+    // Include company ID in the request body for POST requests
     let requestBody = {};
     if (method === 'POST') {
-      requestBody = { user_id: authUserId };
+      requestBody = { company_id };
     }
 
     const response = await fetch(publishServiceUrl, {

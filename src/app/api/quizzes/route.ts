@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getAuth } from "@clerk/nextjs/server";
+import { getCompanyId } from '@/lib/company';
 
 const BACKEND_BASE_URL = `${process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL}`;
 
@@ -15,14 +16,14 @@ const handleApiError = (error: any) => {
   );
 };
 
-async function fetchQuizzes(userId: string, token: string) {
-  const url = `${BACKEND_BASE_URL}/user/${encodeURIComponent(userId)}/quizzes`;
+async function fetchQuizzes(token: string, company_id: string) {
+  const url = `${BACKEND_BASE_URL}/user/${company_id}/quizzes`;
   
-  console.log('Fetching quizzes:', { url, userId });
+  console.log('Fetching quizzes:', { url, company_id });
 
   const response = await fetch(url, {
     headers: {
-      'Content-Type': 'application/json',
+      'accept': 'application/json',
       'Authorization': `Bearer ${token}`
     },
     next: { revalidate: 0 } // Disable caching
@@ -30,13 +31,14 @@ async function fetchQuizzes(userId: string, token: string) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    console.error('Failed to fetch quizzes:', errorData);
     throw new Error(errorData.detail || errorData.message || 'Failed to fetch quizzes');
   }
 
   return response.json();
 }
 
-async function createQuiz(userId: string, token: string, body: any) {
+async function createQuiz(company_id: string, token: string, body: any) {
   if (!body) {
     throw new Error('Request body is required');
   }
@@ -60,7 +62,7 @@ async function createQuiz(userId: string, token: string, body: any) {
     num_questions: body.num_questions || 25,
     theory_questions_percentage: theoryPercentage,
     code_analysis_questions_percentage: codePercentage,
-    user_id: userId,
+    company_id: company_id,
     isPublished: false
   };
 
@@ -95,59 +97,75 @@ async function createQuiz(userId: string, token: string, body: any) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const auth = getAuth(request);
-    const token = request.cookies.get('__session')?.value || '';
-
-    if (!token) {
+    const { getToken, userId } = getAuth(request);
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized - No session token' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const effectiveUserId = auth.userId || userId;
-    if (!effectiveUserId) {
+    const token = await getToken();
+    if (!token) {
       return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
+        { error: 'Unauthorized - No token' },
+        { status: 401 }
       );
     }
 
-    const data = await fetchQuizzes(effectiveUserId, token);
-    return NextResponse.json(data);
+    // Get company_id from query params or fetch it
+    const { searchParams } = new URL(request.url);
+    let company_id = searchParams.get('companyId');
 
-  } catch (error: any) {
-    console.error('Error in GET /api/quizzes:', error);
+    // If no companyId provided, try to get it from the company check endpoint
+    if (!company_id) {
+      const companyResult = await getCompanyId(request);
+      if ('error' in companyResult) {
+        return companyResult.error;
+      }
+      company_id = companyResult.company_id;
+    }
+
+    console.log('GET /api/quizzes - Using company_id:', company_id);
+
+    const quizzes = await fetchQuizzes(token, company_id);
+    return NextResponse.json(quizzes);
+  } catch (error) {
     return handleApiError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const auth = getAuth(request);
-    const token = request.cookies.get('__session')?.value || '';
+    // Get company ID first
+    const companyResult = await getCompanyId(request);
+    if ('error' in companyResult) {
+      return companyResult.error;
+    }
+    const { company_id } = companyResult;
 
-    if (!token) {
+    const { userId, getToken } = getAuth(request);
+    
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized - No session token' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const effectiveUserId = auth.userId || userId;
-    if (!effectiveUserId) {
+    const token = await getToken();
+    
+    if (!token) {
       return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
+        { error: 'Unauthorized - No token' },
+        { status: 401 }
       );
     }
 
     const body = await request.json();
-    const data = await createQuiz(effectiveUserId, token, body);
+    // Add company_id to the request body
+    body.company_id = company_id;
+    const data = await createQuiz(company_id, token, body);
     return NextResponse.json(data, { status: 201 });
 
   } catch (error: any) {
@@ -161,11 +179,21 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const quizId = searchParams.get('quizId');
-    const token = request.cookies.get('__session')?.value || '';
+    
+    const { getToken, userId } = getAuth(request);
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
+    const token = await getToken();
+    
     if (!token) {
       return NextResponse.json(
-        { error: 'Unauthorized - No session token' },
+        { error: 'Unauthorized - No token' },
         { status: 401 }
       );
     }

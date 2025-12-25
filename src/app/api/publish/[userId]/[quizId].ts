@@ -12,7 +12,7 @@ type ApiResponse<T = any> = {
 type PublishedQuiz = {
   quiz_key: string;
   quiz_id: string;
-  user_id: string;
+  company_id: string;
   quiz_public_link: string;
   max_attempts: number;
   quiz_time: number;

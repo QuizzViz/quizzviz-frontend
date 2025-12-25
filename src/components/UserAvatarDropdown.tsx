@@ -6,10 +6,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import LogoutButton from "@/components/auth/LogoutButton";
-import { Settings, User, ChevronDown } from "lucide-react";
+import { Building, Mail, Settings, User, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
@@ -17,12 +18,16 @@ interface UserAvatarDropdownProps {
   userName: string;
   userEmail?: string;
   className?: string;
+  companyName?: string;
+  ownerEmail?: string;
 }
 
 export default function UserAvatarDropdown({
   userName,
   userEmail,
   className,
+  companyName,
+  ownerEmail,
 }: UserAvatarDropdownProps) {
   const [isMobile, setIsMobile] = useState(false);
   
@@ -95,21 +100,43 @@ export default function UserAvatarDropdown({
         )}
         sideOffset={isMobile ? 12 : 8} // More offset on mobile
       >
-        {/* User info section */}
-        <div className="px-3 py-2.5">
-          <p className="text-sm font-medium text-white">{userName}</p>
-          {userEmail && (
-            <p className="text-xs text-white/70 truncate">{userEmail}</p>
-          )}
-          <div className="flex items-center mt-1">
-            <span className="h-2 w-2 rounded-full bg-green-500 mr-1.5"></span>
-            <span className="text-xs text-white/70">Active now</span>
+        <div className="p-3">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage
+                src="https://github.com/shadcn.png"
+                alt={userName}
+                className="object-cover"
+              />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">{userName}</p>
+              {userEmail && (
+                <p className="text-xs text-muted-foreground">{userEmail}</p>
+              )}
+            </div>
           </div>
+          
+          {(companyName || ownerEmail) && (
+            <div className="mt-3 space-y-2 pt-3 border-t">
+              {companyName && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                  <span className="truncate">{companyName}</span>
+                </div>
+              )}
+              {ownerEmail && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span className="truncate">{ownerEmail}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-
-        <DropdownMenuSeparator className="bg-white/20 my-1" />
-
-        {/* Menu items with better mobile touch targets */}
+        
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           className={cn(
             "text-sm text-white rounded-md hover:bg-white/10 focus:bg-white/10 cursor-pointer transition-colors",

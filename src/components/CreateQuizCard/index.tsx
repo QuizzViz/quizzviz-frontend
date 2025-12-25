@@ -16,9 +16,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { useUserPlan } from "@/hooks/useUserPlan";
-import { getPlanLimits } from "@/config/plans";
-import { useQuizUsage, getUpgradeMessage } from "@/hooks/useQuizUsage";
+import { useQuizUsage } from "@/hooks/useQuizUsage";
 import { useUser } from "@clerk/nextjs";
 import { TOPICS } from "@/constants/topics";
 import { RoleSelect } from "./parts/RoleSelect";
@@ -27,64 +25,41 @@ import { TECHNOLOGIES } from "@/constants/technologies";
 
 interface CreateQuizCardProps {
   maxQuestions?: number;
+  isLimitReached?: boolean;
+  onUpgradeClick?: () => void;
 }
 
 // Main container composing all sub-parts and business logic via a hook
-export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: CreateQuizCardProps) {
-  const maxQuestions = propMaxQuestions;
+export default function CreateQuizCard({ 
+  maxQuestions: propMaxQuestions, 
+  isLimitReached = false,
+  onUpgradeClick
+}: CreateQuizCardProps) {
+  const maxQuestions = propMaxQuestions || 200; // Default to Business plan limit
   const [codePercentage, setCodePercentage] = useState(50);
   const [role, setRole] = useState('Software Engineer');
   const [techStack, setTechStack] = useState<Array<{ id: string; name: string; weight: number }>>([]);
   
   // Get user data
   const { user, isLoaded: isUserLoaded } = useUser();
-  const { data: userPlan, isLoading: isLoadingPlan } = useUserPlan();
-  const planName = userPlan?.plan_name || 'Free';
-  const planLimits = getPlanLimits(planName);
   
   // Get quiz usage data
   const quizUsage = useQuizUsage();
   const queryClient = useQueryClient();
   const router = useRouter();
   const { toast } = useToast();
-  const isLoadingUsage = quizUsage?.isLoading || isLoadingPlan || !isUserLoaded;
+  const isLoadingUsage = quizUsage?.isLoading || !isUserLoaded;
   
-  // Get current plan info and usage
-  const planInfo = useMemo(() => {
-    if (!planName || !quizUsage?.data?.current_month) {
-      return { 
-        message: '', 
-        upgradePlan: '', 
-        showUpgrade: false, 
-        hasReachedLimit: false, 
-        userLimit: planLimits.maxQuizzes,
-        currentMonthQuizzes: 0,
-        remainingQuizzes: planLimits.maxQuizzes
-      };
-    }
-    
-    const currentMonthQuizzes = quizUsage.data.current_month.quiz_count || 0;
-    const userLimit = planLimits.maxQuizzes;
-    const isLimitReached = currentMonthQuizzes >= userLimit;
-    const remainingQuizzes = Math.max(0, userLimit - currentMonthQuizzes);
-    
-    // Get upgrade message based on current plan
-    const { message, upgradePlan, showUpgrade } = getUpgradeMessage(
-      planName, 
-      currentMonthQuizzes, 
-      userLimit
-    );
-    
-    return { 
-      message, 
-      upgradePlan, 
-      showUpgrade, 
-      hasReachedLimit: isLimitReached, 
-      userLimit, 
-      currentMonthQuizzes, 
-      remainingQuizzes 
-    };
-  }, [planName, quizUsage?.data?.current_month, planLimits]);
+  // Business plan settings
+  const planInfo = {
+    message: '',
+    upgradePlan: '',
+    showUpgrade: false,
+    hasReachedLimit: false,
+    userLimit: maxQuestions,
+    currentMonthQuizzes: 0,
+    remainingQuizzes: maxQuestions
+  };
 
   // Handle data refresh on mount and periodically
   useEffect(() => {
@@ -111,9 +86,8 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
         
         if (isMounted && process.env.NODE_ENV !== 'production') {
           console.log('Data refreshed:', {
-            planName,
             quizCount: quizUsage?.data?.current_month?.quiz_count || 0,
-            limit: planLimits.maxQuizzes
+            limit: maxQuestions
           });
         }
       } catch (error) {
@@ -133,7 +107,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       isMounted = false;
       clearInterval(refreshInterval);
     };
-  }, [user, queryClient, planName, planLimits.maxQuizzes]);
+  }, [user, queryClient, maxQuestions]);
 
   const {
     // form
@@ -176,12 +150,6 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
       return;
     }
     
-    // Check plan limits
-    if (planInfo.hasReachedLimit) {
-      setError(planInfo.message);
-      return;
-    }
-    
     // Check question count limit
     const effectiveMax = maxQuestions || 10;
     if (count > effectiveMax) {
@@ -193,10 +161,39 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
     _handleGenerate(codePct, techStack, role);
   };
 
+  const handleGenerateClick = (codePct: number) => {
+    if (isLimitReached && onUpgradeClick) {
+      onUpgradeClick();
+      return;
+    }
+    handleGenerateWithLimit(codePct);
+  };
+
   return (
     <Card className="bg-background border-border">
       <CardContent className="p-8 space-y-6">
         <QuizHeader />
+        
+        {isLimitReached && (
+          <div className="p-4 bg-yellow-900/20 border border-yellow-700 rounded-lg text-yellow-200">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 mt-0.5 mr-2 flex-shrink-0" />
+              <div>
+                <h4 className="font-medium">Monthly Quiz Limit Reached</h4>
+                <p className="text-sm mt-1">
+                  You've reached your monthly quiz limit. Upgrade your plan to create more quizzes.
+                </p>
+                <Button 
+                  onClick={onUpgradeClick}
+                  className="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white"
+                  size="sm"
+                >
+                  Upgrade Plan
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="space-y-6">
           {/* Role Selection */}
           <div className="space-y-2">
@@ -238,25 +235,20 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
         </div>
         
         <div className="pt-2 flex flex-col space-y-2">
-          {planName.toLowerCase() !== 'free' && (
-            isLoadingUsage ? (
-              <div className="flex items-center justify-center p-2">
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span className="text-sm text-muted-foreground">Checking your usage...</span>
+          {isLoadingUsage ? (
+            <div className="flex items-center justify-center p-2">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <span className="text-sm text-muted-foreground">Loading...</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <div className="flex items-center">
+                <span>Quizzes this month: </span>
+                <span className="font-medium ml-1">
+                  {quizUsage?.data?.current_month?.quiz_count || 0} / 20
+                </span>
               </div>
-            ) : (
-              quizUsage?.data?.current_month && (
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center">
-                    <span>Quizzes this month: </span>
-                    <span className="font-medium ml-1">
-                      {planInfo.currentMonthQuizzes} / {planInfo.userLimit}
-                    </span>
-                  </div>
-                  {/* Upgrade link removed as per request */}
-                </div>
-              )
-            )
+            </div>
           )}
 
           <div className="flex justify-end">
@@ -265,16 +257,18 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                 <TooltipTrigger asChild>
                   <div>
                     <Button
-                      className={`bg-foreground hover:bg-muted-foreground text-background transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center ${
-                        planInfo.hasReachedLimit || !role || techStack.length === 0 ? 'opacity-70 cursor-not-allowed' : ''
+                      className={`transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center ${
+                        isLimitReached 
+                          ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                          : 'bg-foreground hover:bg-muted-foreground text-background'
                       }`}
-                      disabled={planInfo.hasReachedLimit || !role || techStack.length === 0}
-                      onClick={() => handleGenerateWithLimit(codePercentage)}
+                      disabled={!role || techStack.length === 0}
+                      onClick={() => handleGenerateClick(codePercentage)}
                     >
-                      {planInfo.hasReachedLimit ? (
+                      {isLimitReached ? (
                         <>
                           <AlertTriangle className="h-4 w-4 mr-2" />
-                          Limit Reached
+                          Upgrade to Generate More
                         </>
                       ) : (
                         <>
@@ -285,7 +279,7 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                     </Button>
                   </div>
                 </TooltipTrigger>
-                {(planInfo.hasReachedLimit || !role || techStack.length === 0) && (
+                {(!role || techStack.length === 0) && (
                   <TooltipContent className="w-64 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
                     <div className="space-y-2">
                       <div className="flex items-start">
@@ -296,28 +290,16 @@ export default function CreateQuizCard({ maxQuestions: propMaxQuestions }: Creat
                         </div>
                         <div className="ml-3">
                           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {planInfo.hasReachedLimit ? 'Plan Limit Reached' : 'Missing Information'}
+                            {'Missing Information'}
                           </p>
                           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {planInfo.hasReachedLimit 
-                              ? planInfo.message 
-                              : !role 
-                                ? 'Please select a role before generating.'
-                                : 'Please add at least one technology to your tech stack.'
+                            {!role 
+                              ? 'Please select a role before generating.'
+                              : 'Please add at least one technology to your tech stack.'
                             }
                           </p>
                         </div>
                       </div>
-                      {planInfo.hasReachedLimit && (
-                      <div className="mt-4">
-                        <Link 
-                          href="/pricing" 
-                          className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          {planInfo.upgradePlan ? `Upgrade to ${planInfo.upgradePlan} Plan` : 'Upgrade Plan'}
-                        </Link>
-                      </div>
-                      )}
                     </div>
                   </TooltipContent>
                 )}
