@@ -36,8 +36,13 @@ export function PublishQuizModal({
   const [hasCopied, setHasCopied] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
-  const {company} = useCompanies(user.id as string);
 
+if (!user) {
+  console.error("User not found !")
+  return null; // or a loading state
+}
+
+const {company} = useCompanies(user?.id);
   // Format username to be URL-friendly
   const userSlug = (user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'user')
     .toLowerCase()
