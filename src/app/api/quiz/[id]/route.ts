@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 
 const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL || '';
@@ -7,136 +7,113 @@ const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL ||
 const handleApiError = (error: any) => {
   console.error('API Error:', error);
   return NextResponse.json(
-    { 
+    {
       error: error?.message || 'Internal Server Error',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
     },
-    { status: error.status || 500 }
+    { status: error?.status || 500 }
   );
 };
 
-// Helper function to authenticate and get user info
-const authenticateRequest = async (request: NextRequest) => {
+// Helper to extract companyId and token from request
+async function getAuthAndCompanyId(request: NextRequest) {
   const { userId, getToken } = getAuth(request);
   const token = await getToken() || request.cookies.get('__session')?.value;
-  
+
   if (!userId || !token) {
-    return { 
+    return {
       error: NextResponse.json(
         { error: 'Unauthorized - No valid session' },
         { status: 401 }
       )
     };
   }
-  
-  return { userId, token };
-};
+
+  const body = await request.json().catch(() => ({}));
+  const companyId = body.companyId;
+
+  if (!companyId) {
+    return {
+      error: NextResponse.json(
+        { error: 'companyId is required in request body' },
+        { status: 400 }
+      )
+    };
+  }
+
+  return { userId, companyId, token };
+}
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const auth = await authenticateRequest(request);
+  const auth = await getAuthAndCompanyId(request);
   if ('error' in auth) return auth.error;
-  const { userId } = auth;
-  try {
-    const { id: quizId} = await context.params; 
-// ✅ await it
 
-    if (!quizId) {
-      return NextResponse.json(
-        { error: 'Quiz ID is required' },
-        { status: 400 }
-      );
-    }
-
-    const token = request.cookies.get('__session')?.value || '';
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No session token' },
-        { status: 401 }
-      );
-    }
-
-    console.log('Fetching quiz:', { quizId });
-
-    const response = await fetch(
-      `${BACKEND_BASE_URL}/user/${userId}/quizz/${encodeURIComponent(quizId)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      }
-    );
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.error(`Quiz not found: ${quizId}`);
-        return NextResponse.json(
-          { error: 'Quiz not found', quizId },
-          { status: 404 }
-        );
-      }
-
-      interface ErrorResponse {
-        detail?: string;
-        message?: string;
-        [key: string]: any;
-      }
-      
-      let errorData: ErrorResponse = {};
-      try {
-        const responseData = await response.json();
-        errorData = typeof responseData === 'object' ? responseData : {};
-      } catch (e) {
-        console.error('Failed to parse error response:', e);
-      }
-      
-      const errorMessage = 
-        errorData.detail || 
-        errorData.message || 
-        `Failed to fetch quiz (${response.status})`;
-        
-      const error = new Error(errorMessage);
-      (error as any).status = response.status;
-      (error as any).details = errorData;
-      throw error;
-    }
-
-    return NextResponse.json(await response.json());
-  } catch (error: any) {
-    console.error('Error in GET /api/quiz/[id]:', error);
-    return handleApiError(error);
-  }
-}
-
-
-// DELETE handler for deleting a quiz
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const auth = await authenticateRequest(request);
-  if ('error' in auth) return auth.error;
-  const { userId, token } = auth;
+  const { companyId, token } = auth;
 
   try {
     const { id: quizId } = await context.params;
 
     if (!quizId) {
-      return NextResponse.json(
-        { error: 'Quiz ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Quiz ID is required' }, { status: 400 });
     }
 
-    console.log('Deleting quiz:', { quizId });
+    console.log('Fetching quiz:', { companyId, quizId });
 
     const response = await fetch(
-      `${BACKEND_BASE_URL}/user/${userId}/quizz/${encodeURIComponent(quizId)}`,
+      `${BACKEND_BASE_URL}/user/${companyId}/quizz/${encodeURIComponent(quizId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        cache: 'no-store'
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return NextResponse.json({ error: 'Quiz not found', quizId }, { status: 404 });
+      }
+
+      let errorData = {};
+      try {
+        errorData = await response.json();
+      } catch {}
+
+      const message = (errorData as any)?.detail || (errorData as any)?.message || `Failed to fetch quiz (${response.status})`;
+      throw Object.assign(new Error(message), { status: response.status, details: errorData });
+    }
+
+    return NextResponse.json(await response.json());
+  } catch (error: any) {
+    return handleApiError(error);
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const auth = await getAuthAndCompanyId(request);
+  if ('error' in auth) return auth.error;
+
+  const { companyId, token } = auth;
+
+  try {
+    const { id: quizId } = await context.params;
+
+    if (!quizId) {
+      return NextResponse.json({ error: 'Quiz ID is required' }, { status: 400 });
+    }
+
+    console.log('Deleting quiz:', { companyId, quizId });
+
+    const response = await fetch(
+      `${BACKEND_BASE_URL}/user/${companyId}/quizz/${encodeURIComponent(quizId)}`,
       {
         method: 'DELETE',
         headers: {
@@ -147,8 +124,9 @@ export async function DELETE(
     );
 
     if (!response.ok) {
-      if (response.status === 404)
+      if (response.status === 404) {
         return new NextResponse(null, { status: 204 });
+      }
 
       const data = await response.json().catch(() => ({}));
       throw new Error(data.detail || data.message || 'Delete failed');
@@ -160,63 +138,46 @@ export async function DELETE(
   }
 }
 
-
-// Add other methods as needed
-export async function POST() {
-  return new NextResponse(null, { 
-    status: 405,
-    headers: { 'Allow': 'GET, DELETE' }
-  });
-}
-
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const auth = await authenticateRequest(request);
+  const auth = await getAuthAndCompanyId(request);
   if ('error' in auth) return auth.error;
-  const { userId, token } = auth;
+
+  const { companyId, token } = auth;
 
   try {
     const { id: quizId } = await context.params;
     const payload = await request.json();
 
     if (!quizId) {
-      return NextResponse.json(
-        { error: 'Quiz ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Quiz ID is required' }, { status: 400 });
     }
 
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No session token' },
-        { status: 401 }
-      );
-    }
+    console.log('Patching quiz:', { companyId, quizId });
 
     const response = await fetch(
-      `${BACKEND_BASE_URL}/user/${userId}/quizz/${encodeURIComponent(quizId)}`,
+      `${BACKEND_BASE_URL}/user/${companyId}/quizz/${encodeURIComponent(quizId)}`,
       {
-        method: 'PUT',
+        method: 'PUT',  // most backends use PUT for updates
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       }
     );
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(
-        { error: error.message || 'Failed to update quiz' },
+        { error: errorData.message || 'Failed to update quiz' },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json(await response.json());
   } catch (error) {
     return handleApiError(error);
   }
@@ -226,24 +187,20 @@ export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const auth = await authenticateRequest(request);
+  const auth = await getAuthAndCompanyId(request);
   if ('error' in auth) return auth.error;
-  const { userId, token } = auth;
-  
+
+  const { companyId, token } = auth;
+
   try {
     const { id: quizId } = await context.params;
 
     if (!quizId) {
-      return NextResponse.json(
-        { error: 'Quiz ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Quiz ID is required' }, { status: 400 });
     }
 
-    // Token is already validated in authenticateRequest
-
-    // First, unpublish the quiz from the publish service
-    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${userId}/quiz/${quizId}`;
+    // Unpublish from publish service
+    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${companyId}/quiz/${quizId}`;
     const unpublishResponse = await fetch(publishServiceUrl, {
       method: 'DELETE',
       headers: {
@@ -255,14 +212,9 @@ export async function PUT(
 
     if (!unpublishResponse.ok) {
       const errorData = await unpublishResponse.json().catch(() => ({}));
-      console.error('Failed to unpublish quiz:', {
-        status: unpublishResponse.status,
-        statusText: unpublishResponse.statusText,
-        error: errorData
-      });
-
+      console.error('Failed to unpublish quiz:', errorData);
       return NextResponse.json(
-        { 
+        {
           error: 'Failed to unpublish quiz',
           details: errorData.detail || errorData.message || 'Unknown error'
         },
@@ -270,14 +222,14 @@ export async function PUT(
       );
     }
 
-    // Then update the quiz to mark it as unpublished
-    const backendUrl = `${process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL}/user/${encodeURIComponent(userId)}/quizz/${encodeURIComponent(quizId)}`;
+    // Update backend status to unpublished
+    const backendUrl = `${BACKEND_BASE_URL}/user/${companyId}/quizz/${encodeURIComponent(quizId)}`;
     const updateResponse = await fetch(backendUrl, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
-        'x-user-id': userId
+        'x-user-id': companyId
       },
       body: JSON.stringify({
         is_publish: false,
@@ -288,14 +240,9 @@ export async function PUT(
 
     if (!updateResponse.ok) {
       const errorData = await updateResponse.json().catch(() => ({}));
-      console.error('Failed to update quiz status:', {
-        status: updateResponse.status,
-        statusText: updateResponse.statusText,
-        error: errorData
-      });
-
+      console.error('Failed to update quiz status:', errorData);
       return NextResponse.json(
-        { 
+        {
           error: 'Failed to update quiz status',
           details: errorData.detail || errorData.message || 'Unknown error'
         },
@@ -308,13 +255,14 @@ export async function PUT(
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Error in PATCH /api/quiz/[id]:', error);
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
+}
+
+// Disallow unsupported methods
+export async function POST() {
+  return new NextResponse(null, {
+    status: 405,
+    headers: { Allow: 'GET, DELETE, PATCH, PUT' }
+  });
 }

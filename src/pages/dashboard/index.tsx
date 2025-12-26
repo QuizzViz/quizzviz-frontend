@@ -143,9 +143,7 @@ export default function Dashboard() {
             {/* Main content */}
             <div className="flex-1 flex flex-col">
               <DashboardHeader 
-                userName={companyInfo?.name || user?.fullName || 'User'} 
-                userEmail={companyInfo?.owner_email || user?.emailAddresses?.[0]?.emailAddress} 
-              />
+               />
               <main className="flex-1 p-6 space-y-8">
                 <CreateQuizCard 
                   maxQuestions={maxQuestions} 

@@ -1,8 +1,8 @@
+'use client';
 import { useEffect, useState, useCallback, ReactNode } from "react";
 import { Cpu, Code, Sparkles, CheckCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useQuizGeneration } from "@/contexts/QuizGenerationContext";
-import { TOPICS } from "@/constants/topics";
 
 interface TopicError {
   error: string;
@@ -12,7 +12,13 @@ interface TopicError {
   details?: string;
 }
 
-interface UseCreateQuizReturnV2 {
+interface CompanyInfo {
+  id: string;
+  name: string;
+  owner_email?: string;
+}
+
+interface UseCreateQuizReturn {
   // Form state
   topic: string;
   setTopic: (topic: string) => void;
@@ -20,6 +26,8 @@ interface UseCreateQuizReturnV2 {
   setDifficulty: (difficulty: string) => void;
   count: number;
   setCount: (count: number) => void;
+  balance: number[];
+  setBalance: (balance: number[]) => void;
   
   // Request state
   isReasoning: boolean;
@@ -36,22 +44,31 @@ interface UseCreateQuizReturnV2 {
   typedText: string;
   progress: number;
   
+  // Company state
+  companyInfo: CompanyInfo | null;
+  isLoadingCompany: boolean;
+  
   // Actions
-  handleGenerate: (codePercentage: number, techStack: Array<{ id: string; name: string; weight: number }>, role: string) => Promise<void>;
+  handleGenerate: (techStack: any[],codePercentage?: number,  role?: string) => Promise<void>;
 }
 
-// Updated version of useCreateQuiz that properly handles codePercentage
-export function useCreateQuizV2(): UseCreateQuizReturnV2 {
+// Encapsulates all state and behavior for CreateQuiz workflow
+export function useCreateQuizV2(): UseCreateQuizReturn {
   // form state
-  const [topic, setTopic] = useState(""); // Keeping this for backward compatibility, but not used in the payload
-  const [difficulty, setDifficulty] = useState("Bachelors Level");
+  const [topic, setTopic] = useState("");
+  const [difficulty, setDifficulty] = useState("Bachelors");
   const [count, setCount] = useState(5);
-  
+  const [balance, setBalance] = useState<number[]>([50]);
+
   // request and UX state
   const [isReasoning, setIsReasoning] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | ReactNode | null>(null);
   const [quizData, setQuizData] = useState<any>(null);
+  
+  // Company state
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [isLoadingCompany, setIsLoadingCompany] = useState(true);
 
   // typing steps
   const steps = [
@@ -60,8 +77,8 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
     "🧩 Generating question templates & code scaffolds...",
     "✅ Validating difficulty and finalizing the quiz...",
   ];
-  
   const stepIcons = [Cpu, Code, Sparkles, CheckCircle];
+
   const [stepIndex, setStepIndex] = useState(0);
   const [typedText, setTypedText] = useState("");
   const [charIndex, setCharIndex] = useState(0);
@@ -71,16 +88,53 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
   const HOLD_AFTER_TYPING = 900;
   const FINISH_HOLD = 600;
 
-  // auth (must be called at hook top-level, not inside callbacks)
-  const { user } = useUser();
-  const quizGeneration = useQuizGeneration();
+  // auth
+  const { user, isLoaded } = useUser();
+
+  // Fetch company info on mount
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      if (!isLoaded || !user) {
+        setIsLoadingCompany(false);
+        return;
+      }
+      
+      try {
+        console.log('Fetching company info for user:', user.id);
+        const response = await fetch(`/api/company/check?owner_id=${user.id}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Company check failed:', response.status, errorText);
+          throw new Error(`Failed to fetch company information: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Company check response:', data);
+        
+        if (data.exists && data.companies && data.companies.length > 0) {
+          const company = data.companies[0];
+          console.log('Using company:', company);
+          
+          setCompanyInfo({
+            id: company.company_id || company.id || company.name,
+            name: company.name || company.company_id || 'Company',
+            owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress
+          });
+        } else {
+          console.warn('No company found for user');
+        }
+      } catch (error) {
+        console.error('Error fetching company info:', error);
+      } finally {
+        setIsLoadingCompany(false);
+      }
+    };
+    
+    fetchCompanyInfo();
+  }, [isLoaded, user]);
 
   const difficultyToApi = (val: string) => {
-    // If the value already contains 'Level', return it as is
-    if (val.includes('Level')) {
-      return val;
-    }
-    
     switch (val) {
       case "High School":
         return "High School Level";
@@ -95,7 +149,9 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
     }
   };
 
-  // Memoize the completeGeneration function to prevent unnecessary re-renders
+  const quizGeneration = useQuizGeneration();
+  
+  // Memoize the completeGeneration function
   const safeCompleteGeneration = useCallback((success: boolean, data?: any) => {
     if (quizGeneration?.completeGeneration) {
       quizGeneration.completeGeneration(success, data);
@@ -105,28 +161,12 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
   }, [quizGeneration]);
 
   // API call + animation toggles
-  const handleGenerate = useCallback(async (codePercentage: number, techStack: Array<{ id: string; name: string; weight: number }>, role: string): Promise<void> => {
+  const handleGenerate = useCallback(async (techStack: any[], codePercentage: number = 50, role?: string): Promise<void> => {
     if (isReasoning || isFetching) return;
 
     const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
-    
-    // Ensure codePercentage is a valid number between 0 and 100
-    const validatedCodePercentage = Math.max(0, Math.min(100, Number(codePercentage) || 50));
-    const validatedTheoryPercentage = 100 - validatedCodePercentage;
-    
-    console.log('Generating quiz with:', {
-      codePercentage: validatedCodePercentage,
-      theoryPercentage: validatedTheoryPercentage,
-      totalQuestions: numQuestions
-    });
-    // Validate role and tech stack
-    if (!role || !role.trim()) {
-      setError("Please select a role");
-      return;
-    }
-    
-    if (!techStack || techStack.length === 0) {
-      setError("Please add at least one technology to your tech stack");
+    if (!topic.trim()) {
+      setError("Topic is required");
       return;
     }
     if (!difficulty) {
@@ -137,6 +177,9 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
       setError("Number of questions is required");
       return;
     }
+    
+    // Update the balance state with the current code percentage
+    setBalance([codePercentage]);
 
     // Start the generation process
     setIsFetching(true);
@@ -146,44 +189,29 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
     
     // Notify other tabs that generation has started
     if (quizGeneration?.startGeneration) {
-      quizGeneration.startGeneration(role);
+      quizGeneration.startGeneration(topic.trim());
     }
 
     try {
-      // Log the values being sent to the API
-      console.log('Sending to API:', {
-        codePercentage: validatedCodePercentage,
-        theoryPercentage: validatedTheoryPercentage,
-        totalQuestions: numQuestions
-      });
-
-      // Prepare the payload with the validated percentages
+      // Prepare the payload with the provided code percentage
+      const codePct = Math.max(0, Math.min(100, codePercentage));
       const payload = {
-        role: role || 'Software Engineer',
-        techStack: techStack.map(tech => ({
-          name: tech.name,
-          weight: tech.weight
-        })),
+        topic: topic.trim(),
         difficulty: difficultyToApi(difficulty),
         num_questions: numQuestions,
-        theory_questions_percentage: 100 - validatedCodePercentage, // Ensure they sum to 100
-        code_analysis_questions_percentage: validatedCodePercentage,
+        theory_questions_percentage: 100 - codePct,
+        code_analysis_questions_percentage: codePct,
         user_id: user?.id,
-        isPublished: false
+        timestamp: Date.now()
       };
-      
-      console.log('Sending payload:', payload);
-      
-      console.log('Quiz generation payload with percentages:', {
-        codePercentage: validatedCodePercentage,
-        theoryPercentage: validatedTheoryPercentage,
-        totalQuestions: numQuestions
-      });
 
       console.log('Sending quiz generation request:', payload);
       
+      // Build the API URL with companyId if available
+      const apiUrl = `/api/quizzes${companyInfo?.id ? `?companyId=${encodeURIComponent(companyInfo.id)}` : ''}`;
+      
       // Make a single API call to generate and save the quiz
-      const response = await fetch(`/api/quizzes?userId=${encodeURIComponent(user?.id || '')}`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -207,7 +235,7 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
         if (responseData.error.includes('not related to software')) {
           const topicError: TopicError = {
             error: responseData.error,
-            message: responseData.message ,
+            message: '',
             suggestions: [
               'Programming languages (e.g., Python, JavaScript, Java)',
               'Web development (e.g., React, Node.js, CSS)',
@@ -235,6 +263,8 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
 
       // If we get here, the response was successful and contains quiz data
       setQuizData(responseData);
+      
+      // Complete generation - this will show the success notification
       safeCompleteGeneration(true, responseData);
       
     } catch (error) {
@@ -244,64 +274,94 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
       safeCompleteGeneration(false, { error: 'Error', message: errorMessage });
     } finally {
       setIsFetching(false);
-      setIsReasoning(false);
+      setTimeout(() => setIsReasoning(false), 400);
     }
-  }, [topic, difficulty, count, user?.id, isReasoning, isFetching, quizGeneration, safeCompleteGeneration]);
+  }, [isReasoning, isFetching, count, topic, difficulty, balance, quizGeneration, user?.id, safeCompleteGeneration, companyInfo]);
 
-  // Simulate typing effect for the reasoning panel
+  // Typewriter effect and progress
   useEffect(() => {
-    if (!isReasoning) {
-      setTypedText("");
-      setCharIndex(0);
-      setStepIndex(0);
-      setProgress(0);
-      return;
+    if (!isReasoning) return;
+
+    let typingTimer: ReturnType<typeof setInterval> | null = null;
+    let holdTimer: ReturnType<typeof setTimeout> | null = null;
+
+    if (stepIndex >= steps.length) {
+      if (isFetching) {
+        holdTimer = setTimeout(() => {
+          setStepIndex(0);
+          setTypedText("");
+          setCharIndex(0);
+        }, HOLD_AFTER_TYPING);
+      } else {
+        setProgress(100);
+        holdTimer = setTimeout(() => {
+          setIsReasoning(false);
+          setStepIndex(0);
+          setTypedText("");
+          setCharIndex(0);
+          setProgress(0);
+        }, FINISH_HOLD);
+      }
+      return () => {
+        if (typingTimer) clearInterval(typingTimer);
+        if (holdTimer) clearTimeout(holdTimer);
+      };
     }
 
-    const currentStep = steps[stepIndex];
-    if (!currentStep) return;
+    const current = steps[stepIndex];
+    setTypedText("");
+    setCharIndex(0);
 
-    if (charIndex < currentStep.length) {
-      const timeout = setTimeout(() => {
-        setTypedText(currentStep.substring(0, charIndex + 1));
-        setCharIndex(charIndex + 1);
-        
-        // Update progress based on current step and characters typed
-        const stepProgress = ((charIndex + 1) / currentStep.length) * (100 / steps.length);
-        const totalProgress = (stepIndex * (100 / steps.length)) + stepProgress;
-        setProgress(totalProgress);
-      }, TYPING_SPEED);
+    typingTimer = setInterval(() => {
+      setCharIndex((prev) => {
+        const next = prev + 1;
+        if (next <= current.length) {
+          const slice = current.slice(0, next);
+          setTypedText(slice);
+          const fraction = next / Math.max(1, current.length);
+          const overall = ((stepIndex + fraction) / steps.length) * 100;
+          setProgress(Math.min(100, Math.round(overall)));
+          return next;
+        } else {
+          if (typingTimer) {
+            clearInterval(typingTimer);
+            typingTimer = null;
+          }
+          holdTimer = setTimeout(() => setStepIndex((s) => s + 1), HOLD_AFTER_TYPING);
+          return prev;
+        }
+      });
+    }, TYPING_SPEED);
 
-      return () => clearTimeout(timeout);
-    } else if (stepIndex < steps.length - 1) {
-      const timeout = setTimeout(() => {
-        setStepIndex(stepIndex + 1);
-        setCharIndex(0);
-      }, HOLD_AFTER_TYPING);
+    return () => {
+      if (typingTimer) clearInterval(typingTimer);
+      if (holdTimer) clearTimeout(holdTimer);
+    };
+  }, [isReasoning, stepIndex, isFetching]);
 
-      return () => clearTimeout(timeout);
-    } else if (!isFetching) {
-      // If we're done with all steps and not fetching anymore, hold briefly before clearing
-      const timeout = setTimeout(() => {
-        setTypedText("");
-        setCharIndex(0);
-        setStepIndex(0);
-      }, FINISH_HOLD);
-
-      return () => clearTimeout(timeout);
+  // Get the setGenerationProgress function from context
+  const quizGenContext = useQuizGeneration();
+  
+  // Update global progress when local progress changes
+  useEffect(() => {
+    if (isReasoning && quizGenContext?.setGenerationProgress) {
+      const progressValue = Math.min(99, Math.max(0, progress)); // Cap at 99% until complete
+      quizGenContext.setGenerationProgress(progressValue);
     }
-  }, [isReasoning, stepIndex, charIndex, isFetching, steps]);
+  }, [progress, isReasoning, quizGenContext]);
 
   return {
-    // Form state
+    // form state
     topic,
     setTopic,
     difficulty,
     setDifficulty,
     count,
     setCount,
+    balance,
+    setBalance,
     
-    // Request state
+    // request state
     isReasoning,
     isFetching,
     error,
@@ -309,14 +369,18 @@ export function useCreateQuizV2(): UseCreateQuizReturnV2 {
     quizData,
     setQuizData,
     
-    // Progress state
+    // progress state
     steps,
     stepIcons,
     stepIndex,
     typedText,
     progress,
     
-    // Actions
+    // company state
+    companyInfo,
+    isLoadingCompany,
+    
+    // actions
     handleGenerate,
   };
 }

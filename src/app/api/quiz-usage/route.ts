@@ -15,23 +15,48 @@ const handleApiError = (error: any) => {
   );
 };
 
+// Helper function to get company ID for a user
+async function getCompanyId(userId: string, token: string) {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL}/api/company/check?owner_id=${encodeURIComponent(userId)}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        cache: 'no-store'
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch company information');
+    }
+
+    const data = await response.json();
+    if (!data.companies || data.companies.length === 0) {
+      throw new Error('No company found for this user');
+    }
+
+    return data.companies[0].id;
+  } catch (error) {
+    console.error('Error fetching company ID:', error);
+    throw new Error('Failed to get company information');
+  }
+}
+
 export async function GET(request: Request) {
   // Create a NextRequest object from the incoming request
   const nextRequest = new NextRequest(request);
   try {
-    const url = new URL(request.url);
-    const userId = url.searchParams.get('userId');
     const auth = getAuth(nextRequest);
-    const { userId: authUserId } = auth;
+    const { userId } = auth;
     
-    // Use authenticated user ID if available, otherwise fall back to query param
-    const effectiveUserId = authUserId || userId;
-    
-    if (!effectiveUserId) {
+    if (!userId) {
       return NextResponse.json(
         { 
           error: 'Unauthorized',
-          details: 'No user ID found in session or query parameters'
+          details: 'No user ID found in session'
         },
         { status: 401 }
       );
@@ -58,17 +83,20 @@ export async function GET(request: Request) {
       );
     }
 
+    // Get company ID for the user
+    const companyId = await getCompanyId(userId, sessionToken);
+    
     // Log the request for debugging
     console.log('Sending request to quiz usage backend:', {
-      url: `${BACKEND_BASE_URL}/user/${encodeURIComponent(effectiveUserId)}/quizzes/usage`,
+      url: `${BACKEND_BASE_URL}/user/${companyId}/quizzes/usage`,
       method: 'GET',
-      userId: effectiveUserId,
+      companyId,
       hasToken: !!sessionToken
     });
 
     // Make request to backend
     const response = await fetch(
-      `${BACKEND_BASE_URL}/user/${encodeURIComponent(effectiveUserId)}/quizzes/usage`,
+      `${BACKEND_BASE_URL}/user/${companyId}/quizzes/usage`,
       {
         headers: {
           'Content-Type': 'application/json',

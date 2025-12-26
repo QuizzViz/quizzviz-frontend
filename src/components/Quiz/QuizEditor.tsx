@@ -19,6 +19,12 @@ import {
 
 const QUESTIONS_PER_PAGE = 10;
 
+interface CompanyInfo {
+  id: string;
+  name: string;
+  owner_email?: string;
+}
+
 export function QuizEditor() {
   const router = useRouter();
   const { quizId, username } = router.query as { quizId?: string; username?: string };
@@ -26,6 +32,10 @@ export function QuizEditor() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const slug =  user?.firstName?.trim().replace(/\s+/g, '').toLowerCase();
+  
+  // Company state
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [isLoadingCompany, setIsLoadingCompany] = useState(true);
   
   // State
   const [localQuestions, setLocalQuestions] = useState<QuizQuestion[]>([]);
@@ -56,12 +66,55 @@ export function QuizEditor() {
     correct_answer: "A",
   });
 
+  // Fetch company info on mount
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      if (!isLoaded || !user) {
+        setIsLoadingCompany(false);
+        return;
+      }
+      
+      try {
+        console.log('Fetching company info for user:', user.id);
+        const response = await fetch(`/api/company/check?owner_id=${user.id}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Company check failed:', response.status, errorText);
+          throw new Error(`Failed to fetch company information: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Company check response:', data);
+        
+        if (data.exists && data.companies && data.companies.length > 0) {
+          const company = data.companies[0];
+          console.log('Using company:', company);
+          
+          setCompanyInfo({
+            id: company.company_id || company.id || company.name,
+            name: company.name || company.company_id || 'Company',
+            owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress
+          });
+        } else {
+          console.warn('No company found for user');
+        }
+      } catch (error) {
+        console.error('Error fetching company info:', error);
+      } finally {
+        setIsLoadingCompany(false);
+      }
+    };
+    
+    fetchCompanyInfo();
+  }, [isLoaded, user]);
+
   // Fetch quizzes data
   const { data: quizzesData, isLoading: rqLoading, error: rqError } = useQuery<QuizSummary[]>({
-    queryKey: ["quizzes", user?.id],
-    enabled: Boolean(isLoaded && user?.id),
+    queryKey: ["quizzes", companyInfo?.id],
+    enabled: Boolean(isLoaded && user?.id && !isLoadingCompany),
     queryFn: async () => {
-      const res = await fetch(`/api/quizzes?userId=${encodeURIComponent(user!.id)}`);
+      const res = await fetch(`/api/quizzes${companyInfo?.id ? `?companyId=${encodeURIComponent(companyInfo.id)}` : ''}`);
       if (!res.ok) throw new Error((await res.text()) || `Failed to fetch quizzes (${res.status})`);
       return res.json();
     },
@@ -133,7 +186,7 @@ export function QuizEditor() {
       
       try {
         console.log('Fetching published quiz data...');
-        const response = await fetch(`/api/publish/${user.id}/${quizId}`);
+        const response = await fetch(`/api/publish/${companyInfo?.id}/${quizId}`);
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Failed to fetch published quiz data:', response.status, errorText);
@@ -226,7 +279,7 @@ export function QuizEditor() {
         throw new Error(error.error || `Failed to update quiz (${res.status})`);
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["quizzes", user.id] });
+      await queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
       
       toast({
         title: "Saved",
@@ -327,7 +380,7 @@ export function QuizEditor() {
       
       // Invalidate queries to refresh the UI
       await queryClient.invalidateQueries({ queryKey: ['publishedQuiz', quizId] });
-      await queryClient.invalidateQueries({ queryKey: ['quizzes', user.id] });
+      await queryClient.invalidateQueries({ queryKey: ['quizzes', companyInfo?.id] });
       
       toast({
         title: 'Success!',
@@ -414,7 +467,7 @@ export function QuizEditor() {
 
     try {
       // Get the authentication token
-    const token = await getToken();
+      const token = await getToken();
       
       // First, delete the quiz from our database
       console.log('Deleting quiz from database...');
@@ -439,7 +492,7 @@ export function QuizEditor() {
         console.log('Quiz is published, deleting from publishing service...');
         try {
           const publishRes = await fetch(
-            `/api/publish/${user.id}/${quiz.quiz_id}`,
+            `/api/publish/${companyInfo?.id}/${quiz.quiz_id}`,
             {
               method: 'DELETE',
               headers: {
@@ -464,7 +517,7 @@ export function QuizEditor() {
         }
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["quizzes", user.id] });
+      await queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
       
       toast({
         title: "Deleted",
@@ -568,7 +621,7 @@ export function QuizEditor() {
   };
 
   // Show loading state
-  if (!isLoaded || rqLoading || (quiz?.is_publish && isLoadingPublished)) {
+  if (!isLoaded || isLoadingCompany || rqLoading || (quiz?.is_publish && isLoadingPublished)) {
     return (
       <div className="flex items-center justify-center py-10">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

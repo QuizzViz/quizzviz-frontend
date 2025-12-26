@@ -1,8 +1,7 @@
-import { useQuery, UseQueryOptions } from '@tanstack/react-query';
-import { useAuth } from '@clerk/nextjs';
+import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import {useUser} from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 
 export interface QuizUsageData {
   user_id: string;
@@ -24,19 +23,70 @@ export interface QuizUsageData {
   total_quizzes: number;
 }
 
+interface CompanyInfo {
+  id: string;
+  name: string;
+  owner_email?: string;
+}
+
 export function useQuizUsage(p0?: { refetchOnMount: string; refetchOnWindowFocus: boolean; }) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const { toast } = useToast();
   const [errorShown, setErrorShown] = useState(false);
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [isLoadingCompany, setIsLoadingCompany] = useState(true);
 
   const plan = (user?.publicMetadata?.plan as string) || 'Free';
   
+  // Fetch company info on mount
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      if (!isLoaded || !user) {
+        setIsLoadingCompany(false);
+        return;
+      }
+      
+      try {
+        console.log('Fetching company info for user:', user.id);
+        const response = await fetch(`/api/company/check?owner_id=${user.id}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Company check failed:', response.status, errorText);
+          throw new Error(`Failed to fetch company information: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Company check response:', data);
+        
+        if (data.exists && data.companies && data.companies.length > 0) {
+          const company = data.companies[0];
+          console.log('Using company:', company);
+          
+          setCompanyInfo({
+            id: company.company_id || company.id || company.name,
+            name: company.name || company.company_id || 'Company',
+            owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress
+          });
+        } else {
+          console.warn('No company found for user');
+        }
+      } catch (error) {
+        console.error('Error fetching company info:', error);
+      } finally {
+        setIsLoadingCompany(false);
+      }
+    };
+    
+    fetchCompanyInfo();
+  }, [isLoaded, user]);
+
   const query = useQuery<QuizUsageData, Error>({
-    queryKey: ['quiz-usage', user?.id, plan],
+    queryKey: ['quiz-usage', companyInfo?.id, plan],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not found');
       
-      const response = await fetch(`/api/quiz-usage?userId=${encodeURIComponent(user.id)}`);
+      const response = await fetch(`/api/quiz-usage${companyInfo?.id ? `?companyId=${encodeURIComponent(companyInfo.id)}` : ''}`);
       
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
@@ -47,7 +97,7 @@ export function useQuizUsage(p0?: { refetchOnMount: string; refetchOnWindowFocus
     },
     retry: 1,
     refetchOnWindowFocus: false,
-    enabled: !!user?.id,
+    enabled: !!user?.id && !isLoadingCompany,
   });
 
   // Handle errors with toast in a separate effect
@@ -62,7 +112,11 @@ export function useQuizUsage(p0?: { refetchOnMount: string; refetchOnWindowFocus
     }
   }, [query.isError, query.error, toast, errorShown]);
 
-  return query;
+  return {
+    ...query,
+    companyInfo,
+    isLoadingCompany
+  };
 }
 
 interface PlanDetails {

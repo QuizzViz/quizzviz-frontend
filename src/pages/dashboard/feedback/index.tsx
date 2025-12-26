@@ -116,10 +116,8 @@ export default function FeedbackPage() {
           </div>
           
           <div className="flex-1 flex flex-col">
-            <DashboardHeader 
-              userName={user?.fullName || user?.firstName || 'User'} 
-              userEmail={user?.emailAddresses?.[0]?.emailAddress} 
-            />
+            <DashboardHeader />
+             
             
             <main className="flex-1 flex items-center justify-center p-6 lg:p-8">
               <motion.div 
@@ -168,8 +166,6 @@ export default function FeedbackPage() {
         {/* Main content */}
         <div className="flex-1 flex flex-col">
           <DashboardHeader 
-            userName={user?.fullName || user?.firstName || 'User'} 
-            userEmail={user?.emailAddresses?.[0]?.emailAddress} 
           />
           
           <main className="flex-1 p-6 lg:p-8">

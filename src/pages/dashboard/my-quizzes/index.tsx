@@ -189,10 +189,8 @@ export default function MyQuizzesPage() {
               <DashboardSideBar />
             </div>
             <div className="flex-1 flex flex-col">
-              <DashboardHeader 
-                userName={user?.fullName || user?.firstName || "User"} 
-                userEmail={user?.emailAddresses?.[0]?.emailAddress} 
-              />
+<DashboardHeader 
+               />
               <main className="flex-1 p-6">
                 <div className="mb-6">
                   <h1 className="text-2xl font-semibold">My Quizzes</h1>

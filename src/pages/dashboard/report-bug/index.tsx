@@ -237,9 +237,7 @@ ${actual}
           
           <div className="flex-1 flex flex-col">
             <DashboardHeader 
-              userName={user?.fullName || user?.firstName || 'User'} 
-              userEmail={user?.primaryEmailAddress?.emailAddress || ''} 
-            />
+             />
             
             <main className="flex-1 flex items-center justify-center p-6 lg:p-8">
               <motion.div 
@@ -298,9 +296,7 @@ ${actual}
           
           <div className="flex-1 flex flex-col">
             <DashboardHeader 
-              userName={user?.fullName || user?.firstName || 'User'} 
-              userEmail={user?.primaryEmailAddress?.emailAddress || ''} 
-            />
+              />
             
             <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
               <div className="max-w-6xl mx-auto">

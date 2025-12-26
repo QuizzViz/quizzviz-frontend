@@ -46,9 +46,7 @@ export default function SettingsPage() {
             {/* Main content */}
             <div className="flex-1 flex flex-col">
               <DashboardHeader
-                userName={user?.fullName || user?.firstName || "User"}
-                userEmail={user?.emailAddresses?.[0]?.emailAddress}
-              />
+               />
               <main className="flex-1 p-6 space-y-6">
                 <h1 className="text-2xl font-semibold">Settings</h1>
                 <p className="text-white/70">Customize your QuizzViz experience.</p>

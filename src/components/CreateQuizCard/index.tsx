@@ -158,7 +158,7 @@ export default function CreateQuizCard({
     }
 
     // Pass the code percentage, tech stack, and role to the handler
-    _handleGenerate(codePct, techStack, role);
+    _handleGenerate(techStack, codePct,  role);
   };
 
   const handleGenerateClick = (codePct: number) => {

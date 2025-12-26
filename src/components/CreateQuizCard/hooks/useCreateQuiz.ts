@@ -1,3 +1,4 @@
+'use client';
 import { useEffect, useState, useCallback, ReactNode } from "react";
 import { Cpu, Code, Sparkles, CheckCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
@@ -9,6 +10,12 @@ interface TopicError {
   suggestions?: string[];
   isTopicError?: boolean;
   details?: string;
+}
+
+interface CompanyInfo {
+  id: string;
+  name: string;
+  owner_email?: string;
 }
 
 interface UseCreateQuizReturn {
@@ -37,8 +44,12 @@ interface UseCreateQuizReturn {
   typedText: string;
   progress: number;
   
+  // Company state
+  companyInfo: CompanyInfo | null;
+  isLoadingCompany: boolean;
+  
   // Actions
-  handleGenerate: () => Promise<void>;
+  handleGenerate: (codePercentage?: number) => Promise<void>;
 }
 
 // Encapsulates all state and behavior for CreateQuiz workflow
@@ -47,7 +58,6 @@ export function useCreateQuiz(): UseCreateQuizReturn {
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("Bachelors");
   const [count, setCount] = useState(5);
-  // We'll keep balance for backward compatibility but use codePercentage from props in the component
   const [balance, setBalance] = useState<number[]>([50]);
 
   // request and UX state
@@ -55,6 +65,10 @@ export function useCreateQuiz(): UseCreateQuizReturn {
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | ReactNode | null>(null);
   const [quizData, setQuizData] = useState<any>(null);
+  
+  // Company state
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
+  const [isLoadingCompany, setIsLoadingCompany] = useState(true);
 
   // typing steps
   const steps = [
@@ -74,8 +88,51 @@ export function useCreateQuiz(): UseCreateQuizReturn {
   const HOLD_AFTER_TYPING = 900;
   const FINISH_HOLD = 600;
 
-  // auth (must be called at hook top-level, not inside callbacks)
-  const { user } = useUser();
+  // auth
+  const { user, isLoaded } = useUser();
+
+  // Fetch company info on mount
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      if (!isLoaded || !user) {
+        setIsLoadingCompany(false);
+        return;
+      }
+      
+      try {
+        console.log('Fetching company info for user:', user.id);
+        const response = await fetch(`/api/company/check?owner_id=${user.id}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Company check failed:', response.status, errorText);
+          throw new Error(`Failed to fetch company information: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Company check response:', data);
+        
+        if (data.exists && data.companies && data.companies.length > 0) {
+          const company = data.companies[0];
+          console.log('Using company:', company);
+          
+          setCompanyInfo({
+            id: company.company_id || company.id || company.name,
+            name: company.name || company.company_id || 'Company',
+            owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress
+          });
+        } else {
+          console.warn('No company found for user');
+        }
+      } catch (error) {
+        console.error('Error fetching company info:', error);
+      } finally {
+        setIsLoadingCompany(false);
+      }
+    };
+    
+    fetchCompanyInfo();
+  }, [isLoaded, user]);
 
   const difficultyToApi = (val: string) => {
     switch (val) {
@@ -94,7 +151,7 @@ export function useCreateQuiz(): UseCreateQuizReturn {
 
   const quizGeneration = useQuizGeneration();
   
-  // Memoize the completeGeneration function to prevent unnecessary re-renders
+  // Memoize the completeGeneration function
   const safeCompleteGeneration = useCallback((success: boolean, data?: any) => {
     if (quizGeneration?.completeGeneration) {
       quizGeneration.completeGeneration(success, data);
@@ -150,8 +207,11 @@ export function useCreateQuiz(): UseCreateQuizReturn {
 
       console.log('Sending quiz generation request:', payload);
       
+      // Build the API URL with companyId if available
+      const apiUrl = `/api/quizzes${companyInfo?.id ? `?companyId=${encodeURIComponent(companyInfo.id)}` : ''}`;
+      
       // Make a single API call to generate and save the quiz
-      const response = await fetch(`/api/quizzes?userId=${encodeURIComponent(user?.id || '')}`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -216,7 +276,7 @@ export function useCreateQuiz(): UseCreateQuizReturn {
       setIsFetching(false);
       setTimeout(() => setIsReasoning(false), 400);
     }
-  }, [isReasoning, isFetching, count, topic, difficulty, balance, quizGeneration, user?.id, safeCompleteGeneration]);
+  }, [isReasoning, isFetching, count, topic, difficulty, balance, quizGeneration, user?.id, safeCompleteGeneration, companyInfo]);
 
   // Typewriter effect and progress
   useEffect(() => {
@@ -316,7 +376,11 @@ export function useCreateQuiz(): UseCreateQuizReturn {
     typedText,
     progress,
     
+    // company state
+    companyInfo,
+    isLoadingCompany,
+    
     // actions
     handleGenerate,
-  } as UseCreateQuizReturn;
+  };
 }

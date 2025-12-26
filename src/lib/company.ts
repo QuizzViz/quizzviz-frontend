@@ -1,7 +1,12 @@
 import { getAuth } from "@clerk/nextjs/server";
 import { NextRequest } from 'next/server';
 
-const COMPANY_SERVICE_URL = process.env.NEXT_PUBLIC_COMPANY_SERVICE_URL;
+const COMPANY_SERVICE_URL = process.env.NEXT_PUBLIC_CREATE_COMPANY_SERVICE_URL;
+
+if (!COMPANY_SERVICE_URL) {
+  console.error('NEXT_PUBLIC_CREATE_COMPANY_SERVICE_URL is not defined in environment variables');
+  throw new Error('Company service URL is not configured. Please check your environment variables.');
+}
 
 export interface CompanyDetails {
   id: string;

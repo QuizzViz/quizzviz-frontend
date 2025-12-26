@@ -2,7 +2,12 @@ import { NextResponse, NextRequest } from 'next/server';
 import { getAuth } from "@clerk/nextjs/server";
 import { getCompanyId } from '@/lib/company';
 
-const BACKEND_BASE_URL = `${process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL}`;
+const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL;
+
+if (!BACKEND_BASE_URL) {
+  console.error('NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL is not defined in environment variables');
+  throw new Error('Quiz generation service URL is not configured. Please check your environment variables.');
+}
 
 // Helper function to handle API errors
 const handleApiError = (error: any) => {
@@ -98,26 +103,21 @@ async function createQuiz(company_id: string, token: string, body: any) {
 export async function GET(request: NextRequest) {
   try {
     const { getToken, userId } = getAuth(request);
+    
     if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - User not authenticated' },
         { status: 401 }
       );
     }
-
-    const token = await getToken();
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No token' },
-        { status: 401 }
-      );
-    }
-
-    // Get company_id from query params or fetch it
-    const { searchParams } = new URL(request.url);
-    let company_id = searchParams.get('companyId');
-
-    // If no companyId provided, try to get it from the company check endpoint
+    
+    // Get company ID from query parameter or fetch it
+    const url = new URL(request.url);
+    const companyId = url.searchParams.get('companyId');
+    
+    let company_id = companyId;
+    
+    // If no companyId in query params, try to get it from the user's company
     if (!company_id) {
       const companyResult = await getCompanyId(request);
       if ('error' in companyResult) {
@@ -126,10 +126,36 @@ export async function GET(request: NextRequest) {
       company_id = companyResult.company_id;
     }
 
-    console.log('GET /api/quizzes - Using company_id:', company_id);
+    if (!company_id) {
+      return NextResponse.json(
+        { error: 'Company ID is required' },
+        { status: 400 }
+      );
+    }
 
-    const quizzes = await fetchQuizzes(token, company_id);
-    return NextResponse.json(quizzes);
+    const token = await getToken();
+    
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+    }
+
+    try {
+      const quizzes = await fetchQuizzes(token, company_id);
+      return NextResponse.json(quizzes);
+    } catch (error) {
+      console.error('Error fetching quizzes:', error);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch quizzes',
+          details: error instanceof Error ? error.message : 'Unknown error',
+          companyId: company_id // Include companyId in error for debugging
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     return handleApiError(error);
   }

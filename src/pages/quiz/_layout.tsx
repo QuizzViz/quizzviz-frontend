@@ -26,8 +26,6 @@ export default function QuizLayout({ children }: QuizLayoutProps) {
           {/* Main content */}
           <div className="flex-1 flex flex-col">
             <DashboardHeader
-              userName={user?.fullName || user?.firstName || "User"}
-              userEmail={user?.emailAddresses?.[0]?.emailAddress}
             />
             <main className="flex-1 p-6 pt-10">
               {children}

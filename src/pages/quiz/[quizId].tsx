@@ -43,10 +43,8 @@ export default function QuizDetailsPage() {
           
           {/* Main content */}
           <div className="flex-1 flex flex-col relative z-10">
-            <DashboardHeader
-              userName={user?.fullName || user?.firstName || "User"}
-              userEmail={user?.emailAddresses?.[0]?.emailAddress}
-            />
+<DashboardHeader 
+               />
             
             <main className="flex-1 p-6 pt-14 relative">
               {(!isLoaded || isPlanLoading) ? (
