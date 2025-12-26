@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 
 export async function POST(request: NextRequest) {
-  const { getToken } = getAuth(request);
+  const { getToken,userId } = getAuth(request);
 
   try {
     const requestData = await request.json();
@@ -219,19 +219,20 @@ export async function POST(request: NextRequest) {
 
     // ────────────────────────────────────────────────
     // Call the external publish service
-    // ────────────────────────────────────────────────
-    const publishResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/quizz`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(requestBody)
-      }
-    );
+    const publishHeaders = new Headers();
+publishHeaders.append('Content-Type', 'application/json');
+publishHeaders.append('Accept', 'application/json');
+publishHeaders.append('Authorization', `Bearer ${token}`);
+publishHeaders.append('x-company-id', companyId); // REQUIRED by backend
+if (userId) publishHeaders.append('x-user-id', userId); // only if non-null
+const publishResponse = await fetch(
+  `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/quizz`,
+  {
+    method: 'POST',
+    headers: publishHeaders,
+    body: JSON.stringify(requestBody)
+  }
+);
 
     if (!publishResponse.ok) {
       const errorText = await publishResponse.text().catch(() => 'Unknown error');

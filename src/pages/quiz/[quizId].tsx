@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
@@ -14,7 +13,6 @@ export default function QuizDetailsPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const { toast } = useToast();
-  
   const { plan, isLoading: isPlanLoading } = useUserPlanContext();
   
   // Get the quiz ID from the URL

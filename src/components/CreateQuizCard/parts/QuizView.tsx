@@ -28,7 +28,7 @@ const QuizView: FC<{
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          quiz_id: data?.id || 'new-quiz',
+          quiz_id: data?.id ,
           settings: {
             secretKey: settings.secretKey,
             timeLimit: settings.timeLimit,
@@ -39,7 +39,8 @@ const QuizView: FC<{
           publicLink: settings.publicLink,
           topic: data?.role || 'General Knowledge',
           difficulty: data?.difficulty || 'Medium',
-          role: data?.role
+          role: data?.role,
+          companyId: data?.company_id,
         }),
       });
 

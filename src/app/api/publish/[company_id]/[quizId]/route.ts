@@ -62,18 +62,23 @@ async function handleGetPublishedQuiz(
       );
     }
 
-    // Construct the URL to fetch the published quiz using company_id
-    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/company/${company_id}/quiz/${quizId}`;
+    // Construct the URL to fetch the published quiz
+    // Using the endpoint format: /publish/quiz/{company_id}/{quiz_id}
+    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${company_id}/quiz/${quizId}`;
 
     console.log('Fetching published quiz from:', publishServiceUrl);
 
+   const headers = new Headers();
+headers.append('accept', 'application/json');
+headers.append('Authorization', `Bearer ${token}`);
+headers.append('Content-Type', 'application/json');
+headers.append('x-company-id', company_id);
+headers.append('x-user-id', authUserId); 
+
     const response = await fetch(publishServiceUrl, {
       method: 'GET',
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers,
+      cache: 'no-store' // Prevent caching for this request
     });
 
     if (!response.ok) {
@@ -172,25 +177,34 @@ async function handlePublishRequest(
       );
     }
 
-    // Construct the URL to publish/unpublish quiz using company_id
-    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/company/${company_id}/quiz/${quizId}`;
+    // Construct the URL to publish/unpublish quiz
+    // Using the endpoint format: /publish/quiz/{company_id}/{quiz_id}
+    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${company_id}/quiz/${quizId}`;
 
     console.log(`${method} request to:`, publishServiceUrl);
 
-    // Include company ID in the request body for POST requests
+    // Prepare the request body with company_id and other necessary fields
     let requestBody = {};
     if (method === 'POST') {
-      requestBody = { company_id };
+      // Get the request body from the original request
+      const requestData = await request.json().catch(() => ({}));
+      requestBody = {
+        ...requestData,
+        company_id
+      };
     }
+
+    const headers = new Headers();
+    headers.append('accept', 'application/json');
+    headers.append('Authorization', `Bearer ${token}`);
+    headers.append('Content-Type', 'application/json');
+    headers.append('x-company-id', company_id);
 
     const response = await fetch(publishServiceUrl, {
       method: method,
-      headers: {
-        'accept': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: method === 'POST' ? JSON.stringify(requestBody) : undefined
+      headers,
+      body: method === 'POST' ? JSON.stringify(requestBody) : undefined,
+      cache: 'no-store' // Prevent caching for this request
     });
 
     if (!response.ok) {

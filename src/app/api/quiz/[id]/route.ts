@@ -15,8 +15,10 @@ const handleApiError = (error: any) => {
   );
 };
 
-// Helper to extract companyId and token from request
-async function getAuthAndCompanyId(request: NextRequest) {
+// In src/app/api/quiz/[id]/route.ts
+
+// Update the getAuthAndCompanyId function to accept the parsed body
+async function getAuthAndCompanyId(request: NextRequest, body?: any) {
   const { userId, getToken } = getAuth(request);
   const token = await getToken() || request.cookies.get('__session')?.value;
 
@@ -29,8 +31,7 @@ async function getAuthAndCompanyId(request: NextRequest) {
     };
   }
 
-  const body = await request.json().catch(() => ({}));
-  const companyId = body.companyId;
+  const companyId = body?.companyId;
 
   if (!companyId) {
     return {
@@ -42,6 +43,55 @@ async function getAuthAndCompanyId(request: NextRequest) {
   }
 
   return { userId, companyId, token };
+}
+
+// Then update the PATCH handler
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    // First, parse the request body
+    const body = await request.json().catch(() => ({}));
+    
+    // Pass the parsed body to getAuthAndCompanyId
+    const auth = await getAuthAndCompanyId(request, body);
+    if ('error' in auth) return auth.error;
+
+    const { companyId, token } = auth;
+    const { id: quizId } = await context.params;
+
+    if (!quizId) {
+      return NextResponse.json({ error: 'Quiz ID is required' }, { status: 400 });
+    }
+
+    console.log('Patching quiz:', { companyId, quizId });
+
+    // Use the already parsed body for the API call
+    const response = await fetch(
+      `${BACKEND_BASE_URL}/user/${companyId}/quizz/${encodeURIComponent(quizId)}`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)  // Use the already parsed body
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: errorData.message || 'Failed to update quiz' },
+        { status: response.status }
+      );
+    }
+
+    return NextResponse.json(await response.json());
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 export async function GET(
@@ -138,50 +188,50 @@ export async function DELETE(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const auth = await getAuthAndCompanyId(request);
-  if ('error' in auth) return auth.error;
+// export async function PATCH(
+//   request: NextRequest,
+//   context: { params: Promise<{ id: string }> }
+// ) {
+//   const auth = await getAuthAndCompanyId(request);
+//   if ('error' in auth) return auth.error;
 
-  const { companyId, token } = auth;
+//   const { companyId, token } = auth;
 
-  try {
-    const { id: quizId } = await context.params;
-    const payload = await request.json();
+//   try {
+//     const { id: quizId } = await context.params;
+//     const payload = await request.json();
 
-    if (!quizId) {
-      return NextResponse.json({ error: 'Quiz ID is required' }, { status: 400 });
-    }
+//     if (!quizId) {
+//       return NextResponse.json({ error: 'Quiz ID is required' }, { status: 400 });
+//     }
 
-    console.log('Patching quiz:', { companyId, quizId });
+//     console.log('Patching quiz:', { companyId, quizId });
 
-    const response = await fetch(
-      `${BACKEND_BASE_URL}/user/${companyId}/quizz/${encodeURIComponent(quizId)}`,
-      {
-        method: 'PUT',  // most backends use PUT for updates
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      }
-    );
+//     const response = await fetch(
+//       `${BACKEND_BASE_URL}/user/${companyId}/quizz/${encodeURIComponent(quizId)}`,
+//       {
+//         method: 'PUT',  // most backends use PUT for updates
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'application/json'
+//         },
+//         body: JSON.stringify(payload)
+//       }
+//     );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return NextResponse.json(
-        { error: errorData.message || 'Failed to update quiz' },
-        { status: response.status }
-      );
-    }
+//     if (!response.ok) {
+//       const errorData = await response.json().catch(() => ({}));
+//       return NextResponse.json(
+//         { error: errorData.message || 'Failed to update quiz' },
+//         { status: response.status }
+//       );
+//     }
 
-    return NextResponse.json(await response.json());
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
+//     return NextResponse.json(await response.json());
+//   } catch (error) {
+//     return handleApiError(error);
+//   }
+// }
 
 export async function PUT(
   request: NextRequest,

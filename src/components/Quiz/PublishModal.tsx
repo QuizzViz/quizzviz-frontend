@@ -20,6 +20,7 @@ interface PublishModalProps {
   onCopyLink: () => void;
   isPublished?: boolean;
   quizPublicLink?: string;
+  companyId?: string;
 }
 
 export function PublishModal({
@@ -33,7 +34,8 @@ export function PublishModal({
   origin,
   onCopyLink,
   isPublished = false,
-  quizPublicLink
+  quizPublicLink,
+  companyId
 }: PublishModalProps) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -86,8 +88,20 @@ export function PublishModal({
       // Call the publish handler and wait for it to complete
       await onPublish(localSecretKey.trim());
       
-      // Fetch the published quiz data
-      const response = await fetch(`/api/publish/${user?.id}/${quizId}`);
+      // Fetch the published quiz data with proper headers
+      const headers = new Headers({
+        'Content-Type': 'application/json'
+      });
+      
+      // Add company ID to headers if available
+      if (companyId) {
+        headers.append('x-company-id', companyId);
+      }
+      
+      const response = await fetch(`/api/publish/${companyId || 'user'}/${quizId}`, {
+        headers
+      });
+      
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -95,10 +109,10 @@ export function PublishModal({
           
           // If we have a public link from the API, use it, otherwise construct it
           let publicLink = data.data.quiz_public_link;
-          if (!publicLink && user) {
-            // Use the user's first name from the client-side user object
-            const firstName = (user.firstName || 'user').split(' ')[0].toLowerCase().replace(/\s+/g, '');
-            publicLink = `${origin}/${firstName}/take/quiz/${quizId}`;
+          if (!publicLink) {
+            // Use company ID in the URL if available, otherwise use the slug
+            const pathPrefix = companyId ? `c/${companyId}` : (slug || 'quiz');
+            publicLink = `${origin}/${pathPrefix}/take/quiz/${quizId}`;
           }
           
           setPublishedQuizData({
@@ -163,7 +177,9 @@ export function PublishModal({
   const slug = (user?.firstName?.trim() as string).toLowerCase().replace(/\s+/g, '');
   
   // Create a single source of truth for the quiz link
-  const quizLink = `${origin}/${slug}/take/quiz/${quizId}`;
+  const quizLink = companyId 
+    ? `${origin}/${companyId}/quiz/${quizId}`
+    : `${origin}/quiz/${quizId}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
