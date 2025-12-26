@@ -35,6 +35,7 @@ interface QuizData {
   quiz_id: string;
   topic: string;
   difficulty: string;
+   company_id: string;
   num_questions: number;
   quiz: Question[];
   quiz_key: string;
@@ -43,11 +44,12 @@ interface QuizData {
   max_attempts?: number;
   role: string;
   tech_stack?: TechStackItem[];
+ 
 }
 
 interface PageProps {
   params: Promise<{
-    username: string;
+    companyId: string;
     quizId: string;
   }>;
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -60,7 +62,7 @@ type FormData = {
 };
 
 export default function QuizPage({ params }: PageProps) {
-  const { username, quizId } = use(params);
+  const { companyId, quizId } = use(params);
   const router = useRouter();
   const { user } = useUser();
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
@@ -272,7 +274,7 @@ export default function QuizPage({ params }: PageProps) {
       
       const submissionData = {
         quiz_id: quizData.quiz_id,
-        owner_id: username,
+        company_id: companyId,  
         username: formData.name,
         user_email: formData.email,
         user_answers: userAnswers,
@@ -320,7 +322,7 @@ export default function QuizPage({ params }: PageProps) {
       setIsSubmitting(false);
       setStep('results');
     }
-  }, [quizData, formData, attemptsInfo, timeLeft, username]);
+  }, [quizData, formData, attemptsInfo, timeLeft, companyId]);
 
   const getCurrentAnswer = useCallback((questionIndex: number) => {
     if (selectedAnswers[questionIndex] !== undefined) {
@@ -990,7 +992,7 @@ export default function QuizPage({ params }: PageProps) {
             <div className="w-full max-w-lg">
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                  Welcome to {user ? user.firstName : ''} Quiz
+                  Welcome to {companyId.toUpperCase()} Quiz
                 </h1>
                 <p className="text-gray-400">Enter your details to begin the assessment</p>
               </div>

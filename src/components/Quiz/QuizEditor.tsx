@@ -225,7 +225,7 @@ export function QuizEditor() {
     setIsPublishing(true);
 
     try {
-      const publicLink = `${origin}/${company.company_id}/quiz/${quizId}`;
+      const publicLink = `${origin}/${company.company_id}/take/quiz/${quizId}`;
 
       const updatedSettings = {
         ...publishSettings,
@@ -328,49 +328,63 @@ export function QuizEditor() {
   };
 
   // Delete entire quiz
-  const handleDeleteQuiz = async () => {
-    if (!currentQuiz || !user || !company?.company_id) return;
+ const handleDeleteQuiz = async () => {
+  if (!currentQuiz || !user || !company?.company_id) return;
 
-    setIsPublishing(true);
+  setIsPublishing(true);
 
-    try {
-      const token = await getToken();
-      if (!token) throw new Error("No auth token");
+  try {
+    const token = await getToken();
+    if (!token) throw new Error("No auth token");
 
-      const res = await fetch(`/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}`, {
+    // Add companyId as query parameter for DELETE request
+    const res = await fetch(
+      `/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}?companyId=${encodeURIComponent(company.company_id)}`,
+      {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'x-company-id': company.company_id  // Also add as header for redundancy
+        },
         credentials: "include",
-      });
+      }
+    );
 
-      if (!res.ok) throw new Error("Failed to delete quiz");
+    if (!res.ok) throw new Error("Failed to delete quiz");
 
-      if (isPublished) {
-        await fetch(`/api/publish/${company.company_id}/${currentQuiz.quiz_id}`, {
+    // If quiz is published, clean up from publish service
+    if (isPublished) {
+      await fetch(
+        `/api/publish/${company.company_id}/${currentQuiz.quiz_id}`,
+        {
           method: "DELETE",
           credentials: "include",
-        }).catch((e) => console.warn("Publish cleanup failed:", e));
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["quizzes", company.company_id] });
-
-      toast({
-        title: "Deleted",
-        description: "Quiz removed successfully",
-        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
-      });
-
-      router.push("/dashboard/my-quizzes");
-    } catch (err: any) {
-      toast({
-        title: "Delete failed",
-        description: err.message || "Could not delete quiz",
-        variant: "destructive",
-      });
-    } finally {
-      setIsPublishing(false);
+        }
+      ).catch((e) => console.warn("Publish cleanup failed:", e));
     }
-  };
+
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ["quizzes", company.company_id] });
+
+    toast({
+      title: "Deleted",
+      description: "Quiz removed successfully",
+      className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+    });
+
+    // Redirect to quizzes list
+    router.push("/dashboard/my-quizzes");
+  } catch (err: any) {
+    toast({
+      title: "Delete failed",
+      description: err.message || "Could not delete quiz",
+      variant: "destructive",
+    });
+  } finally {
+    setIsPublishing(false);
+    setIsDeleteDialogOpen(false);
+  }
+};
 
   // Copy link
   const handleCopyLink = useCallback(async () => {
@@ -393,8 +407,16 @@ export function QuizEditor() {
       type: question.type,
       question: question.question,
       code_snippet: question.code_snippet || "",
-      options: { ...question.options },
-      correct_answer: question.correct_answer,
+      options: {
+        ...question.options,
+        A: "",
+        B: "",
+        C: "",
+        D: ""
+      },
+      correct_answer: ['A', 'B', 'C', 'D'].includes(question.correct_answer) 
+        ? question.correct_answer as 'A' | 'B' | 'C' | 'D' 
+        : 'A', // Default to 'A' if invalid
     });
     setIsModalOpen(true);
   };
@@ -492,7 +514,7 @@ export function QuizEditor() {
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={company?.company_id ? `${origin}/${company.company_id}/quiz/${quizId}` : ""}
+        quizLink={company?.company_id ? `${origin}/${company.company_id}/take/quiz/${quizId}` : ""}
         quizKey={publishedQuiz?.quiz_key || publishSettings.secretKey || currentQuiz?.quiz_key || ""}
       />
 

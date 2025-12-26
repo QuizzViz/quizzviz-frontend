@@ -6,7 +6,7 @@ import { Copy, Check, Clock, Calendar, Key, Link as LinkIcon } from "lucide-reac
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@clerk/nextjs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-
+import { useCompanies } from "@/hooks/useCompanies";
 interface PublishQuizModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -36,6 +36,7 @@ export function PublishQuizModal({
   const [hasCopied, setHasCopied] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
+  const {company} = useCompanies(user.id as string);
 
   // Format username to be URL-friendly
   const userSlug = (user?.username || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'user')
@@ -54,7 +55,7 @@ export function PublishQuizModal({
   }, [expirationDate]);
 
   // Generate the correct quiz link format
-  const quizLink = `${window.location.origin}/${userSlug}/take/quiz/${quizId}`;
+  const quizLink = `${window.location.origin}/${company?.company_id}/take/quiz/${quizId}`;
   
   // Ensure the URL is properly formatted
   const formatQuizLink = (link: string) => {

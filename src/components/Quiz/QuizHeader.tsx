@@ -7,7 +7,7 @@ import { ShareQuizModal } from "./ShareQuizModal";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useUser } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
-
+import {useCompanies} from "@/hooks/useCompanies";
 interface QuizHeaderProps {
   quiz: QuizSummary | undefined;
   questionsCount: number;
@@ -36,7 +36,7 @@ export function QuizHeader({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
-  
+  const {company} = useCompanies(user?.id);
   if (!quiz) return null;
 
   const handleShareClick = () => {
@@ -54,7 +54,8 @@ export function QuizHeader({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          is_publish: false
+          is_publish: false,
+          companyId: company?.company_id
         })
       });
 
@@ -153,7 +154,7 @@ export function QuizHeader({
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={`${window.location.origin}/${(user?.firstName?.trim().toLowerCase().replace(/\s+/g, ''))}/take/quiz/${quizId}`}
+        quizLink={`${window.location.origin}/${company?.company_id}/take/quiz/${quizId}`}
         quizKey={settings?.secretKey || ''}
       />
       

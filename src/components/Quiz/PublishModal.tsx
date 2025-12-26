@@ -111,8 +111,7 @@ export function PublishModal({
           let publicLink = data.data.quiz_public_link;
           if (!publicLink) {
             // Use company ID in the URL if available, otherwise use the slug
-            const pathPrefix = companyId ? `c/${companyId}` : (slug || 'quiz');
-            publicLink = `${origin}/${pathPrefix}/take/quiz/${quizId}`;
+            publicLink = `${origin}/${companyId}/take/quiz/${quizId}`;
           }
           
           setPublishedQuizData({
@@ -128,7 +127,7 @@ export function PublishModal({
       console.error('Error in handlePublish:', error);
       // Fallback to the generated link if there's an error
       setPublishedQuizData({
-        quiz_public_link: `${origin}/${slug}/take/quiz/${quizId}`,
+        quiz_public_link: `${origin}/${companyId}/take/quiz/${quizId}`,
         quiz_key: localSecretKey.trim()
       });
       
@@ -178,7 +177,7 @@ export function PublishModal({
   
   // Create a single source of truth for the quiz link
   const quizLink = companyId 
-    ? `${origin}/${companyId}/quiz/${quizId}`
+    ? `${origin}/${companyId}/take/quiz/${quizId}`
     : `${origin}/quiz/${quizId}`;
 
   return (
@@ -345,7 +344,7 @@ export function PublishModal({
         <ShareQuizModal
           isOpen={isShareModalOpen}
           onClose={() => setIsShareModalOpen(false)}
-          quizLink={publishedQuizData?.quiz_public_link || `${origin}/${slug}/take/quiz/${quizId}`}
+          quizLink={publishedQuizData?.quiz_public_link || `${origin}/${companyId}/take/quiz/${quizId}`}
           quizKey={publishedQuizData?.quiz_key || localSecretKey}
         />
       )}

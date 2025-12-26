@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { clerkClient, getAuth } from '@clerk/nextjs/server';
-
+import { useCompanies } from '@/hooks/useCompanies';
 // Types
 type ApiResponse<T = any> = {
   success: boolean;
@@ -40,6 +40,7 @@ export default async function handler(
   try {
     // Authentication check
     const { userId, getToken } = getAuth(req);
+    const {company} = useCompanies(userId as string)
     if (!userId) {
       res.status(401).json({ 
         success: false, 
@@ -59,8 +60,8 @@ export default async function handler(
     }
 
     // Extract route parameters
-    const { userId: paramUserId, quizId } = req.query as { 
-      userId: string; 
+    const { company_id: paramUserId, quizId } = req.query as { 
+      company_id: string; 
       quizId: string; 
     };
 
@@ -138,7 +139,7 @@ export default async function handler(
     
     // Fetch published quiz from external API using the username
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/public/quiz/${encodeURIComponent(`${origin}/${username}/take/quiz/${quizId}`)}`,
+      `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/public/quiz/${encodeURIComponent(`${origin}/${company?.company_id}/take/quiz/${quizId}`)}`,
       {
         method: 'GET',
         headers: {
