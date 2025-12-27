@@ -57,40 +57,52 @@ type QuizResult = {
   user_email: string;
   result: {
     score: number;
-    role: string;
+    role?: string;
     total_questions: number;
-    quiz_difficulty?: string;
     [key: string]: any;
   };
   attempt: number;
-  role: string;
+  role?: string;
   created_at: string;
   quiz_difficulty?: string;
   total_questions?: number;
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("en-US", {
+type ScoreBin = {
+  name: string;
+  count: number;
+  candidates: QuizResult[];
+};
+
+type QuizAnalytics = {
+  quiz_id: string;
+  role: string;
+  quiz_difficulty?: string;
+  details: QuizResult[];
+  scoreDistribution: ScoreBin[];
+  created_at: string; // earliest attempt for sorting
+};
+
+const formatDate = (dateString: string) =>
+  new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
-};
 
-const prepareExportData = (data: QuizResult[]) => {
-  return data.map((q) => ({
+const prepareExportData = (data: QuizResult[]) =>
+  data.map((q) => ({
     Username: q.username,
     Email: q.user_email,
     Score: q.result.score,
     "Total Questions": q.result.total_questions ?? q.total_questions ?? 0,
-    Role: q.result.role || q.role,
+    Role: q.result.role || q.role || "—",
     Attempt: q.attempt,
     "Date Attempted": formatDate(q.created_at),
   }));
-};
 
 const exportExcel = (data: QuizResult[]) => {
-  if (data.length === 0) return;
+  if (!data.length) return;
   const prepared = prepareExportData(data);
   const ws = XLSX.utils.json_to_sheet(prepared);
   const wb = XLSX.utils.book_new();
@@ -99,7 +111,7 @@ const exportExcel = (data: QuizResult[]) => {
 };
 
 const exportPDF = (data: QuizResult[]) => {
-  if (data.length === 0) return;
+  if (!data.length) return;
 
   const prepared = prepareExportData(data);
   const quizRole = data[0]?.result?.role || data[0]?.role || "Quiz";
@@ -151,15 +163,34 @@ const exportPDF = (data: QuizResult[]) => {
     },
     margin: { left: 14, right: 14 },
     didDrawPage: (data: any) => {
-      const pageSize = doc.internal.pageSize;
-      const pageHeight = pageSize.height ?? pageSize.getHeight();
-      const pageNumber = data.pageNumber ?? 1;
-      const pageCount = doc.lastAutoTable?.pageNumber ?? 1;
-      doc.text(`Page ${pageNumber} of ${pageCount}`, pageWidth - 30, pageHeight - 10);
+      const pageHeight = doc.internal.pageSize.height;
+      doc.text(
+        `Page ${data.pageNumber} of ${doc.lastAutoTable?.pageCount || 1}`,
+        pageWidth - 30,
+        pageHeight - 10
+      );
     },
   });
 
   doc.save(`${quizRole.toLowerCase().replace(/\s+/g, "-")}-results-${new Date().toISOString().split("T")[0]}.pdf`);
+};
+
+const getScoreBins = (results: QuizResult[]): ScoreBin[] => {
+  const bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90];
+  const distribution: ScoreBin[] = bins.map((start) => ({
+    name: `${start}-${start + 9}`,
+    count: 0,
+    candidates: [],
+  }));
+
+  results.forEach((r) => {
+    const score = r.result.score;
+    const binIndex = Math.min(Math.floor(score / 10), 9);
+    distribution[binIndex].count++;
+    distribution[binIndex].candidates.push(r);
+  });
+
+  return distribution;
 };
 
 export default function ResultsDashboard() {
@@ -186,10 +217,7 @@ export default function ResultsDashboard() {
   const quizzesPerPage = 5;
   const dataFetched = useRef(false);
 
-  // ────────────────────────────────────────────────
-  //  Caching (1 hour)
-  // ────────────────────────────────────────────────
-  const CACHE_EXPIRY = 60 * 60 * 1000;
+  const CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour
 
   const getCachedData = (key: string) => {
     if (typeof window === "undefined") return null;
@@ -199,7 +227,7 @@ export default function ResultsDashboard() {
       const { data, timestamp } = JSON.parse(cached);
       if (Date.now() - timestamp < CACHE_EXPIRY) return data;
     } catch {
-      console.error("Cache read error");
+      return null;
     }
     return null;
   };
@@ -207,24 +235,16 @@ export default function ResultsDashboard() {
   const saveToCache = (key: string, data: any) => {
     if (typeof window === "undefined") return;
     try {
-      localStorage.setItem(
-        key,
-        JSON.stringify({ data, timestamp: Date.now() })
-      );
-    } catch (e) {
-      console.error("Cache write error:", e);
-    }
+      localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+    } catch {}
   };
 
-  // ────────────────────────────────────────────────
-  //  Fetch logic
-  // ────────────────────────────────────────────────
   const fetchResults = useCallback(
     async (currentUser: typeof user, forceRefresh = false) => {
       if (!dataFetched.current) setLoading(true);
 
       try {
-        const ownerId = currentUser?.firstName?.toLowerCase().replace(/\s+/g, "");
+        const ownerId = currentUser?.id;
         if (!ownerId) return;
 
         const cacheKey = `quiz_results_${ownerId}`;
@@ -238,17 +258,40 @@ export default function ResultsDashboard() {
           }
         }
 
-        const res = await fetch(`/api/quiz_result?owner_id=${ownerId}`);
-        if (!res.ok) throw new Error("Failed to fetch results");
+        const companyRes = await fetch(`/api/company/check?owner_id=${ownerId}`);
+        if (!companyRes.ok) throw new Error("Failed to fetch company details");
+        const companyData = await companyRes.json();
 
-        const { results = [] } = await res.json();
+        const companyId =
+          companyData.companies?.[0]?.company_id ??
+          companyData.company_id ??
+          companyData.id;
+
+        if (!companyId) throw new Error("No company found for this user");
+
+        const res = await fetch(`/api/quiz_result?company_id=${companyId}`);
+        if (!res.ok) throw new Error(await res.text());
+
+        const responseData = await res.json();
+        const results: QuizResult[] = Array.isArray(responseData)
+          ? responseData
+          : responseData.results || [];
+
         saveToCache(cacheKey, results);
         setQuizData(results);
         setLastUpdated(new Date());
-      } catch (err) {
+      } catch (err: any) {
         console.error("Fetch error:", err);
-        const cached = getCachedData(`quiz_results_${currentUser?.firstName?.toLowerCase().replace(/\s+/g, "")}`);
-        if (cached) setQuizData(Array.isArray(cached) ? cached : (cached.results || []));
+        toast({
+          title: "Error",
+          description: err.message || "Failed to load quiz results",
+          variant: "destructive",
+        });
+
+        if (currentUser?.id) {
+          const cached = getCachedData(`quiz_results_${currentUser.id}`);
+          if (cached) setQuizData(cached);
+        }
       } finally {
         setLoading(false);
         dataFetched.current = true;
@@ -260,16 +303,12 @@ export default function ResultsDashboard() {
   const handleRefresh = useCallback(async () => {
     if (!user || refreshing) return;
     setRefreshing(true);
-    try {
-      await fetchResults(user, true);
-    } finally {
-      setRefreshing(false);
-    }
+    await fetchResults(user, true);
+    setRefreshing(false);
   }, [user, refreshing, fetchResults]);
 
   useEffect(() => {
     if (user && !dataFetched.current) {
-      dataFetched.current = true;
       fetchResults(user);
     }
   }, [user, fetchResults]);
@@ -278,80 +317,53 @@ export default function ResultsDashboard() {
     setSelectedUsers({});
   }, [quizData]);
 
-  // ────────────────────────────────────────────────
-  //  Analytics + distribution
-  // ────────────────────────────────────────────────
-  const analyticsPerQuiz = useMemo(() => {
-    const map = new Map<
-      string,
-      {
-        quiz_id: string;
-        role: string;
-        quiz_difficulty: string;
-        total_questions: number;
-        created_at: string;
-        details: QuizResult[];
-      }
-    >();
+  const analyticsPerQuiz = useMemo<QuizAnalytics[]>(() => {
+    if (!quizData.length) return [];
 
-    quizData.forEach((q) => {
-      const id = q.quiz_id;
-      if (!map.has(id)) {
-        map.set(id, {
-          quiz_id: id,
-          role: q.result.role || q.role || "Unknown",
-          quiz_difficulty: q.result.quiz_difficulty || q.quiz_difficulty || "Not Specified",
-          total_questions: q.result.total_questions ?? q.total_questions ?? 0,
-          created_at: q.created_at,
-          details: [],
-        });
-      }
-      map.get(id)!.details.push(q);
+    const map = new Map<string, QuizResult[]>();
+
+    quizData.forEach((item) => {
+      if (!map.has(item.quiz_id)) map.set(item.quiz_id, []);
+      map.get(item.quiz_id)!.push(item);
     });
 
-    return Array.from(map.values())
-      .map((quiz) => {
-        const bins: Record<string, QuizResult[]> = {};
-        for (let i = 0; i < 100; i += 5) {
-          const start = i;
-          const end = Math.min(i + 5, 100);
-          bins[`${start}-${end}%`] = [];
-        }
+    return Array.from(map.entries())
+      .map(([quiz_id, details]) => {
+        const first = details[0];
+        const role = first.result.role || first.role || "Quiz";
+        const difficulty = first.quiz_difficulty;
 
-        quiz.details.forEach((c) => {
-          const score = c.result.score;
-          const bucketStart = Math.floor(score / 5) * 5;
-          const key = bucketStart >= 95 ? "95-100%" : `${bucketStart}-${bucketStart + 5}%`;
-          if (bins[key]) bins[key].push(c);
-        });
-
-        const distribution = Object.entries(bins).map(([name, candidates]) => ({
-          name,
-          count: candidates.length,
-          candidates,
-        }));
+        const sorted = [...details].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
 
         return {
-          ...quiz,
-          scoreDistribution: distribution,
+          quiz_id,
+          role,
+          quiz_difficulty: difficulty,
+          details: sorted,
+          scoreDistribution: getScoreBins(sorted),
+          created_at: sorted[0]?.created_at || new Date().toISOString(),
         };
       })
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [quizData]);
 
   const totalPages = Math.ceil(analyticsPerQuiz.length / quizzesPerPage);
-  const paginatedQuizzes = useMemo(() => {
-    const start = (currentPage - 1) * quizzesPerPage;
-    return analyticsPerQuiz.slice(start, start + quizzesPerPage);
-  }, [analyticsPerQuiz, currentPage]);
+
+  const paginatedQuizzes = useMemo(
+    () =>
+      analyticsPerQuiz.slice(
+        (currentPage - 1) * quizzesPerPage,
+        currentPage * quizzesPerPage
+      ),
+    [analyticsPerQuiz, currentPage]
+  );
 
   useEffect(() => {
     setCurrentPage(1);
   }, [analyticsPerQuiz.length]);
 
-  // ────────────────────────────────────────────────
-  //  Delete & selection handlers
-  // ────────────────────────────────────────────────
   const toggleUserSelection = (key: string) => {
     setSelectedUsers((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -364,13 +376,15 @@ export default function ResultsDashboard() {
   const handleDeleteQuiz = async (quizId: string) => {
     try {
       setIsDeleting(true);
-      const res = await fetch(`/api/quiz_result/delete?quiz_id=${quizId}`, { method: "DELETE" });
+      const res = await fetch(`/api/quiz_result/delete?quiz_id=${quizId}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message || "Delete failed");
       }
       await fetchResults(user, true);
-      toast({ title: "Success", description: "Quiz data deleted", variant: "success" });
+      toast({ title: "Success", description: "Quiz data deleted", variant: "default" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -408,7 +422,7 @@ export default function ResultsDashboard() {
 
       await fetchResults(user, true);
       setSelectedUsers({});
-      toast({ title: "Success", description: "Selected results deleted", variant: "success" });
+      toast({ title: "Success", description: "Selected results deleted", variant: "default" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -417,9 +431,6 @@ export default function ResultsDashboard() {
     }
   };
 
-  // ────────────────────────────────────────────────
-  //  Render
-  // ────────────────────────────────────────────────
   return (
     <DashboardAccess>
       <Head>
@@ -435,8 +446,7 @@ export default function ResultsDashboard() {
             </div>
 
             <div className="flex-1 flex flex-col overflow-hidden">
-                <DashboardHeader 
-               />
+              <DashboardHeader />
 
               <main className="flex-1 overflow-y-auto bg-black">
                 <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
@@ -444,409 +454,382 @@ export default function ResultsDashboard() {
                     <div className="flex justify-center py-24">
                       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
                     </div>
+                  ) : analyticsPerQuiz.length === 0 ? (
+                    <Card className="bg-zinc-950 border-zinc-800">
+                      <CardContent className="py-16 flex flex-col items-center text-center">
+                        <BarChart3 className="h-16 w-16 text-gray-600 mb-6" />
+                        <h3 className="text-xl font-semibold text-gray-300 mb-3">No Results Yet</h3>
+                        <p className="text-gray-500 max-w-md">
+                          Candidate quiz results will appear here once they complete your assessments.
+                        </p>
+                      </CardContent>
+                    </Card>
                   ) : (
-                    <div className="space-y-8">
-                      {/* Header */}
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                          <h1 className="text-2xl md:text-3xl font-bold">Quiz Analytics</h1>
-                          <p className="text-gray-400 mt-1">Performance insights & candidate overview</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleRefresh}
-                            disabled={refreshing}
-                            className="gap-2"
+                    <>
+                      {paginatedQuizzes.map((quiz) => {
+                        const selectedStart = selectedScores[quiz.quiz_id] ?? null;
+                        const selectedBin =
+                          selectedStart !== null
+                            ? quiz.scoreDistribution.find(
+                                (d) => Number(d.name.split("-")[0]) === selectedStart
+                              )
+                            : null;
+
+                        const filteredCandidates = selectedBin ? selectedBin.candidates : quiz.details;
+
+                        const highestScore = Math.max(...quiz.details.map((d) => d.result.score), 0);
+                        const topScorer = quiz.details.find((d) => d.result.score === highestScore);
+                        const correctCount = topScorer
+                          ? Math.round((highestScore / 100) * (topScorer.result.total_questions ?? 0))
+                          : 0;
+                        const totalQ = topScorer?.result.total_questions ?? 0;
+
+                        const totalAttempts = quiz.details.length;
+                        const uniqueCandidates = new Set(quiz.details.map((d) => d.username)).size;
+
+                        return (
+                          <Card
+                            key={quiz.quiz_id}
+                            className="bg-zinc-950 border-zinc-800 shadow-xl hover:shadow-purple-900/20 transition-shadow"
                           >
-                            <RefreshCcw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                            {refreshing ? "Refreshing..." : "Refresh Data"}
-                          </Button>
-                          {lastUpdated && (
-                            <span className="text-sm text-gray-500">
-                              Last update: {lastUpdated.toLocaleTimeString()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                            <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 border-b border-zinc-800 pb-4">
+                              <div>
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <CardTitle className="text-2xl md:text-3xl font-bold">
+                                    {quiz.role} Quiz
+                                  </CardTitle>
+                                  {quiz.quiz_difficulty && (
+                                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 text-white">
+                                      {quiz.quiz_difficulty}
+                                    </span>
+                                  )}
+                                </div>
+                                <CardDescription className="mt-2 text-gray-400">
+                                  Click bars to filter candidates by score range
+                                </CardDescription>
+                              </div>
 
-                      {analyticsPerQuiz.length === 0 ? (
-                        <Card className="bg-zinc-950 border-zinc-800">
-                          <CardContent className="py-16 flex flex-col items-center text-center">
-                            <BarChart3 className="h-16 w-16 text-gray-600 mb-6" />
-                            <h3 className="text-xl font-semibold text-gray-300 mb-3">No Results Yet</h3>
-                            <p className="text-gray-500 max-w-md">
-                              Candidate quiz results will appear here once they complete your assessments.
-                            </p>
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        <>
-                          {paginatedQuizzes.map((quiz) => {
-                            const selectedStart = selectedScores[quiz.quiz_id] ?? null;
-                            const selectedBin = selectedStart !== null
-                              ? quiz.scoreDistribution.find((d) => Number(d.name.split("-")[0]) === selectedStart)
-                              : null;
-
-                            const filteredCandidates = selectedBin ? selectedBin.candidates : quiz.details;
-
-                            const highestScore = Math.max(...quiz.details.map((d) => d.result.score), 0);
-                            const topScorer = quiz.details.find((d) => d.result.score === highestScore);
-                            const correctCount = topScorer
-                              ? Math.round((highestScore / 100) * (topScorer.result.total_questions ?? 0))
-                              : 0;
-                            const totalQ = topScorer?.result.total_questions ?? 0;
-
-                            const totalAttempts = quiz.details.length;
-                            const uniqueCandidates = new Set(quiz.details.map((d) => d.username)).size;
-
-                            return (
-                              <Card
-                                key={quiz.quiz_id}
-                                className="bg-zinc-950 border-zinc-800 shadow-xl hover:shadow-purple-900/20 transition-shadow"
+                              <Button
+                                variant="destructive"
+                                onClick={() =>
+                                  setShowDeleteQuizModal({
+                                    show: true,
+                                    quizId: quiz.quiz_id,
+                                    role: quiz.role,
+                                  })
+                                }
+                                className="gap-2"
                               >
-                                <CardHeader className="flex flex-col sm:flex-row justify-between gap-4 border-b border-zinc-800 pb-4">
+                                <Trash2 className="h-4 w-4" />
+                                Delete Quiz Data
+                              </Button>
+                            </CardHeader>
+
+                            <CardContent className="pt-6 space-y-8">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div className="flex items-center gap-3">
+                                  <Users className="h-5 w-5 text-indigo-400" />
                                   <div>
-                                    <div className="flex items-center gap-3 flex-wrap">
-                                      <CardTitle className="text-2xl md:text-3xl font-bold">
-                                        {quiz.role} Quiz
-                                      </CardTitle>
-                                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 text-white">
-                                        {quiz.quiz_difficulty}
-                                      </span>
-                                    </div>
-                                    <CardDescription className="mt-2 text-gray-400">
-                                      Click bars to filter candidates by score range
-                                    </CardDescription>
+                                    <p className="text-2xl font-bold">{totalAttempts}</p>
+                                    <p className="text-sm text-gray-400">
+                                      Attempts ({uniqueCandidates} unique)
+                                    </p>
                                   </div>
+                                </div>
 
-                                  <Button
-                                    variant="destructive"
-                                    onClick={() =>
-                                      setShowDeleteQuizModal({
-                                        show: true,
-                                        quizId: quiz.quiz_id,
-                                        role: quiz.role,
-                                      })
-                                    }
-                                    className="gap-2"
+                                <div className="flex items-center gap-3">
+                                  <Trophy className="h-5 w-5 text-yellow-400" />
+                                  <div>
+                                    <p className="text-2xl font-bold">{highestScore.toFixed(1)}%</p>
+                                    <p className="text-sm text-gray-400">Highest Score</p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  <CheckCircle className="h-5 w-5 text-green-400" />
+                                  <div>
+                                    <p className="text-2xl font-bold">
+                                      {correctCount}/{totalQ}
+                                    </p>
+                                    <p className="text-sm text-gray-400">Correct (top attempt)</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="h-96 md:h-[420px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart
+                                    data={quiz.scoreDistribution}
+                                    margin={{ top: 20, right: 10, bottom: 80, left: 0 }}
                                   >
-                                    <Trash2 className="h-4 w-4" />
-                                    Delete Quiz Data
-                                  </Button>
-                                </CardHeader>
-
-                                <CardContent className="pt-6 space-y-8">
-                                  {/* KPIs */}
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                    <div className="flex items-center gap-3">
-                                      <Users className="h-5 w-5 text-indigo-400" />
-                                      <div>
-                                        <p className="text-2xl font-bold">{totalAttempts}</p>
-                                        <p className="text-sm text-gray-400">
-                                          Attempts ({uniqueCandidates} unique)
-                                        </p>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-                                      <Trophy className="h-5 w-5 text-yellow-400" />
-                                      <div>
-                                        <p className="text-2xl font-bold">{highestScore.toFixed(1)}%</p>
-                                        <p className="text-sm text-gray-400">Highest Score</p>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-                                      <CheckCircle className="h-5 w-5 text-green-400" />
-                                      <div>
-                                        <p className="text-2xl font-bold">
-                                          {correctCount}/{totalQ}
-                                        </p>
-                                        <p className="text-sm text-gray-400">Correct (top attempt)</p>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Chart */}
-                                  <div className="h-96 md:h-[420px]">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                      <BarChart
-                                        data={quiz.scoreDistribution}
-                                        margin={{ top: 20, right: 10, bottom: 80, left: 0 }}
-                                      >
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                                        <XAxis
-                                          dataKey="name"
-                                          angle={-45}
-                                          textAnchor="end"
-                                          height={80}
-                                          stroke="#71717a"
-                                          tick={{ fill: "#9ca3af", fontSize: 11 }}
-                                          interval={0}
-                                        />
-                                        <YAxis
-                                          stroke="#71717a"
-                                          allowDecimals={false}
-                                          tick={{ fill: "#9ca3af" }}
-                                        />
-                                        <Tooltip
-                                          cursor={{ fill: "rgba(139,92,246,0.1)" }}
-                                          content={({ active, payload }) => {
-                                            if (!active || !payload?.length) return null;
-                                            const item = payload[0].payload;
-                                            return (
-                                              <div className="bg-zinc-900 border border-purple-500/40 rounded-lg p-4 shadow-xl min-w-[240px]">
-                                                <div className="flex justify-between items-center mb-3 pb-2 border-b border-zinc-700">
-                                                  <span className="font-bold text-purple-300">{item.name}</span>
-                                                  <span className="px-2.5 py-1 bg-purple-600/80 rounded-full text-xs font-bold">
-                                                    {item.count}
-                                                  </span>
-                                                </div>
-                                                {item.candidates.length > 0 ? (
-                                                  <div className="space-y-2 max-h-48 overflow-auto">
-                                                    {item.candidates.slice(0, 5).map((c: QuizResult, i: number) => (
-                                                      <div
-                                                        key={i}
-                                                        className="flex justify-between text-sm bg-zinc-800/60 p-2 rounded"
-                                                      >
-                                                        <span className="truncate max-w-[140px]">{c.username}</span>
-                                                        <span className="font-bold text-purple-300">
-                                                          {c.result.score.toFixed(1)}%
-                                                        </span>
-                                                      </div>
-                                                    ))}
-                                                    {item.candidates.length > 5 && (
-                                                      <p className="text-xs text-center text-purple-400 pt-2">
-                                                        +{item.candidates.length - 5} more
-                                                      </p>
-                                                    )}
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                                    <XAxis
+                                      dataKey="name"
+                                      angle={-45}
+                                      textAnchor="end"
+                                      height={80}
+                                      stroke="#71717a"
+                                      tick={{ fill: "#9ca3af", fontSize: 11 }}
+                                      interval={0}
+                                    />
+                                    <YAxis
+                                      stroke="#71717a"
+                                      allowDecimals={false}
+                                      tick={{ fill: "#9ca3af" }}
+                                    />
+                                    <Tooltip
+                                      cursor={{ fill: "rgba(139,92,246,0.1)" }}
+                                      content={({ active, payload }) => {
+                                        if (!active || !payload?.length) return null;
+                                        const item = payload[0].payload as ScoreBin;
+                                        return (
+                                          <div className="bg-zinc-900 border border-purple-500/40 rounded-lg p-4 shadow-xl min-w-[240px]">
+                                            <div className="flex justify-between items-center mb-3 pb-2 border-b border-zinc-700">
+                                              <span className="font-bold text-purple-300">{item.name}%</span>
+                                              <span className="px-2.5 py-1 bg-purple-600/80 rounded-full text-xs font-bold">
+                                                {item.count}
+                                              </span>
+                                            </div>
+                                            {item.candidates.length > 0 ? (
+                                              <div className="space-y-2 max-h-48 overflow-auto">
+                                                {item.candidates.slice(0, 5).map((c, i) => (
+                                                  <div
+                                                    key={i}
+                                                    className="flex justify-between text-sm bg-zinc-800/60 p-2 rounded"
+                                                  >
+                                                    <span className="truncate max-w-[140px]">{c.username}</span>
+                                                    <span className="font-bold text-purple-300">
+                                                      {c.result.score.toFixed(1)}%
+                                                    </span>
                                                   </div>
-                                                ) : (
-                                                  <p className="text-center text-gray-500 py-3 text-sm">
-                                                    No attempts in this range
+                                                ))}
+                                                {item.candidates.length > 5 && (
+                                                  <p className="text-xs text-center text-purple-400 pt-2">
+                                                    +{item.candidates.length - 5} more
                                                   </p>
                                                 )}
                                               </div>
-                                            );
-                                          }}
-                                        />
-                                        <Bar
-                                          dataKey="count"
-                                          radius={[6, 6, 0, 0]}
-                                          maxBarSize={50}
-                                          onClick={(data: any) => {
-                                            if (!data?.count) return;
-                                            const start = Number(data.name.split("-")[0]);
-                                            setSelectedScores((prev) => ({
-                                              ...prev,
-                                              [quiz.quiz_id]: prev[quiz.quiz_id] === start ? null : start,
-                                            }));
-                                          }}
-                                        >
-                                          {quiz.scoreDistribution.map((entry, i) => {
-                                            const start = Number(entry.name.split("-")[0]);
-                                            const isSelected = selectedScores[quiz.quiz_id] === start;
-                                            const hasData = entry.count > 0;
-
-                                            return (
-                                              <Cell
-                                                key={`cell-${i}`}
-                                                fill={hasData ? (isSelected ? "#10B981" : "#8B5CF6") : "#27272a"}
-                                                style={{
-                                                  cursor: hasData ? "pointer" : "default",
-                                                  transition: "all 0.2s ease",
-                                                }}
-                                              />
-                                            );
-                                          })}
-                                        </Bar>
-                                      </BarChart>
-                                    </ResponsiveContainer>
-
-                                    {selectedStart !== null && (
-                                      <div className="mt-4 text-center">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() =>
-                                            setSelectedScores((prev) => ({ ...prev, [quiz.quiz_id]: null }))
-                                          }
-                                          className="gap-2 border-purple-500/50 text-purple-300 hover:text-purple-200"
-                                        >
-                                          <RefreshCcw className="h-4 w-4" />
-                                          Clear {selectedStart}–{selectedStart + 5}% Filter
-                                        </Button>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Candidate Table */}
-                                  <div className="space-y-4">
-                                    <div className="flex flex-col sm:flex-row justify-between gap-4">
-                                      <h2 className="text-xl font-semibold border-l-4 border-purple-500 pl-3">
-                                        Candidate Details
-                                        {selectedStart !== null && (
-                                          <span className="ml-2 text-sm text-purple-400">(Filtered)</span>
-                                        )}
-                                      </h2>
-
-                                      <div className="flex flex-wrap gap-3">
-                                        {hasSelectedUsers && (
-                                          <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() =>
-                                              setShowDeleteUsersModal({
-                                                show: true,
-                                                quizId: quiz.quiz_id,
-                                              })
-                                            }
-                                            className="gap-2"
-                                          >
-                                            <Trash2 className="h-4 w-4" />
-                                            Delete ({Object.values(selectedUsers).filter(Boolean).length})
-                                          </Button>
-                                        )}
-                                        <Button
-                                          size="sm"
-                                          className="bg-purple-600 hover:bg-purple-700 gap-2"
-                                          onClick={() => exportExcel(filteredCandidates)}
-                                        >
-                                          <Download className="h-4 w-4" />
-                                          Excel ({filteredCandidates.length})
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          className="bg-purple-600 hover:bg-purple-700 gap-2"
-                                          onClick={() => exportPDF(filteredCandidates)}
-                                        >
-                                          <Download className="h-4 w-4" />
-                                          PDF ({filteredCandidates.length})
-                                        </Button>
-                                      </div>
-                                    </div>
-
-                                    <div className="border border-zinc-800 rounded-xl overflow-hidden max-h-[420px] overflow-y-auto">
-                                      <Table>
-                                        <TableHeader className="sticky top-0 bg-zinc-900 z-10">
-                                          <TableRow>
-                                            <TableHead className="w-10" />
-                                            <TableHead>Username</TableHead>
-                                            <TableHead className="hidden md:table-cell">Email</TableHead>
-                                            <TableHead>Score</TableHead>
-                                            <TableHead>Attempt</TableHead>
-                                            <TableHead className="hidden sm:table-cell">Date</TableHead>
-                                          </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                          {filteredCandidates.length === 0 ? (
-                                            <TableRow>
-                                              <TableCell colSpan={6} className="text-center py-12 text-gray-500">
-                                                {selectedStart !== null
-                                                  ? "No candidates in selected score range"
-                                                  : "No results yet for this quiz"}
-                                              </TableCell>
-                                            </TableRow>
-                                          ) : (
-                                            filteredCandidates
-                                              .sort((a, b) => b.result.score - a.result.score)
-                                              .map((c) => {
-                                                const key = `${c.username}|${c.user_email}`;
-                                                return (
-                                                  <TableRow key={key} className="hover:bg-zinc-900/60">
-                                                    <TableCell>
-                                                      <input
-                                                        type="checkbox"
-                                                        checked={!!selectedUsers[key]}
-                                                        onChange={() => toggleUserSelection(key)}
-                                                        className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800"
-                                                      />
-                                                    </TableCell>
-                                                    <TableCell className="font-medium">{c.username}</TableCell>
-                                                    <TableCell className="hidden md:table-cell truncate max-w-xs">
-                                                      {c.user_email}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                      <span
-                                                        className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                                                          c.result.score >= 90
-                                                            ? "bg-green-600 text-white"
-                                                            : c.result.score >= 70
-                                                            ? "bg-cyan-600 text-white"
-                                                            : c.result.score >= 50
-                                                            ? "bg-yellow-500 text-black"
-                                                            : "bg-red-600 text-white"
-                                                        }`}
-                                                      >
-                                                        {c.result.score.toFixed(1)}%
-                                                      </span>
-                                                    </TableCell>
-                                                    <TableCell>{c.attempt}</TableCell>
-                                                    <TableCell className="hidden sm:table-cell">
-                                                      {formatDate(c.created_at)}
-                                                    </TableCell>
-                                                  </TableRow>
-                                                );
-                                              })
-                                          )}
-                                        </TableBody>
-                                      </Table>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            );
-                          })}
-
-                          {totalPages > 1 && (
-                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 py-6">
-                              <div className="text-sm text-gray-400">
-                                Showing {(currentPage - 1) * quizzesPerPage + 1}–
-                                {Math.min(currentPage * quizzesPerPage, analyticsPerQuiz.length)} of{" "}
-                                {analyticsPerQuiz.length} quizzes
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  disabled={currentPage === 1}
-                                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                >
-                                  <ChevronLeft className="h-4 w-4 mr-1" /> Prev
-                                </Button>
-
-                                {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
-                                  const page = i + 1;
-                                  return (
-                                    <Button
-                                      key={page}
-                                      size="sm"
-                                      variant={currentPage === page ? "default" : "outline"}
-                                      className="min-w-[36px]"
-                                      onClick={() => setCurrentPage(page)}
+                                            ) : (
+                                              <p className="text-center text-gray-500 py-3 text-sm">
+                                                No attempts in this range
+                                              </p>
+                                            )}
+                                          </div>
+                                        );
+                                      }}
+                                    />
+                                    <Bar
+                                      dataKey="count"
+                                      radius={[6, 6, 0, 0]}
+                                      maxBarSize={50}
+                                      onClick={(data: any) => {
+                                        if (!data?.count) return;
+                                        const start = Number(data.name.split("-")[0]);
+                                        setSelectedScores((prev) => ({
+                                          ...prev,
+                                          [quiz.quiz_id]: prev[quiz.quiz_id] === start ? null : start,
+                                        }));
+                                      }}
                                     >
-                                      {page}
-                                    </Button>
-                                  );
-                                })}
+                                      {quiz.scoreDistribution.map((entry, i) => {
+                                        const start = Number(entry.name.split("-")[0]);
+                                        const isSelected = selectedScores[quiz.quiz_id] === start;
+                                        const hasData = entry.count > 0;
 
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  disabled={currentPage === totalPages}
-                                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                >
-                                  Next <ChevronRight className="h-4 w-4 ml-1" />
-                                </Button>
+                                        return (
+                                          <Cell
+                                            key={`cell-${i}`}
+                                            fill={hasData ? (isSelected ? "#10B981" : "#8B5CF6") : "#27272a"}
+                                            style={{
+                                              cursor: hasData ? "pointer" : "default",
+                                              transition: "all 0.2s ease",
+                                            }}
+                                          />
+                                        );
+                                      })}
+                                    </Bar>
+                                  </BarChart>
+                                </ResponsiveContainer>
+
+                                {selectedStart !== null && (
+                                  <div className="mt-4 text-center">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        setSelectedScores((prev) => ({ ...prev, [quiz.quiz_id]: null }))
+                                      }
+                                      className="gap-2 border-purple-500/50 text-purple-300 hover:text-purple-200"
+                                    >
+                                      <RefreshCcw className="h-4 w-4" />
+                                      Clear {selectedStart}–{selectedStart + 9}% Filter
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          )}
-                        </>
+
+                              <div className="space-y-4">
+                                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                                  <h2 className="text-xl font-semibold border-l-4 border-purple-500 pl-3">
+                                    Candidate Details
+                                    {selectedStart !== null && (
+                                      <span className="ml-2 text-sm text-purple-400">(Filtered)</span>
+                                    )}
+                                  </h2>
+
+                                  <div className="flex flex-wrap gap-3">
+                                    {hasSelectedUsers && (
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() =>
+                                          setShowDeleteUsersModal({
+                                            show: true,
+                                            quizId: quiz.quiz_id,
+                                          })
+                                        }
+                                        className="gap-2"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                        Delete ({Object.values(selectedUsers).filter(Boolean).length})
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      className="bg-purple-600 hover:bg-purple-700 gap-2"
+                                      onClick={() => exportExcel(filteredCandidates)}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                      Excel ({filteredCandidates.length})
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      className="bg-purple-600 hover:bg-purple-700 gap-2"
+                                      onClick={() => exportPDF(filteredCandidates)}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                      PDF ({filteredCandidates.length})
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                <div className="border border-zinc-800 rounded-xl overflow-hidden max-h-[420px] overflow-y-auto">
+                                  <Table>
+                                    <TableHeader className="sticky top-0 bg-zinc-900 z-10">
+                                      <TableRow>
+                                        <TableHead className="w-10" />
+                                        <TableHead>Username</TableHead>
+                                        <TableHead className="hidden md:table-cell">Email</TableHead>
+                                        <TableHead>Score</TableHead>
+                                        <TableHead>Attempt</TableHead>
+                                        <TableHead className="hidden sm:table-cell">Date</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {filteredCandidates.length === 0 ? (
+                                        <TableRow>
+                                          <TableCell colSpan={6} className="text-center py-12 text-gray-500">
+                                            {selectedStart !== null
+                                              ? "No candidates in selected score range"
+                                              : "No results yet for this quiz"}
+                                          </TableCell>
+                                        </TableRow>
+                                      ) : (
+                                        filteredCandidates
+                                          .sort((a, b) => b.result.score - a.result.score)
+                                          .map((c) => {
+                                            const key = `${c.username}|${c.user_email}`;
+                                            return (
+                                              <TableRow key={key} className="hover:bg-zinc-900/60">
+                                                <TableCell>
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={!!selectedUsers[key]}
+                                                    onChange={() => toggleUserSelection(key)}
+                                                    className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800"
+                                                  />
+                                                </TableCell>
+                                                <TableCell className="font-medium">{c.username}</TableCell>
+                                                <TableCell className="hidden md:table-cell truncate max-w-xs">
+                                                  {c.user_email}
+                                                </TableCell>
+                                                <TableCell>
+                                                  <span
+                                                    className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                                                      c.result.score >= 90
+                                                        ? "bg-green-600 text-white"
+                                                        : c.result.score >= 70
+                                                        ? "bg-cyan-600 text-white"
+                                                        : c.result.score >= 50
+                                                        ? "bg-yellow-500 text-black"
+                                                        : "bg-red-600 text-white"
+                                                    }`}
+                                                  >
+                                                    {c.result.score.toFixed(1)}%
+                                                  </span>
+                                                </TableCell>
+                                                <TableCell>{c.attempt}</TableCell>
+                                                <TableCell className="hidden sm:table-cell">
+                                                  {formatDate(c.created_at)}
+                                                </TableCell>
+                                              </TableRow>
+                                            );
+                                          })
+                                      )}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+
+                      {totalPages > 1 && (
+                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 py-6">
+                          <div className="text-sm text-gray-400">
+                            Showing {(currentPage - 1) * quizzesPerPage + 1}–
+                            {Math.min(currentPage * quizzesPerPage, analyticsPerQuiz.length)} of{" "}
+                            {analyticsPerQuiz.length} quizzes
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={currentPage === 1}
+                              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            >
+                              <ChevronLeft className="h-4 w-4 mr-1" /> Prev
+                            </Button>
+
+                            {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
+                              const page = i + 1;
+                              return (
+                                <Button
+                                  key={page}
+                                  size="sm"
+                                  variant={currentPage === page ? "default" : "outline"}
+                                  className="min-w-[36px]"
+                                  onClick={() => setCurrentPage(page)}
+                                >
+                                  {page}
+                                </Button>
+                              );
+                            })}
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={currentPage === totalPages}
+                              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                            >
+                              Next <ChevronRight className="h-4 w-4 ml-1" />
+                            </Button>
+                          </div>
+                        </div>
                       )}
-                    </div>
+                    </>
                   )}
                 </div>
               </main>
@@ -863,7 +846,6 @@ export default function ResultsDashboard() {
         </SignedOut>
       </div>
 
-      {/* Delete Quiz Modal */}
       {showDeleteQuizModal.show && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md">
@@ -902,7 +884,6 @@ export default function ResultsDashboard() {
         </div>
       )}
 
-      {/* Delete Selected Users Modal */}
       {showDeleteUsersModal.show && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md">

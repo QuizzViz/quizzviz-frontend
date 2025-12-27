@@ -30,7 +30,7 @@ export async function getCompanyId(request: NextRequest): Promise<{ company_id: 
       return { error: new Response(JSON.stringify({ error: 'Unauthorized - No token' }), { status: 401 }) };
     }
 
-    const response = await fetch(`${COMPANY_SERVICE_URL}/companies/owner/${userId}`, {
+    const response = await fetch(`${COMPANY_SERVICE_URL}/companies?owner_id=${userId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
