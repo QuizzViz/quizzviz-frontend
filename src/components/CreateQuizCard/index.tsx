@@ -38,7 +38,7 @@ export default function CreateQuizCard({
   const maxQuestions = propMaxQuestions || 200; // Default to Business plan limit
   const [codePercentage, setCodePercentage] = useState(50);
   const [role, setRole] = useState('Software Engineer');
-  const [techStack, setTechStack] = useState<Array<{ id: string; name: string; weight: number }>>([]);
+  const [techStack, setTechStack] = useState<Array<{ name: string; weight: number }>>([]);
   
   // Get user data
   const { user, isLoaded: isUserLoaded } = useUser();
