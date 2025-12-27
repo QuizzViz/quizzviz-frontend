@@ -165,8 +165,8 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
     if (isReasoning || isFetching) return;
 
     const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
-    if (!topic.trim()) {
-      setError("Topic is required");
+    if (!role) {
+      setError("Role is required");
       return;
     }
     if (!difficulty) {

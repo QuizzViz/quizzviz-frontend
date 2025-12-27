@@ -235,22 +235,6 @@ export default function CreateQuizCard({
         </div>
         
         <div className="pt-2 flex flex-col space-y-2">
-          {isLoadingUsage ? (
-            <div className="flex items-center justify-center p-2">
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              <span className="text-sm text-muted-foreground">Loading...</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <div className="flex items-center">
-                <span>Quizzes this month: </span>
-                <span className="font-medium ml-1">
-                  {quizUsage?.data?.current_month?.quiz_count || 0} / 20
-                </span>
-              </div>
-            </div>
-          )}
-
           <div className="flex justify-end">
             <TooltipProvider>
               <Tooltip>
