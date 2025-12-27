@@ -25,7 +25,7 @@ export default function QuizDetailsPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <Head>
-        <title>Quiz Editor | {userName}</title>
+        <title>Quiz Editor | QuizzViz</title>
       </Head>
       
       <SignedIn>

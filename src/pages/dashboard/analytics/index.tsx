@@ -384,7 +384,7 @@ export default function ResultsDashboard() {
         throw new Error(err.message || "Delete failed");
       }
       await fetchResults(user, true);
-      toast({ title: "Success", description: "Quiz data deleted", variant: "default" });
+      toast({ title: "Success", description: "Quiz data deleted", variant: "success" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -422,7 +422,7 @@ export default function ResultsDashboard() {
 
       await fetchResults(user, true);
       setSelectedUsers({});
-      toast({ title: "Success", description: "Selected results deleted", variant: "default" });
+      toast({ title: "Success", description: "Selected results deleted", variant: "success" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -450,6 +450,25 @@ export default function ResultsDashboard() {
 
               <main className="flex-1 overflow-y-auto bg-black">
                 <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
+                  <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold">Quiz Analytics</h1>
+                    <div className="flex items-center gap-4">
+                      {lastUpdated && (
+                        <div className="text-sm text-gray-400">
+                          Last updated: {new Date(lastUpdated).toLocaleString()}
+                        </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="gap-2"
+                      >
+                        <RefreshCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                        {refreshing ? 'Refreshing...' : 'Refresh Data'}
+                      </Button>
+                    </div>
+                  </div>
                   {loading ? (
                     <div className="flex justify-center py-24">
                       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
