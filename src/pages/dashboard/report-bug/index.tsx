@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bug, CheckCircle, AlertCircle, Monitor, Bug as BugIconSvg, Zap, ShieldAlert, HelpCircle } from 'lucide-react';
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
+import { DashboardAccess } from '@/components/Dashboard/DashboardAccess';
 
 type BugType = 'ui' | 'functionality' | 'performance' | 'security' | 'other';
 
@@ -282,7 +283,7 @@ ${actual}
   }
 
   return (
-    <>
+    <DashboardAccess>
       <Head>
         <title>Report a Bug | QuizzViz</title>
         <link rel="icon" href="/favicon.ico" />
@@ -446,6 +447,6 @@ ${actual}
           </div>
         </div>
       </div>
-    </>
+    </DashboardAccess>
   );
 }

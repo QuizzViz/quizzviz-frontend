@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertCircle, Send, ThumbsUp, Lightbulb, MessageSquare, MessageCircle, FileText, Star, Mail, MessageCircleHeart } from 'lucide-react';
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
+import { DashboardAccess } from '@/components/Dashboard/DashboardAccess';
 
 type FeedbackType = 'compliment' | 'suggestion' | 'advice' | 'other';
 
@@ -151,7 +152,7 @@ export default function FeedbackPage() {
 
   // Main form UI
   return (
-    <>
+    <DashboardAccess>
       <Head>
         <title>Feedback | QuizzViz</title>
         <link rel="icon" href="/favicon.ico" />
@@ -377,6 +378,6 @@ export default function FeedbackPage() {
         </div>
       </div>
       </div>
-    </>
+    </DashboardAccess>
   );
 }

@@ -30,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 
 interface QuizSummary {
   quiz_id: string;
@@ -176,7 +177,7 @@ export default function MyQuizzesPage() {
 
   // Business Plan UI
   return (
-    <>
+    <DashboardAccess>
       <Head>
         <title>My Quizzes | QuizzViz</title>
         <link rel="icon" href="/favicon.ico" />
@@ -287,6 +288,6 @@ export default function MyQuizzesPage() {
           </div>
         </SignedOut>
       </div>
-    </>
+    </DashboardAccess>
   );
 }

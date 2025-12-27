@@ -48,7 +48,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Link from "next/link";
+import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 
 type QuizResult = {
   quiz_id: string;
@@ -421,7 +421,7 @@ export default function ResultsDashboard() {
   //  Render
   // ────────────────────────────────────────────────
   return (
-    <>
+    <DashboardAccess>
       <Head>
         <title>Quiz Analytics</title>
         <link rel="icon" href="/favicon.ico" />
@@ -942,6 +942,6 @@ export default function ResultsDashboard() {
           </div>
         </div>
       )}
-    </>
+    </DashboardAccess>
   );
 }

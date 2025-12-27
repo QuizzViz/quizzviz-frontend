@@ -7,6 +7,7 @@ import Head from "next/head";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
+import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
@@ -27,7 +28,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <>
+    <DashboardAccess>
       <Head>
         <title>Profile | QuizzViz</title>
        <link rel="icon" href="/favicon.ico" />
@@ -96,6 +97,6 @@ export default function ProfilePage() {
           </div>
         </SignedOut>
       </div>
-    </>
+    </DashboardAccess>
   );
 }

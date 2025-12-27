@@ -7,6 +7,7 @@ import Head from "next/head";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
+import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 
 export default function SettingsPage() {
   const { user, isLoaded } = useUser();
@@ -27,7 +28,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <>
+    <DashboardAccess>
       <Head>
         <title>Settings | QuizzViz</title>
         <link rel="icon" href="/favicon.ico" />
@@ -65,6 +66,6 @@ export default function SettingsPage() {
           </div>
         </SignedOut>
       </div>
-    </>
+    </DashboardAccess>
   );
 }
