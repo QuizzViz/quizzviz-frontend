@@ -137,14 +137,24 @@ export default function CreateQuizCard({
   }, [topic]);
 
   const handleGenerateWithLimit = (codePct: number) => {
+    // Clear any previous errors
+    setError(null);
+
     // Validate tech stack
-    if (techStack.length === 0) {
+    if (!techStack || techStack.length === 0) {
       setError("Please add at least one technology to your tech stack");
       return;
     }
     
+    // Ensure tech stack items have valid weights
+    const validTechStack = techStack.filter(tech => tech && tech.name && tech.weight !== undefined);
+    if (validTechStack.length === 0) {
+      setError("Invalid tech stack configuration");
+      return;
+    }
+    
     // Check if tech stack weights sum to 100%
-    const totalWeight = techStack.reduce((sum, tech) => sum + tech.weight, 0);
+    const totalWeight = validTechStack.reduce((sum, tech) => sum + tech.weight, 0);
     if (Math.abs(totalWeight - 100) > 1) { // Allow for small floating point errors
       setError("Tech stack weights must sum to 100%");
       return;
@@ -157,8 +167,20 @@ export default function CreateQuizCard({
       return;
     }
 
-    // Pass the code percentage, tech stack, and role to the handler
-    _handleGenerate(techStack, codePct,  role);
+    try {
+      // Ensure we're passing a valid tech stack array with required fields
+      const sanitizedTechStack = validTechStack.map(tech => ({
+        id: tech.id || Math.random().toString(36).substr(2, 9),
+        name: tech.name.trim(),
+        weight: Math.round(tech.weight)
+      }));
+
+      // Pass the code percentage, tech stack, and role to the handler
+      _handleGenerate(sanitizedTechStack, codePct, role);
+    } catch (error) {
+      console.error("Error generating quiz:", error);
+      setError("Failed to generate quiz. Please try again.");
+    }
   };
 
   const handleGenerateClick = (codePct: number) => {

@@ -219,11 +219,18 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         theory_questions_percentage: 100 - codePct,
         code_analysis_questions_percentage: codePct,
         user_id: user?.id,
+        role: role,
         timestamp: Date.now(),
-        techStack: validTechStack
+        techStack: validTechStack.map(tech => ({
+          name: tech.name.trim(),
+          weight: Math.round(tech.weight)
+        })),
+        is_deleted: false,
+        is_publish: false,
+        company_id: companyInfo?.id || 'company_123'
       };
       
-      console.log('Sending payload with tech stack:', payload);
+      console.log('Sending payload with tech stack:', JSON.stringify(payload, null, 2));
 
       console.log('Sending quiz generation request:', payload);
       
