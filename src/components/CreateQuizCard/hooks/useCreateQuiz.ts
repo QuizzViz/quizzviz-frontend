@@ -20,8 +20,8 @@ interface CompanyInfo {
 
 interface UseCreateQuizReturn {
   // Form state
-  topic: string;
-  setTopic: (topic: string) => void;
+  role: string;
+  setRole: (role: string) => void;
   difficulty: string;
   setDifficulty: (difficulty: string) => void;
   count: number;
@@ -48,14 +48,17 @@ interface UseCreateQuizReturn {
   companyInfo: CompanyInfo | null;
   isLoadingCompany: boolean;
   
-  // Actions
-  handleGenerate: (codePercentage?: number) => Promise<void>;
+  handleGenerate: (
+    techStack: Array<{ name: string; weight: number }>,
+    codePercentage?: number,
+    role?: string
+  ) => Promise<void>;
 }
 
 // Encapsulates all state and behavior for CreateQuiz workflow
 export function useCreateQuiz(): UseCreateQuizReturn {
   // form state
-  const [topic, setTopic] = useState("");
+  const [role, setRole] = useState("");
   const [difficulty, setDifficulty] = useState("Bachelors");
   const [count, setCount] = useState(5);
   const [balance, setBalance] = useState<number[]>([50]);
@@ -72,7 +75,7 @@ export function useCreateQuiz(): UseCreateQuizReturn {
 
   // typing steps
   const steps = [
-    "🔍 Parsing and understanding the topic semantics...",
+    "🔍 Parsing and understanding the role semantics...",
     "⚖️ Balancing code-analysis and theoretical coverage...",
     "🧩 Generating question templates & code scaffolds...",
     "✅ Validating difficulty and finalizing the quiz...",
@@ -161,49 +164,48 @@ export function useCreateQuiz(): UseCreateQuizReturn {
   }, [quizGeneration]);
 
   // API call + animation toggles
-  const handleGenerate = useCallback(async (codePercentage: number = 50): Promise<void> => {
-    if (isReasoning || isFetching) return;
-
-    const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
-    if (!topic.trim()) {
-      setError("Role is required");
-      return;
-    }
-    if (!difficulty) {
-      setError("Difficulty is required");
-      return;
-    }
-    if (!numQuestions) {
-      setError("Number of questions is required");
-      return;
-    }
-    
-    // Update the balance state with the current code percentage
-    setBalance([codePercentage]);
-
-    // Start the generation process
-    setIsFetching(true);
-    setIsReasoning(true);
-    setError(null);
-    setQuizData(null);
-    
-    // Notify other tabs that generation has started
-    if (quizGeneration?.startGeneration) {
-      quizGeneration.startGeneration(topic.trim());
-    }
-
-    try {
-      // Prepare the payload with the provided code percentage
-      const codePct = Math.max(0, Math.min(100, codePercentage));
-      const payload = {
-        topic: topic.trim(),
-        difficulty: difficultyToApi(difficulty),
-        num_questions: numQuestions,
-        theory_questions_percentage: 100 - codePct,
-        code_analysis_questions_percentage: codePct,
-        user_id: user?.id,
-        timestamp: Date.now()
-      };
+  const handleGenerate = useCallback(async (
+  techStack: Array<{name: string; weight: number }> = [],
+  codePercentage: number = 50,
+  role: string = ''
+): Promise<void> => {
+  if (isReasoning || isFetching) return;
+  const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
+  
+  if (!role.trim()) {
+    setError("Role is required");
+    return;
+  }
+  
+  if (!techStack || techStack.length === 0) {
+    setError("At least one technology is required in the tech stack");
+    return;
+  }
+  if (!difficulty) {
+    setError("Difficulty is required");
+    return;
+  }
+  
+  if (!numQuestions) {
+    setError("Number of questions is required");
+    return;
+  }
+  try {
+    // Prepare the payload with tech stack and role
+    const codePct = Math.max(0, Math.min(100, codePercentage));
+    const payload = {
+      role: role.trim(),  // Using role as the role
+      difficulty: difficultyToApi(difficulty),
+      num_questions: numQuestions,
+      theory_questions_percentage: 100 - codePct,
+      code_analysis_questions_percentage: codePct,
+      user_id: user?.id,
+      timestamp: Date.now(),
+      tech_stack: techStack.map(tech => ({
+        name: tech.name,
+        weight: tech.weight
+      }))
+    };
 
       console.log('Sending quiz generation request:', payload);
       
@@ -231,9 +233,9 @@ export function useCreateQuiz(): UseCreateQuizReturn {
 
       // Check for error in successful response (200 but with error field)
       if (responseData.error) {
-        // Handle topic-related errors
+        // Handle role-related errors
         if (responseData.error.includes('not related to software')) {
-          const topicError: TopicError = {
+          const roleError: TopicError = {
             error: responseData.error,
             message: '',
             suggestions: [
@@ -244,8 +246,8 @@ export function useCreateQuiz(): UseCreateQuizReturn {
             isTopicError: true
           };
           
-          setError(topicError.message);
-          safeCompleteGeneration(false, topicError);
+          setError(roleError.message);
+          safeCompleteGeneration(false, roleError);
           return;
         }
         
@@ -276,7 +278,7 @@ export function useCreateQuiz(): UseCreateQuizReturn {
       setIsFetching(false);
       setTimeout(() => setIsReasoning(false), 400);
     }
-  }, [isReasoning, isFetching, count, topic, difficulty, balance, quizGeneration, user?.id, safeCompleteGeneration, companyInfo]);
+  }, [isReasoning, isFetching, count, role, difficulty, balance, quizGeneration, user?.id, safeCompleteGeneration, companyInfo]);
 
   // Typewriter effect and progress
   useEffect(() => {
@@ -352,8 +354,8 @@ export function useCreateQuiz(): UseCreateQuizReturn {
 
   return {
     // form state
-    topic,
-    setTopic,
+    role,
+    setRole,
     difficulty,
     setDifficulty,
     count,
