@@ -16,31 +16,55 @@ const handleApiError = (error: any) => {
 };
 
 // Helper function to get company ID for a user
-async function getCompanyId(userId: string, token: string) {
+async function getCompanyId(userId: string, token: string, request: Request) {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/company/check?owner_id=${encodeURIComponent(userId)}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        cache: 'no-store'
-      }
-    );
+    // Get the origin from the request URL
+    const requestUrl = new URL(request.url);
+    const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+    const url = new URL(`/api/company/check?owner_id=${encodeURIComponent(userId)}`, baseUrl).toString();
+    
+    console.log('Fetching company info from:', url);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      cache: 'no-store'
+    });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Failed to fetch company info:', response.status, errorText);
       throw new Error('Failed to fetch company information');
     }
 
     const data = await response.json();
-    if (!data.companies || data.companies.length === 0) {
+    console.log('Company check response:', data);
+    
+    // Check if company exists and has data
+    if (!data.exists || !Array.isArray(data.companies) || data.companies.length === 0) {
+      console.error('No company found for user:', userId);
       throw new Error('No company found for this user');
     }
 
-    return data.companies[0].id;
+    // Get the first company from the array
+    const company = data.companies[0];
+    console.log('Company data:', company);
+    
+    // Extract company_id from the company object
+    const companyId = company.company_id;
+    
+    if (!companyId) {
+      console.error('Company ID not found in company data:', company);
+      throw new Error('Company ID not found in response');
+    }
+
+    console.log('Found company ID:', companyId);
+    return companyId;
   } catch (error) {
-    console.error('Error fetching company ID:', error);
+    console.error('Error in getCompanyId:', error);
     throw new Error('Failed to get company information');
   }
 }
@@ -84,7 +108,7 @@ export async function GET(request: Request) {
     }
 
     // Get company ID for the user
-    const companyId = await getCompanyId(userId, sessionToken);
+    const companyId = await getCompanyId(userId, sessionToken, request);
     
     // Log the request for debugging
     console.log('Sending request to quiz usage backend:', {
