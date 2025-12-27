@@ -173,8 +173,25 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       setError("Difficulty is required");
       return;
     }
-    if (!numQuestions) {
-      setError("Number of questions is required");
+    if (!techStack || !Array.isArray(techStack) || techStack.length === 0) {
+      setError("At least one technology is required in the tech stack");
+      return;
+    }
+  
+    // Ensure all tech stack items have valid names and weights
+    const validTechStack = techStack.filter(tech => 
+      tech && 
+      typeof tech === 'object' && 
+      'name' in tech && 
+      typeof tech.name === 'string' && 
+      tech.name.trim() !== '' &&
+      'weight' in tech && 
+      typeof tech.weight === 'number' &&
+      tech.weight > 0
+    );
+  
+    if (validTechStack.length === 0) {
+      setError("Please add at least one valid technology with a weight greater than 0");
       return;
     }
     
@@ -202,8 +219,11 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         theory_questions_percentage: 100 - codePct,
         code_analysis_questions_percentage: codePct,
         user_id: user?.id,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        techStack: validTechStack
       };
+      
+      console.log('Sending payload with tech stack:', payload);
 
       console.log('Sending quiz generation request:', payload);
       
