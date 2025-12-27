@@ -85,8 +85,17 @@ export function useQuizUsage(p0?: { refetchOnMount: string; refetchOnWindowFocus
     queryKey: ['quiz-usage', companyInfo?.id, plan],
     queryFn: async () => {
       if (!user?.id) throw new Error('User not found');
+      if (!companyInfo?.id) throw new Error('Company information not available');
       
-      const response = await fetch(`/api/quiz-usage${companyInfo?.id ? `?companyId=${encodeURIComponent(companyInfo.id)}` : ''}`);
+      const response = await fetch('/api/quiz-usage', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          company_id: companyInfo.id
+        })
+      });
       
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));

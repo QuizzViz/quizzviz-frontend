@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SignedIn, SignedOut, useUser, useAuth } from "@clerk/nextjs";
-import { ArrowRight, Lock, Zap, Clock } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ArrowRight, Lock, CheckCircle2 } from "lucide-react";
 import Head from "next/head";
 import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -22,10 +21,11 @@ export default function Dashboard() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
-  const [companyInfo, setCompanyInfo] = useState<{name: string; owner_email: string} | null>(null);
+  const [companyInfo, setCompanyInfo] = useState<{name: string; owner_email: string; plan_name: string} | null>(null);
   // Set default values for Business plan
   const maxQuestions = 100; // Business plan limit
   const quizLimit = 20; // Monthly quiz limit
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   useEffect(() => {
     const checkCompanyAccess = async () => {
@@ -56,10 +56,13 @@ export default function Dashboard() {
         if (data.companies && data.companies.length > 0) {
           // Company exists, grant access and set company info
           setHasAccess(true);
-          setCompanyInfo({
+          const companyData = {
             name: data.companies[0].name,
-            owner_email: data.companies[0].owner_email
-          });
+            owner_email: data.companies[0].owner_email,
+            plan_name: data.companies[0].plan_name || 'Free'
+          };
+          setCompanyInfo(companyData);
+          setShowUpgradePrompt(companyData.plan_name.toLowerCase() !== 'business');
           
           // Quiz usage will be handled in a separate page
         } else {
@@ -88,6 +91,49 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-white" />
+      </div>
+    );
+  }
+
+  // Show upgrade prompt for non-Business plans
+  if (showUpgradePrompt && companyInfo) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden shadow-xl">
+          <div className="p-8 text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center mb-6">
+              <Lock className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold mb-4">Get Full Access</h1>
+            <p className="text-gray-300 mb-6">
+              Subscribe to unlock all features and create amazing quizzes.
+            </p>
+            
+            <div className="space-y-3 mb-6">
+              {[
+                'Create and share quizzes',
+                'Access detailed analytics',
+                'Get priority support'
+              ].map((feature, i) => (
+                <div key={i} className="flex items-center justify-center text-gray-300 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
+                  {feature}
+                </div>
+              ))}
+            </div>
+            
+            <Button 
+              onClick={() => router.push('/pricing')}
+              className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-400 hover:to-blue-400 text-white font-medium py-3 px-6 rounded-lg"
+            >
+              Subscribe Now
+            </Button>
+            
+            <p className="mt-4 text-sm text-gray-400">
+              Questions? <a href="mailto:support@quizzviz.com" className="text-blue-400 hover:underline">Contact us</a>
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
