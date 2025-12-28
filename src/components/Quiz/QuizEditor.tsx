@@ -6,6 +6,7 @@ import { useUser, useAuth } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { PageLoading } from "@/components/ui/page-loading";
 import { QuizHeader } from "./QuizHeader";
 import { QuestionCard } from "./QuestionCard";
 import { Pagination } from "./Pagination";
@@ -328,63 +329,63 @@ export function QuizEditor() {
   };
 
   // Delete entire quiz
- const handleDeleteQuiz = async () => {
-  if (!currentQuiz || !user || !company?.company_id) return;
+  const handleDeleteQuiz = async () => {
+    if (!currentQuiz || !user || !company?.company_id) return;
 
-  setIsPublishing(true);
+    setIsPublishing(true);
 
-  try {
-    const token = await getToken();
-    if (!token) throw new Error("No auth token");
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("No auth token");
 
-    // Add companyId as query parameter for DELETE request
-    const res = await fetch(
-      `/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}?companyId=${encodeURIComponent(company.company_id)}`,
-      {
-        method: "DELETE",
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'x-company-id': company.company_id  // Also add as header for redundancy
-        },
-        credentials: "include",
-      }
-    );
-
-    if (!res.ok) throw new Error("Failed to delete quiz");
-
-    // If quiz is published, clean up from publish service
-    if (isPublished) {
-      await fetch(
-        `/api/publish/${company.company_id}/${currentQuiz.quiz_id}`,
+      // Add companyId as query parameter for DELETE request
+      const res = await fetch(
+        `/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}?companyId=${encodeURIComponent(company.company_id)}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-company-id': company.company_id // Also add as header for redundancy
+          },
           credentials: "include",
         }
-      ).catch((e) => console.warn("Publish cleanup failed:", e));
+      );
+
+      if (!res.ok) throw new Error("Failed to delete quiz");
+
+      // If quiz is published, clean up from publish service
+      if (isPublished) {
+        await fetch(
+          `/api/publish/${company.company_id}/${currentQuiz.quiz_id}`,
+          {
+            method: "DELETE",
+            credentials: "include",
+          }
+        ).catch((e) => console.warn("Publish cleanup failed:", e));
+      }
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["quizzes", company.company_id] });
+
+      toast({
+        title: "Deleted",
+        description: "Quiz removed successfully",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+      });
+
+      // Redirect to quizzes list
+      router.push("/dashboard/my-quizzes");
+    } catch (err: any) {
+      toast({
+        title: "Delete failed",
+        description: err.message || "Could not delete quiz",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPublishing(false);
+      setIsDeleteDialogOpen(false);
     }
-
-    // Invalidate queries to refresh data
-    queryClient.invalidateQueries({ queryKey: ["quizzes", company.company_id] });
-
-    toast({
-      title: "Deleted",
-      description: "Quiz removed successfully",
-      className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
-    });
-
-    // Redirect to quizzes list
-    router.push("/dashboard/my-quizzes");
-  } catch (err: any) {
-    toast({
-      title: "Delete failed",
-      description: err.message || "Could not delete quiz",
-      variant: "destructive",
-    });
-  } finally {
-    setIsPublishing(false);
-    setIsDeleteDialogOpen(false);
-  }
-};
+  };
 
   // Copy link
   const handleCopyLink = useCallback(async () => {
@@ -414,8 +415,8 @@ export function QuizEditor() {
         C: "",
         D: ""
       },
-      correct_answer: ['A', 'B', 'C', 'D'].includes(question.correct_answer) 
-        ? question.correct_answer as 'A' | 'B' | 'C' | 'D' 
+      correct_answer: ['A', 'B', 'C', 'D'].includes(question.correct_answer)
+        ? question.correct_answer as 'A' | 'B' | 'C' | 'D'
         : 'A', // Default to 'A' if invalid
     });
     setIsModalOpen(true);
@@ -435,11 +436,7 @@ export function QuizEditor() {
   };
 
   if (!isUserLoaded || isCompanyLoading || isQuizzesLoading || (currentQuiz?.is_publish && isLoadingPublished)) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="animate-spin h-12 w-12 border-t-2 border-b-2 border-blue-500 rounded-full" />
-      </div>
-    );
+    return <PageLoading fullScreen />;
   }
 
   if (quizzesError) {
