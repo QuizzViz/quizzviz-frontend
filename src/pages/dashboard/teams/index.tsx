@@ -70,7 +70,7 @@ export default function TeamsPage() {
                       <FiUsers className="h-12 w-12 text-white/50" />
                     </div>
                     <h3 className="text-xl font-medium text-white mb-2">Teams Coming Soon</h3>
-                    <p className="text-white/60">We're working on bringing you an amazing team management experience.</p>
+                    {/* <p className="text-white/60">We're working on bringing you an amazing team management experience.</p> */}
                   </div>
                 </div>
               </main>

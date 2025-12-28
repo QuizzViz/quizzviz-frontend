@@ -992,13 +992,13 @@ export default function QuizPage({ params }: PageProps) {
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent mb-2">
                   Welcome to {formatCompanyIdToName(companyId)} Quiz
                 </h1>
                 <p className="text-gray-400">Enter your details to begin the assessment</p>
               </div>
 
-              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl">
+              <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
                 <CardContent className="p-8">
                   <form onSubmit={handleSubmitInfo} className="space-y-6">
                     <div className="space-y-2">
@@ -1013,7 +1013,7 @@ export default function QuizPage({ params }: PageProps) {
                         onChange={handleInputChange}
                         placeholder="Enter your Full Name"
                         required
-                        className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/20"
+                        className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
                       />
                     </div>
 
@@ -1029,7 +1029,7 @@ export default function QuizPage({ params }: PageProps) {
                         onChange={handleInputChange}
                         placeholder="Enter your email"
                         required
-                        className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-purple-500 focus:ring-purple-500/20"
+                        className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
                       />
                     </div>
 
@@ -1045,7 +1045,7 @@ export default function QuizPage({ params }: PageProps) {
                         onChange={handleInputChange}
                         placeholder="Enter the quiz access key"
                         required
-                        className="h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-500 focus:border-green-500 focus:ring-green-500/20"
+                        className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
                       />
                       {verificationError && (
                         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
@@ -1060,7 +1060,7 @@ export default function QuizPage({ params }: PageProps) {
                     <Button
                       type="submit"
                       disabled={verifying || showingMaxAttemptsNotification}
-                      className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                      className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-blue-500/20"
                     >
                       {showingMaxAttemptsNotification ? (
                         <>
