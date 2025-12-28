@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from "react";
+import { FC, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PublishQuizModal } from "./PublishQuizModal";
 import { useToast } from "@/hooks/use-toast";
@@ -22,27 +22,29 @@ const QuizView: FC<{
   }) => {
     setIsPublishing(true);
     try {
+      const requestBody = {
+        quiz_id: data?.id,
+        settings: {
+          secretKey: settings.secretKey,
+          timeLimit: settings.timeLimit,
+          maxAttempts: settings.maxAttempts,
+          expirationDate: settings.expirationDate,
+        },
+        questions: data?.quiz || [],
+        publicLink: settings.publicLink,
+        topic: data?.role || 'General Knowledge',
+        difficulty: data?.difficulty || 'Medium',
+        role: data?.role,
+        companyId: data?.company_id,
+        tech_stack: data?.tech_stack || []
+      };
+      
       const response = await fetch('/api/quiz/publish', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          quiz_id: data?.id ,
-          settings: {
-            secretKey: settings.secretKey,
-            timeLimit: settings.timeLimit,
-            maxAttempts: settings.maxAttempts,
-            expirationDate: settings.expirationDate,
-          },
-          questions: data?.quiz || [],
-          publicLink: settings.publicLink,
-          topic: data?.role || 'General Knowledge',
-          difficulty: data?.difficulty || 'Medium',
-          role: data?.role,
-          companyId: data?.company_id,
-          tech_stack: data?.tech_stack || [], // Include tech_stack in the request
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -51,13 +53,11 @@ const QuizView: FC<{
       
       const result = await response.json();
       
-      // Show success message
       toast({
         title: "Quiz Published!",
         description: "Your quiz is now live and can be accessed with the shared link.",
       });
       
-      // Close the modal
       setIsPublishModalOpen(false);
     } catch (error) {
       console.error('Error publishing quiz:', error);
@@ -157,7 +157,7 @@ const QuizView: FC<{
           ))}
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end mt-6">
         <Button className="bg-foreground text-background" onClick={() => { /* TODO: submit */ }}>
           Submit
         </Button>
@@ -174,4 +174,4 @@ const QuizView: FC<{
   );
 };
 
-export default QuizView
+export default QuizView;
