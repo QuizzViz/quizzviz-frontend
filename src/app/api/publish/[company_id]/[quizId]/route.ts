@@ -188,10 +188,19 @@ async function handlePublishRequest(
     if (method === 'POST') {
       // Get the request body from the original request
       const requestData = await request.json().catch(() => ({}));
+      
+      // Log the incoming request data for debugging
+      console.log('Incoming publish request data:', JSON.stringify(requestData, null, 2));
+      
       requestBody = {
         ...requestData,
-        company_id
+        company_id,
+        // Ensure tech_stack is properly included if it exists in the request
+        tech_stack: requestData.tech_stack || []
       };
+      
+      // Log the request body being sent to the backend service
+      console.log('Request body to backend service:', JSON.stringify(requestBody, null, 2));
     }
 
     const headers = new Headers();

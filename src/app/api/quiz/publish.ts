@@ -15,6 +15,9 @@ export default async function handler(
   }
 
   try {
+    // Log the incoming request body for debugging
+    console.log('Incoming request body:', JSON.stringify(req.body, null, 2));
+    
     const {
       quiz_id,
       settings,
@@ -28,7 +31,7 @@ export default async function handler(
       expirationDate,
       isPublic,
       secretKey,
-      tech_stack = [] // Add tech_stack with default empty array
+      tech_stack = []
     } = req.body;
 
     if (!quiz_id || !settings || !questions) {
@@ -71,8 +74,11 @@ export default async function handler(
       quiz_time: timeLimit,
       quiz_expiration_time: expirationDate,
       is_publish: true, // Using is_publish to match backend field name
-      tech_stack: Array.isArray(tech_stack) ? tech_stack : [] // Include tech_stack in the request
+      tech_stack: tech_stack && Array.isArray(tech_stack) ? tech_stack : [] // Ensure tech_stack is properly included
     };
+    
+    // Log the request body being sent to the external API
+    console.log('Request body to external API:', JSON.stringify(requestBody, null, 2));
     
     // Prepare the update payload for the quiz
     const updatePayload = {
