@@ -17,7 +17,7 @@ export default function OurMission() {
   return (
     <>
       <Head>
-        <title>Our Approach - QuizzViz</title>
+        <title>Mission | QuizzViz</title>
         <meta name="description" content="A better way to assess technical skills" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
