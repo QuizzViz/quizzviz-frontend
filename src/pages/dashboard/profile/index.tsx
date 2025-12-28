@@ -116,45 +116,6 @@ export default function ProfilePage() {
                 <h1 className="text-2xl font-semibold">Profile</h1>
 
                 {/* Profile Card */}
-                <div className="bg-gray-900 border border-white/10 rounded-lg p-6 max-w-md w-full mx-auto space-y-6">
-                  <div className="text-center">
-                    <h2 className="text-2xl font-semibold mb-1">
-                      {companyInfo?.name || 'No Company'}
-                    </h2>
-                    <p className="text-white/70">
-                      {companyInfo?.owner_email || 'No owner email'}
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex justify-between border-b border-white/10 pb-2">
-                      <span className="text-white/60">Company ID:</span>
-                      <span className="text-white/80 font-mono text-sm">
-                        {companyInfo?.id ? `#${companyInfo.id.slice(0, 8)}...` : 'N/A'}
-                      </span>
-                    </div>
-                    
-                    {companyInfo?.created_at && (
-                      <div className="flex justify-between border-b border-white/10 pb-2">
-                        <span className="text-white/60">Created:</span>
-                        <span className="text-white/80">
-                          {new Date(companyInfo.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                    
-                    <div className="pt-2">
-                      <p className="text-sm text-white/60">
-                        {companyInfo 
-                          ? 'Company information is read-only. Contact support for updates.'
-                          : 'No company information found. Please create a company first.'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Profile Card */}
                 <div className="bg-gray-900 border border-white/10 rounded-lg p-6 max-w-md mx-auto flex flex-col items-center space-y-4">
                   <img
                     src={"https://github.com/shadcn.png"}
