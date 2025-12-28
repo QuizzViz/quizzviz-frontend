@@ -29,7 +29,7 @@ export default function Dashboard() {
   }, [isLoaded]);
 
   if (!isLoaded) {
-    return null; // Layout will handle the loading state
+    return null; // Let the layout handle the initial loading state
   }
 
   return (
@@ -43,13 +43,19 @@ export default function Dashboard() {
       </Head>
       
       <SignedIn>
-        <div className="space-y-8">
-          <CreateQuizCard 
-            maxQuestions={maxQuestions} 
-            isLimitReached={false}
-            onUpgradeClick={() => router.push('/pricing')}
-          />
-        </div>
+        {isLoading ? (
+          <PageLoading />
+        ) : (
+          <div className="space-y-8">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <CreateQuizCard 
+              maxQuestions={maxQuestions} 
+              isLimitReached={false}
+              onUpgradeClick={() => router.push('/pricing')}
+            />
+            {/* Add more dashboard components here */}
+          </div>
+        )}
       </SignedIn>
 
       <SignedOut>
