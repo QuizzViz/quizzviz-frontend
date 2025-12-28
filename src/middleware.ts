@@ -14,7 +14,8 @@ const isPublicRoute = createRouteMatcher([
     '/terms',
     '/signin',
     '/signup',
-    '/api(.*)'
+    '/api(.*)',
+    '/([^/]+)/take/quiz/([^/]+)'
 ]);
 
 // Bot detection
