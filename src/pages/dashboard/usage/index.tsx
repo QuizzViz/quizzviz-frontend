@@ -126,8 +126,8 @@ const UsagePage = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold tracking-tight mb-1">
-                <span className="bg-gradient-to-r from-teal-300 via-blue-400 to-blue-500 bg-clip-text text-transparent">
-                  Usage Analytics
+                <span className="bg-white bg-clip-text text-transparent">
+                  Usage
                 </span>
               </h1>
               <p className="text-gray-300 text-sm">Track your quiz generation usage</p>
