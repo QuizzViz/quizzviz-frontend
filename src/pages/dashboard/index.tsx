@@ -8,6 +8,8 @@ import Head from "next/head";
 import CreateQuizCard from "@/components/CreateQuizCard";
 import { PageLoading } from "@/components/ui/page-loading";
 import { useEffect, useState } from "react";
+import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
+import { DashboardHeader } from "@/components/Dashboard/Header";
 
 export default function Dashboard() {
   const { isLoaded, user } = useUser();
@@ -28,12 +30,19 @@ export default function Dashboard() {
     }
   }, [isLoaded]);
 
+  // Show full page loading if Clerk is not loaded yet
   if (!isLoaded) {
-    return null; // Let the layout handle the initial loading state
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-black text-white">
       <Head>
         <title>Dashboard | QuizzViz</title>
         <meta
@@ -43,23 +52,37 @@ export default function Dashboard() {
       </Head>
       
       <SignedIn>
-        {isLoading ? (
-          <PageLoading />
-        ) : (
-          <div className="space-y-8">
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <CreateQuizCard 
-              maxQuestions={maxQuestions} 
-              isLimitReached={false}
-              onUpgradeClick={() => router.push('/pricing')}
-            />
-            {/* Add more dashboard components here */}
+        <div className="flex min-h-screen">
+          <div className="bg-white border-r border-white">
+            <DashboardSideBar />
           </div>
-        )}
+          <div className="flex-1 flex flex-col">
+            <DashboardHeader />
+            <main className="flex-1 p-6">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-[50vh]">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  <div className="mb-6">
+                    <h1 className="text-2xl font-semibold">Dashboard</h1>
+                    <p className="text-white/70">Welcome back! Here's what's happening with your quizzes.</p>
+                  </div>
+                  <CreateQuizCard 
+                    maxQuestions={maxQuestions} 
+                    isLimitReached={false}
+                    onUpgradeClick={() => router.push('/pricing')}
+                  />
+                </div>
+              )}
+            </main>
+          </div>
+        </div>
       </SignedIn>
 
       <SignedOut>
-        <div className="flex items-center justify-center h-[50vh]">
+        <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <h1 className="text-lg md:text-xl lg:text-2xl font-semibold mb-4">
               Redirecting to sign in...
@@ -68,6 +91,6 @@ export default function Dashboard() {
           </div>
         </div>
       </SignedOut>
-    </>
+    </div>
   );
 }
