@@ -1060,7 +1060,7 @@ export default function QuizPage({ params }: PageProps) {
                     <Button
                       type="submit"
                       disabled={verifying || showingMaxAttemptsNotification}
-                      className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-blue-500/20"
+                      className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-blue-500/20"
                     >
                       {showingMaxAttemptsNotification ? (
                         <>
@@ -1158,7 +1158,7 @@ export default function QuizPage({ params }: PageProps) {
                 ) : (
                   <Button 
                     onClick={beginQuiz}
-                    className="h-14 w-full max-w-md bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                    className="h-14 w-full max-w-md bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                     disabled={attemptsInfo.current >= attemptsInfo.max || isButtonLoading || showingMaxAttemptsNotification}
                   >
                     {showingMaxAttemptsNotification ? (
@@ -1277,7 +1277,7 @@ export default function QuizPage({ params }: PageProps) {
                   <Button 
                     onClick={handleNextQuestion}
                     disabled={!selectedAnswers[currentQuestionIndex]}
-                    className="h-14 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed text-lg rounded-xl"
+                    className="h-14 px-8 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed text-lg rounded-xl"
                   >
                     {!selectedAnswers[currentQuestionIndex] ? (
                       'Select an answer to continue'
@@ -1322,7 +1322,7 @@ export default function QuizPage({ params }: PageProps) {
                 <h1 className="text-3xl font-bold text-white mb-2">
                   {calculateScore().percentage >= 70 ? 'Congratulations!' : 'Quiz Complete!'}
                 </h1>
-                <p className="text-gray-400">Here is your results</p>
+                <p className="text-gray-400">Here is your result</p>
               </div>
 
               <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl">
