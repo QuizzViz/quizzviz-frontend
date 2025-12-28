@@ -19,6 +19,7 @@ import {
   X,
   AlertTriangle,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { toast } from "@/hooks/use-toast";
@@ -482,15 +483,23 @@ export default function ResultsDashboard() {
                           Last updated: {new Date(lastUpdated).toLocaleString()}
                         </div>
                       )}
-                      <Button
-                        variant="outline"
-                        onClick={handleRefresh}
-                        disabled={refreshing}
-                        className="gap-2"
-                      >
-                        <RefreshCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                        {refreshing ? 'Refreshing...' : 'Refresh Data'}
-                      </Button>
+                      <Button 
+                      onClick={handleRefresh} 
+                      className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl"
+                      disabled={refreshing}
+                    >
+                      {refreshing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Refreshing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4" />
+                          <span>Refresh</span>
+                        </>
+                      )}
+                    </Button>
                     </div>
                   </div>
                   {loading ? (
