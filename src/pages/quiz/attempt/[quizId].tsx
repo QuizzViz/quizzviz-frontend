@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, AlertCircle, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, Maximize2, Monitor } from 'lucide-react';
+import { LoadingSpinner } from "@/components/ui/loading";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { formatTime } from '@/lib/utils';
@@ -507,29 +508,6 @@ const QuizAttemptPage = () => {
       document.addEventListener('MSFullscreenChange', handleFullscreenChange);
       document.addEventListener('mouseleave', handleMouseLeave);
       
-      document.onkeydown = function(e) {
-        if (e.key === 'Escape' || e.keyCode === 27) {
-          e.preventDefault();
-          e.stopPropagation();
-          showWarningMessage('Escape key is disabled during the quiz!');
-          return false;
-        }
-        
-        if (e.key === 'F12' || 
-            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) || 
-            (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
-          e.preventDefault();
-          return false;
-        }
-      };
-      
-      window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' || e.keyCode === 27) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-      }, true);
-
       document.addEventListener('selectstart', (e) => {
         e.preventDefault();
         return false;
@@ -813,6 +791,16 @@ if (typeof data.quiz === 'string') {
     };
   }, [getToken, router]);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <div className="flex items-center justify-center min-h-screen">
+          <LoadingSpinner text="Loading quiz..." />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
       <Head>
@@ -870,12 +858,6 @@ if (typeof data.quiz === 'string') {
       </header>
       
       <main id="quiz-content" className="relative z-10" tabIndex={-1}>
-        {isLoading && (
-          <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          </div>
-        )}
-
         {step === 'welcome' && quizData && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
             <div className="w-full max-w-lg">

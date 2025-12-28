@@ -5,8 +5,26 @@ import Head from "next/head";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
+import { useUser } from "@clerk/nextjs";
+import { PageLoading } from "@/components/ui/page-loading";
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default function DashboardLayout({ 
+  children,
+  loading = false 
+}: { 
+  children: ReactNode;
+  loading?: boolean;
+}) {
+  const { isLoaded } = useUser();
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageLoading />
+      </div>
+    );
+  }
+
   return (
     <DashboardAccess>
       <Head>
@@ -22,7 +40,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex-1 overflow-auto">
           <DashboardHeader />
           <main className="p-6">
-            {children}
+            {loading ? <PageLoading /> : children}
           </main>
         </div>
       </div>

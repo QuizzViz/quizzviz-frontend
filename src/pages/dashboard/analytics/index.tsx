@@ -18,7 +18,9 @@ import {
   Trash2,
   X,
   AlertTriangle,
+  Loader2,
 } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading";
 import { toast } from "@/hooks/use-toast";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
@@ -430,6 +432,28 @@ export default function ResultsDashboard() {
       setShowDeleteUsersModal({ show: false, quizId: "" });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <DashboardAccess>
+          <div className="flex min-h-screen bg-black">
+            <div className="bg-zinc-950 border-r border-zinc-800 shrink-0">
+              <DashboardSideBar />
+            </div>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <DashboardHeader />
+              <main className="flex-1 overflow-y-auto bg-black">
+                <div className="max-w-7xl mx-auto p-4 md:p-6">
+                  <LoadingSpinner text="Loading analytics..." />
+                </div>
+              </main>
+            </div>
+          </div>
+        </DashboardAccess>
+      </div>
+    );
+  }
 
   return (
     <DashboardAccess>
