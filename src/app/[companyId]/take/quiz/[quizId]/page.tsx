@@ -13,6 +13,7 @@ import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, Ar
 
 import { toast } from "@/hooks/use-toast";
 import { formatTime } from '@/lib/utils';
+import { formatCompanyIdToName } from '@/utils/companyUtils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { useUser } from '@clerk/nextjs';
@@ -992,7 +993,7 @@ export default function QuizPage({ params }: PageProps) {
             <div className="w-full max-w-lg">
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                  Welcome to {companyId.toUpperCase()} Quiz
+                  Welcome to {formatCompanyIdToName(companyId)} Quiz
                 </h1>
                 <p className="text-gray-400">Enter your details to begin the assessment</p>
               </div>
