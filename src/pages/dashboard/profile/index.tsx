@@ -162,11 +162,8 @@ export default function ProfilePage() {
                     className="w-28 h-28 rounded-full border-2 border-white object-cover"
                   />
                   <h2 className="text-xl font-semibold">
-                    {user?.fullName || user?.firstName || "User"}
+                    {companyInfo?.name || 'No Company'}
                   </h2>
-                  <p className="text-white/70">
-                    {user?.emailAddresses?.[0]?.emailAddress}
-                  </p>
 
                   {/* Additional Info */}
                   <div className="w-full mt-4 space-y-2">
@@ -177,6 +174,12 @@ export default function ProfilePage() {
                         {new Date(
                           user?.createdAt || Date.now()
                         ).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-white/20 pb-2">
+                      <span className="text-white/50">Owner Email:</span>
+                      <span>
+                        {companyInfo?.owner_email}
                       </span>
                     </div>
                   </div>

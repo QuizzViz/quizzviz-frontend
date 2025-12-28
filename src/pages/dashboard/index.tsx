@@ -32,13 +32,7 @@ export default function Dashboard() {
 
   // Show full page loading if Clerk is not loaded yet
   if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-black text-white">
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      </div>
-    );
+    return <PageLoading fullScreen />;
   }
 
   return (
@@ -60,9 +54,7 @@ export default function Dashboard() {
             <DashboardHeader />
             <main className="flex-1 p-6">
               {isLoading ? (
-                <div className="flex items-center justify-center h-[50vh]">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                </div>
+                <PageLoading />
               ) : (
                 <div className="space-y-8">
                   <CreateQuizCard 
@@ -79,12 +71,7 @@ export default function Dashboard() {
 
       <SignedOut>
         <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <h1 className="text-lg md:text-xl lg:text-2xl font-semibold mb-4">
-              Redirecting to sign in...
-            </h1>
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          </div>
+          <PageLoading text="Redirecting to sign in..." />
         </div>
       </SignedOut>
     </div>
