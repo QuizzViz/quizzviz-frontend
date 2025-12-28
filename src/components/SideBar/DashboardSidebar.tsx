@@ -14,6 +14,7 @@ import {
   FiX,
   FiAlertTriangle,
   FiMessageSquare,
+  FiUsers,
 } from "react-icons/fi";
 
 type DashboardSidebarProps = {
@@ -110,6 +111,7 @@ export default function DashboardSidebar({
   const menuItems: { name: string; href: string; Icon: (props: { className?: string }) => JSX.Element }[] = [
     { name: "Dashboard", href: "/dashboard", Icon: (props) => <FiHome {...props} /> },
     { name: "My Quizzes", href: "/dashboard/my-quizzes", Icon: (props) => <FiBook {...props} /> },
+    { name: "Teams", href: "/dashboard/teams", Icon: (props) => <FiUsers {...props} /> },
     { name: "Analytics", href: "/dashboard/analytics", Icon: (props) => <FiBarChart2 {...props} /> },
     { name: "Usage", href: "/dashboard/usage", Icon: (props) => <FiCreditCard {...props} /> },
     { name: "Profile", href: "/dashboard/profile", Icon: (props) => <FiUser {...props} /> },
