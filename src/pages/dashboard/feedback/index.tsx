@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, CheckCircle, Zap, Clock, Lock, ArrowRight } from "lucide-react";
-
+import { SignedIn } from "@clerk/nextjs";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
@@ -257,7 +257,7 @@ export default function FeedbackPage() {
                             <Label htmlFor="feedback-type" className="text-white text-sm font-medium">
                               Type of Feedback
                             </Label>
-                            <Select value={feedbackType} onValueChange={setFeedbackType}>
+                            <Select value={feedbackType}   onValueChange={(value: FeedbackType) => setFeedbackType(value)}>
                               <SelectTrigger className="h-10 bg-white/5 border border-white/10 text-white text-sm focus:border-green-500/50 transition-colors rounded-lg focus:ring-0 focus:ring-offset-0">
                                 <SelectValue placeholder="Select feedback type" />
                               </SelectTrigger>
