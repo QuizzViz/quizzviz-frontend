@@ -236,18 +236,22 @@ export function QuizEditor() {
       setPublishSettings(updatedSettings);
 
       const payload = {
-        quiz_id: quizId,
-        companyId: company.company_id,
-        role: currentQuiz?.role ?? "",
-        tech_stack: currentQuiz?.techStack ?? [],
-        difficulty: currentQuiz?.difficulty ?? "Bachelors Level",
-        questions: localQuestions,
-        publicLink,
-        secretKey: updatedSettings.secretKey,
-        timeLimit: updatedSettings.timeLimit,
-        maxAttempts: updatedSettings.maxAttempts,
-        expirationDate: updatedSettings.expirationDate,
-      };
+  quiz_id: quizId,
+  companyId: company.company_id,
+  role: currentQuiz?.role ?? "",
+  tech_stack: Array.isArray(currentQuiz?.techStack) 
+    ? currentQuiz.techStack 
+    : typeof currentQuiz?.techStack === 'string'
+      ? JSON.parse(currentQuiz.techStack)
+      : [],
+  difficulty: currentQuiz?.difficulty ?? "Bachelors Level",
+  questions: localQuestions,
+  publicLink,
+  secretKey: updatedSettings.secretKey,
+  timeLimit: updatedSettings.timeLimit,
+  maxAttempts: updatedSettings.maxAttempts,
+  expirationDate: updatedSettings.expirationDate,
+};
 
       const res = await fetch("/api/quiz/publish", {
         method: "POST",
