@@ -11,7 +11,7 @@ import { ShareQuizModal } from "./ShareQuizModal";
 interface PublishModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onPublish: (secretKey: string) => void;
+  onPublish: (secretKey: string, techStack?: any[]) => Promise<void>;
   quizId: string;
   settings: PublishSettings;
   onSettingsChange: (settings: PublishSettings) => void;
@@ -21,7 +21,14 @@ interface PublishModalProps {
   isPublished?: boolean;
   quizPublicLink?: string;
   companyId?: string;
+  techStack?: any[];
 }
+
+type PublishedQuizData = {
+  quiz_public_link: string;
+  quiz_key: string;
+  tech_stack?: Array<{ name: string; weight: number }>;
+};
 
 export function PublishModal({
   isOpen,
@@ -35,14 +42,15 @@ export function PublishModal({
   onCopyLink,
   isPublished = false,
   quizPublicLink,
-  companyId
+  companyId,
+  techStack = []
 }: PublishModalProps) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [localSecretKey, setLocalSecretKey] = useState(settings.secretKey || '');
-  const [publishedQuizData, setPublishedQuizData] = useState<{quiz_public_link: string; quiz_key: string} | null>(null);
+  const [publishedQuizData, setPublishedQuizData] = useState<PublishedQuizData | null>(null);
   const [isPublishingLocal, setIsPublishingLocal] = useState(false);
-  
+
   // Sync local state with props when settings change
   React.useEffect(() => {
     setLocalSecretKey(settings.secretKey || '');
@@ -84,56 +92,63 @@ export function PublishModal({
         isSecretKeyRequired: localSecretKey.trim().length > 0
       };
       onSettingsChange(updatedSettings);
-      
-      // Call the publish handler and wait for it to complete
-      await onPublish(localSecretKey.trim());
-      
+
+      // Call the publish handler and wait for it to complete, passing the tech stack
+      await onPublish(localSecretKey.trim(), techStack);
+
       // Fetch the published quiz data with proper headers
       const headers = new Headers({
         'Content-Type': 'application/json'
       });
-      
+
       // Add company ID to headers if available
       if (companyId) {
         headers.append('x-company-id', companyId);
       }
-      
+
       const response = await fetch(`/api/publish/${companyId || 'user'}/${quizId}`, {
         headers
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
           const quizKey = data.data.quiz_key || localSecretKey.trim();
-          
+          const techStack = data.data.tech_stack || [];
+
           // If we have a public link from the API, use it, otherwise construct it
           let publicLink = data.data.quiz_public_link;
           if (!publicLink) {
-            // Use company ID in the URL if available, otherwise use the slug
             publicLink = `${origin}/${companyId}/take/quiz/${quizId}`;
           }
-          
+
           setPublishedQuizData({
             quiz_public_link: publicLink,
-            quiz_key: quizKey
+            quiz_key: quizKey,
+            tech_stack: techStack
           });
-        
         }
       } else {
         setIsPublishingLocal(false);
+        // Fallback to the generated link if there's an error
+        setPublishedQuizData({
+          quiz_public_link: `${origin}/${companyId}/take/quiz/${quizId}`,
+          quiz_key: localSecretKey.trim(),
+          tech_stack: techStack || []
+        });
       }
     } catch (error) {
       console.error('Error in handlePublish:', error);
       // Fallback to the generated link if there's an error
       setPublishedQuizData({
         quiz_public_link: `${origin}/${companyId}/take/quiz/${quizId}`,
-        quiz_key: localSecretKey.trim()
+        quiz_key: localSecretKey.trim(),
+        tech_stack: techStack || []
       });
-      
-  
+    } finally {
+      setIsPublishingLocal(false);
     }
-   };
+  };
 
   const handleSettingChange = <K extends keyof PublishSettings>(
     key: K,
