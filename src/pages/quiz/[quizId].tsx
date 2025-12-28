@@ -8,6 +8,7 @@ import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { QuizEditor } from "@/components/Quiz/QuizEditor";
 import { useUserPlanContext } from "@/contexts/UserPlanContext";
+import { PageLoading } from "@/components/ui/page-loading";
 
 export default function QuizDetailsPage() {
   const router = useRouter();
@@ -41,14 +42,12 @@ export default function QuizDetailsPage() {
           
           {/* Main content */}
           <div className="flex-1 flex flex-col relative z-10">
-<DashboardHeader 
+            <DashboardHeader 
                />
             
             <main className="flex-1 p-6 pt-14 relative">
               {(!isLoaded || isPlanLoading) ? (
-                <div className="flex items-center justify-center h-screen">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                </div>
+                <PageLoading fullScreen />
               ) : !quizId ? (
                 <div className="text-white/70">No quiz selected.</div>
               ) : (
