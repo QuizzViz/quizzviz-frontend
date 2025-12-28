@@ -185,6 +185,8 @@ export function QuizEditor() {
           companyId: company.company_id,
         };
 
+        console.log("payload :", payload)
+        console.log("Tech Stack :", currentQuiz.techStack)
         const res = await fetch(`/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}`, {
           method: "PATCH",
           headers: {
