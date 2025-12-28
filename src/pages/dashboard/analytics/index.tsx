@@ -179,16 +179,19 @@ const exportPDF = (data: QuizResult[]) => {
 };
 
 const getScoreBins = (results: QuizResult[]): ScoreBin[] => {
-  const bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90];
+  const bins = [0, 11, 21, 31, 41, 51, 61, 71, 81, 91];
   const distribution: ScoreBin[] = bins.map((start) => ({
-    name: `${start}-${start + 9}`,
+    name: start === 0 ? '0-10' : `${start}-${start + 9}`,
     count: 0,
     candidates: [],
   }));
 
   results.forEach((r) => {
     const score = r.result.score;
-    const binIndex = Math.min(Math.floor(score / 10), 9);
+    let binIndex = Math.min(Math.floor(score / 10), 9);
+    if (score % 10 === 0 && score > 0) {
+      binIndex = Math.min(Math.ceil(score / 10), 9);
+    }
     distribution[binIndex].count++;
     distribution[binIndex].candidates.push(r);
   });
