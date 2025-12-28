@@ -8,6 +8,7 @@ import Head from "next/head";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 export default function SettingsPage() {
   const { user, isLoaded } = useUser();
@@ -21,8 +22,20 @@ export default function SettingsPage() {
 
   if (isLoading || !isLoaded) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen bg-black text-white">
+        <SignedIn>
+          <div className="flex min-h-screen">
+            <div className="bg-white border-r border-white">
+              <DashboardSideBar />
+            </div>
+            <div className="flex-1 flex flex-col">
+              <DashboardHeader />
+              <main className="flex-1 p-6">
+                <LoadingSpinner text="Loading settings..." />
+              </main>
+            </div>
+          </div>
+        </SignedIn>
       </div>
     );
   }

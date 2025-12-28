@@ -65,10 +65,6 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-8">
-                  <div className="mb-6">
-                    <h1 className="text-2xl font-semibold">Dashboard</h1>
-                    <p className="text-white/70">Welcome back! Here's what's happening with your quizzes.</p>
-                  </div>
                   <CreateQuizCard 
                     maxQuestions={maxQuestions} 
                     isLimitReached={false}

@@ -8,11 +8,14 @@ import { CheckCircle, AlertCircle, Send, ThumbsUp, Lightbulb, MessageSquare, Mes
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardAccess } from '@/components/Dashboard/DashboardAccess';
+import { LoadingSpinner } from "@/components/ui/loading";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 
 type FeedbackType = 'compliment' | 'suggestion' | 'advice' | 'other';
 
 export default function FeedbackPage() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+  const [isLoading, setIsLoading] = useState(true);
   const [feedbackType, setFeedbackType] = useState<FeedbackType>('suggestion');
   const [customSubject, setCustomSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -106,6 +109,27 @@ export default function FeedbackPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Loading state
+  if (!isLoaded || isLoading) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <SignedIn>
+          <div className="flex min-h-screen">
+            <div className="bg-white border-r border-white">
+              <DashboardSideBar />
+            </div>
+            <div className="flex-1 flex flex-col">
+              <DashboardHeader />
+              <main className="flex-1 p-6">
+                <LoadingSpinner text="Loading feedback form..." />
+              </main>
+            </div>
+          </div>
+        </SignedIn>
+      </div>
+    );
+  }
 
   // Success state UI
   if (submitStatus?.success) {

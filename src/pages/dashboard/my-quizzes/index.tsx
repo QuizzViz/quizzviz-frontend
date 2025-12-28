@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 interface QuizSummary {
   quiz_id: string;
@@ -178,9 +179,7 @@ export default function MyQuizzesPage() {
             <div className="flex-1 flex flex-col">
               <DashboardHeader />
               <main className="flex-1 p-6">
-                <div className="flex items-center justify-center h-[50vh]">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                </div>
+                <LoadingSpinner text="Loading your quizzes..." />
               </main>
             </div>
           </div>
