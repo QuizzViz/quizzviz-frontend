@@ -27,7 +27,8 @@ export default async function handler(
       maxAttempts,
       expirationDate,
       isPublic,
-      secretKey 
+      secretKey,
+      tech_stack = [] // Add tech_stack with default empty array
     } = req.body;
 
     if (!quiz_id || !settings || !questions) {
@@ -69,7 +70,8 @@ export default async function handler(
       max_attempts: maxAttempts,
       quiz_time: timeLimit,
       quiz_expiration_time: expirationDate,
-      is_publish: true // Using is_publish to match backend field name
+      is_publish: true, // Using is_publish to match backend field name
+      tech_stack: Array.isArray(tech_stack) ? tech_stack : [] // Include tech_stack in the request
     };
     
     // Prepare the update payload for the quiz
@@ -121,7 +123,8 @@ export default async function handler(
               max_attempts: maxAttempts,
               quiz_time: timeLimit,
               quiz_expiration_time: expirationDate,
-              quiz_key: secretKey
+              quiz_key: secretKey,
+              tech_stack: Array.isArray(tech_stack) ? tech_stack : [] // Include tech_stack in the update
             })
           });
 

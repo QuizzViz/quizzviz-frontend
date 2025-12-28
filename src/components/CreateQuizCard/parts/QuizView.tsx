@@ -41,6 +41,7 @@ const QuizView: FC<{
           difficulty: data?.difficulty || 'Medium',
           role: data?.role,
           companyId: data?.company_id,
+          tech_stack: data?.tech_stack || [], // Include tech_stack in the request
         }),
       });
 
