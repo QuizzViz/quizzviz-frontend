@@ -133,7 +133,7 @@ export default function ProfilePage() {
                       <span className="text-white/50">Joined:</span>
                       <span>
                         {new Date(
-                          user?.createdAt || Date.now()
+                          companyInfo?.created_at || Date.now()
                         ).toLocaleDateString()}
                       </span>
                     </div>
