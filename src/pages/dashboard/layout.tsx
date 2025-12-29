@@ -2,7 +2,6 @@
 
 import { ReactNode } from "react";
 import Head from "next/head";
-import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { useUser } from "@clerk/nextjs";
@@ -26,7 +25,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <DashboardAccess>
+    <>
       <Head>
         <title>Dashboard | QuizzViz</title>
         <link rel="icon" href="/favicon.ico" />
@@ -44,6 +43,6 @@ export default function DashboardLayout({
           </main>
         </div>
       </div>
-    </DashboardAccess>
+    </>
   );
 }

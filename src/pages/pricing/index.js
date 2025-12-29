@@ -31,7 +31,7 @@ const PricingPage = () => {
   const { user, isSignedIn } = useUser();
   const { getToken } = useAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -40,44 +40,45 @@ const PricingPage = () => {
   const yearlySavings = Math.round(((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        if (!isSignedIn) {
-          router.push('/signin');
-          return;
+    setIsMounted(true);
+  }, []);
+
+  const handleSubscribe = async (e, planLink) => {
+    e.preventDefault();
+    
+    if (!isSignedIn) {
+      router.push('/signin?redirect=/pricing');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const token = await getToken();
+      const response = await fetch(`/api/company/check?owner_id=${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-        
-        // We still want to check company status but not redirect
-        const token = await getToken();
-        await fetch(`/api/company/check?owner_id=${user.id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-      } catch (error) {
-        console.error('Error checking company:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to verify company status',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-        setIsMounted(true);
+      });
+      
+      const data = await response.json();
+      if (!data.exists || !data.companies || data.companies.length === 0) {
+        router.push('/onboarding');
+        return;
       }
-    };
-
-    checkAuth();
-  }, [isSignedIn, router, getToken, user?.id, toast]);
-
-  if (!isMounted || isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
+      
+      // If company exists, proceed to subscription
+      window.location.href = planLink;
+    } catch (error) {
+      console.error('Error checking company:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to verify company status',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
@@ -107,26 +108,23 @@ const PricingPage = () => {
           <div className="mt-5 inline-flex items-center bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-full p-1 shadow-lg">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 ${
+              className={`px-4 py-2 rounded-l-lg font-medium ${
                 billingCycle === 'monthly'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
               }`}
             >
               Monthly
             </button>
             <button
               onClick={() => setBillingCycle('yearly')}
-              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 relative ${
+              className={`px-4 py-2 rounded-r-lg font-medium ${
                 billingCycle === 'yearly'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
               }`}
             >
-              Yearly
-              <span className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
-                -{yearlySavings}%
-              </span>
+              Yearly (Save {yearlySavings}%)
             </button>
           </div>
         </div>
@@ -170,17 +168,24 @@ const PricingPage = () => {
                   )}
                 </div>
 
-                {/* CTA Button - Moved here */}
-                <a 
-                  href={billingCycle === 'yearly' ? plans[0].yearlyLink : plans[0].monthlyLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block mb-5"
+                {/* CTA Button */}
+                <button
+                  onClick={(e) => handleSubscribe(e, billingCycle === 'monthly' ? plans[0].monthlyLink : plans[0].yearlyLink)}
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  <button className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-sm py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98]">
-                    Get Started Now →
-                  </button>
-                </a>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2 h-5 w-5" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Get Started
+                      {/* <ArrowRight className="inline-block ml-2" /> */}
+                    </>
+                  )}
+                </button>
 
                 {/* Divider */}
                 <div className="border-t border-gray-800 mb-5"></div>
