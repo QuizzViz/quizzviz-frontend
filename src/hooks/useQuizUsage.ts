@@ -91,12 +91,19 @@ const companyId = companyInfo?.id;
   );
 
   // Return empty data structure when no data is available
+  const currentDate = new Date();
   const normalizedData = data || {
-    totalQuizzes: 0,
-    totalQuestions: 0,
-    totalAttempts: 0,
-    averageScore: 0,
-    quizzes: []
+    user_id: user?.id || '',
+    current_month: {
+      year: currentDate.getFullYear(),
+      month: currentDate.getMonth() + 1,
+      month_name: currentDate.toLocaleString('default', { month: 'long' }),
+      quiz_count: 0,
+      period: `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
+    },
+    quiz_count: 0,
+    monthly_breakdown: [],
+    total_quizzes: 0
   };
 
   // Check if error is 404
