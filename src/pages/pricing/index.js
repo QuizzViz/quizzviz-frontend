@@ -175,7 +175,7 @@ const PricingPage = () => {
                 <button
                   onClick={(e) => handleSubscribe(e, billingCycle === 'monthly' ? plans[0].monthlyLink : plans[0].yearlyLink)}
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold text-sm py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98]"
+                  className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold text-sm py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-emerald-500/30 active:scale-[0.98]"
                 >
                   {isLoading ? (
                     <>

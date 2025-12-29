@@ -61,7 +61,7 @@ export const EmailPasswordSignInForm: FC<{
     <button
       type="submit"
       disabled={loading}
-      className="w-full inline-flex h-10 items-center justify-center rounded-lg px-4 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+      className="w-full inline-flex h-10 items-center justify-center rounded-lg px-4 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 transform hover:shadow-lg hover:shadow-emerald-500/30 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
     >
       {loading ? "Signing in..." : "Sign in"}
     </button>
