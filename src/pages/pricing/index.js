@@ -110,8 +110,8 @@ const PricingPage = () => {
               onClick={() => setBillingCycle('monthly')}
               className={`px-4 py-2 rounded-l-lg font-medium ${
                 billingCycle === 'monthly'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-transparent text-gray-300 hover:bg-gray-800/50'
               }`}
             >
               Monthly
@@ -120,8 +120,8 @@ const PricingPage = () => {
               onClick={() => setBillingCycle('yearly')}
               className={`px-4 py-2 rounded-r-lg font-medium ${
                 billingCycle === 'yearly'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-transparent text-gray-300 hover:bg-gray-800/50'
               }`}
             >
               Yearly (Save {yearlySavings}%)
@@ -172,7 +172,7 @@ const PricingPage = () => {
                 <button
                   onClick={(e) => handleSubscribe(e, billingCycle === 'monthly' ? plans[0].monthlyLink : plans[0].yearlyLink)}
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {isLoading ? (
                     <>
@@ -182,7 +182,7 @@ const PricingPage = () => {
                   ) : (
                     <>
                       Get Started
-                      {/* <ArrowRight className="inline-block ml-2" /> */}
+                      <ArrowRight className="inline-block ml-2" />
                     </>
                   )}
                 </button>
