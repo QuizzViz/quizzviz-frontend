@@ -5,6 +5,7 @@ import { Check, Building2, Sparkles, Zap, Users, Shield, BarChart3, Download, Lo
 import Head from 'next/head';
 import { Footer } from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
+import { ArrowRight } from 'lucide-react';
 
 const plans = [{
   id: 'basic',
