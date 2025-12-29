@@ -113,21 +113,21 @@ const companyId = companyInfo?.id;
     return apiError.status === 404 || apiError.response?.status === 404;
   };
 // Handle usage fetch errors
-useEffect(() => {
-  if (usageError && !errorShown) {
-    const apiError = usageError as ApiError;
-    console.error('Error fetching quiz usage:', apiError);
-    // Don't show error toast for 404 - just show empty state
-    if (apiError?.status !== 404 && apiError?.response?.status !== 404) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load quiz usage data',
-        variant: 'destructive',
-      });
-      setErrorShown(true);
-    }
-  }
-}, [usageError, toast, errorShown]);
+// useEffect(() => {
+//   if (usageError && !errorShown) {
+//     const apiError = usageError as ApiError;
+//     console.error('Error fetching quiz usage:', apiError);
+//     // Don't show error toast for 404 - just show empty state
+//     if (apiError?.status !== 404 && apiError?.response?.status !== 404) {
+//       toast({
+//         title: 'Error',
+//         description: 'Failed to load quiz usage data',
+//         variant: 'destructive',
+//       });
+//       setErrorShown(true);
+//     }
+//   }
+// }, [usageError, toast, errorShown]);
 
   return {
     data: normalizedData,
