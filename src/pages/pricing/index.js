@@ -40,25 +40,21 @@ const PricingPage = () => {
   const yearlySavings = Math.round(((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100);
 
   useEffect(() => {
-    const checkAuthAndCompany = async () => {
+    const checkAuth = async () => {
       try {
         if (!isSignedIn) {
           router.push('/signin');
           return;
         }
-
+        
+        // We still want to check company status but not redirect
         const token = await getToken();
-        const response = await fetch(`/api/company/check?owner_id=${user.id}`, {
+        await fetch(`/api/company/check?owner_id=${user.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
-        const data = await response.json();
-        if (!data.exists || !data.companies || data.companies.length === 0) {
-          router.push('/onboarding');
-          return;
-        }
       } catch (error) {
         console.error('Error checking company:', error);
         toast({
@@ -72,7 +68,7 @@ const PricingPage = () => {
       }
     };
 
-    checkAuthAndCompany();
+    checkAuth();
   }, [isSignedIn, router, getToken, user?.id, toast]);
 
   if (!isMounted || isLoading) {
