@@ -71,7 +71,7 @@ export default function SignUpPage() {
                 <div className="grid grid-cols-1 gap-2">
                   <button 
                     onClick={() => router.push('/dashboard')} 
-                    className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center"
+                    className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02]  active:scale-[0.98] flex items-center justify-center"
                   >
                     Go to Dashboard
                   </button>
