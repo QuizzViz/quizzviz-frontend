@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { useCachedFetch } from "@/hooks/useCachedFetch";
 import Head from "next/head";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -202,9 +203,6 @@ const getScoreBins = (results: QuizResult[]): ScoreBin[] => {
 export default function ResultsDashboard() {
   const { user } = useUser();
 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [quizData, setQuizData] = useState<QuizResult[]>([]);
   const [selectedScores, setSelectedScores] = useState<Record<string, number | null>>({});
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -219,112 +217,92 @@ export default function ResultsDashboard() {
     quizId: string;
   }>({ show: false, quizId: "" });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [forceRefresh, setForceRefresh] = useState(false);
 
   const quizzesPerPage = 5;
   const dataFetched = useRef(false);
 
-  const CACHE_EXPIRY = 60 * 60 * 1000; // 1 hour
 
-  const getCachedData = (key: string) => {
-    if (typeof window === "undefined") return null;
-    const cached = localStorage.getItem(key);
-    if (!cached) return null;
-    try {
-      const { data, timestamp } = JSON.parse(cached);
-      if (Date.now() - timestamp < CACHE_EXPIRY) return data;
-    } catch {
-      return null;
-    }
-    return null;
-  };
-
-  const saveToCache = (key: string, data: any) => {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
-    } catch {}
-  };
-
-  const fetchResults = useCallback(
-    async (currentUser: typeof user, forceRefresh = false) => {
-      if (!dataFetched.current) setLoading(true);
-
-      try {
-        const ownerId = currentUser?.id;
-        if (!ownerId) return;
-
-        const cacheKey = `quiz_results_${ownerId}`;
-
-        if (!forceRefresh) {
-          const cached = getCachedData(cacheKey);
-          if (cached) {
-            setQuizData(cached);
-            setLastUpdated(new Date());
-            if (dataFetched.current) return;
-          }
-        }
-
-        const companyRes = await fetch(`/api/company/check?owner_id=${ownerId}`);
-        if (!companyRes.ok) throw new Error("Failed to fetch company details");
-        const companyData = await companyRes.json();
-
-        const companyId =
-          companyData.companies?.[0]?.company_id ??
-          companyData.company_id ??
-          companyData.id;
-
-        if (!companyId) throw new Error("No company found for this user");
-
-        const res = await fetch(`/api/quiz_result?company_id=${companyId}`);
-        if (!res.ok) throw new Error(await res.text());
-
-        const responseData = await res.json();
-        const results: QuizResult[] = Array.isArray(responseData)
-          ? responseData
-          : responseData.results || [];
-
-        saveToCache(cacheKey, results);
-        setQuizData(results);
-        setLastUpdated(new Date());
-      } catch (err: any) {
-        console.error("Fetch error:", err);
-        toast({
-          title: "Error",
-          description: err.message || "Failed to load quiz results",
-          variant: "destructive",
-        });
-
-        if (currentUser?.id) {
-          const cached = getCachedData(`quiz_results_${currentUser.id}`);
-          if (cached) setQuizData(cached);
-        }
-      } finally {
-        setLoading(false);
-        dataFetched.current = true;
-      }
-    },
-    []
+  // Fetch company info
+  const { data: companyData, isLoading: isCompanyLoading } = useCachedFetch<{
+    companies: Array<{ id?: string; company_id?: string }>;
+  }>(
+    ['companyInfo', user?.id as string],
+    user ? `/api/company/check?owner_id=${user.id}` : '',
+    { enabled: Boolean(user) }
   );
 
-  const handleRefresh = useCallback(async () => {
-    if (!user || refreshing) return;
-    setRefreshing(true);
-    await fetchResults(user, true);
-    setRefreshing(false);
-  }, [user, refreshing, fetchResults]);
+  const companyId = companyData?.companies?.[0]?.company_id || companyData?.companies?.[0]?.id;
+
+  // Fetch quiz results
+ const { data: quizResults, isLoading, refetch: refetchResults } = useCachedFetch<QuizResult[] | { results: QuizResult[] } | { error: string }>(
+    ['quizResults', companyId as string],
+    companyId ? `/api/quiz_result?company_id=${companyId}` : '',
+    { 
+      enabled: Boolean(companyId)
+    }
+  );
+
 
   useEffect(() => {
-    if (user && !dataFetched.current) {
-      fetchResults(user);
+    if (quizResults) {
+      setLastUpdated(new Date());
     }
-  }, [user, fetchResults]);
+  }, [quizResults]);
+  
+  // Process quiz results
+  const quizData = useMemo(() => {
+    if (!quizResults) return [];
+    if (quizResults === null || (typeof quizResults === 'object' && 'error' in quizResults)) {
+      return [];
+    }
+    return Array.isArray(quizResults) ? quizResults : (quizResults.results || []);
+  }, [quizResults]);
+
+   useEffect(() => {
+  if (quizResults && 'error' in quizResults) {
+    console.error('Error fetching quiz results:', quizResults.error);
+    toast({
+      title: "Error",
+      description: "Failed to load quiz results",
+      variant: "destructive",
+    });
+  } else if (quizResults) {
+    setLastUpdated(new Date());
+  }
+}, [quizResults]);
+  // Handle refresh
+  const handleRefresh = useCallback(async () => {
+    try {
+      setForceRefresh(true);
+      await refetchResults();
+      setLastUpdated(new Date());
+    } finally {
+      setForceRefresh(false);
+    }
+  }, [refetchResults]);
+
+  // Set initial loaded state
+  useEffect(() => {
+    if (user && companyId && !dataFetched.current) {
+      dataFetched.current = true;
+    }
+  }, [user, companyId]);
+
+  // Handle errors
+  useEffect(() => {
+    if (quizResults === null || (typeof quizResults === 'object' && 'error' in quizResults)) {
+      // Don't show error toast, just show empty state
+      return;
+    }
+  }, [quizResults]);
 
   useEffect(() => {
     setSelectedUsers({});
   }, [quizData]);
 
   const analyticsPerQuiz = useMemo<QuizAnalytics[]>(() => {
-    if (!quizData.length) return [];
+    if (!quizData || !Array.isArray(quizData) || quizData.length === 0) return [];
 
     const map = new Map<string, QuizResult[]>();
 
@@ -389,7 +367,7 @@ export default function ResultsDashboard() {
         const err = await res.json();
         throw new Error(err.message || "Delete failed");
       }
-      await fetchResults(user, true);
+      await refetchResults();
       toast({ title: "Success", description: "Quiz data deleted", variant: "success" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -426,7 +404,7 @@ export default function ResultsDashboard() {
         throw new Error(errors.map((e) => e.message).join(", "));
       }
 
-      await fetchResults(user, true);
+      await refetchResults();
       setSelectedUsers({});
       toast({ title: "Success", description: "Selected results deleted", variant: "success" });
     } catch (err: any) {
@@ -437,7 +415,7 @@ export default function ResultsDashboard() {
     }
   };
 
-  if (loading) {
+  if (isLoading || isCompanyLoading) {
     return (
       <div className="min-h-screen bg-black text-white">
         <DashboardAccess>
@@ -489,9 +467,9 @@ export default function ResultsDashboard() {
                       <Button 
                       onClick={handleRefresh} 
                       className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl"
-                      disabled={refreshing}
+                      disabled={isLoading}
                     >
-                      {refreshing ? (
+                      {forceRefresh ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
                           <span>Refreshing...</span>
@@ -505,7 +483,7 @@ export default function ResultsDashboard() {
                     </Button>
                     </div>
                   </div>
-                  {loading ? (
+                  {isLoading ? (
                     <div className="flex justify-center py-24">
                       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
                     </div>

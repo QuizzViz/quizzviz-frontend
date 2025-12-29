@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCachedFetch } from "@/hooks/useCachedFetch";
 import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import Head from "next/head";
@@ -54,7 +55,6 @@ export default function MyQuizzesPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
-  const [isFetchingQuizzes, setIsFetchingQuizzes] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quizToDelete, setQuizToDelete] = useState<string | null>(null);
@@ -66,79 +66,65 @@ export default function MyQuizzesPage() {
   
   const isBusinessPlan = plan === 'Business';
 
-  // Fetch company info
-  useEffect(() => {
-    const fetchCompanyInfo = async () => {
-      if (!isLoaded || !user) return;
-      
-      try {
-        console.log('Fetching company info for user:', user.id);
-        const response = await fetch(`/api/company/check?owner_id=${user.id}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Company check failed:', response.status, errorText);
-          throw new Error(`Failed to fetch company information: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Company check response:', data);
-        
-        if (data.exists && data.companies && data.companies.length > 0) {
-          const company = data.companies[0];
-          console.log('Using company:', company);
-          
-          // The company_id field should be the slug/identifier used in your backend API
-          // Check what fields are available in your company object
-          setCompanyInfo({
-            id: company.company_id || company.id || company.name,
-            name: company.name || company.company_id || 'Company',
-            owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress
+  // Use cached fetch for company info
+  const companyId = user?.id || '';
+  const companyUrl = user ? `/api/company/check?owner_id=${user.id}` : '';
+  const { data: companyData, isLoading: isCompanyLoading, error: companyError } = useCachedFetch<{
+    exists: boolean;
+    companies: Array<{ id?: string; company_id?: string; name: string; owner_email?: string }>;
+  }>(
+    ['companyInfo', companyId],
+    companyUrl,
+    { enabled: Boolean(isLoaded && user) }
+  );
 
-          });
-        } else {
-          console.warn('No company found for user');
-          setFetchError('No company found. Please create a company first.');
-        }
-      } catch (error) {
-        console.error('Error fetching company info:', error);
-        setFetchError(error instanceof Error ? error.message : 'Failed to load company information');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
+  // Update company info when data is loaded
+  useEffect(() => {
     if (isLoaded) {
       if (!user) {
         router.push("/signin");
-      } else {
-        fetchCompanyInfo();
+        return;
+      }
+
+      if (companyData?.exists && companyData.companies?.length > 0) {
+        const company = companyData.companies[0];
+        setCompanyInfo({
+          id: company.company_id || company.id || company.name,
+          name: company.name || company.company_id || 'Company',
+          owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress
+        });
+      } else if (companyData && !companyData.exists) {
+        console.warn('No company found for user');
+        setFetchError('No company found. Please create a company first.');
+      }
+
+      if (companyError) {
+        console.error('Error fetching company info:', companyError);
+        setFetchError(companyError.message);
+      }
+
+      // Update loading state
+      if (!isCompanyLoading && isLoading) {
+        setIsLoading(false);
       }
     }
-  }, [isLoaded, user, router]);
+  }, [isLoaded, user, companyData, companyError, isCompanyLoading, router]);
 
-  // React Query - cache quizzes per company
-  const { data: quizzesData, isFetching: rqFetching, error: rqError } = useQuery<QuizSummary[]>({
-    queryKey: ["quizzes", companyInfo?.id],
-    enabled: Boolean(companyInfo?.id && !isLoading),
-    queryFn: async () => {
-      const res = await fetch(`/api/quizzes${companyInfo?.id ? `?companyId=${encodeURIComponent(companyInfo.id)}` : ''}`);
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || `Failed to fetch quizzes (${res.status})`);
-      }
-      return res.json();
-    },
-    staleTime: 30000,
-  });
-  
+  // Use cached fetch for quizzes
+  const quizzesUrl = companyInfo?.id ? `/api/quizzes?companyId=${encodeURIComponent(companyInfo.id)}` : '';
+  const { data: quizzesData, isFetching: isFetchingQuizzes, error: quizzesError } = useCachedFetch<QuizSummary[]>(
+    ['quizzes', companyInfo?.id || ''],
+    quizzesUrl,
+    { enabled: Boolean(companyInfo?.id) }
+  );
+
+  // Update quizzes when data is loaded
   useEffect(() => {
     if (quizzesData) {
       setQuizzes(quizzesData);
     }
-    setIsFetchingQuizzes(rqFetching);
-    setFetchError(rqError ? rqError.message : null);
-  }, [quizzesData, rqFetching, rqError]);
+    setFetchError(quizzesError ? quizzesError.message : null);
+  }, [quizzesData, quizzesError]);
 
   const handleDeleteQuiz = async (quizId: string) => {
     if (!quizId) return;

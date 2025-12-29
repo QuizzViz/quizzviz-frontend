@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useUser, SignedIn, SignedOut } from "@clerk/nextjs";
+import { useCachedFetch } from "@/hooks/useCachedFetch";
 import Head from "next/head";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
@@ -20,51 +21,56 @@ interface CompanyInfo {
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchCompanyInfo = async () => {
-      if (!isLoaded || !user) return;
-      
-      try {
-        const response = await fetch(`/api/company/check?owner_id=${user.id}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Company check failed:', response.status, errorText);
-          throw new Error(`Failed to fetch company information: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.exists && data.companies && data.companies.length > 0) {
-          const company = data.companies[0];
-          setCompanyInfo({
-            id: company.id || company.company_id,
-            name: company.name || 'Unnamed Company',
-            owner_email: company.owner_email,
-            created_at: company.created_at
-          });
-        } else {
-          setCompanyInfo(null);
-          setError('No company found for this user');
-        }
-      } catch (error) {
-        console.error('Error fetching company info:', error);
-        setError(error instanceof Error ? error.message : 'Failed to load company information');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Fetch company info using useCachedFetch
+  const { data: companyData, isLoading, error: fetchError } = useCachedFetch<{
+    exists: boolean;
+    companies: Array<{
+      id?: string;
+      company_id?: string;
+      name: string;
+      owner_email?: string;
+      created_at?: string;
+    }>;
+  }>(
+    ['companyInfo', user?.id || ''],
+    user ? `/api/company/check?owner_id=${user.id}` : '',
+    { enabled: Boolean(user && isLoaded) }
+  );
+
+  // Process company data
+  const companyInfo = useMemo(() => {
+    if (!companyData?.exists || !companyData.companies?.length) {
+      setError('No company found for this user');
+      return null;
+    }
     
-    if (isLoaded) {
-      if (!user) {
-        router.push("/signin");
-      } else {
-        fetchCompanyInfo();
-      }
+    const company = companyData.companies[0];
+    return {
+      id: company.id || company.company_id || '',
+      name: company.name || 'Unnamed Company',
+      owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress || (user?.emailAddresses?.[0]?.emailAddress as string) || '',
+      created_at: company.created_at || new Date().toISOString()
+    };
+  }, [companyData, user]);
+
+  // Handle errors
+  useEffect(() => {
+    if (fetchError) {
+      console.error('Error fetching company info:', fetchError);
+      setError(fetchError.message || 'Failed to load company information');
+    } else if (companyData && !companyData.exists) {
+      setError('No company found for this user');
+    } else {
+      setError(null);
+    }
+  }, [fetchError, companyData]);
+
+  // Redirect if not signed in
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push("/signin");
     }
   }, [isLoaded, user, router]);
 

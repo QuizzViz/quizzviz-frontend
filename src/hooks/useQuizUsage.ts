@@ -1,7 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
 import { useUser } from "@clerk/nextjs";
+import { useCachedFetch } from './useCachedFetch';
+import { useState, useEffect } from 'react';
+
+type ApiError = Error & {
+  status?: number;
+  response?: {
+    status?: number;
+    data?: any;
+  };
+};
 
 export interface QuizUsageData {
   user_id: string;
@@ -29,99 +37,98 @@ interface CompanyInfo {
   owner_email?: string;
 }
 
-export function useQuizUsage(p0?: { refetchOnMount: string; refetchOnWindowFocus: boolean; }) {
+export function useQuizUsage() {
   const { user, isLoaded } = useUser();
   const { toast } = useToast();
   const [errorShown, setErrorShown] = useState(false);
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
-  const [isLoadingCompany, setIsLoadingCompany] = useState(true);
-
+  
   const plan = (user?.publicMetadata?.plan as string) || 'Free';
   
-  // Fetch company info on mount
+  // Fetch company info using useCachedFetch
+  const { data: companyData, isLoading: isCompanyLoading, error: companyError } = useCachedFetch<{
+    exists: boolean;
+    companies: Array<{ id?: string; company_id?: string; name: string; owner_email?: string }>;
+  }>(
+    ['companyInfo', user?.id || ''],
+    user && isLoaded ? `/api/company/check?owner_id=${user.id}` : '',
+    { enabled: Boolean(user && isLoaded) }
+  );
+  
+  // Process company info
+  const companyInfo = companyData?.exists && companyData.companies?.[0] ? {
+    id: companyData.companies[0].company_id || companyData.companies[0].id || '',
+    name: companyData.companies[0].name || 'Unnamed Company',
+    owner_email: companyData.companies[0].owner_email,
+  } : null;
+  
+  // Handle company fetch errors
   useEffect(() => {
-    const fetchCompanyInfo = async () => {
-      if (!isLoaded || !user) {
-        setIsLoadingCompany(false);
-        return;
-      }
-      
-      try {
-        console.log('Fetching company info for user:', user.id);
-        const response = await fetch(`/api/company/check?owner_id=${user.id}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Company check failed:', response.status, errorText);
-          throw new Error(`Failed to fetch company information: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Company check response:', data);
-        
-        if (data.exists && data.companies && data.companies.length > 0) {
-          const company = data.companies[0];
-          console.log('Using company:', company);
-          
-          setCompanyInfo({
-            id: company.company_id || company.id || company.name,
-            name: company.name || company.company_id || 'Company',
-            owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress
-          });
-        } else {
-          console.warn('No company found for user');
-        }
-      } catch (error) {
-        console.error('Error fetching company info:', error);
-      } finally {
-        setIsLoadingCompany(false);
-      }
-    };
-    
-    fetchCompanyInfo();
-  }, [isLoaded, user]);
-
-  const query = useQuery<QuizUsageData, Error>({
-    queryKey: ['quiz-usage', companyInfo?.id, plan],
-    queryFn: async () => {
-      if (!user?.id) throw new Error('User not found');
-      if (!companyInfo?.id) return null;
-      
-      const response = await fetch(`/api/quiz-usage?company_id=${encodeURIComponent(companyInfo.id)}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || 'Failed to fetch quiz usage');
-      }
-
-      return response.json();
-    },
-    retry: 1,
-    refetchOnWindowFocus: false,
-    enabled: !!user?.id && !isLoadingCompany,
-  });
-
-  // Handle errors with toast in a separate effect
-  useEffect(() => {
-    if (query.isError && !errorShown) {
+    if (companyError && !errorShown) {
+      console.error('Error fetching company info:', companyError);
       toast({
         title: 'Error',
-        description: query.error?.message || 'Failed to fetch quiz usage',
+        description: 'Failed to load company information',
         variant: 'destructive',
       });
       setErrorShown(true);
     }
-  }, [query.isError, query.error, toast, errorShown]);
+  }, [companyError, toast, errorShown]);
+
+  // Fetch quiz usage data using useCachedFetch
+  
+const companyId = companyInfo?.id;
+ const { 
+    data, 
+    isLoading: isLoadingUsage, 
+    error: usageError, 
+    refetch 
+  } = useCachedFetch<QuizUsageData>(
+    ['quizUsage', companyId || ''],
+    companyId ? `/api/quiz-usage` : '',
+    { 
+      enabled: Boolean(companyId)
+    }
+  );
+
+  // Return empty data structure when no data is available
+  const normalizedData = data || {
+    totalQuizzes: 0,
+    totalQuestions: 0,
+    totalAttempts: 0,
+    averageScore: 0,
+    quizzes: []
+  };
+
+  // Check if error is 404
+  const is404Error = (error: unknown): boolean => {
+    if (!error) return false;
+    const apiError = error as ApiError;
+    return apiError.status === 404 || apiError.response?.status === 404;
+  };
+// Handle usage fetch errors
+useEffect(() => {
+  if (usageError && !errorShown) {
+    const apiError = usageError as ApiError;
+    console.error('Error fetching quiz usage:', apiError);
+    // Don't show error toast for 404 - just show empty state
+    if (apiError?.status !== 404 && apiError?.response?.status !== 404) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load quiz usage data',
+        variant: 'destructive',
+      });
+      setErrorShown(true);
+    }
+  }
+}, [usageError, toast, errorShown]);
 
   return {
-    ...query,
+    data: normalizedData,
+    isLoading: isLoadingUsage || isCompanyLoading,
+    error: companyError || (!is404Error(usageError) ? usageError : null), // Don't treat 404 as error
+    refetch,
     companyInfo,
-    isLoadingCompany
+    isCompanyLoading
   };
 }
 
