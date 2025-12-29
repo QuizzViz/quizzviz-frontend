@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { useState } from "react";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
+import Head from "next/head";
 
 // Constants
 const MONTHLY_QUIZ_LIMIT = 20;
@@ -116,7 +117,12 @@ const UsagePage = () => {
   }
 
   return (
+
     <DashboardAccess>
+    <Head>
+        <title>Usage | QuizzViz</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
     <div className="flex min-h-screen bg-background">
       <DashboardSideBar />
       <div className="flex-1 overflow-y-auto">

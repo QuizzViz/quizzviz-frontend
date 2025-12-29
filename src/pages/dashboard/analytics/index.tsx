@@ -440,7 +440,7 @@ export default function ResultsDashboard() {
   return (
     <DashboardAccess>
       <Head>
-        <title>Quiz Analytics</title>
+        <title>Analytics | QuizzViz</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
