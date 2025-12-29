@@ -197,7 +197,9 @@ ${actual}
         body: JSON.stringify({
           subject: `[Bug] ${subject}`,
           message,
-          email_type: 'report_bug'
+          email_type: 'report_bug',
+          userEmail: user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '',
+          email: user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || ''
         }),
       });
 
@@ -269,7 +271,7 @@ ${actual}
                     onClick={() => setSubmitStatus(null)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg transition-all duration-200"
+                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-lg transition-all duration-200"
                   >
                     Report Another Bug
                   </motion.button>
@@ -312,7 +314,7 @@ ${actual}
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                      className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-rose-600 to-pink-600 mb-2"
+                      className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-green-600 to-blue-600 mb-2"
                     >
                       <Bug className="w-8 h-8 text-white" />
                     </motion.div>
@@ -388,7 +390,7 @@ ${actual}
                       />
                     </div>
 
-                    <div className="pt-4">
+                    <div className="pt-4 flex justify-end">
                       <motion.button
                         type="submit"
                         disabled={isSubmitting || !actual.trim()}
@@ -396,8 +398,8 @@ ${actual}
                         whileTap={{ scale: 0.95 }}
                         className={`w-full sm:w-auto px-6 sm:px-8 py-3 text-sm sm:text-base font-medium rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 ${
                           isSubmitting || !actual.trim()
-                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl'
+                            ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white cursor-not-allowed'
+                            : 'bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
                         }`}
                       >
                         {isSubmitting ? (

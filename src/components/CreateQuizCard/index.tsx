@@ -266,7 +266,7 @@ export default function CreateQuizCard({
                       className={`transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center ${
                         isLimitReached 
                           ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                          : 'bg-foreground hover:bg-muted-foreground text-background'
+                          : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 duration-300 transition-all hover:to-blue-700 h text-white'
                       }`}
                       disabled={!role || techStack.length === 0}
                       onClick={() => handleGenerateClick(codePercentage)}
