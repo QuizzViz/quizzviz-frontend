@@ -84,12 +84,12 @@ export default function CreateQuizCard({
           await refetchQuizUsage();
         }
         
-        if (isMounted && process.env.NODE_ENV !== 'production') {
-          console.log('Data refreshed:', {
-            quizCount: quizUsage?.data?.current_month?.quiz_count || 0,
-            limit: maxQuestions
-          });
-        }
+        // if (isMounted && process.env.NODE_ENV !== 'production') {
+        //   console.log('Data refreshed:', {
+        //     quizCount: quizUsage?.data?.current_month?.quiz_count || 0,
+        //     limit: maxQuestions
+        //   });
+        // }
       } catch (error) {
         if (isMounted) {
           console.error('Error refreshing data:', error);
