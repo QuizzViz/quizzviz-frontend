@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import {Footer} from '@/components/Footer';
+import { PageLoading } from '@/components/ui/page-loading';
 
 export default function ContactPage() {
   const { isLoaded, user, isSignedIn } = useUser();
@@ -43,11 +44,7 @@ export default function ContactPage() {
 
  
   if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-black">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <PageLoading fullScreen />;
   }
 
   const handleChange = (e) => {
