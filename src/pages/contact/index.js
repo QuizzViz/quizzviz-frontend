@@ -75,9 +75,11 @@ export default function ContactPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          subject: `${formData.subject}`,
+          subject: formData.subject || 'Contact Form Submission',
           message: `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`,
-          email_type: 'contact'
+          email_type: 'contact',
+          userEmail: formData.email || '',
+          email: formData.email || ''  // Include both for backward compatibility
         }),
       });
 
@@ -154,7 +156,7 @@ export default function ContactPage() {
                   setIsModalOpen(false);
                   
                 }}
-                className="px-6 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+                className="px-6 py-2.5 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
               >
                 {submitStatus.success ? 'Okay' : 'Okay, got it'}
               </button>
@@ -175,7 +177,7 @@ export default function ContactPage() {
           transition={{ duration: 0.5, ease: 'easeOut' }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-rose-600 to-pink-600 mb-4 mx-auto">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-green-600 to-blue-600 mb-4 mx-auto">
             <Mail className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl md:text-4xl font-semibold text-white tracking-tight mb-3 bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text">
@@ -306,7 +308,7 @@ export default function ContactPage() {
                     disabled={isSubmitting || (!formData.name.trim() || !formData.email.trim() || !formData.message.trim())}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="w-full h-12 text-base font-medium bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full h-12 text-base font-medium bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
