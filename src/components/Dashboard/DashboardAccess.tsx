@@ -17,7 +17,21 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [company, setCompany] = useState<Company | null>(null);
   const [isLoadingCompany, setIsLoadingCompany] = useState(true);
-  const isPricingPage = typeof window !== 'undefined' && window.location.pathname === '/pricing';
+  const [currentPath, setCurrentPath] = useState('');
+
+  useEffect(() => {
+    // Set the current path on client-side only
+    if (typeof window !== 'undefined') {
+      setCurrentPath(window.location.pathname);
+    }
+  }, []);
+
+  const isPricingPage = currentPath === '/pricing';
+
+  // Skip all checks for pricing page
+  if (isPricingPage) {
+    return <>{children}</>;
+  }
 
   useEffect(() => {
     const fetchCompany = async () => {
