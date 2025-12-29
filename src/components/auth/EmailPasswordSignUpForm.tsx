@@ -61,9 +61,16 @@ export const EmailPasswordSignUpForm: FC<{
     <button
       type="submit"
       disabled={loading}
-      className="w-full inline-flex h-10 items-center justify-center rounded-lg px-4 bg-primary text-primary-foreground hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60 font-medium mt-3"
+      className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
     >
-      {loading ? "Creating account..." : "Create account"}
+      {loading ? (
+        <>
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          Creating account...
+        </>
+      ) : (
+        "Create account"
+      )}
     </button>
   </form>
 );

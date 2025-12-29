@@ -69,8 +69,18 @@ export default function SignInPage() {
                   You are already signed in as <span className="text-foreground">{user?.primaryEmailAddress?.emailAddress || user?.fullName || "current user"}</span>.
                 </p>
                 <div className="grid grid-cols-1 gap-2">
-                  <button onClick={() => router.push('/dashboard')} className="inline-flex h-10 w-full items-center justify-center rounded-lg px-4 bg-primary text-primary-foreground hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ring font-medium">Go to Dashboard</button>
-                  <button onClick={async () => { try { await signOut(); router.push('/signin'); } catch {} }} className="inline-flex h-10 w-full items-center justify-center rounded-lg px-4 bg-secondary text-secondary-foreground hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-ring font-medium">Switch account (sign out first)</button>
+                  <button 
+                    onClick={() => router.push('/dashboard')} 
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center"
+                  >
+                    Go to Dashboard
+                  </button>
+                  <button 
+                    onClick={async () => { try { await signOut(); router.push('/signin'); } catch {} }} 
+                    className="w-full bg-gray-800 hover:bg-gray-700/80 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] border border-gray-700"
+                  >
+                    Switch account (sign out first)
+                  </button>
                 </div>
               </div>
             )}
