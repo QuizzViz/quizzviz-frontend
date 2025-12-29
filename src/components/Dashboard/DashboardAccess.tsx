@@ -17,6 +17,7 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [company, setCompany] = useState<Company | null>(null);
   const [isLoadingCompany, setIsLoadingCompany] = useState(true);
+  const isPricingPage = typeof window !== 'undefined' && window.location.pathname === '/pricing';
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -93,8 +94,8 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Show subscription prompt for non-Business plans
-  if (company.plan_name !== 'Business') {
+  // Show subscription prompt for non-Business plans, but not on the pricing page
+  if (company.plan_name !== 'Business' && !isPricingPage) {
     return (
       <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
         <div className="w-full max-w-md">
