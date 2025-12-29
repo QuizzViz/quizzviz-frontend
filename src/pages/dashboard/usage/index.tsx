@@ -75,7 +75,7 @@ const UsagePage = () => {
                 <div className="w-16 h-16 border-4 border-transparent rounded-full border-t-green-400 border-r-blue-400 animate-spin absolute top-0 left-0" />
               </div>
               <p className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent font-semibold">
-                Loading your analytics...
+                Loading your usage data ...
               </p>
             </div>
 
