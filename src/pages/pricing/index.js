@@ -105,27 +105,29 @@ const PricingPage = () => {
             Unlock the full power of QuizzViz with our comprehensive solution
           </p>
 
-          {/* Billing Toggle */}
-          <div className="mt-5 inline-flex items-center bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-full p-1 shadow-lg">
+           <div className="mt-5 inline-flex items-center bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-full p-1 shadow-lg">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-4 py-2 rounded-l-lg font-medium ${
+              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 ${
                 billingCycle === 'monthly'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-transparent text-gray-300 hover:bg-gray-800/50'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20'
+                  : 'text-gray-400 hover:text-white'
               }`}
             >
               Monthly
             </button>
             <button
               onClick={() => setBillingCycle('yearly')}
-              className={`px-4 py-2 rounded-r-lg font-medium ${
+              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 relative ${
                 billingCycle === 'yearly'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-transparent text-gray-300 hover:bg-gray-800/50'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20'
+                  : 'text-gray-400 hover:text-white'
               }`}
             >
-              Yearly (Save {yearlySavings}%)
+              Yearly
+              <span className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+                -{yearlySavings}%
+              </span>
             </button>
           </div>
         </div>
@@ -173,7 +175,7 @@ const PricingPage = () => {
                 <button
                   onClick={(e) => handleSubscribe(e, billingCycle === 'monthly' ? plans[0].monthlyLink : plans[0].yearlyLink)}
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-4 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-sm py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98]"
                 >
                   {isLoading ? (
                     <>
