@@ -10,7 +10,7 @@ export const OAuthProviderButton: FC<{
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02]  active:scale-[0.98] flex items-center justify-center ${loading ? "opacity-70" : "hover:opacity-90"}`}
+    className={`w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-emerald-500/30  active:scale-[0.98] flex items-center justify-center ${loading ? "opacity-70" : "hover:opacity-90"}`}
   >
     {loading ? (
       <svg className="animate-spin mr-2 h-4 w-4 text-primary-foreground" viewBox="0 0 24 24">
