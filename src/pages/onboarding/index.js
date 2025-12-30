@@ -39,6 +39,7 @@ export default function OnboardingPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isChecking, setIsChecking] = useState(true);
+  const [isSubmitting,setIsSubmitting] = useState(false)
   const { toast } = useToast();
 
   // Check if user is signed in and has a company
