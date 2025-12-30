@@ -137,7 +137,7 @@ export default function OnboardingPage() {
 
       // Update user public metadata to mark onboarding as complete
       await user.update({
-        publicMetadata: {
+        unsafeMetadata: {
           onboardingComplete: true
         }
       });
