@@ -39,7 +39,7 @@ export default function OnboardingPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isChecking, setIsChecking] = useState(true);
-  const [isSubmitting,setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   // Check if user is signed in and has a company
@@ -230,13 +230,13 @@ export default function OnboardingPage() {
               <Button 
                 type="submit" 
                 className="w-full mt-2 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
                 {isSubmitting ? (
-                  <Button disabled className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:opacity-90 transition-opacity">
+                  <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
                     Creating your company...
-                  </Button>
+                  </>
                 ) : (
                   <div className="flex items-center justify-center">
                     <span>Continue to Pricing</span>
