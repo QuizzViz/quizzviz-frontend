@@ -2,105 +2,132 @@
 
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
-import { Loader2, Zap, Lock, ArrowRight, Building2 } from 'lucide-react';
+import { useUser, useClerk } from '@clerk/nextjs';
+import { Loader2, Zap, Lock, ArrowRight, Building2, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 interface Company {
   company_id: string;
   plan_name: string;
-  // Add other company fields as needed
+  question_limit: number;
+  quiz_limit: number;
+  questions_used: number;
+  quizzes_used: number;
 }
 
-export function DashboardAccess({ children }: { children: React.ReactNode }) {
+interface DashboardAccessProps {
+  children: React.ReactNode;
+  showFullAccess?: boolean;
+}
+
+export function DashboardAccess({ children, showFullAccess = false }: DashboardAccessProps) {
   const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
   const [company, setCompany] = useState<Company | null>(null);
-  const [isLoadingCompany, setIsLoadingCompany] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentPath, setCurrentPath] = useState('');
+  const [usage, setUsage] = useState({
+    questions: { used: 0, limit: 100 },
+    quizzes: { used: 0, limit: 20 }
+  });
 
+  // Set current path on client-side
   useEffect(() => {
-    // Set the current path on client-side only
     if (typeof window !== 'undefined') {
       setCurrentPath(window.location.pathname);
     }
   }, []);
 
-  const isPricingPage = currentPath === '/pricing';
-
-  // Skip all checks for pricing page
-  if (isPricingPage) {
-    return <>{children}</>;
-  }
-
+  // Fetch company and usage data
   useEffect(() => {
-    const fetchCompany = async () => {
+    const fetchData = async () => {
       if (!isLoaded || !user) {
-        setIsLoadingCompany(false);
+        setIsLoading(false);
         return;
       }
-      
-      try {
-        // Check if user has a company
-        const checkResponse = await fetch(`/api/company/check?owner_id=${user.id}`);
-        
-        if (!checkResponse.ok) {
-          console.error('Failed to check company status');
-          setCompany(null);
-          setIsLoadingCompany(false);
-          return;
-        }
 
-        const checkData = await checkResponse.json();
-        
-        // If company exists in the response, use it
-        if (checkData.exists && checkData.companies && checkData.companies.length > 0) {
-          setCompany(checkData.companies[0]);
-        } else {
-          setCompany(null);
+      try {
+        // Fetch company data
+        const companyRes = await fetch('/api/company/check');
+        if (companyRes.ok) {
+          const data = await companyRes.json();
+          if (data.exists && data.companies && data.companies.length > 0) {
+            const companyData = data.companies[0];
+            setCompany(companyData);
+            
+            // Update usage state with company data
+            setUsage({
+              questions: {
+                used: companyData.questions_used || 0,
+                limit: companyData.question_limit || 100
+              },
+              quizzes: {
+                used: companyData.quizzes_used || 0,
+                limit: companyData.quiz_limit || 20
+              }
+            });
+          }
         }
       } catch (error) {
-        console.error('Error fetching company:', error);
-        setCompany(null);
+        console.error('Error fetching data:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load dashboard data. Please try again.',
+          variant: 'destructive',
+        });
       } finally {
-        setIsLoadingCompany(false);
+        setIsLoading(false);
       }
     };
 
-    fetchCompany();
+    fetchData();
   }, [isLoaded, user]);
 
-  // Show loading state in the page content instead
-  if (!isLoaded || isLoadingCompany) {
-    return <>{children}</>;
+  // Show loading state
+  if (!isLoaded || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
   }
 
-  // Check if user needs to create a company
+  // Case 1: User has no company
   if (!company) {
     return (
-      <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-black/30 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl">
+          <div className="bg-gray-800/80 backdrop-blur-lg border border-gray-700/50 rounded-2xl p-8 shadow-2xl">
             <div className="text-center space-y-6">
-              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-green-500/20 to-blue-500/20 flex items-center justify-center">
+              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center">
                 <Building2 className="h-10 w-10 text-blue-400" />
               </div>
               <div className="space-y-3">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-teal-300 via-blue-400 to-blue-500 bg-clip-text text-transparent">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                   Welcome to QuizzViz
                 </h2>
                 <p className="text-gray-300 text-base">
-                  Create your company to start building and sharing technical assessments with candidates.
+                  You need to create a company to get started.
                 </p>
               </div>
-              <Button 
-                onClick={() => router.push('/onboarding')}
-                className="w-full h-14 text-base font-bold bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl group rounded-xl"
-              >
-                <Zap className="w-5 h-5 mr-2" />
-                Create Your Company
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <div className="flex flex-col space-y-3">
+                <Button
+                  onClick={() => router.push('/onboarding')}
+                  className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white transition-all duration-300"
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Create Company
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => signOut(() => router.push('/'))}
+                  className="text-gray-400 hover:text-white hover:bg-gray-700/50"
+                >
+                  Sign Out
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -108,32 +135,54 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Show subscription prompt for non-Business plans, but not on the pricing page
-  if (company.plan_name !== 'Business' && !isPricingPage) {
+  // Case 2: User has company but no Business plan
+  if (company.plan_name !== 'Business') {
     return (
-      <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-black/30 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl">
+          <div className="bg-gray-800/80 backdrop-blur-lg border border-amber-500/30 rounded-2xl p-8 shadow-2xl">
             <div className="text-center space-y-6">
-              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-blue-500/20 to-green-500/20 flex items-center justify-center">
-                <Zap className="h-10 w-10 text-blue-400" />
+              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 flex items-center justify-center">
+                <Lock className="h-10 w-10 text-amber-400" />
               </div>
               <div className="space-y-3">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-teal-300 via-blue-400 to-blue-500 bg-clip-text text-transparent">
-                  Subscribe to Continue
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                  Upgrade Required
                 </h2>
                 <p className="text-gray-300 text-base">
-                  Unlock all features and create quizzes by subscribing to our service.
+                  You need to upgrade to the Business plan to access all features.
                 </p>
+                <div className="text-left space-y-2 text-sm text-gray-400 mt-4">
+                  <div className="flex items-center">
+                    <span className="text-green-400 mr-2">✓</span>
+                    <span>Access to all quiz templates</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-green-400 mr-2">✓</span>
+                    <span>Advanced analytics</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-green-400 mr-2">✓</span>
+                    <span>Priority support</span>
+                  </div>
+                </div>
               </div>
-              <Button 
-                onClick={() => router.push('/pricing')}
-                className="w-full h-14 text-base font-bold bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl group rounded-xl"
-              >
-                <Zap className="w-5 h-5 mr-2" />
-                Subscribe Now
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <div className="flex flex-col space-y-3">
+                <Button
+                  onClick={() => router.push('/pricing')}
+                  className="w-full h-12 text-base font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition-all duration-300"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Upgrade to Business Plan
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => signOut(() => router.push('/'))}
+                  className="text-gray-400 hover:text-white hover:bg-gray-700/50"
+                >
+                  Sign Out
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -141,5 +190,24 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  // Case 3: User has Business plan - show full access
+  return (
+    <>
+      {children}
+      {/* Usage limit indicators */}
+      {(usage.questions.used >= usage.questions.limit || 
+        usage.quizzes.used >= usage.quizzes.limit) && (
+        <div className="fixed bottom-4 right-4 bg-amber-500/10 border border-amber-500/30 text-amber-300 px-4 py-2 rounded-lg shadow-lg backdrop-blur-sm flex items-center space-x-2">
+          <AlertCircle className="h-5 w-5 text-amber-400" />
+          <span>You've reached your monthly limit. </span>
+          <button 
+            onClick={() => router.push('/pricing')}
+            className="font-semibold text-amber-300 hover:text-white underline"
+          >
+            Upgrade
+          </button>
+        </div>
+      )}
+    </>
+  );
 }

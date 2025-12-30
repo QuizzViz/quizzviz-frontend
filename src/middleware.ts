@@ -5,25 +5,27 @@ declare module '@clerk/nextjs/server' {
   interface SessionClaims {
     publicMetadata?: {
       onboardingComplete?: boolean;
+      companyId?: string;
+      planName?: string;
     };
   }
 }
 
 // Define public routes
 const isPublicRoute = createRouteMatcher([
-    '/',
-    '/about',
-    '/pricing',
-    '/not-allowed',
-    '/sitemap.xml',
-    '/robots.txt',
-    '/mission',
-    '/privacy-policy',
-    '/terms',
-    '/signin',
-    '/signup',
-    '/api(.*)',
-    '/([^/]+)/take/quiz/([^/]+)'
+  '/',
+  '/about',
+  '/pricing',
+  '/not-allowed',
+  '/sitemap.xml',
+  '/robots.txt',
+  '/mission',
+  '/privacy-policy',
+  '/terms',
+  '/signin',
+  '/signup',
+  '/api(.*)',
+  '/([^/]+)/take/quiz/([^/]+)'
 ]);
 
 // Bot detection
@@ -74,12 +76,16 @@ export default clerkMiddleware(async (auth, request) => {
     // Type guard for public metadata
     interface PublicMetadata {
       onboardingComplete?: boolean;
+      companyId?: string;
+      planName?: string;
     }
     
     const publicMetadata = (sessionClaims?.publicMetadata || {}) as PublicMetadata;
     const onboardingComplete = publicMetadata.onboardingComplete === true;
+    const hasCompany = !!publicMetadata.companyId;
+    const hasBusinessPlan = publicMetadata.planName === 'Business';
 
-    // If user is signed in and tries to access sign-in/up
+    // Handle sign-in/signup redirects
     if (userId && (pathname === '/signin' || pathname === '/signup')) {
       if (!onboardingComplete) {
         return NextResponse.redirect(new URL('/onboarding', request.url));
@@ -87,32 +93,63 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    // For dashboard route, check if user needs to complete onboarding
-    if (pathname.startsWith('/dashboard') && !onboardingComplete) {
-      return NextResponse.redirect(new URL('/onboarding', request.url));
+    // Handle onboarding flow
+    if (pathname === '/onboarding') {
+      if (onboardingComplete && hasCompany) {
+        if (hasBusinessPlan) {
+          return NextResponse.redirect(new URL('/dashboard', request.url));
+        }
+        return NextResponse.redirect(new URL('/pricing', request.url));
+      }
+      return NextResponse.next();
+    }
+
+    // Handle pricing page access
+    if (pathname === '/pricing') {
+      if (!onboardingComplete) {
+        return NextResponse.redirect(new URL('/onboarding', request.url));
+      }
+      if (hasBusinessPlan) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+      return NextResponse.next();
+    }
+
+    // Handle dashboard access
+    if (pathname.startsWith('/dashboard')) {
+      if (!onboardingComplete) {
+        return NextResponse.redirect(new URL('/onboarding', request.url));
+      }
+      if (!hasCompany) {
+        // Allow access to dashboard but show DashboardAccess component
+        return NextResponse.next();
+      }
+      if (!hasBusinessPlan) {
+        // Allow access to dashboard but show upgrade prompt
+        return NextResponse.next();
+      }
+      // Full access to dashboard
+      return NextResponse.next();
     }
 
     // User is authenticated - check for mobile restrictions
     const isMobile = /iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(ua);
     
     // For middleware, we'll check the plan on the client side
-    // as we can't access the user's plan in middleware directly
     if (pathname.startsWith('/quiz/') && isMobile) {
-      // This is a mobile device trying to access a quiz
-      // We'll let it through and handle the restriction in the component
-      // where we have access to the user's plan
+      // Mobile restrictions would be handled here
       return NextResponse.next();
     }
 
     return NextResponse.next();
   } catch (error) {
-    console.error('Auth error:', error);
-    return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+    console.error('Middleware error:', error);
+    return NextResponse.redirect(new URL('/error', request.url));
   }
 });
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!.*\\.|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
