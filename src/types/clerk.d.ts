@@ -2,7 +2,7 @@ import '@clerk/nextjs/server';
 
 declare module '@clerk/nextjs/server' {
   interface SessionClaims {
-    metadata: {
+    publicMetadata?: {
       onboardingComplete?: boolean;
       // Add other custom metadata properties here as needed
     };
