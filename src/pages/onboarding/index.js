@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useAuth, useClerk } from '@clerk/nextjs';
-import { Loader2, ArrowRight, Building2 } from 'lucide-react';
+import { ArrowRight, Building2 } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/loading';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,10 +79,15 @@ export default function OnboardingPage() {
     checkAuthAndCompany();
   }, [isSignedIn, router, getToken, user?.id, redirectToSignIn, toast]);
 
-  if (isChecking) {
+  if (isLoading || isChecking) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen bg-black text-white">
+        <div className="flex items-center justify-center min-h-screen">
+          <LoadingSpinner 
+            fullScreen={false}
+            text="Preparing your onboarding experience..."
+          />
+        </div>
       </div>
     );
   }
@@ -101,7 +107,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     
     try {
       const token = await getToken();
@@ -163,7 +169,7 @@ export default function OnboardingPage() {
         });
       }
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -225,11 +231,11 @@ export default function OnboardingPage() {
                 className="w-full mt-2 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 font-medium py-2 px-4 rounded-lg transition-colors duration-200"
                 disabled={isLoading}
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Setting up...
-                  </>
+                {isSubmitting ? (
+                  <Button disabled className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:opacity-90 transition-opacity">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    Creating your company...
+                  </Button>
                 ) : (
                   <div className="flex items-center justify-center">
                     <span>Continue to Pricing</span>

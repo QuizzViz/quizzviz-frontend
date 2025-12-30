@@ -10,6 +10,7 @@ import { PageLoading } from "@/components/ui/page-loading";
 import { useEffect, useState } from "react";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
+import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 
 export default function Dashboard() {
   const { isLoaded, user } = useUser();
@@ -36,6 +37,7 @@ export default function Dashboard() {
   }
 
   return (
+    <DashboardAccess>
     <div className="min-h-screen bg-black text-white">
       <Head>
         <title>Dashboard | QuizzViz</title>
@@ -75,5 +77,6 @@ export default function Dashboard() {
         </div>
       </SignedOut>
     </div>
+    </DashboardAccess>
   );
 }
