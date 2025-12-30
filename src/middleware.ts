@@ -1,6 +1,14 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
+declare module '@clerk/nextjs/server' {
+  interface SessionClaims {
+    publicMetadata?: {
+      onboardingComplete?: boolean;
+    };
+  }
+}
+
 // Define public routes
 const isPublicRoute = createRouteMatcher([
     '/',
@@ -63,13 +71,26 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL('/signin', request.url));
     }
 
-    // If user is signed in and tries to access sign-in/up, redirect to dashboard
+    // Type guard for public metadata
+    interface PublicMetadata {
+      onboardingComplete?: boolean;
+    }
+    
+    const publicMetadata = (sessionClaims?.publicMetadata || {}) as PublicMetadata;
+    const onboardingComplete = publicMetadata.onboardingComplete === true;
+
+    // If user is signed in and tries to access sign-in/up
     if (userId && (pathname === '/signin' || pathname === '/signup')) {
+      if (!onboardingComplete) {
+        return NextResponse.redirect(new URL('/onboarding', request.url));
+      }
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    // Let the dashboard handle the onboarding state and redirections
-    // No more automatic redirects based on onboarding status
+    // For dashboard route, check if user needs to complete onboarding
+    if (pathname.startsWith('/dashboard') && !onboardingComplete) {
+      return NextResponse.redirect(new URL('/onboarding', request.url));
+    }
 
     // User is authenticated - check for mobile restrictions
     const isMobile = /iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(ua);

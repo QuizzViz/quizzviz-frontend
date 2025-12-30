@@ -134,9 +134,9 @@ export default function OnboardingPage() {
         throw new Error(error.message || 'Failed to create company');
       }
 
-      // Update user metadata to mark onboarding as complete
+      // Update user public metadata to mark onboarding as complete
       await user.update({
-        unsafeMetadata: {
+        publicMetadata: {
           onboardingComplete: true
         }
       });
