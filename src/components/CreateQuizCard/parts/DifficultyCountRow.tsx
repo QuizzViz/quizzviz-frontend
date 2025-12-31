@@ -48,31 +48,7 @@ const DifficultyCountRow: FC<DifficultyCountRowProps> = ({
             <SelectItem value="High School Level">High School level</SelectItem>
             <SelectItem value="Bachelors Level">Bachelors Level</SelectItem>
             <SelectItem value="Masters Level">Masters level</SelectItem>
-            {planName === 'Free' ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="relative">
-                      <SelectItem 
-                        value="PhD Level" 
-                        disabled 
-                        className="opacity-50 cursor-not-allowed"
-                      >
-                        <div className="flex items-center">
-                          <span>PhD level</span>
-                          <Info className="ml-2 h-3.5 w-3.5 text-muted-foreground" />
-                        </div>
-                      </SelectItem>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[200px]">
-                    <p>Upgrade to <Link href="/pricing" className=" underline font-semibold text-blue-500">Consumer Plan</Link> to access PhD level difficulty</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <SelectItem value="PhD Level">PhD level</SelectItem>
-            )}
+            <SelectItem value="PhD Level">PhD level</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -84,7 +60,7 @@ const DifficultyCountRow: FC<DifficultyCountRowProps> = ({
           value={count}
           onChange={setCount}
           min={1}
-          max={Math.min(maxQuestions, currentPlan.maxQuestions)}
+          max={100} // Set fixed max to 100 questions
           showMaxIndicator={false}
           className="w-full"
         />

@@ -241,7 +241,7 @@ export function TechStackInput({ value, onChange, availableTechs: externalAvaila
           <div className="flex items-center gap-2">
             <Label className="text-foreground text-sm">Tech Stack</Label>
           </div>
-          <Badge variant="outline" className="text-xs">
+          <Badge className="text-xs bg-gradient-to-r from-green-500 to-blue-500 text-white border-0">
             {value.length}/{maxTechs} technologies
           </Badge>
         </div>
@@ -311,7 +311,7 @@ export function TechStackInput({ value, onChange, availableTechs: externalAvaila
                 variant="outline"
                 size="sm"
                 onClick={distributeEqually}
-                className="text-xs h-8"
+                className="text-xs h-8 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200"
               >
                 Distribute Equally
               </Button>

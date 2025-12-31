@@ -87,15 +87,15 @@ export function CodeTheorySlider({ codePercentage, onCodePercentageChange }: Cod
             onMouseDown={handleMouseDown}
           >
             <div
-              className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-150 ease-out shadow-sm"
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-blue-500 rounded-full transition-all duration-150 ease-out shadow-sm"
               style={{ width: `${codePercentage}%` }}
             >
-              <div className="absolute right-0 h-6 w-1 bg-white/50 -mr-1 transform translate-x-1/2 top-1/2 -translate-y-1/2 rounded-full" />
+              <div className="absolute right-0 h-6 w-1 bg-white/80 -mr-1 transform translate-x-1/2 top-1/2 -translate-y-1/2 rounded-full" />
             </div>
 
             {/* Theory section (remaining percentage) */}
             <div
-              className="absolute top-0 right-0 h-full bg-gradient-to-l from-accent to-accent/80 rounded-full transition-all duration-150 ease-out shadow-sm"
+              className="absolute top-0 right-0 h-full bg-gradient-to-l from-muted-foreground/20 to-muted-foreground/30 rounded-full transition-all duration-150 ease-out shadow-sm"
               style={{ width: `${theoryPercentage}%` }}
             />
           </div>
