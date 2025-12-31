@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser, useClerk, useAuth } from '@clerk/nextjs';
 import { Loader2, Zap, Lock, ArrowRight, Building2, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ interface DashboardAccessProps {
 export function DashboardAccess({ children, showFullAccess = false }: DashboardAccessProps) {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
+  const { getToken } = useAuth();
   const router = useRouter();
   const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,13 +50,28 @@ export function DashboardAccess({ children, showFullAccess = false }: DashboardA
       }
 
       try {
-        // Fetch company data
-        const companyRes = await fetch('/api/company/check');
+        // Fetch company data with the user's ID
+        const token = await getToken();
+        const companyRes = await fetch(`/api/company/check?owner_id=${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
         if (companyRes.ok) {
           const data = await companyRes.json();
           if (data.exists && data.companies && data.companies.length > 0) {
             const companyData = data.companies[0];
             setCompany(companyData);
+            
+            // Update user metadata with company info
+            await user.update({
+              unsafeMetadata: {
+                ...user.unsafeMetadata,
+                companyId: companyData.id,
+                planName: companyData.plan_name || 'Free'
+              }
+            });
             
             // Update usage state with company data
             setUsage({
@@ -96,6 +112,17 @@ export function DashboardAccess({ children, showFullAccess = false }: DashboardA
 
   // Case 1: User has no company
   if (!company) {
+    // Check if we're already on the onboarding page to prevent infinite redirects
+    if (currentPath !== '/onboarding') {
+      router.push('/onboarding');
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        </div>
+      );
+    }
+    
+    // If we're on the onboarding page, show the create company UI
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white flex items-center justify-center p-4">
         <div className="w-full max-w-md">

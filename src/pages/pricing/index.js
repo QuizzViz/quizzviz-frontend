@@ -84,8 +84,8 @@ const PricingPage = () => {
   return (
     <>
     <Head>
-      <title>QuizzViz - Pricing</title>
-      <meta name="description" content="QuizzViz - Pricing" />
+      <title>Pricing | QuizzViz</title>
+      <meta name="description" content="Pricing | QuizzViz" />
       <link rel="icon" href="/favicon.ico" />
     </Head>
     <div className="min-h-screen bg-[#0a0a0a] relative overflow-hidden">
