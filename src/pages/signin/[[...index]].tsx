@@ -4,6 +4,7 @@ import { OAuthProviderButton } from "@/components/auth/OAuthProviderButton";
 import { EmailPasswordSignInForm } from "@/components/auth/EmailPasswordSignInForm";
 import { useSignInController } from "@/components/auth/hooks/useSignInController";
 import { useEffect, useState } from "react";
+import Head from "next/head";
 
 export default function SignInPage() {
   const {
@@ -29,6 +30,12 @@ export default function SignInPage() {
   }
 
   return (
+    <>
+    <Head>
+      <title> Signin | QuizzViz </title>
+      <meta name="description" content="Signin to QuizzViz" />
+        <link rel="icon" href="/favicon.ico" />
+    </Head>
     <div className="min-h-screen w-full bg-background text-foreground flex items-center justify-center p-4 pt-20">
       <div className="w-full max-w-sm animate-fade-in-smooth">
         <div className="rounded-2xl p-[1px] bg-gradient-to-r from-primary/60 via-primary/20 to-primary/60">
@@ -92,5 +99,6 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

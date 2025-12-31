@@ -84,9 +84,9 @@ export function Navbar() {
             </div>
             <div className="hidden md:flex items-center gap-6 lg:gap-8 ml-6 md:ml-10 lg:ml-16 xl:ml-24">
              <Link href="https://calendly.com/syedshahmirsultan/new-meeting"><Button 
-                className="bg-white text-black hover:bg-gray-200 hover:translate-x-1 transition-all duration-150 font-medium"
+                className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600 hover:translate-x-1 transition-all duration-150 font-medium"
               >
-                Book a Demo <ArrowRight className=" w-9 h-5" />
+                Book a Demo <ArrowRight className="w-5 h-5 ml-1" />
               </Button></Link>
               <div className="flex items-center gap-4">
                 <Link href="/signin"><button 
