@@ -1,19 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
 
 export const dynamic = 'force-dynamic';
 const FEEDBACK_RECIPIENT_EMAIL = 'syedshahmirsultan@gmail.com';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get user session
-    const { userId } = getAuth(request);
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, message: 'You must be signed in to submit feedback' },
-        { status: 401 }
-      );
-    }
     
     // Parse the request body
     const { subject, message, email_type, userEmail, email } = await request.json();

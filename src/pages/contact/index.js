@@ -27,14 +27,14 @@ export default function ContactPage() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (isLoaded && user) {
       setFormData(prev => ({
         ...prev,
         name: user.fullName || '',
         email: user.primaryEmailAddress?.emailAddress || ''
       }));
     }
-  }, [user]);
+  }, [isLoaded, user]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitStatus, setSubmitStatus] = useState({
@@ -239,9 +239,10 @@ export default function ContactPage() {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
+                      readOnly={!!user}
                       required
                       placeholder={user?.fullName || 'e.g., John Doe'}
-                      className="h-12 bg-gray-800/50 border-gray-700 hover:border-gray-500 focus:border-blue-500 transition-colors text-white placeholder-gray-400"
+                      className={`h-12 bg-gray-800/50 border-gray-700 ${!user ? 'hover:border-gray-500 focus:border-blue-500' : 'cursor-not-allowed opacity-80'} transition-colors text-white placeholder-gray-400`}
                     />
                     {!formData.name.trim() && <p className="text-xs text-red-400">Name is required.</p>}
                   </div>
@@ -258,9 +259,10 @@ export default function ContactPage() {
                       type="email"
                       value={formData.email}
                       onChange={handleChange}
+                      readOnly={!!user}
                       required
                       placeholder={user?.primaryEmailAddress?.emailAddress || 'your.email@example.com'}
-                      className="h-12 bg-gray-800/50 border-gray-700 hover:border-gray-500 focus:border-blue-500 transition-colors text-white placeholder-gray-400"
+                      className={`h-12 bg-gray-800/50 border-gray-700 ${!user ? 'hover:border-gray-500 focus:border-blue-500' : 'cursor-not-allowed opacity-80'} transition-colors text-white placeholder-gray-400`}
                     />
                     {!formData.email.trim() && <p className="text-xs text-red-400">Email is required.</p>}
                   </div>

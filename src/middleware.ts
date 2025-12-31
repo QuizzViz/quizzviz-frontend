@@ -160,6 +160,7 @@ const isPublicRoute = createRouteMatcher([
   '/([^/]+)/take/quiz/([^/]+)',
   '/pricing',           // ← added pricing as public for simplicity
   '/onboarding',        // ← added onboarding as public (we handle redirect client-side)
+  '/contact',           // ← added contact page as public
 ]);
 
 // Bot detection (kept)
