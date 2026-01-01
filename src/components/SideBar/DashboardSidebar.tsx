@@ -16,6 +16,7 @@ import {
   FiMessageSquare,
   FiUsers,
 } from "react-icons/fi";
+import { LogoWithText } from "../LogoWithText";
 
 type DashboardSidebarProps = {
   mobileWidthClass?: string; // Tailwind classes for mobile drawer width
@@ -189,7 +190,8 @@ export default function DashboardSidebar({
           >
             {/* Show "Menu" text only when sidebar is open, hide when collapsed */}
             {isOpen && (
-              <span className="font-semibold text-white">Menu</span>
+             <LogoWithText className="h-6 text-white" />
+
             )}
             {/* Desktop toggle button */}
             {!isMobile && (
