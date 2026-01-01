@@ -41,7 +41,7 @@ export const DashboardHeader: React.FC = () => {
 
   return (
     <header className="px-6 py-4 border-b border-black bg-black flex items-center justify-between">
-      <LogoWithText className="h-8 text-white" />
+      <span> </span>
       <UserAvatarDropdown 
         userName={companyInfo?.name || 'Company'}
         userEmail={userEmail}
