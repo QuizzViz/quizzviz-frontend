@@ -17,17 +17,18 @@ export function LogoWithText({
 }: LogoWithTextProps) {
   return (
     <div className={`flex items-center justify-between w-full ${className}`}>
-      <Link href="/" className="flex items-center gap-2 group">
-        <div className="relative h-6 w-6 flex-shrink-0">
+      <Link href="/" className="flex items-center gap-3 group">
+        <div className="relative h-10 w-10 flex-shrink-0">
           <Image 
             src="/QuizzViz-logo.png" 
             alt="QuizzViz Logo" 
             fill
             className="object-contain"
             priority
+            sizes="2.5rem"
           />
         </div>
-        <span className="text-lg font-semibold text-white">
+        <span className="text-xl font-semibold text-white whitespace-nowrap">
           QuizzViz
         </span>
       </Link>

@@ -190,7 +190,7 @@ export default function DashboardSidebar({
           >
             {/* Logo with back arrow */}
             <div className="w-full">
-              <LogoWithText 
+              <LogoWithText
                 className="px-2 py-1"
                 showArrow={!isOpen}
                 onBack={() => setIsOpen(true)}
