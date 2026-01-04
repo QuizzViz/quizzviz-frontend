@@ -189,12 +189,29 @@ export default function DashboardSidebar({
             }`}
           >
             {/* Logo with back arrow */}
-            <div className="w-full">
-              <LogoWithText
-                className="px-2 py-1"
-                showArrow={!isOpen}
-                onBack={() => setIsOpen(true)}
-              />
+            <div className="w-full flex items-center justify-between">
+              {isOpen ? (
+                <div className="flex-1">
+                  <LogoWithText
+                    className=""
+                    showArrow={false}
+                    onBack={() => {}}
+                  />
+                </div>
+              ) : (
+                <div className="flex-1" />
+              )}
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-1.5 rounded-md hover:bg-white/10 transition-colors duration-200 focus:outline-none"
+                aria-label={isOpen ? "Collapse menu" : "Expand menu"}
+              >
+                {isOpen ? (
+                  <FiChevronLeft className="w-5 h-5 text-white" />
+                ) : (
+                  <FiMenu className="w-5 h-5 text-white" />
+                )}
+              </button>
             </div>
             {/* Desktop toggle button */}
             {!isMobile && (
