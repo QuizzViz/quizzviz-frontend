@@ -190,7 +190,7 @@ export default function DashboardSidebar({
           >
             {/* Show "Menu" text only when sidebar is open, hide when collapsed */}
             {isOpen && (
-             <LogoWithText className="h-6 text-white" />
+             <LogoWithText className="h-4 mb-4 flex ml-2 self-start text-white" />
 
             )}
             {/* Desktop toggle button */}
