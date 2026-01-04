@@ -188,11 +188,14 @@ export default function DashboardSidebar({
               isScrolled ? "shadow-lg" : ""
             }`}
           >
-            {/* Show "Menu" text only when sidebar is open, hide when collapsed */}
-            {isOpen && (
-             <LogoWithText className="h-4 mb-4 flex ml-2 self-start text-white" />
-
-            )}
+            {/* Logo with back arrow */}
+            <div className="w-full">
+              <LogoWithText 
+                className="px-2 py-1"
+                showArrow={!isOpen}
+                onBack={() => setIsOpen(true)}
+              />
+            </div>
             {/* Desktop toggle button */}
             {!isMobile && (
               <button
