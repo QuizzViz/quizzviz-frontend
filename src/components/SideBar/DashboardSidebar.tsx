@@ -177,33 +177,37 @@ export default function DashboardSidebar({
                 isScrolled ? "shadow-lg" : ""
               }`}
             >
-              <div className="w-full">
+              <div className="flex-1">
                 <LogoWithText
                   className=""
                   showArrow={false}
                   onBack={() => {}}
                 />
               </div>
+              
+              {!isMobile && (
+                <button
+                  onClick={() => setIsOpen(!isOpen)}
+                  className="p-1.5 rounded-md hover:bg-white/10 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 ml-2"
+                  aria-label="Collapse menu"
+                >
+                  <FiChevronLeft className="w-5 h-5 text-white" />
+                </button>
+              )}
             </div>
           )}
 
-          <div className="px-2 pt-2">
-            {!isMobile && (
+          {!isOpen && !isMobile && (
+            <div className="px-2 pt-4">
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`p-1.5 rounded-md hover:bg-white/10 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 ${
-                  !isOpen ? "mx-auto" : ""
-                }`}
-                aria-label={isOpen ? "Collapse menu" : "Expand menu"}
+                className="p-1.5 rounded-md hover:bg-white/10 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 mx-auto"
+                aria-label="Expand menu"
               >
-                {isOpen ? (
-                  <FiChevronLeft className="w-5 h-5 text-white" />
-                ) : (
-                  <FiMenu className="w-5 h-5 text-white" />
-                )}
+                <FiMenu className="w-5 h-5 text-white" />
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="flex-1 overflow-y-auto overflow-x-hidden pt-1">
             <nav className="py-4 px-2">
