@@ -19,11 +19,11 @@ import {
 import { LogoWithText } from "../LogoWithText";
 
 type DashboardSidebarProps = {
-  mobileWidthClass?: string; // Tailwind classes for mobile drawer width
-  menuIconSizeClass?: string; // Tailwind size for FiMenu/FiX icons, e.g., "w-6 h-6"
-  navIconSizeClass?: string; // Tailwind size for nav icons
-  navTextSizeClass?: string; // Tailwind text size for nav labels
-  itemPaddingClass?: string; // Tailwind padding for nav items
+  mobileWidthClass?: string;
+  menuIconSizeClass?: string;
+  navIconSizeClass?: string;
+  navTextSizeClass?: string;
+  itemPaddingClass?: string;
 };
 
 export default function DashboardSidebar({
@@ -37,7 +37,6 @@ export default function DashboardSidebar({
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
@@ -46,12 +45,10 @@ export default function DashboardSidebar({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Handle mobile detection and responsive behavior
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      // On mobile, sidebar should be closed by default
       if (mobile) {
         setIsOpen(false);
       } else {
@@ -64,7 +61,6 @@ export default function DashboardSidebar({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Close sidebar when clicking outside on mobile
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (isMobile && isOpen) {
@@ -96,7 +92,6 @@ export default function DashboardSidebar({
     };
   }, [isMobile, isOpen]);
 
-  // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (isMobile && isOpen) {
       document.body.style.overflow = "hidden";
@@ -119,11 +114,9 @@ export default function DashboardSidebar({
     { name: "Settings", href: "/dashboard/settings", Icon: (props) => <FiSettings {...props} /> },
     { name: "Feedback", href: "/dashboard/feedback", Icon: (props) => <FiMessageSquare {...props} /> },
     { name: "Report a Bug", href: "/dashboard/report-bug", Icon: (props) => <FiAlertTriangle {...props} /> },
-
   ];
 
   const handleMenuItemClick = () => {
-    // Close sidebar on mobile when menu item is clicked
     if (isMobile) {
       setIsOpen(false);
     }
@@ -131,7 +124,6 @@ export default function DashboardSidebar({
 
   return (
     <>
-      {/* Mobile Overlay */}
       <div
         className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden transition-opacity duration-400 ${
           isMobile && isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -140,7 +132,6 @@ export default function DashboardSidebar({
         onClick={() => setIsOpen(false)}
       />
 
-      {/* Mobile Menu Button - Only visible on mobile */}
       <button
         id="menu-button"
         onClick={() => setIsOpen(!isOpen)}
@@ -158,7 +149,6 @@ export default function DashboardSidebar({
         )}
       </button>
 
-      {/* Sidebar */}
       <div
         id="mobile-sidebar"
         className={`
@@ -181,8 +171,6 @@ export default function DashboardSidebar({
         aria-label={isMobile ? "Navigation menu" : undefined}
       >
         <div className="flex flex-col h-full">
-
-          {/* Header - Only show when sidebar is open */}
           {isOpen && (
             <div
               className={`sticky top-0 z-10 flex-shrink-0 flex items-center justify-between p-4 border-b border-white/20 bg-black ${
@@ -198,7 +186,8 @@ export default function DashboardSidebar({
               </div>
             </div>
           )}
-            {/* Desktop toggle button */}
+
+          <div className="px-2 pt-2">
             {!isMobile && (
               <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -216,7 +205,6 @@ export default function DashboardSidebar({
             )}
           </div>
 
-          {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden pt-1">
             <nav className="py-4 px-2">
               <ul className="space-y-1 overflow-hidden">
@@ -255,7 +243,6 @@ export default function DashboardSidebar({
             </nav>
           </div>
 
-          {/* Mobile footer space for safe area */}
           {isMobile && <div className="h-6 flex-shrink-0" />}
         </div>
       </div>
