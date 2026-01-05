@@ -182,37 +182,22 @@ export default function DashboardSidebar({
       >
         <div className="flex flex-col h-full">
 
-          {/* Header */}
-          <div
-            className={`sticky top-0 z-10 flex-shrink-0 flex items-center justify-between p-4 border-b border-white/20 bg-black ${
-              isScrolled ? "shadow-lg" : ""
-            }`}
-          >
-            {/* Logo with back arrow */}
-            <div className="w-full flex items-center justify-between">
-              {isOpen ? (
-                <div className="flex-1">
-                  <LogoWithText
-                    className=""
-                    showArrow={false}
-                    onBack={() => {}}
-                  />
-                </div>
-              ) : (
-                <div className="flex-1" />
-              )}
-              <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="p-1.5 rounded-md hover:bg-white/10 transition-colors duration-200 focus:outline-none"
-                aria-label={isOpen ? "Collapse menu" : "Expand menu"}
-              >
-                {isOpen ? (
-                  <FiChevronLeft className="w-5 h-5 text-white" />
-                ) : (
-                  <FiMenu className="w-5 h-5 text-white" />
-                )}
-              </button>
+          {/* Header - Only show when sidebar is open */}
+          {isOpen && (
+            <div
+              className={`sticky top-0 z-10 flex-shrink-0 flex items-center justify-between p-4 border-b border-white/20 bg-black ${
+                isScrolled ? "shadow-lg" : ""
+              }`}
+            >
+              <div className="w-full">
+                <LogoWithText
+                  className=""
+                  showArrow={false}
+                  onBack={() => {}}
+                />
+              </div>
             </div>
+          )}
             {/* Desktop toggle button */}
             {!isMobile && (
               <button
