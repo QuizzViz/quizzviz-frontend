@@ -17,7 +17,7 @@ export function LogoWithText({
 }: LogoWithTextProps) {
   return (
     <div className={`flex items-center justify-between w-full ${className}`}>
-      <Link href="/" className="flex items-center gap-3 group">
+      <Link href="/" className="flex items-center gap-2 group">
         <div className="relative h-10 w-10 flex-shrink-0">
           <Image 
             src="/QuizzViz-logo.png" 
