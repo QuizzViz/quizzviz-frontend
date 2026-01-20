@@ -30,7 +30,7 @@ export const DashboardHeader: React.FC = () => {
   if (isLoading) {
     return (
       <header className="px-6 py-4 border-b border-black bg-black flex items-center justify-between">
-        <LogoWithText className="h-8 text-white" />
+        <span> </span>
         <div className="w-10 h-10 rounded-full bg-gray-700 animate-pulse" />
       </header>
     );
