@@ -2,6 +2,8 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FC, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { Zap, X, Code, BookOpen, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,6 +89,8 @@ const TECHNOLOGIES = [
 ].sort();
 
 const HeroSection: FC = () => {
+  const { isSignedIn } = useUser();
+  const router = useRouter();
   const [role, setRole] = useState('Software Engineer');
   const [techStack, setTechStack] = useState<Array<{ id: string; name: string; weight: number }>>([
     { id: '1', name: 'Python', weight: 70 },
@@ -106,10 +110,20 @@ const HeroSection: FC = () => {
     setCount(Math.min(Math.max(value, min), max));
   };
 
-  const handleGenerate = (e: React.FormEvent) => {
+  const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsGenerating(true);
-    setTimeout(() => setIsGenerating(false), 2000);
+    setIsGenerating(true); // Show loading state
+
+    try {
+      if (!isSignedIn) {
+        await router.push(`/signin?redirect_url=${encodeURIComponent('/dashboard')}`);
+      } else {
+        await router.push('/dashboard');
+      }
+    } finally {
+      // Reset loading state if navigation fails
+      setTimeout(() => setIsGenerating(false), 2000);
+    }
   };
 
   const addTechnology = (tech: string) => {
@@ -398,7 +412,7 @@ const HeroSection: FC = () => {
                     {isGenerating ? (
                       <span className="flex items-center gap-2">
                         <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                        Generating...
+                        Redirecting...
                       </span>
                     ) : (
                       <>
