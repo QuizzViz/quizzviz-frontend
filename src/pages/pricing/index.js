@@ -10,8 +10,8 @@ import { ArrowRight } from 'lucide-react';
 const plans = [{
   id: 'basic',
   name: 'Basic',
-  price: '99',
-  yearlyPrice: '959',
+  price: '199',
+  yearlyPrice: '1910',
   tagline: 'Perfect for growing companies',
    monthlyLink: "https://quizzviz1.lemonsqueezy.com/buy/1339e755-d028-4b6e-adbb-8b048f7c8018",
   // Test Mode URL Below
