@@ -52,7 +52,18 @@ export function useSignInController() {
         setError("Additional steps required. Please use a social provider.");
       }
     } catch (err: any) {
-      setError(err?.errors?.[0]?.message || "Invalid email or password.");
+      const errorMessage = err?.errors?.[0]?.message || "Invalid email or password.";
+      
+      // Check if the error indicates the account doesn't exist
+      if (errorMessage.includes("not found") || 
+          errorMessage.includes("doesn't exist") || 
+          errorMessage.includes("no account found") ||
+          err?.errors?.[0]?.code === "form_identifier_not_found") {
+        // Redirect to sign up page with email pre-filled
+        router.push(`/signup?email=${encodeURIComponent(email)}&message=No account found. Please sign up first.`);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

@@ -47,7 +47,18 @@ export function useSignUpController() {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setStep("verify");
     } catch (err: any) {
-      setError(err?.errors?.[0]?.message || "Could not create account.");
+      const errorMessage = err?.errors?.[0]?.message || "Could not create account.";
+      
+      // Check if the error indicates the account already exists
+      if (errorMessage.includes("already exists") || 
+          errorMessage.includes("already been taken") || 
+          errorMessage.includes("already registered") ||
+          err?.errors?.[0]?.code === "form_identifier_exists") {
+        // Redirect to sign in page with email pre-filled
+        router.push(`/signin?email=${encodeURIComponent(email)}&message=Account already exists. Please sign in.`);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }

@@ -5,13 +5,29 @@ import { EmailPasswordSignInForm } from "@/components/auth/EmailPasswordSignInFo
 import { useSignInController } from "@/components/auth/hooks/useSignInController";
 import { useEffect, useState } from "react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 
 export default function SignInPage() {
+  const router = useRouter();
   const {
     email, setEmail, password, setPassword, loading, oauthLoading, error,
-    isLoaded, user, handleOAuth, onSubmit, signOut, router
+    isLoaded, user, handleOAuth, onSubmit, signOut
   } = useSignInController();
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  useEffect(() => {
+    // Handle URL parameters for pre-filled email and messages
+    if (router.isReady) {
+      const { email: emailParam, message } = router.query;
+      if (emailParam && typeof emailParam === 'string') {
+        setEmail(emailParam);
+      }
+      if (message && typeof message === 'string') {
+        // You could display this message in a toast or banner
+        console.log('Message from signup:', message);
+      }
+    }
+  }, [router.isReady, router.query, setEmail]);
 
   useEffect(() => {
     if (user) {
