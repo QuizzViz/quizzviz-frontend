@@ -53,8 +53,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       }}
       signInUrl="/signin"
       signUpUrl="/signup"
-      afterSignInUrl="/dashboard"
-      afterSignUpUrl="/pricing"
+      fallbackRedirectUrl="/dashboard"
     >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
