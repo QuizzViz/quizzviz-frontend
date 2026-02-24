@@ -2,7 +2,6 @@ import { useState, FormEvent } from "react";
 import { useSignUp, useClerk, useUser, useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/router";
 
-// Consolidates all state and actions for the custom Sign Up flow
 export function useSignUpController() {
   const { signUp, isLoaded } = useSignUp();
   const { signIn } = useSignIn();
@@ -26,15 +25,11 @@ export function useSignUpController() {
     }
     try {
       setOauthLoading(provider);
-      
-      // For OAuth, we need to use the signUp flow but Clerk will handle existing users
-      // Store the intent in sessionStorage so we can check it in the callback
-      console.log('Setting authIntent to signup');
+
       sessionStorage.setItem('authIntent', 'signup');
-      
-      // Try to detect if this is an existing user by checking if they have any recent sign-ins
-      // This is a workaround since Clerk OAuth doesn't let us check beforehand
-      
+      sessionStorage.setItem('signupAttemptTime', Date.now().toString());
+
+      // Use signUp first — if user already exists, Clerk will throw
       await signUp.authenticateWithRedirect({
         strategy: provider,
         redirectUrl: "/sso-callback",
@@ -42,25 +37,37 @@ export function useSignUpController() {
       });
     } catch (err: any) {
       const msg = (err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "").toString();
-      
-      // Debug logging for OAuth errors
-      console.log("OAuth SignUp Error:", {
-        message: msg,
-        fullError: err,
-        errors: err?.errors
-      });
-      
-      // Check if OAuth error indicates account already exists
-      if (msg.toLowerCase().includes("already exists") || 
-          msg.toLowerCase().includes("already been taken") || 
-          msg.toLowerCase().includes("already registered") ||
-          msg.toLowerCase().includes("identifier already exists")) {
-        // Redirect to sign in page for OAuth
-        router.push(`/signin?message=Account already exists. Please sign in with Google.`);
+      const code = err?.errors?.[0]?.code;
+
+      console.log("OAuth SignUp Error:", { message: msg, code, fullError: err });
+
+      // If account already exists, re-attempt with signIn
+      if (
+        code === "form_identifier_exists" ||
+        code === "oauth_access_denied" ||
+        msg.toLowerCase().includes("already exists") ||
+        msg.toLowerCase().includes("already been taken")
+      ) {
+        try {
+          await signIn.authenticateWithRedirect({
+            strategy: provider,
+            redirectUrl: "/sso-callback",
+            redirectUrlComplete: "/dashboard",
+          });
+        } catch (signInErr: any) {
+          setError("Failed to sign in with provider.");
+          setOauthLoading(null);
+        }
+      } else if (
+        msg.toLowerCase().includes("not found") ||
+        msg.toLowerCase().includes("identifier not found")
+      ) {
+        router.push(`/signup?message=No account found. Please sign up with Google.`);
+        setOauthLoading(null);
       } else {
         setError(msg || "Failed to continue with provider. Check provider configuration in Clerk.");
+        setOauthLoading(null);
       }
-      setOauthLoading(null);
     }
   };
 
@@ -76,22 +83,21 @@ export function useSignUpController() {
     } catch (err: any) {
       const errorMessage = err?.errors?.[0]?.message || "Could not create account.";
       const errorCode = err?.errors?.[0]?.code;
-      
-      // Debug logging to see actual error structure
+
       console.log("SignUp Error:", {
         message: errorMessage,
         code: errorCode,
         fullError: err,
         errors: err?.errors
       });
-      
-      // Check if the error indicates the account already exists
-      if (errorMessage.toLowerCase().includes("already exists") || 
-          errorMessage.toLowerCase().includes("already been taken") || 
-          errorMessage.toLowerCase().includes("already registered") ||
-          errorMessage.toLowerCase().includes("identifier already exists") ||
-          errorCode === "form_identifier_exists") {
-        // Redirect to sign in page with email pre-filled
+
+      if (
+        errorCode === "form_identifier_exists" ||
+        errorMessage.toLowerCase().includes("already exists") ||
+        errorMessage.toLowerCase().includes("already been taken") ||
+        errorMessage.toLowerCase().includes("already registered") ||
+        errorMessage.toLowerCase().includes("identifier already exists")
+      ) {
         router.push(`/signin?email=${encodeURIComponent(email)}&message=Account already exists. Please sign in.`);
       } else {
         setError(errorMessage);
@@ -110,7 +116,7 @@ export function useSignUpController() {
       const res = await signUp.attemptEmailAddressVerification({ code });
       if (res.status === "complete") {
         await setActive({ session: res.createdSessionId });
-        router.push("/onboarding"); // Redirect to onboarding after successful verification
+        router.push("/onboarding");
       } else {
         setError("Verification incomplete. Please try again.");
       }
