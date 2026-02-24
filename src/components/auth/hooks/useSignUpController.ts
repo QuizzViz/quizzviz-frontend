@@ -25,6 +25,8 @@ export function useSignUpController() {
     }
     try {
       setOauthLoading(provider);
+      // Store the intent in sessionStorage so we can check it in the callback
+      sessionStorage.setItem('authIntent', 'signup');
       await signUp.authenticateWithRedirect({
         strategy: provider,
         redirectUrl: "/sso-callback",

@@ -11,7 +11,7 @@ export default function SignInPage() {
   const router = useRouter();
   const {
     email, setEmail, password, setPassword, loading, oauthLoading, error,
-    isLoaded, user, handleOAuth, onSubmit, signOut
+    isLoaded, user, handleOAuth, onSubmit, signOut, setError
   } = useSignInController();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -23,11 +23,11 @@ export default function SignInPage() {
         setEmail(emailParam);
       }
       if (message && typeof message === 'string') {
-        // You could display this message in a toast or banner
-        console.log('Message from signup:', message);
+        // Set the message as error to display it to the user
+        setError(decodeURIComponent(message));
       }
     }
-  }, [router.isReady, router.query, setEmail]);
+  }, [router.isReady, router.query, setEmail, setError]);
 
   useEffect(() => {
     if (user) {
