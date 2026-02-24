@@ -31,11 +31,28 @@ export function useSignInController() {
         });
       } catch (err: any) {
         const msg = (err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "").toString();
-        setError(msg || "Failed to continue with provider. Check provider configuration in Clerk.");
+        
+        // Debug logging for OAuth errors
+        console.log("OAuth SignIn Error:", {
+          message: msg,
+          fullError: err,
+          errors: err?.errors
+        });
+        
+        // Check if OAuth error indicates account doesn't exist
+        if (msg.toLowerCase().includes("not found") || 
+            msg.toLowerCase().includes("doesn't exist") || 
+            msg.toLowerCase().includes("no account found") ||
+            msg.toLowerCase().includes("identifier not found")) {
+          // Redirect to sign up page for OAuth
+          router.push(`/signup?message=No account found. Please sign up with Google.`);
+        } else {
+          setError(msg || "Failed to continue with provider. Check provider configuration in Clerk.");
+        }
         setOauthLoading(null);
       }
     },
-    [isLoaded, signIn, user]
+    [isLoaded, signIn, user, router]
   );
 
   const onSubmit = async (e: FormEvent) => {
@@ -53,12 +70,22 @@ export function useSignInController() {
       }
     } catch (err: any) {
       const errorMessage = err?.errors?.[0]?.message || "Invalid email or password.";
+      const errorCode = err?.errors?.[0]?.code;
+      
+      // Debug logging to see actual error structure
+      console.log("SignIn Error:", {
+        message: errorMessage,
+        code: errorCode,
+        fullError: err,
+        errors: err?.errors
+      });
       
       // Check if the error indicates the account doesn't exist
-      if (errorMessage.includes("not found") || 
-          errorMessage.includes("doesn't exist") || 
-          errorMessage.includes("no account found") ||
-          err?.errors?.[0]?.code === "form_identifier_not_found") {
+      if (errorMessage.toLowerCase().includes("not found") || 
+          errorMessage.toLowerCase().includes("doesn't exist") || 
+          errorMessage.toLowerCase().includes("no account found") ||
+          errorMessage.toLowerCase().includes("identifier not found") ||
+          errorCode === "form_identifier_not_found") {
         // Redirect to sign up page with email pre-filled
         router.push(`/signup?email=${encodeURIComponent(email)}&message=No account found. Please sign up first.`);
       } else {

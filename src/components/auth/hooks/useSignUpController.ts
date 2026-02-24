@@ -28,11 +28,28 @@ export function useSignUpController() {
       await signUp.authenticateWithRedirect({
         strategy: provider,
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/onboarding", // Update to redirect to onboarding
+        redirectUrlComplete: "/onboarding",
       });
     } catch (err: any) {
       const msg = (err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "").toString();
-      setError(msg || "Failed to continue with provider. Check provider configuration in Clerk.");
+      
+      // Debug logging for OAuth errors
+      console.log("OAuth SignUp Error:", {
+        message: msg,
+        fullError: err,
+        errors: err?.errors
+      });
+      
+      // Check if OAuth error indicates account already exists
+      if (msg.toLowerCase().includes("already exists") || 
+          msg.toLowerCase().includes("already been taken") || 
+          msg.toLowerCase().includes("already registered") ||
+          msg.toLowerCase().includes("identifier already exists")) {
+        // Redirect to sign in page for OAuth
+        router.push(`/signin?message=Account already exists. Please sign in with Google.`);
+      } else {
+        setError(msg || "Failed to continue with provider. Check provider configuration in Clerk.");
+      }
       setOauthLoading(null);
     }
   };
@@ -48,12 +65,22 @@ export function useSignUpController() {
       setStep("verify");
     } catch (err: any) {
       const errorMessage = err?.errors?.[0]?.message || "Could not create account.";
+      const errorCode = err?.errors?.[0]?.code;
+      
+      // Debug logging to see actual error structure
+      console.log("SignUp Error:", {
+        message: errorMessage,
+        code: errorCode,
+        fullError: err,
+        errors: err?.errors
+      });
       
       // Check if the error indicates the account already exists
-      if (errorMessage.includes("already exists") || 
-          errorMessage.includes("already been taken") || 
-          errorMessage.includes("already registered") ||
-          err?.errors?.[0]?.code === "form_identifier_exists") {
+      if (errorMessage.toLowerCase().includes("already exists") || 
+          errorMessage.toLowerCase().includes("already been taken") || 
+          errorMessage.toLowerCase().includes("already registered") ||
+          errorMessage.toLowerCase().includes("identifier already exists") ||
+          errorCode === "form_identifier_exists") {
         // Redirect to sign in page with email pre-filled
         router.push(`/signin?email=${encodeURIComponent(email)}&message=Account already exists. Please sign in.`);
       } else {
