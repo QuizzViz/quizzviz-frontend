@@ -7,18 +7,42 @@ export default function SSOCallback() {
   const router = useRouter();
 
   useEffect(() => {
-    // If user is signed in, check if they need to be redirected
+    // If user is signed in, check their intent and handle accordingly
     if (isSignedIn && user) {
-      // Check if user is new (no createdAt or very recent)
+      const authIntent = sessionStorage.getItem('authIntent');
       const createdAt = user.createdAt;
       const now = new Date();
       const userAge = createdAt ? now.getTime() - new Date(createdAt).getTime() : Infinity;
       
-      // If user is less than 1 minute old, they're likely new
-      if (userAge < 60000) {
-        router.push("/onboarding");
-      } else {
+      console.log('SSO Callback:', {
+        authIntent,
+        userAge,
+        createdAt,
+        isNewUser: userAge < 60000
+      });
+      
+      // Clear the intent after using it
+      sessionStorage.removeItem('authIntent');
+      
+      if (authIntent === 'signup') {
+        // User intended to sign up
+        if (userAge < 60000) {
+          // New user - proceed to onboarding
+          router.push("/onboarding");
+        } else {
+          // Existing user who tried to sign up - redirect to signin with message
+          router.push("/signin?message=Account already exists. Please sign in.");
+        }
+      } else if (authIntent === 'signin') {
+        // User intended to sign in - always go to dashboard
         router.push("/dashboard");
+      } else {
+        // Default behavior - check if new user
+        if (userAge < 60000) {
+          router.push("/onboarding");
+        } else {
+          router.push("/dashboard");
+        }
       }
     }
   }, [isSignedIn, user, router]);

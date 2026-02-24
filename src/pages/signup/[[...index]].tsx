@@ -12,7 +12,7 @@ export default function SignUpPage() {
   const router = useRouter();
   const {
     email, setEmail, password, setPassword, code, setCode, step, setStep,
-    loading, oauthLoading, error, isLoaded, user, handleOAuth, submitSignUp, verifyCode, signOut
+    loading, oauthLoading, error, isLoaded, user, handleOAuth, submitSignUp, verifyCode, signOut, setError
   } = useSignUpController();
 
   useEffect(() => {
@@ -23,11 +23,11 @@ export default function SignUpPage() {
         setEmail(emailParam);
       }
       if (message && typeof message === 'string') {
-        // You could display this message in a toast or banner
-        console.log('Message from signin:', message);
+        // Set the message as error to display it to user
+        setError(decodeURIComponent(message));
       }
     }
-  }, [router.isReady, router.query, setEmail]);
+  }, [router.isReady, router.query, setEmail, setError]);
 
   
   
