@@ -1,10 +1,11 @@
 import { useState, FormEvent } from "react";
-import { useSignUp, useClerk, useUser } from "@clerk/nextjs";
+import { useSignUp, useClerk, useUser, useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/router";
 
 // Consolidates all state and actions for the custom Sign Up flow
 export function useSignUpController() {
   const { signUp, isLoaded } = useSignUp();
+  const { signIn } = useSignIn();
   const { setActive, signOut } = useClerk();
   const { user } = useUser();
   const router = useRouter();
@@ -18,15 +19,22 @@ export function useSignUpController() {
   const [error, setError] = useState<string | null>(null);
 
   const handleOAuth = async (provider: "oauth_google") => {
-    if (!isLoaded || !signUp) return;
+    if (!isLoaded || !signUp || !signIn) return;
     if (user) {
       setError("You are already signed in. Use 'Switch account' to continue with another account.");
       return;
     }
     try {
       setOauthLoading(provider);
+      
+      // For OAuth, we need to use the signUp flow but Clerk will handle existing users
       // Store the intent in sessionStorage so we can check it in the callback
+      console.log('Setting authIntent to signup');
       sessionStorage.setItem('authIntent', 'signup');
+      
+      // Try to detect if this is an existing user by checking if they have any recent sign-ins
+      // This is a workaround since Clerk OAuth doesn't let us check beforehand
+      
       await signUp.authenticateWithRedirect({
         strategy: provider,
         redirectUrl: "/sso-callback",
