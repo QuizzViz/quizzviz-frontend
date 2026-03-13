@@ -415,11 +415,10 @@ export function QuizEditor() {
       question: question.question,
       code_snippet: question.code_snippet || "",
       options: {
-        ...question.options,
-        A: "",
-        B: "",
-        C: "",
-        D: ""
+        A: question.options?.A || "",
+        B: question.options?.B || "",
+        C: question.options?.C || "",
+        D: question.options?.D || ""
       },
       correct_answer: ['A', 'B', 'C', 'D'].includes(question.correct_answer)
         ? question.correct_answer as 'A' | 'B' | 'C' | 'D'
