@@ -63,12 +63,12 @@ export function Navbar() {
               >
                 Mission
               </button></Link>
-              <Link href="/pricing"><button 
+              {/* <Link href="/pricing"><button 
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"
               >
                 Pricing
-              </button></Link>
+              </button></Link> */}
               <Link href="/contact"><button 
                 className="text-white hover:text-gray-200 transition-colors duration-200 px-2"
                 data-testid="link-about"

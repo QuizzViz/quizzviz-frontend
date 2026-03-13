@@ -153,7 +153,7 @@ export function getUpgradeMessage(
   maxQuizzes: number
 ): { message: string; upgradePlan: string; showUpgrade: boolean } {
   const plans: Record<PlanType, PlanDetails> = {
-    Free: { next: 'Consumer', max: 2 },
+    Free: { next: 'Consumer', max: 4 }, // Updated from 2 to 4 for free users
     Consumer: { next: 'Elite', max: 10 },
     Elite: { next: 'Business', max: 30 },
     Business: { next: 'Enterprise', max: 30, custom: true },

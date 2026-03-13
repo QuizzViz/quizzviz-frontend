@@ -341,8 +341,8 @@ export default function OnboardingPage() {
         if (data.exists && data.companies?.length > 0) {
           setHasCompany(true);
 
-          const companyData = data.companies[0];
-          const redirectPath = companyData.plan_name === 'Business' ? '/dashboard' : '/pricing';
+          // FREE ACCESS - Always redirect to dashboard for users with company
+          const redirectPath = '/dashboard';
 
           // Hard redirect – this will definitely take you away from the spinner
           setTimeout(() => {
@@ -407,13 +407,13 @@ export default function OnboardingPage() {
       if (checkData.exists && checkData.companies?.length > 0) {
         toast({
           title: 'Company Already Exists',
-          description: 'Redirecting to pricing...',
+          description: 'Redirecting to dashboard...',
           variant: 'success'
         });
 
         // Hard redirect immediately
         setTimeout(() => {
-          window.location.href = '/pricing';
+          window.location.href = '/dashboard';
         }, 1000);
 
         return;
@@ -445,12 +445,12 @@ export default function OnboardingPage() {
 
       toast({
         title: "Success!",
-        description: "Company created successfully. Redirecting to pricing...",
+        description: "Company created successfully. Redirecting to dashboard...",
       });
 
       // Hard redirect after creation too
       setTimeout(() => {
-        window.location.href = '/pricing';
+        window.location.href = '/dashboard';
       }, 1500);
 
     } catch (error) {
@@ -533,7 +533,7 @@ export default function OnboardingPage() {
                     </>
                   ) : (
                     <div className="flex items-center justify-center">
-                      <span>Continue to Pricing</span>
+                      <span>Continue to Dashboard</span>
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </div>
                   )}
