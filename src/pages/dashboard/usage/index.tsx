@@ -11,7 +11,7 @@ import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import Head from "next/head";
 
 // Constants
-const MONTHLY_QUIZ_LIMIT = 20;
+const MONTHLY_QUIZ_LIMIT = 4;
 
 // Format date helper
 const formatDate = (date: any) => {
