@@ -69,8 +69,16 @@ const PricingPage = () => {
         return;
       }
       
-      // If company exists, proceed to subscription
-      window.location.href = planLink;
+      // FREE ACCESS - Redirect to dashboard instead of subscription
+      toast({
+        title: 'Success!',
+        description: 'Company already exists. Redirecting to dashboard...',
+      });
+        
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1000);
+      return;
     } catch (error) {
       console.error('Error checking company:', error);
       toast({

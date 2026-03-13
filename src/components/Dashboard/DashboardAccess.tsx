@@ -108,8 +108,8 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
-  // Show subscription prompt for non-Business plans, but not on the pricing page
+/*
+// Show subscription prompt for non-Business plans, but not on the pricing page
   if (company.plan_name !== 'Business' && !isPricingPage) {
     return (
       <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
@@ -142,5 +142,7 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     );
   }
 
+*/
+  // FREE ACCESS - Allow dashboard access for any user with a company
   return <>{children}</>;
 }
