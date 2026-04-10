@@ -16,6 +16,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { formatTime } from '@/lib/utils';
 import { useUserPlanContext } from '@/contexts/UserPlanContext';
+import CameraProctoring from '@/components/Proctoring/CameraProctoring';
 
 interface Question {
   id: string | number;
@@ -351,6 +352,37 @@ const QuizAttemptPage = () => {
   }, [submitQuiz]);
 
   const isSubmittingRef = useRef(false);
+
+  // Handle proctoring violations
+  const handleProctoringViolation = useCallback((message: string) => {
+    console.log('Proctoring violation:', message);
+    showWarningMessage(`Proctoring: ${message}`);
+    
+    toast({
+      variant: 'destructive',
+      title: 'Proctoring Alert',
+      description: message,
+      duration: 3000,
+      className: 'font-medium'
+    });
+  }, [showWarningMessage]);
+
+  const handleProctoringEnd = useCallback((reason: string) => {
+    console.log('Proctoring ended:', reason);
+    
+    toast({
+      variant: 'destructive',
+      title: 'Quiz Terminated',
+      description: `Quiz ended due to: ${reason}`,
+      duration: 5000,
+      className: 'font-medium'
+    });
+    
+    setSelectedAnswers(currentAnswers => {
+      submitQuiz(currentAnswers);
+      return currentAnswers;
+    });
+  }, [submitQuiz]);
 
   const handleFullscreenChange = useCallback(async () => {
     if (isSubmittingRef.current) return;
@@ -972,47 +1004,6 @@ if (typeof data.quiz === 'string') {
                     ) : (
                       <>
                         Start Quiz
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 'quiz' && quizData && (
-          <div className="min-h-[calc(100vh-80px)]">
-            <div className="bg-gray-900/50 backdrop-blur-xl border-b border-gray-800 sticky top-20 z-10">
-              <div className="max-w-4xl mx-auto px-4 py-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-lg font-semibold text-white">
-                    Question {currentQuestionIndex + 1} of {quizData.questions.length}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {Object.keys(selectedAnswers).length} answered
-                  </div>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${((currentQuestionIndex + 1) / quizData.questions.length) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="max-w-4xl mx-auto p-6">
-              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl mb-6">
-                <CardContent className="p-8">
-                  <h2 className="text-2xl font-semibold text-white mb-6 leading-relaxed">
-                    {quizData?.questions?.[currentQuestionIndex]?.question || 'Loading question...'}
-                  </h2>
-
-                  {quizData?.questions?.[currentQuestionIndex]?.code_snippet && (
-                    <div className="mb-8 rounded-xl overflow-hidden border border-gray-700">
-                      <div className="bg-gray-800 px-4 py-2 border-b border-gray-700">
                         <span className="text-sm text-gray-300 font-medium">Code Preview</span>
                       </div>
                       <SyntaxHighlighter
