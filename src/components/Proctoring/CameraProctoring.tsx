@@ -10,7 +10,7 @@ interface CameraProctoringProps {
 
 type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 
-const VIOLATION_TIMEOUT = 15; // seconds before quiz ends
+const VIOLATION_TIMEOUT = 10;
 
 const CameraProctoring: React.FC<CameraProctoringProps> = ({
   onViolation,
@@ -97,19 +97,21 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const leftEye  = landmarks[33];
     const rightEye = landmarks[263];
     const forehead = landmarks[10];
+    const chin = landmarks[175];
 
     const eyeCenterX = (leftEye.x + rightEye.x) / 2;
     const eyeCenterY = (leftEye.y + rightEye.y) / 2;
     const faceCenterX = (noseTip.x + forehead.x) / 2;
-    const faceCenterY = (noseTip.y + forehead.y) / 2;
+    const faceCenterY = (noseTip.y + chin.y) / 2;
 
     const hOffset = eyeCenterX - faceCenterX;
     const vOffset = eyeCenterY - faceCenterY;
 
-    if (hOffset < -0.05) return 'left';
-    if (hOffset > 0.05)  return 'right';
-    if (vOffset > 0.1)   return 'down';
-    if (vOffset < -0.1)  return 'up';
+    // More sensitive thresholds for detecting eye movements
+    if (hOffset < -0.03) return 'left';
+    if (hOffset > 0.03)  return 'right';
+    if (vOffset > 0.08)   return 'down';
+    if (vOffset < -0.08)  return 'up';
     return 'center';
   };
 
@@ -136,7 +138,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     const direction = estimateHeadDirection(faces[0]);
 
-    if (direction === 'left' || direction === 'right' || direction === 'down') {
+    if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
       onViolation(`Looking ${direction}`);
       startViolationTimer(`Looking ${direction}`);
     } else {
