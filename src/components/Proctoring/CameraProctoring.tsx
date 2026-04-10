@@ -456,35 +456,36 @@ interface HeadMovementState {
   startTime: number | null;
   isViolating: boolean;
   violationStartTime: number | null;
+  consecutiveCenterCount?: number;
 }
 
 const VIOLATION_TIMEOUT = 10
 
 // Sensitivity thresholds for head movement detection
 const HEAD_MOVEMENT_THRESHOLDS = {
-  // Horizontal movement (left/right)
-  SLIGHT_LEFT: -0.03,
-  MODERATE_LEFT: -0.06,
-  SEVERE_LEFT: -0.1,
-  SLIGHT_RIGHT: 0.03,
-  MODERATE_RIGHT: 0.06,
-  SEVERE_RIGHT: 0.1,
+  // Horizontal movement (left/right) - made much less sensitive
+  SLIGHT_LEFT: -0.08,   // Increased from -0.03
+  MODERATE_LEFT: -0.15, // Increased from -0.06
+  SEVERE_LEFT: -0.25,   // Increased from -0.1
+  SLIGHT_RIGHT: 0.08,   // Increased from 0.03
+  MODERATE_RIGHT: 0.15, // Increased from 0.06
+  SEVERE_RIGHT: 0.25,   // Increased from 0.1
   
-  // Vertical movement (up/down)
-  SLIGHT_UP: -0.05,
-  MODERATE_UP: -0.08,
-  SEVERE_UP: -0.12,
-  SLIGHT_DOWN: 0.05,
-  MODERATE_DOWN: 0.08,
-  SEVERE_DOWN: 0.12,
+  // Vertical movement (up/down) - made much less sensitive for looking up
+  SLIGHT_UP: -0.15,     // Increased from -0.05 (allows more upward movement)
+  MODERATE_UP: -0.25,   // Increased from -0.08
+  SEVERE_UP: -0.35,     // Increased from -0.12
+  SLIGHT_DOWN: 0.08,    // Increased from 0.05
+  MODERATE_DOWN: 0.15,  // Increased from 0.08
+  SEVERE_DOWN: 0.25,    // Increased from 0.12
   
-  // Time thresholds for violation accumulation
-  SLIGHT_VIOLATION_TIME: 3000,   // 3 seconds for slight movement
-  MODERATE_VIOLATION_TIME: 2000, // 2 seconds for moderate movement
-  SEVERE_VIOLATION_TIME: 1000,   // 1 second for severe movement
+  // Time thresholds for violation accumulation - increased for more tolerance
+  SLIGHT_VIOLATION_TIME: 8000,   // 8 seconds for slight movement (increased from 3s)
+  MODERATE_VIOLATION_TIME: 5000, // 5 seconds for moderate movement (increased from 2s)
+  SEVERE_VIOLATION_TIME: 3000,   // 3 seconds for severe movement (increased from 1s)
   
-  // Grace period for returning to center
-  GRACE_PERIOD: 1500, // 1.5 seconds to return to center before violation starts
+  // Grace period for returning to center - increased
+  GRACE_PERIOD: 3000, // 3 seconds to return to center before violation starts (increased from 1.5s)
 }
 
 const CameraProctoring: React.FC<CameraProctoringProps> = ({
@@ -512,7 +513,8 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     severity: 'slight',
     startTime: null,
     isViolating: false,
-    violationStartTime: null
+    violationStartTime: null,
+    consecutiveCenterCount: 0
   });
   
   const violationGraceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -587,37 +589,51 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     }));
   }, []);
   
-  // ─── Handle head movement with grace period ────────────────────────────────
+  // ─── Handle head movement with improved grace period ────────────────────────
   const handleHeadMovement = useCallback((detection: { direction: HeadDirection; severity: MovementSeverity }) => {
     const now = Date.now();
     
     if (detection.direction === 'center') {
-      // User returned to center - give grace period
-      if (headMovement.isViolating) {
-        if (violationGraceTimeoutRef.current) {
-          clearTimeout(violationGraceTimeoutRef.current);
+      // User returned to center - reset violation tracking immediately
+      // Add consecutive center detection to prevent false triggers
+      setHeadMovement(prev => {
+        const consecutiveCenterCount = (prev.consecutiveCenterCount || 0) + 1;
+        
+        // Only stop violation if we have consecutive center detections
+        if (prev.isViolating && consecutiveCenterCount >= 3) {
+          if (violationGraceTimeoutRef.current) {
+            clearTimeout(violationGraceTimeoutRef.current);
+          }
+          stopViolationTimer();
         }
         
-        violationGraceTimeoutRef.current = setTimeout(() => {
-          stopViolationTimer();
-        }, HEAD_MOVEMENT_THRESHOLDS.GRACE_PERIOD);
-      }
-      
-      setHeadMovement(prev => ({
-        ...prev,
-        direction: 'center',
-        severity: 'slight',
-        startTime: null
-      }));
+        return {
+          ...prev,
+          direction: 'center',
+          severity: 'slight',
+          startTime: null,
+          consecutiveCenterCount
+        };
+      });
       return;
     }
     
-    // User is looking away from center
+    // Reset consecutive center count when not looking at center
+    setHeadMovement(prev => ({
+      ...prev,
+      consecutiveCenterCount: 0
+    }));
+    
+    // Only consider violations for moderate and severe movements
+    // Ignore slight movements completely as they're normal behavior
+    if (detection.severity === 'slight') {
+      return;
+    }
+    
+    // User is looking away from center with moderate or severe movement
     const violationTime = detection.severity === 'severe' 
       ? HEAD_MOVEMENT_THRESHOLDS.SEVERE_VIOLATION_TIME
-      : detection.severity === 'moderate'
-      ? HEAD_MOVEMENT_THRESHOLDS.MODERATE_VIOLATION_TIME
-      : HEAD_MOVEMENT_THRESHOLDS.SLIGHT_VIOLATION_TIME;
+      : HEAD_MOVEMENT_THRESHOLDS.MODERATE_VIOLATION_TIME;
     
     setHeadMovement(prev => {
       const newStartTime = prev.startTime || now;
@@ -635,7 +651,8 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
           severity: detection.severity,
           startTime: newStartTime,
           isViolating: true,
-          violationStartTime: now
+          violationStartTime: now,
+          consecutiveCenterCount: 0
         };
       }
       
@@ -643,10 +660,11 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
         ...prev,
         direction: detection.direction,
         severity: detection.severity,
-        startTime: newStartTime
+        startTime: newStartTime,
+        consecutiveCenterCount: 0
       };
     });
-  }, [headMovement.isViolating, onViolation, startViolationTimer, stopViolationTimer]);
+  }, [onViolation, startViolationTimer, stopViolationTimer]);
 
   // ─── Enhanced head direction estimation ───────────────────────────────────────
   const estimateHeadDirection = (landmarks: any[]): { direction: HeadDirection; severity: MovementSeverity; offset: { horizontal: number; vertical: number } } => {
