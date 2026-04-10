@@ -17,6 +17,7 @@ import { formatCompanyIdToName } from '@/utils/companyUtils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { useUser } from '@clerk/nextjs';
+import CameraProctoring from '@/components/Proctoring/CameraProctoring';
 
 interface Question {
   id: string | number;
@@ -405,6 +406,37 @@ export default function QuizPage({ params }: PageProps) {
   }, [submitQuiz]);
 
   const isSubmittingRef = useRef(false);
+
+  // Handle proctoring violations
+  const handleProctoringViolation = useCallback((message: string) => {
+    console.log('Proctoring violation:', message);
+    showWarningMessage(`Proctoring: ${message}`);
+    
+    toast({
+      variant: 'destructive',
+      title: 'Proctoring Alert',
+      description: message,
+      duration: 3000,
+      className: 'font-medium'
+    });
+  }, [showWarningMessage]);
+
+  const handleProctoringEnd = useCallback((reason: string) => {
+    console.log('Proctoring ended:', reason);
+    
+    toast({
+      variant: 'destructive',
+      title: 'Quiz Terminated',
+      description: `Quiz ended due to: ${reason}`,
+      duration: 5000,
+      className: 'font-medium'
+    });
+    
+    setSelectedAnswers(currentAnswers => {
+      submitQuiz(currentAnswers);
+      return currentAnswers;
+    });
+  }, [submitQuiz]);
 
   const handleFullscreenChange = useCallback(async () => {
     if (isSubmittingRef.current) return;
@@ -1186,6 +1218,14 @@ export default function QuizPage({ params }: PageProps) {
 
         {step === 'quiz' && quizData && (
           <div className="min-h-[calc(100vh-80px)]">
+            {/* This part is added additional for camera proctoring */}
+            <div className="fixed top-24 right-6 z-30">
+              <CameraProctoring
+                onViolation={handleProctoringViolation}
+                onEnd={handleProctoringEnd}
+                isActive={quizStarted && !hasSubmittedRef.current}
+              />
+            </div>
             <div className="bg-gray-900/50 backdrop-blur-xl border-b border-gray-800 sticky top-20 z-10">
               <div className="max-w-4xl mx-auto px-4 py-4">
                 <div className="flex items-center justify-between mb-3">
