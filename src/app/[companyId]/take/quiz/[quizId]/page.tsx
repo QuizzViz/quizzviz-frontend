@@ -2107,6 +2107,26 @@ export default function QuizPage({ params }: PageProps) {
         }
       }, 1000);
 
+      const mobileCheckInterval = setInterval(() => {
+        if (hasSubmittedRef.current) return;
+        
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobileDevice) {
+          toast({
+            variant: 'destructive',
+            title: 'Quiz Terminated',
+            description: 'Mobile device detected during quiz. Quiz ended immediately.',
+            duration: 5000,
+            className: 'font-medium',
+          });
+          
+          setSelectedAnswers(currentAnswers => {
+            submitQuiz(currentAnswers);
+            return currentAnswers;
+          });
+        }
+      }, 5000); // Check every 5 seconds
+
       return () => {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         document.removeEventListener('contextmenu', handleContextMenu);
@@ -2122,6 +2142,7 @@ export default function QuizPage({ params }: PageProps) {
         window.removeEventListener('keydown', blockEscapeKey, true);
         clearInterval(checkFullscreen);
         clearInterval(devToolsCheck);
+        clearInterval(mobileCheckInterval);
       };
     }
   }, [step, quizStarted, requestFullscreen, showWarningMessage, handleFullscreenChange, submitQuiz]);
@@ -2248,7 +2269,27 @@ export default function QuizPage({ params }: PageProps) {
       setQuizStarted(true);
       setStep('quiz');
 
-      // ── Start proctoring ONLY now (after quiz begins) ─────────────────────────
+      // Mobile device detection - immediately end quiz if mobile is detected
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobileDevice) {
+        toast({
+          variant: 'destructive',
+          title: 'Quiz Terminated',
+          description: 'Mobile devices are not allowed for proctored quizzes.',
+          duration: 5000,
+          className: 'font-medium',
+        });
+        
+        // Submit quiz immediately due to mobile detection
+        setSelectedAnswers(currentAnswers => {
+          submitQuiz(currentAnswers);
+          return currentAnswers;
+        });
+        setIsButtonLoading(false);
+        return;
+      }
+
+      // Start proctoring ONLY now (after quiz begins) 
       setProctoringStarted(true);
 
       if (document.documentElement.requestFullscreen) {
