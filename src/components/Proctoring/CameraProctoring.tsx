@@ -1,16 +1,42 @@
+
+
+
+
+
 // 'use client';
 // import React, { useRef, useEffect, useState, useCallback } from 'react';
+
+// // Type declarations for TensorFlow packages (they don't have built-in types)
+// declare module '@tensorflow/tfjs' {
+//   export function ready(): Promise<void>;
+// }
+
+// declare module '@tensorflow-models/coco-ssd' {
+//   export interface ObjectDetection {
+//     class: string;
+//     score: number;
+//     bbox: [number, number, number, number];
+//   }
+  
+//   export function load(): Promise<{
+//     detect: (element: HTMLVideoElement) => Promise<ObjectDetection[]>;
+//   }>;
+// }
 
 // interface CameraProctoringProps {
 //   onViolation: (message: string) => void;
 //   onEnd: (reason: string) => void;
-//   isActive?: boolean;   // component is mounted & ready
-//   isStarted?: boolean;  // quiz actually started – begin detection now
+//   isActive?: boolean;
+//   isStarted?: boolean;
 // }
 
 // type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 
-// const VIOLATION_TIMEOUT = 10
+// const VIOLATION_TIMEOUT = 10;
+
+// // How many consecutive frames a phone must appear before ending quiz
+// // (avoids false positives from a single misclassified frame)
+// const PHONE_CONFIRM_FRAMES = 1;
 
 // const CameraProctoring: React.FC<CameraProctoringProps> = ({
 //   onViolation,
@@ -28,11 +54,16 @@
 //   const hasEndedRef = useRef(false);
 //   const isInitializingRef = useRef(false);
 
+//   // Phone detection state
+//   const cocoModelRef = useRef<any>(null);
+//   const phoneFrameCountRef = useRef(0);
+//   const phoneDetectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
 //   const [status, setStatus] = useState<'idle' | 'loading' | 'active' | 'error'>('idle');
-//   const [violationCountdown, setViolationCountdown] = useState<number | null>(null); // null = no active violation
+//   const [violationCountdown, setViolationCountdown] = useState<number | null>(null);
 //   const [currentViolation, setCurrentViolation] = useState<string>('');
 //   const [faceCount, setFaceCount] = useState<number>(0);
-
+//   
 //   // ─── Cleanup ────────────────────────────────────────────────────────────────
 //   const cleanup = useCallback(() => {
 //     if (streamRef.current) {
@@ -51,6 +82,10 @@
 //       clearInterval(violationIntervalRef.current);
 //       violationIntervalRef.current = null;
 //     }
+//     if (phoneDetectionIntervalRef.current) {
+//       clearInterval(phoneDetectionIntervalRef.current);
+//       phoneDetectionIntervalRef.current = null;
+//     }
 //     if (faceMeshRef.current) {
 //       try { faceMeshRef.current.close(); } catch (_) {}
 //       faceMeshRef.current = null;
@@ -60,7 +95,7 @@
 
 //   // ─── Violation timer ────────────────────────────────────────────────────────
 //   const startViolationTimer = useCallback((message: string) => {
-//     if (violationIntervalRef.current) return; // already running
+//     if (violationIntervalRef.current) return;
 //     setCurrentViolation(message);
 //     setViolationCountdown(VIOLATION_TIMEOUT);
 
@@ -89,7 +124,15 @@
 //     setCurrentViolation('');
 //   }, []);
 
-//   // ─── Head direction estimation ───────────────────────────────────────────────
+//   // ─── Head direction estimation (scale-invariant) ─────────────────────────────
+//   //
+//   // FIX 1: The old fixed offsets (0.05 / 0.1) were calibrated for faces close to
+//   // the camera. When the user sits further back the face is smaller in frame and
+//   // all landmark coordinates cluster together, so the same absolute offset never
+//   // gets exceeded even for large head turns.
+//   //
+//   // Solution: express thresholds as a fraction of the inter-eye distance, which
+//   // naturally scales with face size / distance from the camera.
 //   const estimateHeadDirection = (landmarks: any[]): HeadDirection => {
 //     if (!landmarks || landmarks.length === 0) return 'unknown';
 
@@ -97,19 +140,36 @@
 //     const leftEye  = landmarks[33];
 //     const rightEye = landmarks[263];
 //     const forehead = landmarks[10];
+//     const chin     = landmarks[152];
+
+//     // Inter-eye distance – our scale reference
+//     const eyeSpan = Math.abs(rightEye.x - leftEye.x);
+//     // Guard against degenerate values (face too small / sideways)
+//     const scale = Math.max(eyeSpan, 0.01);
 
 //     const eyeCenterX = (leftEye.x + rightEye.x) / 2;
 //     const eyeCenterY = (leftEye.y + rightEye.y) / 2;
 //     const faceCenterX = (noseTip.x + forehead.x) / 2;
 //     const faceCenterY = (noseTip.y + forehead.y) / 2;
 
-//     const hOffset = eyeCenterX - faceCenterX;
-//     const vOffset = eyeCenterY - faceCenterY;
+//     // Normalise offsets by scale so they are distance-invariant
+//     const hOffset = (eyeCenterX - faceCenterX) / scale;
+//     const vOffset = (eyeCenterY - faceCenterY) / scale;
 
-//     if (hOffset < -0.05) return 'left';
-//     if (hOffset > 0.05)  return 'right';
-//     if (vOffset > 0.1)   return 'down';
-//     if (vOffset < -0.1)  return 'up';
+//     // Additional vertical cue: nose-to-forehead vs nose-to-chin ratio
+//     // When head tilts down the chin landmark approaches the nose in y
+//     const foreheadDist = Math.abs(noseTip.y - forehead.y);
+//     const chinDist     = Math.abs(noseTip.y - chin.y);
+//     const tiltRatio    = chinDist > 0 ? foreheadDist / chinDist : 1;
+
+//     // Stricter thresholds (normalised by inter-eye span):
+//     //   horizontal: ±0.4 of eye-span -> detect smaller left/right movements
+//     //   vertical:   >0.3 of eye-span downward shift -> detect looking down sooner
+//     //   tiltRatio < 0.7 -> detect downward tilt more easily
+//     if (hOffset < -0.4) return 'left';
+//     if (hOffset > 0.4)  return 'right';
+//     if (vOffset > 0.3 || tiltRatio < 0.7) return 'down';
+//     if (vOffset < -0.3) return 'up';
 //     return 'center';
 //   };
 
@@ -140,10 +200,54 @@
 //       onViolation(`Looking ${direction}`);
 //       startViolationTimer(`Looking ${direction}`);
 //     } else {
-//       // back on screen – reset timer
 //       stopViolationTimer();
 //     }
 //   }, [onViolation, onEnd, startViolationTimer, stopViolationTimer, cleanup]);
+
+//   // ─── Phone detection via COCO-SSD ────────────────────────────────────────────
+//   //
+//   // FIX 2: MediaPipe FaceMesh only tracks faces – it cannot see objects like
+//   // phones. We load TensorFlow.js + COCO-SSD (runs entirely in-browser, no
+//   // server) and poll every 800 ms. A phone must appear in PHONE_CONFIRM_FRAMES
+//   // consecutive detections before ending the quiz to avoid false positives.
+//   const startPhoneDetection = useCallback(async () => {
+//     try {
+//       // Dynamically import to keep SSR safe
+//       const tf = await import('@tensorflow/tfjs');
+//       await tf.ready();
+
+//       const cocoSsd = await import('@tensorflow-models/coco-ssd');
+//       const model = await cocoSsd.load();
+//       cocoModelRef.current = model;
+
+//       phoneDetectionIntervalRef.current = setInterval(async () => {
+//         if (hasEndedRef.current || !videoRef.current || videoRef.current.readyState < 2) return;
+
+//         try {
+//           const predictions = await cocoModelRef.current.detect(videoRef.current);
+//           const phoneFound = predictions.some(
+//             (p: any) =>
+//               p.class === 'cell phone' &&
+//               p.score > 0.55 // confidence threshold
+//           );
+
+//           if (phoneFound) {
+//             // End quiz immediately on first phone detection
+//             if (!hasEndedRef.current) {
+//               hasEndedRef.current = true;
+//               cleanup();
+//               onEnd('Mobile phone detected in frame');
+//             }
+//           }
+//         } catch (_) {
+//           // ignore single-frame errors
+//         }
+//       }, 800);
+//     } catch (err) {
+//       console.warn('COCO-SSD phone detection unavailable:', err);
+//       // Non-fatal – face proctoring continues normally
+//     }
+//   }, [cleanup, onEnd]);
 
 //   // ─── Initialize ──────────────────────────────────────────────────────────────
 //   const initialize = useCallback(async () => {
@@ -167,7 +271,7 @@
 //         await videoRef.current.play();
 //       }
 
-//       // 2. Dynamic import of MediaPipe (avoids SSR crash)
+//       // 2. Dynamic import of MediaPipe
 //       const [{ FaceMesh }, { Camera }] = await Promise.all([
 //         import('@mediapipe/face_mesh'),
 //         import('@mediapipe/camera_utils'),
@@ -200,17 +304,18 @@
 //       cameraRef.current = cam;
 
 //       setStatus('active');
+
+//       // 4. Start phone detection in parallel (non-blocking)
+//       startPhoneDetection();
 //     } catch (err: any) {
 //       console.error('CameraProctoring init error:', err);
 //       setStatus('error');
-//       // Do NOT call onEnd here – just mark camera as unavailable
-//       // The quiz can still run; tab-switch / fullscreen guards remain active
 //     } finally {
 //       isInitializingRef.current = false;
 //     }
-//   }, [processFaceDetection]);
+//   }, [processFaceDetection, startPhoneDetection]);
 
-//   // ─── Lifecycle: start when isStarted flips true ──────────────────────────────
+//   // ─── Lifecycle ───────────────────────────────────────────────────────────────
 //   useEffect(() => {
 //     if (!isActive || !isStarted) return;
 //     initialize();
@@ -240,9 +345,9 @@
 //           width: '200px',
 //           borderRadius: '12px',
 //           overflow: 'hidden',
-//           border: isViolating ? '2px solid #ef4444' : '2px solid rgba(255,255,255,0.15)',
+//           border: isViolating || phoneDetected ? '2px solid #ef4444' : '2px solid rgba(255,255,255,0.15)',
 //           backgroundColor: '#000',
-//           boxShadow: isViolating
+//           boxShadow: isViolating || phoneDetected
 //             ? '0 0 20px rgba(239,68,68,0.5)'
 //             : '0 4px 24px rgba(0,0,0,0.5)',
 //           transition: 'border-color 0.3s, box-shadow 0.3s',
@@ -260,7 +365,7 @@
 //             height: '150px',
 //             objectFit: 'cover',
 //             display: status === 'active' ? 'block' : 'none',
-//             transform: 'scaleX(-1)', // mirror
+//             transform: 'scaleX(-1)',
 //           }}
 //         />
 
@@ -325,12 +430,18 @@
 //               height: '6px',
 //               borderRadius: '50%',
 //               backgroundColor:
-//                 status === 'active' ? (isViolating ? '#ef4444' : '#22c55e') : '#f59e0b',
+//                 status === 'active' ? (isViolating || phoneDetected ? '#ef4444' : '#22c55e') : '#f59e0b',
 //               display: 'inline-block',
 //               animation: status === 'active' ? 'pulse 1.5s infinite' : 'none',
 //             }}
 //           />
-//           {status === 'active' ? (isViolating ? 'VIOLATION' : 'PROCTORED') : status.toUpperCase()}
+//           {status === 'active'
+//             ? phoneDetected
+//               ? 'PHONE!'
+//               : isViolating
+//               ? 'VIOLATION'
+//               : 'PROCTORED'
+//             : status.toUpperCase()}
 //         </div>
 
 //         {/* Face count badge */}
@@ -353,8 +464,26 @@
 //         )}
 //       </div>
 
+//       {/* Phone detected banner (instant, no countdown) */}
+//       {phoneDetected && (
+//         <div
+//           style={{
+//             width: '200px',
+//             background: 'rgba(0,0,0,0.9)',
+//             border: '1px solid rgba(239,68,68,0.8)',
+//             borderRadius: '10px',
+//             padding: '8px 10px',
+//             pointerEvents: 'none',
+//           }}
+//         >
+//           <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: 700 }}>
+//             📱 Phone detected – ending quiz…
+//           </span>
+//         </div>
+//       )}
+
 //       {/* Violation countdown bar */}
-//       {isViolating && (
+//       {isViolating && !phoneDetected && (
 //         <div
 //           style={{
 //             width: '200px',
@@ -380,7 +509,6 @@
 //               {violationCountdown}s
 //             </span>
 //           </div>
-//           {/* Progress bar */}
 //           <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '99px', height: '4px' }}>
 //             <div
 //               style={{
@@ -416,29 +544,8 @@
 // export default CameraProctoring;
 
 
-
-
-
-
 'use client';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-
-// Type declarations for TensorFlow packages (they don't have built-in types)
-declare module '@tensorflow/tfjs' {
-  export function ready(): Promise<void>;
-}
-
-declare module '@tensorflow-models/coco-ssd' {
-  export interface ObjectDetection {
-    class: string;
-    score: number;
-    bbox: [number, number, number, number];
-  }
-  
-  export function load(): Promise<{
-    detect: (element: HTMLVideoElement) => Promise<ObjectDetection[]>;
-  }>;
-}
 
 interface CameraProctoringProps {
   onViolation: (message: string) => void;
@@ -451,9 +558,7 @@ type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 
 const VIOLATION_TIMEOUT = 10;
 
-// How many consecutive frames a phone must appear before ending quiz
-// (avoids false positives from a single misclassified frame)
-const PHONE_CONFIRM_FRAMES = 3;
+
 
 const CameraProctoring: React.FC<CameraProctoringProps> = ({
   onViolation,
@@ -473,7 +578,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
   // Phone detection state
   const cocoModelRef = useRef<any>(null);
-  const phoneFrameCountRef = useRef(0);
   const phoneDetectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'active' | 'error'>('idle');
@@ -580,14 +684,14 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const chinDist     = Math.abs(noseTip.y - chin.y);
     const tiltRatio    = chinDist > 0 ? foreheadDist / chinDist : 1;
 
-    // Tuned thresholds (normalised by inter-eye span):
-    //   horizontal: ±0.6 of eye-span → clear left/right turn
-    //   vertical:   >0.5 of eye-span downward shift → looking down
-    //   tiltRatio < 0.55 → face strongly tilted down (works at distance)
-    if (hOffset < -0.6) return 'left';
-    if (hOffset > 0.6)  return 'right';
-    if (vOffset > 0.5 || tiltRatio < 0.55) return 'down';
-    if (vOffset < -0.5) return 'up';
+    // Strict thresholds (normalised by inter-eye span):
+    //   horizontal: ±0.3 → catches even a moderate left/right turn
+    //   vertical:   >0.25 downward shift OR tiltRatio < 0.7 → looking down
+    //   These are intentionally tight so any clear head movement is caught.
+    if (hOffset < -0.3) return 'left';
+    if (hOffset > 0.3)  return 'right';
+    if (vOffset > 0.25 || tiltRatio < 0.7) return 'down';
+    if (vOffset < -0.3) return 'up';
     return 'center';
   };
 
@@ -650,19 +754,14 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
           );
 
           if (phoneFound) {
-            phoneFrameCountRef.current += 1;
-            setPhoneDetected(true);
-
-            if (phoneFrameCountRef.current >= PHONE_CONFIRM_FRAMES) {
-              if (!hasEndedRef.current) {
-                hasEndedRef.current = true;
-                cleanup();
-                onEnd('Mobile phone detected in frame');
-              }
+            // Instant termination — no warnings, no countdown
+            if (!hasEndedRef.current) {
+              hasEndedRef.current = true;
+              setPhoneDetected(true);
+              cleanup();
+              onEnd('Mobile phone detected in frame');
             }
           } else {
-            // Reset counter – phone disappeared
-            phoneFrameCountRef.current = 0;
             setPhoneDetected(false);
           }
         } catch (_) {
