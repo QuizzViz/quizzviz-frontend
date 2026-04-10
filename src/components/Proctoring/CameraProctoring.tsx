@@ -184,8 +184,8 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     // Using OR (not AND) because at distance hOffset weakens and ear takes over
     if (hLeft  || earLeft)  return 'left';
     if (hRight || earRight) return 'right';
-    if (lookingDown)        return 'down';
-    if (vOffset < -0.25)    return 'up';
+    if (vOffset > 0.25)     return 'down';  // eyes below face center = looking down
+    if (vOffset < -0.25)    return 'up';    // eyes above face center = looking up
     return 'center';
   };
 
@@ -230,7 +230,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     const direction = estimateHeadDirection(realFaces[0]);
 
-    if (direction === 'left' || direction === 'right' || direction === 'down') {
+    if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
       onViolation(`Looking ${direction}`);
       startViolationTimer(`Looking ${direction}`);
     } else {
