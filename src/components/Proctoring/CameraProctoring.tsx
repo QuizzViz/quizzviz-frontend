@@ -12,6 +12,8 @@ type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 
 const VIOLATION_TIMEOUT = 10;
 
+
+
 const CameraProctoring: React.FC<CameraProctoringProps> = ({
   onViolation,
   onEnd,
@@ -28,6 +30,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
   const hasEndedRef = useRef(false);
   const isInitializingRef = useRef(false);
 
+  // Phone detection state
   const cocoModelRef = useRef<any>(null);
   const phoneDetectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -37,6 +40,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
   const [faceCount, setFaceCount] = useState<number>(0);
   const [phoneDetected, setPhoneDetected] = useState(false);
 
+  // ─── Cleanup ────────────────────────────────────────────────────────────────
   const cleanup = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
@@ -46,9 +50,18 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       try { cameraRef.current.stop(); } catch (_) {}
       cameraRef.current = null;
     }
-    if (detectionIntervalRef.current) { clearInterval(detectionIntervalRef.current); detectionIntervalRef.current = null; }
-    if (violationIntervalRef.current) { clearInterval(violationIntervalRef.current); violationIntervalRef.current = null; }
-    if (phoneDetectionIntervalRef.current) { clearInterval(phoneDetectionIntervalRef.current); phoneDetectionIntervalRef.current = null; }
+    if (detectionIntervalRef.current) {
+      clearInterval(detectionIntervalRef.current);
+      detectionIntervalRef.current = null;
+    }
+    if (violationIntervalRef.current) {
+      clearInterval(violationIntervalRef.current);
+      violationIntervalRef.current = null;
+    }
+    if (phoneDetectionIntervalRef.current) {
+      clearInterval(phoneDetectionIntervalRef.current);
+      phoneDetectionIntervalRef.current = null;
+    }
     if (faceMeshRef.current) {
       try { faceMeshRef.current.close(); } catch (_) {}
       faceMeshRef.current = null;
@@ -57,10 +70,12 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     multiFaceFrameCountRef.current = 0;
   }, []);
 
+  // ─── Violation timer ────────────────────────────────────────────────────────
   const startViolationTimer = useCallback((message: string) => {
     if (violationIntervalRef.current) return;
     setCurrentViolation(message);
     setViolationCountdown(VIOLATION_TIMEOUT);
+
     violationIntervalRef.current = setInterval(() => {
       setViolationCountdown((prev) => {
         if (prev === null) return null;
@@ -86,9 +101,11 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     setCurrentViolation('');
   }, []);
 
+  // consecutive multi-face frames required before ending (prevents close-up artefacts)
   const multiFaceFrameCountRef = useRef(0);
   const MULTI_FACE_CONFIRM_FRAMES = 4;
 
+  // ─── Validate a real full face (not an artefact from close-up distortion) ────
   const isRealFace = (landmarks: any[]): boolean => {
     if (!landmarks || landmarks.length < 200) return false;
     const forehead = landmarks[10];
@@ -102,22 +119,14 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
   // ─── Head direction estimation ───────────────────────────────────────────────
   //
-  // LEFT / RIGHT: 100% original logic — untouched.
+  // In MediaPipe, Y coordinates increase DOWNWARD (top = 0, bottom = 1).
   //
-  // UP / DOWN: was broken (AND logic too strict). Fixed to use OR logic
-  //            across 3 independent pitch signals, same approach as left/right.
-  //
-  //   Signal A — chinFraction: ratio of chin-side face height vs total face height
-  //     DOWN → chin rises toward nose → chinFraction DECREASES  (threshold < 0.42)
-  //     UP   → chin drops away        → chinFraction INCREASES  (threshold > 0.60)
-  //
-  //   Signal B — eyeNoseYDiff: vertical gap between eye centre and nose tip, ÷ eye span
-  //     DOWN → eyes approach nose level → value INCREASES  (threshold > 0.55)
-  //     UP   → eyes rise above nose     → value DECREASES  (threshold < 0.10)
-  //
-  //   Signal C — foreheadChinRatio: upper-face height ÷ lower-face height
-  //     DOWN → forehead compresses → ratio DECREASES  (threshold < 0.75)
-  //     UP   → chin region stretches → ratio INCREASES  (threshold > 1.35)
+  // Signals used:
+  //  1. hOffset       – horizontal nose-to-eye-centre offset (yaw left/right)
+  //  2. earAsymmetry  – nose-to-ear distance ratio (yaw at distance)
+  //  3. chinFraction  – fraction of face height below the nose (pitch up/down)
+  //  4. eyeNoseYDiff  – where eyes sit relative to nose tip (pitch confirmation)
+  //  5. foreheadChinRatio – upper-face height vs lower-face height (pitch confirmation)
   //
   const estimateHeadDirection = (landmarks: any[]): HeadDirection => {
     if (!landmarks || landmarks.length === 0) return 'unknown';
@@ -129,45 +138,62 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const chin          = landmarks[152];
     const leftEarInner  = landmarks[93];
     const rightEarInner = landmarks[323];
-    const noseBridge    = landmarks[6];
+    const noseBridge    = landmarks[6]; // ← added: needed for foreheadChinRatio
 
+    // ── Scale reference (inter-eye distance) ────────────────────────────────
     const eyeSpan = Math.abs(rightEye.x - leftEye.x);
     const scale   = Math.max(eyeSpan, 0.01);
 
-    const eyeCenterX  = (leftEye.x + rightEye.x) / 2;
-    const eyeCenterY  = (leftEye.y + rightEye.y) / 2;
+    const eyeCenterX = (leftEye.x + rightEye.x) / 2;
+    const eyeCenterY = (leftEye.y + rightEye.y) / 2;
     const faceCenterX = (noseTip.x + forehead.x) / 2;
 
-    // ── LEFT / RIGHT (original — do not touch) ───────────────────────────────
-    const hOffset      = (eyeCenterX - faceCenterX) / scale;
-    const noseToLeft   = Math.abs(noseTip.x - leftEarInner.x);
-    const noseToRight  = Math.abs(noseTip.x - rightEarInner.x);
-    const earAsymmetry = (noseToLeft - noseToRight) / Math.max(noseToLeft + noseToRight, 0.01);
+    // ── Signal 1: horizontal offset (normalised by eye span) ────────────────
+    const hOffset = (eyeCenterX - faceCenterX) / scale;
 
-    if (hOffset < -0.25 || earAsymmetry >  0.18) return 'left';
-    if (hOffset >  0.25 || earAsymmetry < -0.18) return 'right';
+    // ── Signal 2: ear asymmetry ──────────────────────────────────────────────
+    // earAsymmetry > 0 → nose closer to right ear → face turned LEFT
+    // earAsymmetry < 0 → nose closer to left ear  → face turned RIGHT
+    const noseToLeftEar  = Math.abs(noseTip.x - leftEarInner.x);
+    const noseToRightEar = Math.abs(noseTip.x - rightEarInner.x);
+    const earAsymmetry   = (noseToLeftEar - noseToRightEar) /
+                           Math.max(noseToLeftEar + noseToRightEar, 0.01);
 
-    // ── UP / DOWN (fixed — OR logic, 3 signals) ──────────────────────────────
+    // ── Signal 3: chinFraction ───────────────────────────────────────────────
+    // DOWN → chin rises toward nose → chinFraction DECREASES
+    // UP   → chin drops away from nose → chinFraction INCREASES
+    const foreheadDist     = Math.abs(noseTip.y - forehead.y);
+    const chinDist         = Math.abs(noseTip.y - chin.y);
+    const totalFaceHeight  = foreheadDist + chinDist;
+    const chinFraction     = totalFaceHeight > 0.01 ? chinDist / totalFaceHeight : 0.5;
 
-    // Signal A: chinFraction
-    const foreheadDist = Math.abs(noseTip.y - forehead.y);
-    const chinDist     = Math.abs(noseTip.y - chin.y);
-    const chinFraction = (foreheadDist + chinDist) > 0.01
-      ? chinDist / (foreheadDist + chinDist)
-      : 0.5;
-
-    // Signal B: eyeNoseYDiff
+    // ── Signal 4: eye-to-nose Y difference ──────────────────────────────────
+    // DOWN → eyes drop toward nose level → value INCREASES
+    // UP   → eyes rise well above nose → value DECREASES
     const eyeNoseYDiff = (eyeCenterY - noseTip.y) / scale;
 
-    // Signal C: foreheadChinRatio
+    // ── Signal 5: foreheadChinRatio ──────────────────────────────────────────
+    // Compares upper-face height (forehead→noseBridge) vs lower-face (noseBridge→chin)
+    // DOWN → forehead compresses → ratio DECREASES
+    // UP   → chin region stretches → ratio INCREASES
     const upperFace         = Math.abs(noseBridge.y - forehead.y);
     const lowerFace         = Math.abs(chin.y - noseBridge.y);
     const foreheadChinRatio = lowerFace > 0.01 ? upperFace / lowerFace : 1.0;
 
+    // ── Horizontal decisions (OR logic – either signal alone is enough) ──────
+    const hLeft   = hOffset < -0.25;
+    const hRight  = hOffset >  0.25;
+    const earLeft  = earAsymmetry >  0.18;
+    const earRight = earAsymmetry < -0.18;
+
+    if (hLeft  || earLeft)  return 'left';
+    if (hRight || earRight) return 'right';
+
+    // ── Vertical decisions (OR logic – any one signal fires) ─────────────────
     const lookingDown = chinFraction < 0.42 || eyeNoseYDiff > 0.55 || foreheadChinRatio < 0.75;
     const lookingUp   = chinFraction > 0.60 || eyeNoseYDiff < 0.10 || foreheadChinRatio > 1.35;
 
-    // If both fire simultaneously (rare edge case), pick whichever has more signals
+    // Edge case: both fire → pick whichever has more signals agreeing
     if (lookingDown && lookingUp) {
       const downScore = (chinFraction < 0.42 ? 1 : 0) + (eyeNoseYDiff > 0.55 ? 1 : 0) + (foreheadChinRatio < 0.75 ? 1 : 0);
       const upScore   = (chinFraction > 0.60 ? 1 : 0) + (eyeNoseYDiff < 0.10 ? 1 : 0) + (foreheadChinRatio > 1.35 ? 1 : 0);
@@ -180,6 +206,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     return 'center';
   };
 
+  // ─── Process detection results ───────────────────────────────────────────────
   const processFaceDetection = useCallback((results: any) => {
     if (hasEndedRef.current) return;
 
@@ -192,6 +219,8 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     }
 
     const faces = results.multiFaceLandmarks;
+
+    // Filter to only real faces (eliminates close-up artefact detections)
     const realFaces = faces.filter(isRealFace);
     setFaceCount(realFaces.length);
 
@@ -211,7 +240,9 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       return;
     }
 
+    // Single real face – reset multi-face counter
     multiFaceFrameCountRef.current = 0;
+
     const direction = estimateHeadDirection(realFaces[0]);
 
     if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
@@ -222,19 +253,27 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     }
   }, [onViolation, onEnd, startViolationTimer, stopViolationTimer, cleanup]);
 
+  // ─── Phone detection via COCO-SSD ────────────────────────────────────────────
   const startPhoneDetection = useCallback(async () => {
     try {
       const tf = await import('@tensorflow/tfjs');
       await tf.ready();
+
       const cocoSsd = await import('@tensorflow-models/coco-ssd');
       const model = await cocoSsd.load();
       cocoModelRef.current = model;
 
       phoneDetectionIntervalRef.current = setInterval(async () => {
         if (hasEndedRef.current || !videoRef.current || videoRef.current.readyState < 2) return;
+
         try {
           const predictions = await cocoModelRef.current.detect(videoRef.current);
-          const phoneFound = predictions.some((p: any) => p.class === 'cell phone' && p.score > 0.55);
+          const phoneFound = predictions.some(
+            (p: any) =>
+              p.class === 'cell phone' &&
+              p.score > 0.55
+          );
+
           if (phoneFound) {
             if (!hasEndedRef.current) {
               hasEndedRef.current = true;
@@ -245,19 +284,23 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
           } else {
             setPhoneDetected(false);
           }
-        } catch (_) {}
+        } catch (_) {
+          // ignore single-frame errors
+        }
       }, 800);
     } catch (err) {
       console.warn('COCO-SSD phone detection unavailable:', err);
     }
   }, [cleanup, onEnd]);
 
+  // ─── Initialize ──────────────────────────────────────────────────────────────
   const initialize = useCallback(async () => {
     if (isInitializingRef.current || hasEndedRef.current) return;
     isInitializingRef.current = true;
     setStatus('loading');
 
     try {
+      // 1. Webcam
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { width: 320, height: 240, facingMode: 'user' },
       });
@@ -272,18 +315,26 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
         await videoRef.current.play();
       }
 
+      // 2. Dynamic import of MediaPipe
       const [{ FaceMesh }, { Camera }] = await Promise.all([
         import('@mediapipe/face_mesh'),
         import('@mediapipe/camera_utils'),
       ]);
 
       const faceMesh = new FaceMesh({
-        locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+        locateFile: (file: string) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
       });
-      faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      faceMesh.setOptions({
+        maxNumFaces: 5,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
       faceMesh.onResults(processFaceDetection);
       faceMeshRef.current = faceMesh;
 
+      // 3. Start Camera loop
       const cam = new Camera(videoRef.current!, {
         onFrame: async () => {
           if (faceMeshRef.current && videoRef.current && videoRef.current.readyState === 4) {
@@ -297,6 +348,8 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       cameraRef.current = cam;
 
       setStatus('active');
+
+      // 4. Start phone detection in parallel (non-blocking)
       startPhoneDetection();
     } catch (err: any) {
       console.error('CameraProctoring init error:', err);
@@ -306,55 +359,219 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     }
   }, [processFaceDetection, startPhoneDetection]);
 
+  // ─── Lifecycle ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isActive || !isStarted) return;
     initialize();
     return cleanup;
   }, [isActive, isStarted]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ─── UI ──────────────────────────────────────────────────────────────────────
   const isViolating = violationCountdown !== null;
 
   return (
-    <div style={{ position: 'fixed', bottom: '24px', left: '24px', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', pointerEvents: 'none' }}>
-      <div style={{ width: '200px', borderRadius: '12px', overflow: 'hidden', border: isViolating || phoneDetected ? '2px solid #ef4444' : '2px solid rgba(255,255,255,0.15)', backgroundColor: '#000', boxShadow: isViolating || phoneDetected ? '0 0 20px rgba(239,68,68,0.5)' : '0 4px 24px rgba(0,0,0,0.5)', transition: 'border-color 0.3s, box-shadow 0.3s', position: 'relative' }}>
-        <video ref={videoRef} autoPlay playsInline muted style={{ width: '200px', height: '150px', objectFit: 'cover', display: status === 'active' ? 'block' : 'none', transform: 'scaleX(-1)' }} />
+    <div
+      style={{
+        position: 'fixed',
+        bottom: '24px',
+        left: '24px',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '8px',
+        pointerEvents: 'none',
+      }}
+    >
+      {/* Camera preview box */}
+      <div
+        style={{
+          width: '200px',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          border: isViolating || phoneDetected ? '2px solid #ef4444' : '2px solid rgba(255,255,255,0.15)',
+          backgroundColor: '#000',
+          boxShadow: isViolating || phoneDetected
+            ? '0 0 20px rgba(239,68,68,0.5)'
+            : '0 4px 24px rgba(0,0,0,0.5)',
+          transition: 'border-color 0.3s, box-shadow 0.3s',
+          position: 'relative',
+        }}
+      >
+        {/* Video */}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{
+            width: '200px',
+            height: '150px',
+            objectFit: 'cover',
+            display: status === 'active' ? 'block' : 'none',
+            transform: 'scaleX(-1)',
+          }}
+        />
 
+        {/* Placeholder when not active */}
         {status !== 'active' && (
-          <div style={{ width: '200px', height: '150px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#111', color: '#666', fontSize: '12px', gap: '8px' }}>
-            {status === 'loading' && (<><div style={{ fontSize: '24px' }}>📷</div><span>Starting camera…</span></>)}
-            {status === 'idle'    && (<><div style={{ fontSize: '24px' }}>📷</div><span>Camera standby</span></>)}
-            {status === 'error'   && (<><div style={{ fontSize: '24px' }}>⚠️</div><span style={{ color: '#f87171', textAlign: 'center', padding: '0 12px' }}>Camera unavailable</span></>)}
+          <div
+            style={{
+              width: '200px',
+              height: '150px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#111',
+              color: '#666',
+              fontSize: '12px',
+              gap: '8px',
+            }}
+          >
+            {status === 'loading' && (
+              <>
+                <div style={{ fontSize: '24px' }}>📷</div>
+                <span>Starting camera…</span>
+              </>
+            )}
+            {status === 'idle' && (
+              <>
+                <div style={{ fontSize: '24px' }}>📷</div>
+                <span>Camera standby</span>
+              </>
+            )}
+            {status === 'error' && (
+              <>
+                <div style={{ fontSize: '24px' }}>⚠️</div>
+                <span style={{ color: '#f87171', textAlign: 'center', padding: '0 12px' }}>
+                  Camera unavailable
+                </span>
+              </>
+            )}
           </div>
         )}
 
-        <div style={{ position: 'absolute', top: '6px', left: '6px', display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(0,0,0,0.65)', borderRadius: '99px', padding: '2px 8px', fontSize: '10px', color: '#fff' }}>
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: status === 'active' ? (isViolating || phoneDetected ? '#ef4444' : '#22c55e') : '#f59e0b', display: 'inline-block', animation: status === 'active' ? 'pulse 1.5s infinite' : 'none' }} />
-          {status === 'active' ? (phoneDetected ? 'PHONE!' : isViolating ? 'VIOLATION' : 'PROCTORED') : status.toUpperCase()}
+        {/* Status badge */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '6px',
+            left: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            background: 'rgba(0,0,0,0.65)',
+            borderRadius: '99px',
+            padding: '2px 8px',
+            fontSize: '10px',
+            color: '#fff',
+          }}
+        >
+          <span
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor:
+                status === 'active' ? (isViolating || phoneDetected ? '#ef4444' : '#22c55e') : '#f59e0b',
+              display: 'inline-block',
+              animation: status === 'active' ? 'pulse 1.5s infinite' : 'none',
+            }}
+          />
+          {status === 'active'
+            ? phoneDetected
+              ? 'PHONE!'
+              : isViolating
+              ? 'VIOLATION'
+              : 'PROCTORED'
+            : status.toUpperCase()}
         </div>
 
+        {/* Face count badge */}
         {status === 'active' && (
-          <div style={{ position: 'absolute', top: '6px', right: '6px', background: faceCount === 1 ? 'rgba(34,197,94,0.8)' : 'rgba(239,68,68,0.8)', borderRadius: '99px', padding: '2px 8px', fontSize: '10px', color: '#fff', fontWeight: 600 }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: '6px',
+              right: '6px',
+              background: faceCount === 1 ? 'rgba(34,197,94,0.8)' : 'rgba(239,68,68,0.8)',
+              borderRadius: '99px',
+              padding: '2px 8px',
+              fontSize: '10px',
+              color: '#fff',
+              fontWeight: 600,
+            }}
+          >
             {faceCount === 0 ? 'No face' : faceCount === 1 ? '1 face ✓' : `${faceCount} faces!`}
           </div>
         )}
       </div>
 
+      {/* Phone detected banner (instant, no countdown) */}
       {phoneDetected && (
-        <div style={{ width: '200px', background: 'rgba(0,0,0,0.9)', border: '1px solid rgba(239,68,68,0.8)', borderRadius: '10px', padding: '8px 10px', pointerEvents: 'none' }}>
-          <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: 700 }}>📱 Phone detected – ending quiz…</span>
+        <div
+          style={{
+            width: '200px',
+            background: 'rgba(0,0,0,0.9)',
+            border: '1px solid rgba(239,68,68,0.8)',
+            borderRadius: '10px',
+            padding: '8px 10px',
+            pointerEvents: 'none',
+          }}
+        >
+          <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: 700 }}>
+            📱 Phone detected – ending quiz…
+          </span>
         </div>
       )}
 
+      {/* Violation countdown bar */}
       {isViolating && !phoneDetected && (
-        <div style={{ width: '200px', background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(239,68,68,0.5)', borderRadius: '10px', padding: '8px 10px', pointerEvents: 'none' }}>
+        <div
+          style={{
+            width: '200px',
+            background: 'rgba(0,0,0,0.85)',
+            border: '1px solid rgba(239,68,68,0.5)',
+            borderRadius: '10px',
+            padding: '8px 10px',
+            pointerEvents: 'none',
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-            <span style={{ color: '#fca5a5', fontSize: '11px', fontWeight: 600 }}>⚠️ {currentViolation}</span>
-            <span style={{ color: (violationCountdown ?? 0) <= 5 ? '#ef4444' : '#fbbf24', fontSize: '13px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{violationCountdown}s</span>
+            <span style={{ color: '#fca5a5', fontSize: '11px', fontWeight: 600 }}>
+              ⚠️ {currentViolation}
+            </span>
+            <span
+              style={{
+                color: (violationCountdown ?? 0) <= 5 ? '#ef4444' : '#fbbf24',
+                fontSize: '13px',
+                fontWeight: 700,
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {violationCountdown}s
+            </span>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '99px', height: '4px' }}>
-            <div style={{ width: `${((violationCountdown ?? 0) / VIOLATION_TIMEOUT) * 100}%`, height: '4px', borderRadius: '99px', background: (violationCountdown ?? 0) <= 5 ? '#ef4444' : (violationCountdown ?? 0) <= 10 ? '#f59e0b' : '#22c55e', transition: 'width 1s linear, background 0.3s' }} />
+            <div
+              style={{
+                width: `${((violationCountdown ?? 0) / VIOLATION_TIMEOUT) * 100}%`,
+                height: '4px',
+                borderRadius: '99px',
+                background:
+                  (violationCountdown ?? 0) <= 5
+                    ? '#ef4444'
+                    : (violationCountdown ?? 0) <= 10
+                    ? '#f59e0b'
+                    : '#22c55e',
+                transition: 'width 1s linear, background 0.3s',
+              }}
+            />
           </div>
-          <p style={{ color: '#9ca3af', fontSize: '10px', marginTop: '4px' }}>Quiz ends if not corrected</p>
+          <p style={{ color: '#9ca3af', fontSize: '10px', marginTop: '4px' }}>
+            Quiz ends if not corrected
+          </p>
         </div>
       )}
 
