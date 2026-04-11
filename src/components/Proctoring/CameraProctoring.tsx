@@ -644,21 +644,16 @@ interface CameraProctoringProps {
 type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 
 const VIOLATION_TIMEOUT = 10;
+const prevSimilarityRef = useRef(1);
+
 
 // ─── Face identity config ─────────────────────────────────────────────────────
 const IDENTITY_CALIBRATION_FRAMES = 30;
 
-// CHANGED: Loosened thresholds to be more tolerant of lighting changes.
-// Same person with different lighting: typically 0.82–0.99 (after normalisation)
-// Different person:                    typically 0.50–0.72
-const APPEARANCE_HARD_FAIL        = 0.65;  // was 0.72 — only fires on a truly different person
-const APPEARANCE_SOFT_FAIL        = 0.75;  // was 0.80 — slightly more forgiving soft band
-const APPEARANCE_MISMATCH_FRAMES  = 15;   // was 10  — need more consecutive misses before terminate
-
-// How fast the baseline adapts to slow lighting drift (0–1 per confirmed frame).
-// 0.01 = baseline fully updates after ~100 confirmed frames — fast enough for
-// a dimming room, too slow for a person-swap to sneak through.
-const BASELINE_ADAPT_RATE = 0.01;
+const APPEARANCE_HARD_FAIL       = 0.75;  // stricter (was 0.65)
+const APPEARANCE_SOFT_FAIL       = 0.80;  // slightly stricter
+const APPEARANCE_MISMATCH_FRAMES = 5;     // faster reaction (was 15)
+const BASELINE_ADAPT_RATE        = 0.01;  // same
 
 // Phone detection
 const PHONE_DETECTION_INTERVAL_MS = 200;
@@ -982,36 +977,84 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       return;
     }
 
-    // ── IDENTITY CHECK (pixel appearance) ────────────────────────────────────
+    // // ── IDENTITY CHECK (pixel appearance) ────────────────────────────────────
+    // const currentHist = extractFaceHistogram(primaryFace, videoEl, canvas);
+    // if (!currentHist) return;
+
+    // const similarity = bhattacharyya(currentHist, faceHistogramRef.current);
+
+    // // Uncomment to tune thresholds — watch the console while changing lighting:
+    // // console.log('[Proctoring] appearance similarity:', similarity.toFixed(4));
+
+    // if (similarity < APPEARANCE_HARD_FAIL) {
+    //   // Drastically different appearance — only a different person triggers this
+    //   // after mean-normalisation absorbs lighting changes.
+    //   console.warn('[Proctoring] HARD FAIL similarity:', similarity.toFixed(4));
+    //   terminate('Person changed – exam terminated. A different person was detected on camera.');
+    //   return;
+    // }
+
+    // if (similarity < APPEARANCE_SOFT_FAIL) {
+    //   appearanceMismatchRef.current += 1;
+    //   console.warn('[Proctoring] Soft mismatch', appearanceMismatchRef.current,
+    //                'similarity:', similarity.toFixed(4));
+
+    //   onViolationRef.current('Identity mismatch detected');
+    //   startViolationTimer('Identity mismatch detected');
+
+    //   if (appearanceMismatchRef.current >= APPEARANCE_MISMATCH_FRAMES) {
+    //     terminate('Person changed – exam terminated. A different person was detected on camera.');
+    //   }
+    //   return;
+    // }
     const currentHist = extractFaceHistogram(primaryFace, videoEl, canvas);
-    if (!currentHist) return;
+if (!currentHist) return;
 
-    const similarity = bhattacharyya(currentHist, faceHistogramRef.current);
+const similarity = bhattacharyya(currentHist, faceHistogramRef.current);
 
-    // Uncomment to tune thresholds — watch the console while changing lighting:
-    // console.log('[Proctoring] appearance similarity:', similarity.toFixed(4));
+// 🔥 Sudden drop detection (face swap killer)
+const drop = prevSimilarityRef.current - similarity;
+prevSimilarityRef.current = similarity;
 
-    if (similarity < APPEARANCE_HARD_FAIL) {
-      // Drastically different appearance — only a different person triggers this
-      // after mean-normalisation absorbs lighting changes.
-      console.warn('[Proctoring] HARD FAIL similarity:', similarity.toFixed(4));
-      terminate('Person changed – exam terminated. A different person was detected on camera.');
-      return;
-    }
+if (drop > 0.15) {
+  console.warn('[Proctoring] Sudden drop detected:', drop.toFixed(4));
+  terminate('Person changed – sudden identity change detected.');
+  return;
+}
 
-    if (similarity < APPEARANCE_SOFT_FAIL) {
-      appearanceMismatchRef.current += 1;
-      console.warn('[Proctoring] Soft mismatch', appearanceMismatchRef.current,
-                   'similarity:', similarity.toFixed(4));
+// 🔴 HARD FAIL
+if (similarity < APPEARANCE_HARD_FAIL) {
+  console.warn('[Proctoring] HARD FAIL similarity:', similarity.toFixed(4));
+  terminate('Person changed – exam terminated. A different person was detected on camera.');
+  return;
+}
 
-      onViolationRef.current('Identity mismatch detected');
-      startViolationTimer('Identity mismatch detected');
+// 🟡 SOFT FAIL
+if (similarity < APPEARANCE_SOFT_FAIL) {
+  appearanceMismatchRef.current += 1;
 
-      if (appearanceMismatchRef.current >= APPEARANCE_MISMATCH_FRAMES) {
-        terminate('Person changed – exam terminated. A different person was detected on camera.');
-      }
-      return;
-    }
+  console.warn('[Proctoring] Soft mismatch', appearanceMismatchRef.current,
+    'similarity:', similarity.toFixed(4));
+
+  onViolationRef.current('Identity mismatch detected');
+  startViolationTimer('Identity mismatch detected');
+
+  if (appearanceMismatchRef.current >= APPEARANCE_MISMATCH_FRAMES) {
+    terminate('Person changed – exam terminated. A different person was detected on camera.');
+  }
+  return;
+}
+
+// ✅ Identity confirmed
+appearanceMismatchRef.current = 0;
+
+// ✅ Adapt ONLY when very confident (prevents new face learning)
+if (similarity > 0.9) {
+  const baseline = faceHistogramRef.current!;
+  faceHistogramRef.current = baseline.map(
+    (b, i) => b * (1 - BASELINE_ADAPT_RATE) + currentHist[i] * BASELINE_ADAPT_RATE
+  );
+}
 
     // ── Identity confirmed — reset mismatch streak ────────────────────────────
     appearanceMismatchRef.current = 0;
