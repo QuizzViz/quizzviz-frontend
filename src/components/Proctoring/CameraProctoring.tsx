@@ -644,7 +644,6 @@ interface CameraProctoringProps {
 type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 
 const VIOLATION_TIMEOUT = 10;
-const prevSimilarityRef = useRef(1);
 
 
 // ─── Face identity config ─────────────────────────────────────────────────────
@@ -690,6 +689,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
   const multiFaceFrameCountRef = useRef(0);
   const MULTI_FACE_CONFIRM_FRAMES = 4;
+  const prevSimilarityRef = useRef(1);
 
   // Always-current prop refs (avoids stale closure)
   const onViolationRef = useRef(onViolation);
