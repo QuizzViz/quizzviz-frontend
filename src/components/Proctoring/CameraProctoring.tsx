@@ -770,21 +770,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     return Math.abs(c.y - f.y) > 0.04 && Math.abs(r.x - l.x) > 0.03;
   };
 
-  // ─── Pixel appearance histogram ───────────────────────────────────────────
-  //
-  // CHANGE: Mean-normalised histogram instead of raw brightness histogram.
-  //
-  // HOW IT WORKS:
-  //   1. Crop the face region using MediaPipe landmark bounds.
-  //   2. Draw the crop into a 32×32 canvas.
-  //   3. Compute the mean brightness across all pixels.
-  //   4. Subtract the mean from each pixel and shift to mid-scale (128).
-  //      This cancels out uniform lighting changes (dim room, bright sun, etc.)
-  //      while preserving the relative brightness pattern that is person-specific
-  //      (skin tone contrast, shadow distribution, facial structure).
-  //   5. Build a 64-bin normalised histogram on these shifted values.
-  //   6. Compare with Bhattacharyya coefficient.
-  //
   const CROP_SIZE  = 32;
   const HIST_BINS  = 64;
 

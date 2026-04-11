@@ -2339,6 +2339,11 @@ export default function QuizPage({ params }: PageProps) {
   const quizInstructions = [
     { icon: <Shield className="w-5 h-5 text-red-500" />, title: 'Honor Code', text: 'This is an individual assessment. Cheating will result in disqualification.' },
     { icon: <BookOpen className="w-5 h-5 text-blue-500" />, title: 'Quiz Details', text: `${quizData?.num_questions || 'Multiple'} questions • ${quizData?.quiz_time || 30} minutes` },
+    { icon: <User className="w-5 h-5 text-orange-500" />, title: 'Identity Verification', text: 'Only the person whose information was provided can attempt this quiz. Face verification will be performed.' },
+    { icon: <User className="w-5 h-5 text-orange-500" />, title: 'Solo Attempt Required', text: 'You must attempt this quiz alone in a private room. No other person should be present.' },
+    { icon: <AlertTriangle className="w-5 h-5 text-red-600" />, title: 'Multiple People Detection', text: 'If two or more people are detected during the quiz, it will be terminated immediately.' },
+    { icon: <Lock className="w-5 h-5 text-red-500" />, title: 'No Devices Allowed', text: 'Mobile phones, tablets, or any other electronic devices are strictly prohibited during the quiz.' },
+    { icon: <Eye className="w-5 h-5 text-purple-400" />, title: 'No External Help', text: 'No books, notes, websites, or any other sources of assistance are permitted.' },
     { icon: <Maximize2 className="w-5 h-5 text-amber-500" />, title: 'Full-Screen Mode', text: 'The quiz will start in full-screen. You must stay in full-screen mode.' },
     { icon: <AlertTriangle className="w-5 h-5 text-red-500" />, title: 'Important', text: 'Switching tabs or leaving full-screen will end your quiz immediately.' },
     { icon: <Eye className="w-5 h-5 text-purple-400" />, title: 'Camera Proctoring', text: 'Your webcam will be active during the quiz. Keep your face visible and centred.' },
@@ -2755,23 +2760,6 @@ export default function QuizPage({ params }: PageProps) {
                           <span className="text-white font-medium">{value}</span>
                         </div>
                       ))}
-                      <div className="p-2 flex justify-between">
-                        <div className="text-gray-400 mb-2">Tech Stack:</div>
-                        <div className="flex flex-wrap gap-2">
-                          {quizData.tech_stack?.length ? (
-                            quizData.tech_stack.map((tech, index) => (
-                              <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-blue-200 border border-blue-800/50">
-                                {tech.name}
-                                {tech.weight && (
-                                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-blue-800/50 text-blue-200 text-xs">{tech.weight}%</span>
-                                )}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-gray-500 text-sm">No tech stack specified</span>
-                          )}
-                        </div>
-                      </div>
                     </div>
                   </div>
 

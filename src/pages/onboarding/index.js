@@ -445,7 +445,7 @@ export default function OnboardingPage() {
       toast({
         title: "Success!",
         description: "Company created successfully. Redirecting to dashboard...",
-        className: "bg-green-500 text-white"
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
 
       // Hard redirect after creation too
