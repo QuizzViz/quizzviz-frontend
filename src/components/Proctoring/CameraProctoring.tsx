@@ -578,6 +578,7 @@
 
 // export default CameraProctoring;
 
+
 'use client';
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 
@@ -592,13 +593,14 @@ type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 
 const VIOLATION_TIMEOUT = 10;
 
-// ─── Attention check config ───────────────────────────────────────────────────
-// How often (ms) a new random attention-check challenge is issued
-const ATTENTION_CHECK_INTERVAL_MS = 45_000; // every 45 s
-// How long (ms) the user has to comply before it counts as a violation
-const ATTENTION_CHECK_WINDOW_MS   = 5_000;  // 5 s to respond
-// Directions we ask the user to look towards
-const ATTENTION_DIRECTIONS: Array<'left' | 'right' | 'up'> = ['left', 'right', 'up'];
+// ─── Face identity config ─────────────────────────────────────────────────────
+// How many frames to average when building the baseline face signature
+const IDENTITY_CALIBRATION_FRAMES = 30;
+// Cosine similarity threshold — below this we suspect a different person (0–1)
+// 0.82 tolerates natural pose/lighting shifts while catching a true face swap
+const IDENTITY_SIMILARITY_THRESHOLD = 0.82;
+// Consecutive mismatched frames required before ending (prevents single-frame blips)
+const IDENTITY_MISMATCH_CONFIRM_FRAMES = 20;
 
 
 const CameraProctoring: React.FC<CameraProctoringProps> = ({
@@ -621,21 +623,19 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
   const cocoModelRef = useRef<any>(null);
   const phoneDetectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // ─── Face identity state ──────────────────────────────────────────────────
+  // Averaged geometric signature of the original exam taker's face
+  const faceSignatureRef = useRef<number[] | null>(null);
+  // Accumulator for calibration frames
+  const calibrationAccRef = useRef<number[][]>([]);
+  // Consecutive mismatch streak counter
+  const identityMismatchCountRef = useRef(0);
+
   const [status, setStatus] = useState<'idle' | 'loading' | 'active' | 'error'>('idle');
   const [violationCountdown, setViolationCountdown] = useState<number | null>(null);
   const [currentViolation, setCurrentViolation] = useState<string>('');
   const [faceCount, setFaceCount] = useState<number>(0);
   const [phoneDetected, setPhoneDetected] = useState(false);
-
-  // ─── Attention-check state ────────────────────────────────────────────────
-  // null = no active challenge; string = direction user must look toward
-  const attentionChallengeRef   = useRef<'left' | 'right' | 'up' | null>(null);
-  const attentionDeadlineRef    = useRef<number>(0);           // epoch ms
-  const attentionSchedulerRef   = useRef<NodeJS.Timeout | null>(null);
-  const attentionWindowRef      = useRef<NodeJS.Timeout | null>(null);
-  const [attentionChallenge, setAttentionChallenge] = useState<'left' | 'right' | 'up' | null>(null);
-  const [attentionTimeLeft, setAttentionTimeLeft]   = useState<number | null>(null);
-  const attentionCountdownRef   = useRef<NodeJS.Timeout | null>(null);
 
   // ─── Cleanup ────────────────────────────────────────────────────────────────
   const cleanup = useCallback(() => {
@@ -658,18 +658,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     if (phoneDetectionIntervalRef.current) {
       clearInterval(phoneDetectionIntervalRef.current);
       phoneDetectionIntervalRef.current = null;
-    }
-    if (attentionSchedulerRef.current) {
-      clearTimeout(attentionSchedulerRef.current);
-      attentionSchedulerRef.current = null;
-    }
-    if (attentionWindowRef.current) {
-      clearTimeout(attentionWindowRef.current);
-      attentionWindowRef.current = null;
-    }
-    if (attentionCountdownRef.current) {
-      clearInterval(attentionCountdownRef.current);
-      attentionCountdownRef.current = null;
     }
     if (faceMeshRef.current) {
       try { faceMeshRef.current.close(); } catch (_) {}
@@ -726,18 +714,111 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     return verticalSpan > 0.04 && horizontalSpan > 0.03;
   };
 
+  // ─── Face geometric signature ─────────────────────────────────────────────
+  //
+  // Builds a pose-normalised descriptor from ~21 stable inter-landmark ratios.
+  // All distances are divided by the inter-eye span so the vector is invariant
+  // to head size and distance from camera. This captures unique facial
+  // proportions (eye spacing, nose length, jaw width, etc.) without depending
+  // on absolute position.
+  //
+  // Key landmark indices used (MediaPipe 468-point FaceMesh):
+  //   1   = nose tip         10  = forehead centre    152 = chin tip
+  //   13  = upper lip        14  = lower lip          33  = left eye inner
+  //   61  = left mouth corner 70 = left brow peak     93  = left ear inner
+  //   98  = left nose base   145 = left eye bottom   159 = left eye top
+  //   168 = nose bridge      234 = left ear          263 = right eye inner
+  //   291 = right mouth corner 300= right brow peak  323 = right ear inner
+  //   327 = right nose base  374 = right eye bottom  386 = right eye top
+  //   454 = right ear
+  //
+  const extractFaceSignature = (landmarks: any[]): number[] => {
+    const p = (idx: number) => landmarks[idx];
+
+    const eyeSpan = Math.hypot(p(263).x - p(33).x, p(263).y - p(33).y);
+    const scale   = Math.max(eyeSpan, 0.01);
+
+    const d  = (a: number, b: number) =>
+      Math.hypot(p(a).x - p(b).x, p(a).y - p(b).y) / scale;
+    const dx = (a: number, b: number) =>
+      Math.abs(p(a).x - p(b).x) / scale;
+    const dy = (a: number, b: number) =>
+      Math.abs(p(a).y - p(b).y) / scale;
+
+    return [
+      // Vertical face proportions
+      dy(10, 1),    // forehead → nose tip
+      dy(1, 152),   // nose tip → chin
+      dy(10, 152),  // full face height
+      dy(33, 152),  // left eye → chin
+      dy(263, 152), // right eye → chin
+
+      // Horizontal / width proportions
+      dx(234, 454), // ear-to-ear (face width)
+      dx(61, 291),  // mouth width
+      dx(93, 323),  // inner ear to inner ear
+
+      // Nose geometry
+      dy(168, 1),   // nose bridge → tip (nose length)
+      dx(98, 327),  // nose width at base
+
+      // Eye geometry
+      dy(159, 145), // left eye height
+      dy(386, 374), // right eye height
+      dy(70, 33),   // left brow → eye
+      dy(300, 263), // right brow → eye
+
+      // Mouth geometry
+      dy(13, 14),   // lip height
+      dy(1, 13),    // nose tip → upper lip
+      dy(14, 152),  // lower lip → chin
+
+      // Jaw / cheek diagonals
+      d(234, 152),  // left ear → chin diagonal
+      d(454, 152),  // right ear → chin diagonal
+      d(33, 61),    // left eye → left mouth corner
+      d(263, 291),  // right eye → right mouth corner
+    ];
+  };
+
+  // ── Cosine similarity between two equal-length vectors (0–1) ────────────
+  const cosineSimilarity = (a: number[], b: number[]): number => {
+    let dot = 0, normA = 0, normB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot   += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    return dot / (Math.sqrt(normA) * Math.sqrt(normB) + 1e-8);
+  };
+
+  // ── Average a list of signature vectors component-wise ──────────────────
+  const averageSignatures = (sigs: number[][]): number[] => {
+    const len = sigs[0].length;
+    const avg = new Array(len).fill(0);
+    for (const s of sigs) for (let i = 0; i < len; i++) avg[i] += s[i];
+    return avg.map((v) => v / sigs.length);
+  };
+
   // ─── Head direction estimation ───────────────────────────────────────────────
   //
-  // MediaPipe Y coordinates increase DOWNWARD (top = 0, bottom = 1).
+  // In MediaPipe, Y coordinates increase DOWNWARD (top = 0, bottom = 1).
   //
   // FIX for "down" detection:
   //   When the user looks DOWN the head tilts forward:
-  //     • The forehead landmark moves TOWARD the nose  → foreheadDist SHRINKS → chinFraction INCREASES
-  //     • The eyes, which are above the nose, shift UPWARD in the frame → eyeCenterY < noseTip.y → eyeNoseYDiff NEGATIVE
-  //   Previous code had these signals inverted.  Corrected thresholds below.
+  //     • Forehead landmark moves TOWARD the nose  → foreheadDist SHRINKS
+  //       → chinFraction (chinDist / total) INCREASES (more face below nose)
+  //     • Eyes are ABOVE the nose and shift further upward in the frame
+  //       → eyeCenterY DECREASES relative to noseTip.y
+  //       → eyeNoseYDiff = (eyeCenterY − noseTip.y) / scale goes MORE NEGATIVE
   //
-  // Looking DOWN:  chinFraction > 0.58  AND  eyeNoseYDiff < -0.10
-  // Looking UP:    chinFraction < 0.42  AND  eyeNoseYDiff >  0.25
+  //   When the user looks UP the head tilts back:
+  //     • Chin landmark moves TOWARD the nose → chinDist SHRINKS → chinFraction DECREASES
+  //     • Eyes drop toward nose level → eyeNoseYDiff approaches 0 or goes POSITIVE
+  //
+  //   Previous code had both signals inverted. Corrected thresholds:
+  //     Looking DOWN : chinFraction > 0.58  AND  eyeNoseYDiff < -0.10
+  //     Looking UP   : chinFraction < 0.42  AND  eyeNoseYDiff > 0.20
   //
   const estimateHeadDirection = (landmarks: any[]): HeadDirection => {
     if (!landmarks || landmarks.length === 0) return 'unknown';
@@ -754,11 +835,11 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const eyeSpan = Math.abs(rightEye.x - leftEye.x);
     const scale   = Math.max(eyeSpan, 0.01);
 
-    const eyeCenterX = (leftEye.x + rightEye.x) / 2;
-    const eyeCenterY = (leftEye.y + rightEye.y) / 2;
+    const eyeCenterX  = (leftEye.x + rightEye.x) / 2;
+    const eyeCenterY  = (leftEye.y + rightEye.y) / 2;
     const faceCenterX = (noseTip.x + forehead.x) / 2;
 
-    // ── Signal 1: horizontal offset (normalised by eye span) ────────────────
+    // ── Signal 1: horizontal offset ──────────────────────────────────────────
     const hOffset = (eyeCenterX - faceCenterX) / scale;
 
     // ── Signal 2: ear asymmetry ──────────────────────────────────────────────
@@ -767,92 +848,30 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const earAsymmetry   = (noseToLeftEar - noseToRightEar) /
                            Math.max(noseToLeftEar + noseToRightEar, 0.01);
 
-    // ── Signal 3: chinFraction (pitch) ───────────────────────────────────────
-    // MediaPipe Y increases downward.
-    // Looking DOWN → head tilts forward → forehead landmark drops toward nose
-    //   → foreheadDist shrinks → chinFraction (chinDist / total) INCREASES
-    // Looking UP   → head tilts back   → chin landmark rises toward nose
-    //   → chinDist shrinks → chinFraction DECREASES
+    // ── Signal 3: chinFraction ───────────────────────────────────────────────
+    // Head tilts FORWARD (look down) → forehead approaches nose → chinFraction ↑
+    // Head tilts BACK   (look up)    → chin approaches nose     → chinFraction ↓
     const foreheadDist    = Math.abs(noseTip.y - forehead.y);
     const chinDist        = Math.abs(noseTip.y - chin.y);
     const totalFaceHeight = foreheadDist + chinDist;
     const chinFraction    = totalFaceHeight > 0.01 ? chinDist / totalFaceHeight : 0.5;
 
-    // ── Signal 4: eye-to-nose Y difference (independent pitch confirmation) ──
-    // MediaPipe Y increases downward; eyes are ABOVE nose in a neutral pose
-    // → eyeCenterY < noseTip.y at rest → eyeNoseYDiff is NEGATIVE at rest.
-    //
-    // Looking DOWN: head tilts forward → eyes rise further above nose in frame
-    //   → eyeCenterY decreases relative to noseTip.y → eyeNoseYDiff becomes MORE negative
-    // Looking UP:   head tilts back    → eyes drop toward / below nose in frame
-    //   → eyeCenterY approaches or exceeds noseTip.y → eyeNoseYDiff becomes less negative / positive
+    // ── Signal 4: eye-to-nose Y difference ──────────────────────────────────
+    // Neutral: eyes above nose → value is NEGATIVE.
+    // Look DOWN: eyes rise further → MORE NEGATIVE.
+    // Look UP:   eyes drop toward nose → approaches 0 / goes POSITIVE.
     const eyeNoseYDiff = (eyeCenterY - noseTip.y) / scale;
 
     // ── Horizontal decisions ─────────────────────────────────────────────────
-    const hLeft   = hOffset < -0.25;
-    const hRight  = hOffset >  0.25;
-    const earLeft  = earAsymmetry >  0.18;
-    const earRight = earAsymmetry < -0.18;
-
-    if (hLeft  || earLeft)  return 'left';
-    if (hRight || earRight) return 'right';
+    if (hOffset < -0.25 || earAsymmetry >  0.18) return 'left';
+    if (hOffset >  0.25 || earAsymmetry < -0.18) return 'right';
 
     // ── Vertical decisions (FIXED) ───────────────────────────────────────────
-    // Looking DOWN: forehead closes in (chinFraction > 0.58) AND eyes rise (eyeNoseYDiff < -0.10)
-    const lookingDown = chinFraction > 0.58 && eyeNoseYDiff < -0.10;
-
-    // Looking UP: chin closes in (chinFraction < 0.42) AND eyes drop (eyeNoseYDiff > 0.25)
-    const lookingUp   = chinFraction < 0.42 && eyeNoseYDiff > 0.25;
-
-    if (lookingDown) return 'down';
-    if (lookingUp)   return 'up';
+    if (chinFraction > 0.58 && eyeNoseYDiff < -0.10) return 'down';
+    if (chinFraction < 0.42 && eyeNoseYDiff > 0.20)  return 'up';
 
     return 'center';
   };
-
-  // ─── Attention check helpers ─────────────────────────────────────────────────
-  const clearAttentionChallenge = useCallback(() => {
-    attentionChallengeRef.current = null;
-    setAttentionChallenge(null);
-    setAttentionTimeLeft(null);
-    if (attentionWindowRef.current)    { clearTimeout(attentionWindowRef.current);    attentionWindowRef.current = null; }
-    if (attentionCountdownRef.current) { clearInterval(attentionCountdownRef.current); attentionCountdownRef.current = null; }
-  }, []);
-
-  const issueAttentionChallenge = useCallback(() => {
-    if (hasEndedRef.current) return;
-    const dir = ATTENTION_DIRECTIONS[Math.floor(Math.random() * ATTENTION_DIRECTIONS.length)];
-    attentionChallengeRef.current = dir;
-    attentionDeadlineRef.current  = Date.now() + ATTENTION_CHECK_WINDOW_MS;
-    setAttentionChallenge(dir);
-    setAttentionTimeLeft(Math.ceil(ATTENTION_CHECK_WINDOW_MS / 1000));
-
-    // Countdown display
-    attentionCountdownRef.current = setInterval(() => {
-      const remaining = Math.ceil((attentionDeadlineRef.current - Date.now()) / 1000);
-      setAttentionTimeLeft(Math.max(remaining, 0));
-    }, 500);
-
-    // Fail if not responded in time
-    attentionWindowRef.current = setTimeout(() => {
-      if (attentionChallengeRef.current !== null && !hasEndedRef.current) {
-        // Still pending → user didn't comply → treat as violation
-        onViolation(`Attention check failed – did not look ${dir}`);
-        startViolationTimer(`Attention check failed`);
-      }
-      clearAttentionChallenge();
-      scheduleNextAttentionCheck();
-    }, ATTENTION_CHECK_WINDOW_MS);
-  }, [clearAttentionChallenge, onViolation]); // startViolationTimer added below via ref pattern
-
-  // scheduleNextAttentionCheck is defined after issueAttentionChallenge to avoid circular ref
-  const scheduleNextAttentionCheck = useCallback(() => {
-    if (hasEndedRef.current) return;
-    if (attentionSchedulerRef.current) clearTimeout(attentionSchedulerRef.current);
-    attentionSchedulerRef.current = setTimeout(() => {
-      issueAttentionChallenge();
-    }, ATTENTION_CHECK_INTERVAL_MS);
-  }, [issueAttentionChallenge]);
 
   // ─── Process detection results ───────────────────────────────────────────────
   const processFaceDetection = useCallback((results: any) => {
@@ -868,6 +887,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     const faces = results.multiFaceLandmarks;
 
+    // Filter to only real faces (eliminates close-up artefact detections)
     const realFaces = faces.filter(isRealFace);
     setFaceCount(realFaces.length);
 
@@ -887,29 +907,54 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       return;
     }
 
+    // Single real face – reset multi-face counter
     multiFaceFrameCountRef.current = 0;
 
-    const direction = estimateHeadDirection(realFaces[0]);
+    const primaryFace = realFaces[0];
 
-    // ── Attention-check satisfaction ─────────────────────────────────────────
-    if (attentionChallengeRef.current !== null && direction === attentionChallengeRef.current) {
-      // User looked the requested direction in time → clear challenge
-      clearAttentionChallenge();
-      stopViolationTimer();
-      scheduleNextAttentionCheck();
-      return; // don't flag this as a normal violation
-    }
+    // ── Face identity check ────────────────────────────────────────────────
+    const currentSig = extractFaceSignature(primaryFace);
 
-    // ── Normal gaze violation (only when no attention challenge is active) ────
-    if (!attentionChallengeRef.current) {
-      if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
-        onViolation(`Looking ${direction}`);
-        startViolationTimer(`Looking ${direction}`);
-      } else {
-        stopViolationTimer();
+    if (faceSignatureRef.current === null) {
+      // Still in calibration phase – accumulate frames to build the baseline
+      calibrationAccRef.current.push(currentSig);
+      if (calibrationAccRef.current.length >= IDENTITY_CALIBRATION_FRAMES) {
+        faceSignatureRef.current = averageSignatures(calibrationAccRef.current);
+        calibrationAccRef.current = []; // free memory
       }
+      // During calibration, skip gaze checks so the first few frames don't
+      // fire false violations while the user settles into position
+      return;
     }
-  }, [onViolation, onEnd, startViolationTimer, stopViolationTimer, cleanup, clearAttentionChallenge, scheduleNextAttentionCheck]);
+
+    // Calibrated – compare current face against stored baseline
+    const similarity = cosineSimilarity(currentSig, faceSignatureRef.current);
+
+    if (similarity < IDENTITY_SIMILARITY_THRESHOLD) {
+      identityMismatchCountRef.current += 1;
+      if (identityMismatchCountRef.current >= IDENTITY_MISMATCH_CONFIRM_FRAMES) {
+        if (!hasEndedRef.current) {
+          hasEndedRef.current = true;
+          cleanup();
+          onEnd('Different person detected – exam terminated');
+        }
+        return;
+      }
+    } else {
+      // Faces match – reset mismatch streak
+      identityMismatchCountRef.current = 0;
+    }
+
+    // ── Gaze / head direction check ────────────────────────────────────────
+    const direction = estimateHeadDirection(primaryFace);
+
+    if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
+      onViolation(`Looking ${direction}`);
+      startViolationTimer(`Looking ${direction}`);
+    } else {
+      stopViolationTimer();
+    }
+  }, [onViolation, onEnd, startViolationTimer, stopViolationTimer, cleanup]);
 
   // ─── Phone detection via COCO-SSD ────────────────────────────────────────────
   const startPhoneDetection = useCallback(async () => {
@@ -1009,16 +1054,13 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
       // 4. Start phone detection in parallel (non-blocking)
       startPhoneDetection();
-
-      // 5. Schedule first attention check
-      scheduleNextAttentionCheck();
     } catch (err: any) {
       console.error('CameraProctoring init error:', err);
       setStatus('error');
     } finally {
       isInitializingRef.current = false;
     }
-  }, [processFaceDetection, startPhoneDetection, scheduleNextAttentionCheck]);
+  }, [processFaceDetection, startPhoneDetection]);
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1050,12 +1092,10 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
           width: '200px',
           borderRadius: '12px',
           overflow: 'hidden',
-          border: isViolating || phoneDetected ? '2px solid #ef4444' : attentionChallenge ? '2px solid #f59e0b' : '2px solid rgba(255,255,255,0.15)',
+          border: isViolating || phoneDetected ? '2px solid #ef4444' : '2px solid rgba(255,255,255,0.15)',
           backgroundColor: '#000',
           boxShadow: isViolating || phoneDetected
             ? '0 0 20px rgba(239,68,68,0.5)'
-            : attentionChallenge
-            ? '0 0 20px rgba(245,158,11,0.5)'
             : '0 4px 24px rgba(0,0,0,0.5)',
           transition: 'border-color 0.3s, box-shadow 0.3s',
           position: 'relative',
@@ -1137,13 +1177,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
               height: '6px',
               borderRadius: '50%',
               backgroundColor:
-                status === 'active'
-                  ? isViolating || phoneDetected
-                    ? '#ef4444'
-                    : attentionChallenge
-                    ? '#f59e0b'
-                    : '#22c55e'
-                  : '#f59e0b',
+                status === 'active' ? (isViolating || phoneDetected ? '#ef4444' : '#22c55e') : '#f59e0b',
               display: 'inline-block',
               animation: status === 'active' ? 'pulse 1.5s infinite' : 'none',
             }}
@@ -1153,8 +1187,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
               ? 'PHONE!'
               : isViolating
               ? 'VIOLATION'
-              : attentionChallenge
-              ? 'ATTENTION!'
               : 'PROCTORED'
             : status.toUpperCase()}
         </div>
@@ -1194,52 +1226,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
           <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: 700 }}>
             📱 Phone detected – ending quiz…
           </span>
-        </div>
-      )}
-
-      {/* ── Attention-check challenge banner ─────────────────────────────────── */}
-      {attentionChallenge && !phoneDetected && !isViolating && (
-        <div
-          style={{
-            width: '200px',
-            background: 'rgba(0,0,0,0.9)',
-            border: '1px solid rgba(245,158,11,0.8)',
-            borderRadius: '10px',
-            padding: '8px 10px',
-            pointerEvents: 'none',
-            animation: 'attentionPulse 0.5s ease-in-out infinite alternate',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-            <span style={{ color: '#fbbf24', fontSize: '11px', fontWeight: 700 }}>
-              👀 Look {attentionChallenge}!
-            </span>
-            <span
-              style={{
-                color: (attentionTimeLeft ?? 0) <= 2 ? '#ef4444' : '#fbbf24',
-                fontSize: '13px',
-                fontWeight: 700,
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {attentionTimeLeft}s
-            </span>
-          </div>
-          {/* Progress bar */}
-          <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '99px', height: '4px' }}>
-            <div
-              style={{
-                width: `${((attentionTimeLeft ?? 0) / (ATTENTION_CHECK_WINDOW_MS / 1000)) * 100}%`,
-                height: '4px',
-                borderRadius: '99px',
-                background: (attentionTimeLeft ?? 0) <= 2 ? '#ef4444' : '#f59e0b',
-                transition: 'width 0.5s linear, background 0.3s',
-              }}
-            />
-          </div>
-          <p style={{ color: '#9ca3af', fontSize: '10px', marginTop: '4px' }}>
-            Attention check – respond now
-          </p>
         </div>
       )}
 
@@ -1296,10 +1282,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
-        }
-        @keyframes attentionPulse {
-          from { box-shadow: 0 0 6px rgba(245,158,11,0.3); }
-          to   { box-shadow: 0 0 16px rgba(245,158,11,0.8); }
         }
       `}</style>
     </div>
