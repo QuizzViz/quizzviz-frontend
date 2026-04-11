@@ -2421,7 +2421,7 @@ export default function QuizPage({ params }: PageProps) {
                         <Mail className="w-4 h-4 text-purple-400" /> Email
                       </Label>
                       <Input
-                        id="email" name="email" value={formData.email} onChange={handleInputChange}
+                        id="email" type='email' name="email" value={formData.email} onChange={handleInputChange}
                         placeholder="Enter your email" required
                         className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
                       />
