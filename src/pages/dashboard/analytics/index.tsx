@@ -368,7 +368,8 @@ export default function ResultsDashboard() {
         throw new Error(err.message || "Delete failed");
       }
       await refetchResults();
-      toast({ title: "Success", description: "Quiz data deleted", variant: "success" });
+      toast({ title: "Success", description: "Quiz data deleted", className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+ });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -406,7 +407,7 @@ export default function ResultsDashboard() {
 
       await refetchResults();
       setSelectedUsers({});
-      toast({ title: "Success", description: "Selected results deleted", variant: "success" });
+      toast({ title: "Success", description: "Selected results deleted",     className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
