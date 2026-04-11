@@ -17,20 +17,20 @@ const IDENTITY_CALIBRATION_FRAMES = 40;
 
 // Soft threshold — sustained mismatch over N frames triggers termination
 // Set deliberately high (0.82) so even moderate face changes are caught
-const IDENTITY_SIMILARITY_THRESHOLD = 0.82;
+const IDENTITY_SIMILARITY_THRESHOLD = 0.90;
 
 // How many consecutive frames below soft threshold before terminating
 const IDENTITY_MISMATCH_CONFIRM_FRAMES = 12;
 
 // Hard threshold — if similarity drops THIS low, terminate immediately
 // 0.60 = clearly a different person (not just a lighting/pose shift)
-const IDENTITY_HARD_FAIL_THRESHOLD = 0.60;
+const IDENTITY_HARD_FAIL_THRESHOLD = 0.90;
 
 // Phone detection interval in ms — lower = faster response
 const PHONE_DETECTION_INTERVAL_MS = 200;
 
 // Confidence score for phone detection (lower = more sensitive)
-const PHONE_DETECTION_CONFIDENCE = 0.40;
+const PHONE_DETECTION_CONFIDENCE = 0.30;
 
 
 const CameraProctoring: React.FC<CameraProctoringProps> = ({
