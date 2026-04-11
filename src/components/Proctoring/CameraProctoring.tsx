@@ -662,8 +662,7 @@ const BASELINE_ADAPT_RATE = 0.01;
 
 // Phone detection
 const PHONE_DETECTION_INTERVAL_MS = 200;
-const PHONE_DETECTION_CONFIDENCE  = 0.45;  // Higher confidence for immediate termination
-const MIN_PHONE_SIZE = 40;                // Larger minimum size to avoid false positives
+const PHONE_DETECTION_CONFIDENCE  = 0.55;
 
 
 const CameraProctoring: React.FC<CameraProctoringProps> = ({
@@ -1058,24 +1057,11 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
         try {
           ctx.drawImage(videoRef.current, 0, 0, 320, 240);
           const predictions = await cocoModelRef.current.detect(offscreen);
-          
-          // Filter for cell phone or remote with high confidence and minimum size
-          const validPhoneDetections = predictions.filter((p: any) => {
-            const isPhone = p.class === 'cell phone' || p.class === 'remote';
-            const hasHighConfidence = p.score > PHONE_DETECTION_CONFIDENCE;
-            const hasMinSize = p.bbox && (p.bbox[2] >= MIN_PHONE_SIZE || p.bbox[3] >= MIN_PHONE_SIZE);
-            
-            // Additional check: phone should be reasonably rectangular (not too distorted)
-            const isReasonableShape = p.bbox && 
-              Math.abs(p.bbox[2] - p.bbox[3]) < Math.max(p.bbox[2], p.bbox[3]) * 0.8;
-            
-            return isPhone && hasHighConfidence && hasMinSize && isReasonableShape;
-          });
-          
-          const phoneFound = validPhoneDetections.length > 0;
-          
+          const phoneFound  = predictions.some(
+            (p: any) => (p.class === 'cell phone' || p.class === 'remote') &&
+                         p.score > PHONE_DETECTION_CONFIDENCE
+          );
           if (phoneFound && !hasEndedRef.current) {
-            console.warn('[Proctoring] Phone detected with confidence:', validPhoneDetections[0].score.toFixed(3), '- terminating immediately');
             hasEndedRef.current = true;
             setPhoneDetected(true);
             cleanup();
