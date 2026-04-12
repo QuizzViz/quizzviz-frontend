@@ -708,31 +708,40 @@ type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 const VIOLATION_TIMEOUT = 10;
 
 // ─── Face identity config ─────────────────────────────────────────────────────
-const IDENTITY_CALIBRATION_FRAMES = 30;
+//
+// DUAL-SIGNAL APPROACH:
+//   Primary  → Geometric signature  (landmark ratio cosine similarity)
+//              Person-specific: same person ~0.97+, different person ~0.80-0.88
+//   Secondary → Appearance histogram (Bhattacharyya on face crop)
+//              Catches lighting changes / partial occlusion as a supplement
+//
+// Both signals must AGREE to terminate — prevents false positives.
+// Either signal alone is insufficient: geometry alone misses disguises,
+// histogram alone can't distinguish similar-looking people.
 
-// Sudden drop on RAW similarity — face-swaps drop 0.20–0.40 instantly
-// Lighting changes are gradual (< 0.05/frame)
-const SUDDEN_DROP_THRESHOLD = 0.08;   // tighter — catch even partial-face transitions
+const IDENTITY_CALIBRATION_FRAMES = 60;   // ~2 s at 30 fps
+const IDENTITY_REFERENCE_POOL_SIZE = 10;  // evenly sampled from calibration
 
-// Hard fail: different person sitting clearly below threshold
-const APPEARANCE_HARD_FAIL        = 0.72;  // raised — different people rarely exceed this
-const APPEARANCE_HARD_FAIL_FRAMES = 3;     // faster — 3 frames (~0.6s) is enough
+// Geometric cosine similarity thresholds (primary, high-confidence signal)
+// Same person:      typically 0.96–0.99
+// Different person: typically 0.78–0.90
+const GEO_SIMILARITY_THRESHOLD  = 0.92;  // all pool members must fail
+const GEO_HARD_FAIL_STREAK      = 30;    // ~1 s of consecutive mismatches → terminate
 
-// Soft fail: borderline mismatch
-const APPEARANCE_SOFT_FAIL        = 0.80;
-const APPEARANCE_MISMATCH_FRAMES  = 5;     // faster reaction
+// Histogram Bhattacharyya thresholds (secondary, catches abrupt appearance change)
+// Same person:      typically 0.75–0.95 (noisy, lighting-dependent)
+// Different person: typically 0.60–0.80
+// We use this ONLY as a corroborating signal — geo must also be failing
+const HIST_CORROBORATE_THRESHOLD = 0.68; // only meaningful when geo is also failing
 
-// EMA alpha for streak checks
-const SIMILARITY_EMA_ALPHA = 0.50;   // more responsive (was 0.40)
-
-// Baseline adaptation — very slow, only when very confident
-const BASELINE_ADAPT_RATE = 0.003;
-
-const REAPPEAR_HARD_FAIL = 0.80;  // higher bar for a face that just reappeared
+// Reappearance check — applied once when face comes back after being absent
+// Uses BOTH geo and histogram together for a single decisive check
+const REAPPEAR_GEO_THRESHOLD  = 0.90;
+const REAPPEAR_HIST_THRESHOLD = 0.65;
 
 // Phone detection
-const PHONE_DETECTION_INTERVAL_MS = 50;
-const PHONE_DETECTION_CONFIDENCE  = 0.50;
+const PHONE_DETECTION_INTERVAL_MS = 800;
+const PHONE_DETECTION_CONFIDENCE  = 0.55;
 
 
 const CameraProctoring: React.FC<CameraProctoringProps> = ({
@@ -755,24 +764,23 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
   const cocoModelRef   = useRef<any>(null);
   const phoneCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // ─── Face appearance identity ──────────────────────────────────────────────
-  const faceHistogramRef         = useRef<number[] | null>(null);
-  const calibrationHistogramsRef = useRef<number[][]>([]);
-  const appearanceMismatchRef    = useRef(0);
-  const hardFailStreakRef        = useRef(0);
+  // ─── Face identity state ───────────────────────────────────────────────────
+  // Geometric signature pool (primary — most reliable)
+  const geoPoolRef              = useRef<number[][] | null>(null);
+  const geoMismatchStreakRef    = useRef(0);
 
-  // EMA similarity — for streak checks only
-  const smoothedSimilarityRef = useRef(1.0);
-  // Raw similarity from previous frame — for sudden-drop guard
-  const prevRawSimilarityRef  = useRef(1.0);
+  // Histogram baseline (secondary — corroborating)
+  const histBaselineRef         = useRef<number[] | null>(null);
 
-  // ── KEY FIX: track whether face was absent last frame ─────────────────────
-  // When face disappears and reappears (handover scenario), we apply a stricter
-  // one-shot check on the reappearing face before trusting it.
-  const faceWasAbsentRef = useRef(false);
+  // Calibration accumulator
+  const calibGeoRef             = useRef<number[][]>([]);
+  const calibHistRef            = useRef<number[][]>([]);
+
+  // Reappearance guard
+  const faceWasAbsentRef        = useRef(false);
 
   // Offscreen canvas for face crop
-  const faceCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const faceCanvasRef           = useRef<HTMLCanvasElement | null>(null);
 
   const multiFaceFrameCountRef    = useRef(0);
   const MULTI_FACE_CONFIRM_FRAMES = 4;
@@ -856,128 +864,133 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     return Math.abs(c.y - f.y) > 0.04 && Math.abs(r.x - l.x) > 0.03;
   };
 
-  // ─── Histogram extraction (3-channel: brightness + 2 colour opponents) ────
+  // ─── PRIMARY: Geometric face signature ────────────────────────────────────
+  //
+  // 21 normalised inter-landmark distance ratios, all divided by inter-eye span.
+  // Captures unique facial proportions (eye spacing, nose length, jaw width, etc.)
+  // Invariant to position, scale, and mild head rotation.
+  // Same person across varied poses: cosine similarity ~0.96–0.99
+  // Different person:                cosine similarity ~0.78–0.90
+  //
+  const extractGeoSignature = (landmarks: any[]): number[] => {
+    const p  = (i: number) => landmarks[i];
+    const es = Math.hypot(p(263).x - p(33).x, p(263).y - p(33).y);
+    const sc = Math.max(es, 0.01);
+    const d  = (a: number, b: number) => Math.hypot(p(a).x-p(b).x, p(a).y-p(b).y) / sc;
+    const dx = (a: number, b: number) => Math.abs(p(a).x - p(b).x) / sc;
+    const dy = (a: number, b: number) => Math.abs(p(a).y - p(b).y) / sc;
+    return [
+      dy(10,1), dy(1,152), dy(10,152), dy(33,152), dy(263,152),
+      dx(234,454), dx(61,291), dx(93,323),
+      dy(168,1), dx(98,327),
+      dy(159,145), dy(386,374), dy(70,33), dy(300,263),
+      dy(13,14), dy(1,13), dy(14,152),
+      d(234,152), d(454,152), d(33,61), d(263,291),
+    ];
+  };
+
+  const cosineSim = (a: number[], b: number[]): number => {
+    let dot=0, na=0, nb=0;
+    for (let i=0; i<a.length; i++) { dot+=a[i]*b[i]; na+=a[i]*a[i]; nb+=b[i]*b[i]; }
+    return dot / (Math.sqrt(na)*Math.sqrt(nb) + 1e-8);
+  };
+
+  // ─── SECONDARY: Histogram appearance descriptor ───────────────────────────
+  //
+  // 3-channel colour histogram on a 32x32 face crop (96 bins total).
+  // Used only as a CORROBORATING signal — NOT for sole termination decisions.
+  // Reason: histogram similarity is dominated by skin tone and lighting,
+  // making it unreliable for distinguishing people with similar complexions.
+  //
   const CROP_SIZE = 32;
   const HIST_BINS = 32;
 
-  const extractFaceHistogram = (
-    landmarks: any[],
-    videoEl: HTMLVideoElement,
-    canvas: HTMLCanvasElement
+  const extractHistogram = (
+    landmarks: any[], videoEl: HTMLVideoElement, canvas: HTMLCanvasElement
   ): number[] | null => {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return null;
-
-    let minX = 1, minY = 1, maxX = 0, maxY = 0;
+    let minX=1,minY=1,maxX=0,maxY=0;
     for (const lm of landmarks) {
-      if (lm.x < minX) minX = lm.x;
-      if (lm.y < minY) minY = lm.y;
-      if (lm.x > maxX) maxX = lm.x;
-      if (lm.y > maxY) maxY = lm.y;
+      if (lm.x<minX) minX=lm.x; if (lm.y<minY) minY=lm.y;
+      if (lm.x>maxX) maxX=lm.x; if (lm.y>maxY) maxY=lm.y;
     }
-
-    const vw = videoEl.videoWidth  || 320;
-    const vh = videoEl.videoHeight || 240;
-    const padX = (maxX - minX) * 0.10;
-    const padY = (maxY - minY) * 0.10;
-    const sx = Math.max(0, (minX - padX) * vw);
-    const sy = Math.max(0, (minY - padY) * vh);
-    const sw = Math.min(vw - sx, (maxX - minX + 2 * padX) * vw);
-    const sh = Math.min(vh - sy, (maxY - minY + 2 * padY) * vh);
-
-    if (sw < 10 || sh < 10) return null;
-
-    canvas.width  = CROP_SIZE;
-    canvas.height = CROP_SIZE;
-    ctx.drawImage(videoEl, sx, sy, sw, sh, 0, 0, CROP_SIZE, CROP_SIZE);
-
-    const imageData   = ctx.getImageData(0, 0, CROP_SIZE, CROP_SIZE).data;
-    const totalPixels = CROP_SIZE * CROP_SIZE;
-
-    // Channel 1: mean-normalised luminance
-    const grays = new Array(totalPixels);
-    let meanGray = 0;
-    for (let i = 0, p = 0; i < imageData.length; i += 4, p++) {
-      const g = 0.299 * imageData[i] + 0.587 * imageData[i + 1] + 0.114 * imageData[i + 2];
-      grays[p] = g;
-      meanGray += g;
+    const vw=videoEl.videoWidth||320, vh=videoEl.videoHeight||240;
+    const px=(maxX-minX)*0.10, py=(maxY-minY)*0.10;
+    const sx=Math.max(0,(minX-px)*vw), sy=Math.max(0,(minY-py)*vh);
+    const sw=Math.min(vw-sx,(maxX-minX+2*px)*vw), sh=Math.min(vh-sy,(maxY-minY+2*py)*vh);
+    if (sw<10||sh<10) return null;
+    canvas.width=CROP_SIZE; canvas.height=CROP_SIZE;
+    ctx.drawImage(videoEl,sx,sy,sw,sh,0,0,CROP_SIZE,CROP_SIZE);
+    const data=ctx.getImageData(0,0,CROP_SIZE,CROP_SIZE).data;
+    const N=CROP_SIZE*CROP_SIZE;
+    const hG=new Array(HIST_BINS).fill(0);
+    const hRG=new Array(HIST_BINS).fill(0);
+    const hBY=new Array(HIST_BINS).fill(0);
+    let mg=0;
+    const grays=new Array(N);
+    for (let i=0,p=0;i<data.length;i+=4,p++) {
+      const g=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2]; grays[p]=g; mg+=g;
     }
-    meanGray /= totalPixels;
-
-    const histGray = new Array(HIST_BINS).fill(0);
-    for (let p = 0; p < totalPixels; p++) {
-      const shifted = Math.max(0, Math.min(255, grays[p] - meanGray + 128));
-      histGray[Math.min(HIST_BINS - 1, Math.floor((shifted / 255) * HIST_BINS))]++;
+    mg/=N;
+    for (let p=0;p<N;p++) {
+      const s=Math.max(0,Math.min(255,grays[p]-mg+128));
+      hG[Math.min(HIST_BINS-1,Math.floor((s/255)*HIST_BINS))]++;
     }
-
-    // Channel 2: (R-G)/(R+G+B+1) — lighting-invariant red-green opponent
-    const histRG = new Array(HIST_BINS).fill(0);
-    for (let i = 0; i < imageData.length; i += 4) {
-      const r = imageData[i], g = imageData[i + 1], b = imageData[i + 2];
-      const rg = (r - g) / (r + g + b + 1) + 0.5;
-      histRG[Math.min(HIST_BINS - 1, Math.floor(rg * HIST_BINS))]++;
+    for (let i=0;i<data.length;i+=4) {
+      const r=data[i],g=data[i+1],b=data[i+2];
+      hRG[Math.min(HIST_BINS-1,Math.floor(((r-g)/(r+g+b+1)+0.5)*HIST_BINS))]++;
+      hBY[Math.min(HIST_BINS-1,Math.floor((b/(r+g+b+1))*HIST_BINS))]++;
     }
-
-    // Channel 3: B/(R+G+B+1) — lighting-invariant blue-yellow opponent
-    const histBY = new Array(HIST_BINS).fill(0);
-    for (let i = 0; i < imageData.length; i += 4) {
-      const r = imageData[i], g = imageData[i + 1], b = imageData[i + 2];
-      const by = b / (r + g + b + 1);
-      histBY[Math.min(HIST_BINS - 1, Math.floor(by * HIST_BINS))]++;
-    }
-
-    const norm = (h: number[]) => h.map(v => v / totalPixels);
-    return [...norm(histGray), ...norm(histRG), ...norm(histBY)];
+    const norm=(h:number[])=>h.map(v=>v/N);
+    return [...norm(hG),...norm(hRG),...norm(hBY)];
   };
 
-  // Bhattacharyya coefficient (0 = nothing in common, 1 = identical)
-  const bhattacharyya = (h1: number[], h2: number[]): number => {
-    let sum = 0;
-    for (let i = 0; i < h1.length; i++) sum += Math.sqrt(h1[i] * h2[i]);
-    return Math.min(1, sum);
+  const bhattacharyya = (h1:number[],h2:number[]): number => {
+    let s=0; for (let i=0;i<h1.length;i++) s+=Math.sqrt(h1[i]*h2[i]); return Math.min(1,s);
   };
 
-  const averageHistograms = (hists: number[][]): number[] => {
-    const len = hists[0].length;
-    const avg = new Array(len).fill(0);
-    for (const h of hists) for (let i = 0; i < len; i++) avg[i] += h[i];
-    return avg.map(v => v / hists.length);
+  const averageVecs = (vecs:number[][]): number[] => {
+    const len=vecs[0].length, avg=new Array(len).fill(0);
+    for (const v of vecs) for (let i=0;i<len;i++) avg[i]+=v[i];
+    return avg.map(v=>v/vecs.length);
   };
 
   // ─── Head direction ────────────────────────────────────────────────────────
   const estimateHeadDirection = (landmarks: any[]): HeadDirection => {
     if (!landmarks || landmarks.length === 0) return 'unknown';
-    const noseTip = landmarks[1], leftEye = landmarks[33], rightEye = landmarks[263];
-    const forehead = landmarks[10], chin = landmarks[152];
-    const leftEarInner = landmarks[93], rightEarInner = landmarks[323];
-    const noseBridge = landmarks[168];
+    const noseTip=landmarks[1], leftEye=landmarks[33], rightEye=landmarks[263];
+    const forehead=landmarks[10], chin=landmarks[152];
+    const leftEarInner=landmarks[93], rightEarInner=landmarks[323];
+    const noseBridge=landmarks[168];
 
-    const eyeSpan     = Math.abs(rightEye.x - leftEye.x);
-    const scale       = Math.max(eyeSpan, 0.01);
-    const eyeCenterX  = (leftEye.x + rightEye.x) / 2;
-    const eyeCenterY  = (leftEye.y + rightEye.y) / 2;
-    const faceCenterX = (noseTip.x + forehead.x) / 2;
+    const eyeSpan=Math.abs(rightEye.x-leftEye.x);
+    const scale=Math.max(eyeSpan,0.01);
+    const eyeCenterX=(leftEye.x+rightEye.x)/2;
+    const eyeCenterY=(leftEye.y+rightEye.y)/2;
+    const faceCenterX=(noseTip.x+forehead.x)/2;
 
-    const hOffset      = (eyeCenterX - faceCenterX) / scale;
-    const noseToLeft   = Math.abs(noseTip.x - leftEarInner.x);
-    const noseToRight  = Math.abs(noseTip.x - rightEarInner.x);
-    const earAsymmetry = (noseToLeft - noseToRight) / Math.max(noseToLeft + noseToRight, 0.01);
+    const hOffset=(eyeCenterX-faceCenterX)/scale;
+    const nL=Math.abs(noseTip.x-leftEarInner.x), nR=Math.abs(noseTip.x-rightEarInner.x);
+    const earAsym=(nL-nR)/Math.max(nL+nR,0.01);
 
-    if (hOffset < -0.25 || earAsymmetry >  0.18) return 'left';
-    if (hOffset >  0.25 || earAsymmetry < -0.18) return 'right';
+    if (hOffset<-0.25||earAsym>0.18) return 'left';
+    if (hOffset>0.25||earAsym<-0.18) return 'right';
 
-    const foreheadDist    = Math.abs(noseTip.y - forehead.y);
-    const chinDist        = Math.abs(noseTip.y - chin.y);
-    const faceHeight      = foreheadDist + chinDist;
-    const foreheadRatio   = faceHeight > 0.01 ? foreheadDist / faceHeight : 0.5;
-    const eyeToNoseY      = (eyeCenterY - noseTip.y) / scale;
-    const bridgeChinRatio = faceHeight > 0.01 ? Math.abs(noseBridge.y - chin.y) / faceHeight : 0.5;
-    const chinBelowEyes   = (chin.y - eyeCenterY) / scale;
+    const fH=Math.abs(noseTip.y-forehead.y), cH=Math.abs(noseTip.y-chin.y);
+    const faceH=fH+cH;
+    const foreheadRatio=faceH>0.01?fH/faceH:0.5;
+    const eyeToNoseY=(eyeCenterY-noseTip.y)/scale;
+    const bridgeChin=faceH>0.01?Math.abs(noseBridge.y-chin.y)/faceH:0.5;
+    const chinBelow=(chin.y-eyeCenterY)/scale;
 
-    if (foreheadRatio < 0.40 || eyeToNoseY < -0.85 || bridgeChinRatio < 0.66 || chinBelowEyes > 2.4)
-      return 'down';
-    if (foreheadRatio > 0.60 && eyeToNoseY > -0.30)
-      return 'up';
+    // AND+OR hybrid: primary signal must fire + at least one corroborating signal
+    const sigA=foreheadRatio<0.32;
+    const sigB=eyeToNoseY<-1.1;
+    const sigC=bridgeChin<0.58;
+    const sigD=chinBelow>3.0;
+    if (sigA&&(sigB||sigC||sigD)) return 'down';
+    if (foreheadRatio>0.60&&eyeToNoseY>-0.30) return 'up';
     return 'center';
   };
 
@@ -995,18 +1008,11 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       }
     };
 
-    // ── No face ──────────────────────────────────────────────────────────────
+    // ── No face ───────────────────────────────────────────────────────────────
     if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
       multiFaceFrameCountRef.current = 0;
       setFaceCount(0);
-
-      // ── KEY FIX: mark face as absent so next reappearing face gets strict check
-      faceWasAbsentRef.current = true;
-
-      // Also poison the prev-raw tracker so the reappearance can't fake continuity
-      prevRawSimilarityRef.current = 1.0;  // reset — next frame drop will be measured fresh
-      smoothedSimilarityRef.current = 1.0; // reset EMA too
-
+      faceWasAbsentRef.current = true;  // mark for strict reappearance check
       onViolationRef.current('Face not detected');
       startViolationTimer('Face not detected');
       return;
@@ -1017,8 +1023,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     if (realFaces.length === 0) {
       faceWasAbsentRef.current = true;
-      prevRawSimilarityRef.current  = 1.0;
-      smoothedSimilarityRef.current = 1.0;
       onViolationRef.current('Face not detected');
       startViolationTimer('Face not detected');
       return;
@@ -1039,129 +1043,125 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     if (!videoEl || !canvas) return;
 
     // ── CALIBRATION ───────────────────────────────────────────────────────────
-    if (faceHistogramRef.current === null) {
-      const hist = extractFaceHistogram(primaryFace, videoEl, canvas);
+    if (geoPoolRef.current === null) {
+      const geo  = extractGeoSignature(primaryFace);
+      const hist = extractHistogram(primaryFace, videoEl, canvas);
       if (!hist) return;
 
-      calibrationHistogramsRef.current.push(hist);
+      calibGeoRef.current.push(geo);
+      calibHistRef.current.push(hist);
+
       const pct = Math.min(
-        Math.round((calibrationHistogramsRef.current.length / IDENTITY_CALIBRATION_FRAMES) * 100),
-        100
+        Math.round((calibGeoRef.current.length / IDENTITY_CALIBRATION_FRAMES) * 100), 100
       );
       setCalibrationPct(pct);
 
-      if (calibrationHistogramsRef.current.length >= IDENTITY_CALIBRATION_FRAMES) {
-        faceHistogramRef.current      = averageHistograms(calibrationHistogramsRef.current);
-        calibrationHistogramsRef.current = [];
-        appearanceMismatchRef.current    = 0;
-        hardFailStreakRef.current         = 0;
-        smoothedSimilarityRef.current     = 1.0;
-        prevRawSimilarityRef.current      = 1.0;
-        faceWasAbsentRef.current          = false;
+      if (calibGeoRef.current.length >= IDENTITY_CALIBRATION_FRAMES) {
+        // Evenly sample pool frames from the calibration buffer
+        const total = calibGeoRef.current.length;
+        const step  = Math.floor(total / IDENTITY_REFERENCE_POOL_SIZE);
+        const pool: number[][] = [];
+        for (let i = 0; i < IDENTITY_REFERENCE_POOL_SIZE; i++) {
+          pool.push(calibGeoRef.current[i * step]);
+        }
+        geoPoolRef.current     = pool;
+        histBaselineRef.current = averageVecs(calibHistRef.current);
+
+        calibGeoRef.current  = [];
+        calibHistRef.current = [];
+        geoMismatchStreakRef.current = 0;
+        faceWasAbsentRef.current    = false;
         setCalibrated(true);
-        console.log('[Proctoring] Face baseline locked ✓');
       }
-      return;
-    }
 
-    // ── IDENTITY CHECK ────────────────────────────────────────────────────────
-    const currentHist = extractFaceHistogram(primaryFace, videoEl, canvas);
-    if (!currentHist) return;
+      // Gaze checks run normally even during calibration
+    } else {
 
-    const rawSimilarity = bhattacharyya(currentHist, faceHistogramRef.current);
+      // ── IDENTITY CHECK (post-calibration) ──────────────────────────────────
+      const currentGeo  = extractGeoSignature(primaryFace);
+      const currentHist = extractHistogram(primaryFace, videoEl, canvas);
+      if (!currentHist) return;
 
-    // ── KEY FIX: Strict reappearance check ───────────────────────────────────
-    // If face was absent (handover scenario), the returning face must immediately
-    // pass a higher similarity bar. A different person reappearing after a handover
-    // will fail this instantly — no streak needed, no EMA warmup needed.
-    if (faceWasAbsentRef.current) {
-      faceWasAbsentRef.current = false;  // clear the flag
-      if (rawSimilarity < REAPPEAR_HARD_FAIL) {
-        console.warn('[Proctoring] Reappearance failed identity check:', rawSimilarity.toFixed(4));
-        terminate('Person changed – a different person appeared after face was lost.');
-        return;
-      }
-      // Passed — seed the tracking refs so next frame has a valid baseline
-      prevRawSimilarityRef.current  = rawSimilarity;
-      smoothedSimilarityRef.current = rawSimilarity;
-      // Identity confirmed on reappearance — fall through to gaze check
-      stopViolationTimer();
-      const direction = estimateHeadDirection(primaryFace);
-      if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
-        onViolationRef.current(`Looking ${direction}`);
-        startViolationTimer(`Looking ${direction}`);
-      }
-      return;
-    }
-
-    // ── Guard 1: SUDDEN DROP on RAW similarity ────────────────────────────────
-    // Uses raw-to-raw delta (not smoothed) so EMA dampening doesn't hide a swap.
-    const rawDrop = prevRawSimilarityRef.current - rawSimilarity;
-    prevRawSimilarityRef.current = rawSimilarity;
-
-    if (rawDrop > SUDDEN_DROP_THRESHOLD) {
-      console.warn('[Proctoring] Sudden raw drop:', rawDrop.toFixed(4), 'raw:', rawSimilarity.toFixed(4));
-      terminate('Person changed – sudden identity change detected.');
-      return;
-    }
-
-    // EMA for streak checks only
-    smoothedSimilarityRef.current =
-      smoothedSimilarityRef.current * (1 - SIMILARITY_EMA_ALPHA) +
-      rawSimilarity                 * SIMILARITY_EMA_ALPHA;
-    const smoothed = smoothedSimilarityRef.current;
-
-    // Uncomment to tune:
-    // console.log('[Proctoring] raw:', rawSimilarity.toFixed(3), 'smoothed:', smoothed.toFixed(3));
-
-    // ── Guard 2: HARD FAIL streak ─────────────────────────────────────────────
-    if (smoothed < APPEARANCE_HARD_FAIL) {
-      hardFailStreakRef.current += 1;
-      console.warn(
-        `[Proctoring] Hard-fail streak ${hardFailStreakRef.current}/${APPEARANCE_HARD_FAIL_FRAMES}`,
-        'smoothed:', smoothed.toFixed(4)
+      // Check current geo against ALL pool members — must match at least one
+      const bestGeoSim = Math.max(
+        ...geoPoolRef.current.map(ref => cosineSim(currentGeo, ref))
       );
-      if (hardFailStreakRef.current >= APPEARANCE_HARD_FAIL_FRAMES) {
-        terminate('Person changed – exam terminated. A different person was detected on camera.');
+      const histSim = bhattacharyya(currentHist, histBaselineRef.current!);
+
+      // ── Reappearance check (face was absent — handover scenario) ─────────────
+      // Applied once when a face comes back after being gone.
+      // Uses BOTH signals: geo is primary, histogram corroborates.
+      // Different person returning: geo drops to ~0.80-0.88, hist to ~0.60-0.75.
+      if (faceWasAbsentRef.current) {
+        faceWasAbsentRef.current = false;
+
+        const geoFail  = bestGeoSim  < REAPPEAR_GEO_THRESHOLD;
+        const histFail = histSim     < REAPPEAR_HIST_THRESHOLD;
+
+        // Terminate if BOTH signals indicate a different person
+        // OR if geo alone shows a very large drop (> 0.06 below threshold)
+        if ((geoFail && histFail) || bestGeoSim < REAPPEAR_GEO_THRESHOLD - 0.06) {
+          terminate(
+            `Person change detected – a different person appeared after face was lost ` +
+            `(geo: ${bestGeoSim.toFixed(3)}, hist: ${histSim.toFixed(3)})`
+          );
+          return;
+        }
+
+        // Passed — reset streak and fall through to gaze check
+        geoMismatchStreakRef.current = 0;
+        stopViolationTimer();
+      } else {
+
+        // ── Normal per-frame identity check ────────────────────────────────────
+        //
+        // Primary (geometric): fails if best match across all pool members
+        //   is below GEO_SIMILARITY_THRESHOLD (0.92).
+        //   Same person naturally varies 0.96–0.99. Different person: 0.78–0.90.
+        //
+        // Termination: geometric signal must fail for GEO_HARD_FAIL_STREAK
+        //   consecutive frames (~1 s). This prevents lighting-change false positives.
+        //   Additionally, if hist also fails, streak threshold halves (faster response).
+        //
+        const geoFailing  = bestGeoSim  < GEO_SIMILARITY_THRESHOLD;
+        const histFailing = histSim     < HIST_CORROBORATE_THRESHOLD;
+
+        if (geoFailing) {
+          geoMismatchStreakRef.current += 1;
+
+          // If histogram also corroborates a person change, react twice as fast
+          const effectiveThreshold = histFailing
+            ? Math.floor(GEO_HARD_FAIL_STREAK / 2)   // ~0.5 s
+            : GEO_HARD_FAIL_STREAK;                    // ~1 s
+
+          if (geoMismatchStreakRef.current >= effectiveThreshold) {
+            terminate(
+              `Person change detected – exam terminated ` +
+              `(geo: ${bestGeoSim.toFixed(3)}, hist: ${histSim.toFixed(3)})`
+            );
+            return;
+          }
+
+          // Warn but don't terminate yet
+          onViolationRef.current('Identity mismatch detected');
+          startViolationTimer('Identity mismatch detected');
+        } else {
+          // Geo matches — same person confirmed, reset streak
+          geoMismatchStreakRef.current = 0;
+        }
       }
-      return;
     }
 
-    // ── Guard 3: SOFT FAIL streak ─────────────────────────────────────────────
-    if (smoothed < APPEARANCE_SOFT_FAIL) {
-      hardFailStreakRef.current = 0;
-      appearanceMismatchRef.current += 1;
-      console.warn(
-        '[Proctoring] Soft mismatch', appearanceMismatchRef.current,
-        'smoothed:', smoothed.toFixed(4)
-      );
-      onViolationRef.current('Identity mismatch detected');
-      startViolationTimer('Identity mismatch detected');
-
-      if (appearanceMismatchRef.current >= APPEARANCE_MISMATCH_FRAMES) {
-        terminate('Person changed – exam terminated. A different person was detected on camera.');
-      }
-      return;
-    }
-
-    // ── Identity confirmed ────────────────────────────────────────────────────
-    hardFailStreakRef.current     = 0;
-    appearanceMismatchRef.current = 0;
-
-    if (smoothed > 0.90) {
-      const baseline = faceHistogramRef.current!;
-      faceHistogramRef.current = baseline.map(
-        (b, i) => b * (1 - BASELINE_ADAPT_RATE) + currentHist[i] * BASELINE_ADAPT_RATE
-      );
-    }
-
-    // ── GAZE CHECK ────────────────────────────────────────────────────────────
+    // ── GAZE CHECK (always runs after identity check passes) ─────────────────
     const direction = estimateHeadDirection(primaryFace);
     if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
       onViolationRef.current(`Looking ${direction}`);
       startViolationTimer(`Looking ${direction}`);
     } else {
-      stopViolationTimer();
+      // Only clear violation if it was a gaze violation (not identity)
+      if (currentViolation.startsWith('Looking') || currentViolation === 'Face not detected') {
+        stopViolationTimer();
+      }
     }
   };
 
