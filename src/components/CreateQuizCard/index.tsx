@@ -40,9 +40,9 @@ export default function CreateQuizCard({
   const [role, setRole] = useState('Software Engineer');
   const [techStack, setTechStack] = useState<Array<{ id: string; name: string; weight: number }>>([]);
 
-  // Auto-select default stacks for Associate Software Engineer Open Stack role
+  // Auto-select default stacks for Associate Software Engineer (Open Stack) role
   useEffect(() => {
-    if (role === 'Associate Software Engineer Open Stack') {
+    if (role === 'Associate Software Engineer (Open Stack)') {
       const defaultStacks = [
         { id: '1', name: 'System Design', weight: 20 },
         { id: '2', name: 'Networking', weight: 20 },
