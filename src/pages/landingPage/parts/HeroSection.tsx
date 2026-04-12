@@ -94,7 +94,7 @@ const TECHNOLOGIES = [
     "Compiler", "Interpreter", "Operating System", "Linux", "Unix", "Bash", "Shell", "Command Line", "API",
     "System Design", "Networking", "Database", "OOP", "DSA",
     "Node.js", "Maven", "GCC", "Make", "GDB", "CMake", "Cargo", "Ruby on Rails", "Laravel", "Xcode",
-    "Redux", "Vuex", "Postman", "Vite", "Docker Compose", "Authentication", "Entity Framework"
+    "Redux", "Vuex", "Postman", "Vite", "Docker Compose", "Authentication", "Entity Framework", "Debugging", "Android"
 ].sort();
 
 const HeroSection: FC = () => {
@@ -146,7 +146,7 @@ const HeroSection: FC = () => {
       "FastAPI Developer": ["FastAPI", "Python", "PostgreSQL", "Docker", "API"],
       "Spring Developer": ["Spring", "Java", "Maven", "MySQL", "API"],
       "Express Developer": ["Express", "Node.js", "JavaScript", "MongoDB", "API"],
-      "NextJS Developer": ["NextJS", "React", "TypeScript", "Tailwind CSS", "Vercel"],
+      "NextJS Developer": ["NextJS", "React", "TypeScript", "Tailwind CSS"],
       "NestJS Developer": ["NestJS", "TypeScript", "Express", "PostgreSQL", "API"],
       ".NET Developer": [".NET", "C#", "Entity Framework", "Microsoft Azure", "Git"],
       "Bootstrap Developer": ["Bootstrap", "CSS3", "HTML5", "JavaScript", "jQuery"],

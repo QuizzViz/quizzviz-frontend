@@ -45,12 +45,12 @@ export default function CreateQuizCard({
     const roleTechMap: { [key: string]: string[] } = {
       "Python Developer": ["Python", "Django", "Flask", "FastAPI", "PostgreSQL"],
       "Java Developer": ["Java", "Spring", "Maven", "MySQL", "Oracle"],
-      "JavaScript Developer": ["JavaScript", "React", "Node.js", "Express", "MongoDB"],
+      "JavaScript Developer": ["JavaScript", "Node.js", "React", "Database", "API"],
       "TypeScript Developer": ["TypeScript", "React", "NextJS", "Node.js", "PostgreSQL"],
       "C Developer": ["C", "GCC", "Make", "GDB", "Linux"],
       "C++ Developer": ["C++", "GCC", "CMake", "GDB", "Linux"],
       "C# Developer": ["C#", ".NET", "Entity Framework", "MySQL", "Microsoft Azure"],
-      "Go Developer": ["Go", "Docker", "Kubernetes", "PostgreSQL", "API"],
+      "Go Developer": ["Go", "API", "Database", "System Design"],
       "Rust Developer": ["Rust", "Cargo", "Linux", "API", "Database"],
       "Ruby Developer": ["Ruby", "Ruby on Rails", "PostgreSQL", "Redis", "API"],
       "PHP Developer": ["PHP", "Laravel", "MySQL", "Redis", "API"],
@@ -62,8 +62,7 @@ export default function CreateQuizCard({
       "MATLAB Developer": ["MATLAB", "API", "Database", "Git", "Linux"],
       "R Developer": ["R", "API", "Database", "Git", "Linux"],
       "SQL Developer": ["SQL", "PostgreSQL", "MySQL", "Oracle", "Redis"],
-      "HTML Developer": ["HTML5", "CSS3", "JavaScript", "Bootstrap", "jQuery"],
-      "CSS Developer": ["CSS3", "Bootstrap", "Tailwind CSS", "HTML5", "JavaScript"],
+      "Frontend Developer": ["JavaScript", "React", "HTML5", "API", "Tailwind CSS"],
       "React Developer": ["React", "JavaScript", "TypeScript", "Redux", "NextJS"],
       "Angular Developer": ["Angular", "TypeScript", "JavaScript", "Git", "API"],
       "Vue Developer": ["Vue", "JavaScript", "TypeScript", "Vuex", "Git"],
@@ -109,8 +108,8 @@ export default function CreateQuizCard({
       "Shell Scripting Engineer": ["Shell", "Bash", "Linux", "Git", "API"],
       "Command Line Engineer": ["Command Line", "Linux", "Bash", "Git", "API"],
       "API Developer": ["API", "Postman", "Authentication", "Git", "Linux"],
-      "Software Engineer": ["System Design", "OOP", "DSA", "Database", "Networking"],
-      "Associate Software Engineer (ASE)": ["System Design", "OOP", "DSA", "Database", "Networking"],
+      "Software Engineer": ["DSA", "OOP", "System Design", "Database", "API"],
+      "Associate Software Engineer (ASE)": ["DSA", "OOP", "Database", "System Design", "Debugging"],
       "Associate Software Engineer (Open Stack)": ["System Design", "Networking", "Database", "OOP", "DSA"]
     };
 
