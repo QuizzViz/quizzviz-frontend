@@ -176,7 +176,7 @@ export function QuizEditor() {
         const payload = {
           role: currentQuiz.role,
           techStack: currentQuiz.techStack,
-          difficulty: currentQuiz.difficulty,
+          experience: currentQuiz.experience,
           num_questions: questions.length,
           theory_questions_percentage: currentQuiz.theory_questions_percentage,
           code_analysis_questions_percentage: currentQuiz.code_analysis_questions_percentage,
@@ -246,7 +246,7 @@ export function QuizEditor() {
     : typeof currentQuiz?.techStack === 'string'
       ? JSON.parse(currentQuiz.techStack)
       : [],
-  difficulty: currentQuiz?.difficulty ?? "Bachelors Level",
+  experience: currentQuiz?.experience ?? "1-3",
   questions: localQuestions,
   publicLink,
   secretKey: updatedSettings.secretKey,
