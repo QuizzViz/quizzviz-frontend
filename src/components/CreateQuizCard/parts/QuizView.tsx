@@ -33,7 +33,7 @@ const QuizView: FC<{
         questions: data?.quiz || [],
         publicLink: settings.publicLink,
         topic: data?.role || 'General Knowledge',
-        difficulty: data?.difficulty || 'Medium',
+        experience: data?.experience || '1-3',
         role: data?.role,
         companyId: data?.company_id,
         tech_stack: data?.tech_stack

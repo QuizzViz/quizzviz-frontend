@@ -6,9 +6,9 @@ export const queuedQuizzes = [
 ];
 
 export const previousQuizzes = [
-  { id: 1, title: "JavaScript Fundamentals", questions: 15, completed: 120, rating: 4.5, subject: "JavaScript", difficulty: "High School" },
-  { id: 2, title: "Python for Data Science", questions: 20, completed: 95, rating: 4.8, subject: "Python", difficulty: "PhD" },
-  { id: 3, title: "Algorithms and Data Structures", questions: 10, completed: 80, rating: 4.2, subject: "CS", difficulty: "Masters" },
-  { id: 4, title: "React Hooks & State Management", questions: 12, completed: 50, rating: 4.7, subject: "React", difficulty: "High School" },
-  { id: 5, title: "Node.js & Express Basics", questions: 18, completed: 60, rating: 4.4, subject: "Node.js", difficulty: "Bachelors" },
+  { id: 1, title: "JavaScript Fundamentals", questions: 15, completed: 120, rating: 4.5, subject: "JavaScript", experience: "0-1" },
+  { id: 2, title: "Python for Data Science", questions: 20, completed: 95, rating: 4.8, subject: "Python", experience: "5+" },
+  { id: 3, title: "Algorithms and Data Structures", questions: 10, completed: 80, rating: 4.2, subject: "CS", experience: "3-5" },
+  { id: 4, title: "React Hooks & State Management", questions: 12, completed: 50, rating: 4.7, subject: "React", experience: "0-1" },
+  { id: 5, title: "Node.js & Express Basics", questions: 18, completed: 60, rating: 4.4, subject: "Node.js", experience: "1-3" },
 ];

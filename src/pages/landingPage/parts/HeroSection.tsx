@@ -419,15 +419,15 @@ const HeroSection: FC = () => {
                     )}
                   </div>
                   
-                  {/* Difficulty and Count */}
+                  {/* Experience and Count */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="difficulty" className="text-white font-medium text-sm">
-                        Difficulty Level
+                      <Label htmlFor="experience" className="text-white font-medium text-sm">
+                        Experience Level
                       </Label>
                       <Select value={experience} onValueChange={setExperience}>
                         <SelectTrigger className="h-10 bg-white/5 border border-white/10 text-white text-sm focus:border-blue-500/50 transition-colors rounded-lg">
-                          <SelectValue placeholder="Select difficulty" />
+                          <SelectValue placeholder="Select experience" />
                         </SelectTrigger>
                         <SelectContent className="bg-gray-900 border-white/10">
                           <SelectItem value="High School Level" className="text-white hover:bg-blue-500/20">High School Level</SelectItem>

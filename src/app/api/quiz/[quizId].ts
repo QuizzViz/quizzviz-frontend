@@ -192,7 +192,7 @@ export default async function handler(
         // Prepare the request body according to the required format
         const updateData = {
           topic: req.body.topic,
-          difficulty: req.body.difficulty || '1-3',
+          experience: req.body.experience || '1-3',
           num_questions: req.body.num_questions || 0,
           theory_questions_percentage: req.body.theory_questions_percentage || 0,
           code_analysis_questions_percentage: req.body.code_analysis_questions_percentage || 0,

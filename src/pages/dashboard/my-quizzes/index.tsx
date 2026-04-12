@@ -39,7 +39,7 @@ interface QuizSummary {
   user_id: string;
   role: string;
   techStack: Array<{name: string; weight: number }>;
-  difficulty: string;
+  experience: string;
   num_questions: number;
   theory_questions_percentage: number;
   code_analysis_questions_percentage: number;
@@ -231,7 +231,7 @@ export default function MyQuizzesPage() {
                                   </div>
                                 )}
                               </div>
-                              <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.difficulty.replace('Level', '')}</Badge>
+                              <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience}</Badge>
                             </div>
                             <CardDescription className="text-white/70">
                               <span className="font-medium text-white">{q.num_questions}</span> questions

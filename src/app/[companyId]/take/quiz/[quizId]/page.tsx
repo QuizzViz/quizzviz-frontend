@@ -36,7 +36,7 @@
 // interface QuizData {
 //   quiz_id: string;
 //   topic: string;
-//   difficulty: string;
+//   experience: string;
 //    company_id: string;
 //   num_questions: number;
 //   quiz: Question[];
@@ -285,7 +285,7 @@
 //           total_questions: total,
 //           correct_answers: correct,
 //           role: quizData.role,
-//           quiz_difficulty: quizData.difficulty,
+//           quiz_experience: quizData.experience,
 //           time_taken: Math.max(1, Math.ceil((quizData.quiz_time * 60 - timeLeft) / 60))
 //         },
 //         attempt: attemptsInfo ? attemptsInfo.current + 1 : 1,
@@ -1129,7 +1129,7 @@
 //                   {quizData?.role} Quiz
 //                 </h1>
 //                 <p className="text-gray-400">
-//                   {quizData?.difficulty ? `${quizData.difficulty.charAt(0).toUpperCase() + quizData.difficulty.slice(1)}` : 'Quiz'}
+//                   {quizData?.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)}` : 'Quiz'}
 //                 </p>
 //               </div>
 
@@ -1231,7 +1231,7 @@
 //                   {quizData?.role} Quiz
 //                 </h1>
 //                 <p className="text-gray-400">
-//                   {quizData?.difficulty ? `${quizData.difficulty.charAt(0).toUpperCase() + quizData.difficulty.slice(1)}` : 'Quiz'}
+//                   {quizData?.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)}` : 'Quiz'}
 //                 </p>
 //               </div>
 
@@ -1626,7 +1626,7 @@ interface TechStackItem {
 interface QuizData {
   quiz_id: string;
   topic: string;
-  difficulty: string;
+  experience: string;
   company_id: string;
   num_questions: number;
   quiz: Question[];
@@ -1818,7 +1818,7 @@ export default function QuizPage({ params }: PageProps) {
           total_questions: total,
           correct_answers: correct,
           role: quizData.role,
-          quiz_difficulty: quizData.difficulty,
+          quiz_experience: quizData.experience,
           time_taken: Math.max(1, Math.ceil((quizData.quiz_time * 60 - timeLeft) / 60))
         },
         attempt: attemptsInfo ? attemptsInfo.current + 1 : 1,
@@ -2479,7 +2479,7 @@ export default function QuizPage({ params }: PageProps) {
                 </div>
                 <h1 className="text-3xl font-bold text-white mb-2">{quizData?.role} Quiz</h1>
                 <p className="text-gray-400">
-                  {quizData?.difficulty ? `${quizData.difficulty.charAt(0).toUpperCase() + quizData.difficulty.slice(1)}` : 'Quiz'}
+                  {quizData?.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)}` : 'Quiz'}
                 </p>
               </div>
 
@@ -2751,7 +2751,7 @@ export default function QuizPage({ params }: PageProps) {
                     <div className="space-y-3">
                       {[
                         { label: 'Role', value: quizData.role },
-                        { label: 'Difficulty', value: <span className="capitalize">{quizData.difficulty}</span> },
+                        { label: 'Experience', value: <span className="capitalize">{quizData.experience}</span> },
                         { label: 'Questions', value: quizData.quiz.length },
                         { label: 'Time Limit', value: `${quizData.quiz_time} min` },
                       ].map(({ label, value }) => (
