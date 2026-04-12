@@ -46,7 +46,7 @@ const BASELINE_ADAPT_RATE   = 0.005;
 
 // Phone detection
 const PHONE_DETECTION_INTERVAL_MS = 50;
-const PHONE_DETECTION_CONFIDENCE  = 0.55;
+const PHONE_DETECTION_CONFIDENCE  = 0.50;
 
 
 const CameraProctoring: React.FC<CameraProctoringProps> = ({
