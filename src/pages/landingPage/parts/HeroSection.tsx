@@ -423,7 +423,7 @@ const HeroSection: FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="experience" className="text-white font-medium text-sm">
-                        Experience Level
+                         Experience (Years)
                       </Label>
                       <Select value={experience} onValueChange={setExperience}>
                         <SelectTrigger className="h-10 bg-white/5 border border-white/10 text-white text-sm focus:border-blue-500/50 transition-colors rounded-lg">
