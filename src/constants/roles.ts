@@ -65,6 +65,7 @@ export const ROLES = [
   "Shell Scripting Engineer",
   "Command Line Engineer",
   "API Developer",
+  "Software Engineer",
   "Associate Software Engineer (ASE)",
-  "Associate Software Engineer ( ASE Open Stack)"
+  "Associate Software Engineer (Open Stack)"
 ]

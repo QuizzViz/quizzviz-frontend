@@ -7,5 +7,7 @@ export const TECHNOLOGIES = [
     "PostgreSQL", "MySQL", "MongoDB", "Redis", "SQLite", "Oracle", "DynamoDB", "Firebase", "Supabase",
     "Amazon Web Services (AWS)", "Microsoft Azure", "Google Cloud Platform (GCP)",
     "Compiler", "Interpreter", "Operating System", "Linux", "Unix", "Bash", "Shell", "Command Line", "API",
-    "System Design", "Networking", "Database", "OOP", "DSA"
+    "System Design", "Networking", "Database", "OOP", "DSA",
+    "Node.js", "Maven", "GCC", "Make", "GDB", "CMake", "Cargo", "Ruby on Rails", "Laravel", "Xcode",
+    "Redux", "Vuex", "Postman", "Vite", "Docker Compose", "Authentication", "Entity Framework"
 ].sort();
