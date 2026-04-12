@@ -30,7 +30,7 @@ const DEFAULT_TECHS = [
 export function TechStackInput({ value, onChange, availableTechs: externalAvailableTechs }: TechStackInputProps) {
   const { toast } = useToast();
   const [selectedTech, setSelectedTech] = useState('');
-  const maxTechs = 7;
+  const maxTechs = 12;
   
   // Set default techs on component mount if no value is provided
   useEffect(() => {
