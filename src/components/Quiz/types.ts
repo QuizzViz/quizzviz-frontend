@@ -3,7 +3,7 @@ export interface QuizSummary {
   techStack: any;
   quiz_id: string;
   user_id: string;
-  difficulty: string;
+  experience: string;
   num_questions: number;
   theory_questions_percentage: number;
   code_analysis_questions_percentage: number;

@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       publicLink = '',
       topic = '',
       role = '',
-      difficulty = 'Bachelors Level',
+      experience = '1-3',
       timeLimit = 30,
       maxAttempts = 1,
       expirationDate,
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       company_id: companyId,          // ← now using companyId from body
       role,
       tech_stack: techStackArray,
-      difficulty,
+      experience,
       num_questions: totalQuestions,
       theory_questions_percentage: theoryPercentage,
       code_analysis_questions_percentage: codeAnalysisPercentage,

@@ -63,7 +63,7 @@ async function createQuiz(company_id: string, token: string, body: any) {
   const payload = {
     role: body.role,
     techStack: body.techStack || [],
-    difficulty: body.difficulty || 'Bachelors Level',
+    experience: body.experience || '1-3',
     num_questions: body.num_questions || 25,
     theory_questions_percentage: theoryPercentage,
     code_analysis_questions_percentage: codePercentage,

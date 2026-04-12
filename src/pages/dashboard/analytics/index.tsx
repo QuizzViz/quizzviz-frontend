@@ -68,7 +68,7 @@ type QuizResult = {
   attempt: number;
   role?: string;
   created_at: string;
-  quiz_difficulty?: string;
+  quiz_experience?: string;
   total_questions?: number;
 };
 
@@ -81,7 +81,7 @@ type ScoreBin = {
 type QuizAnalytics = {
   quiz_id: string;
   role: string;
-  quiz_difficulty?: string;
+  quiz_experience?: string;
   details: QuizResult[];
   scoreDistribution: ScoreBin[];
   created_at: string; // earliest attempt for sorting
@@ -315,7 +315,6 @@ export default function ResultsDashboard() {
       .map(([quiz_id, details]) => {
         const first = details[0];
         const role = first.result.role || first.role || "Quiz";
-        const difficulty = first.quiz_difficulty;
 
         const sorted = [...details].sort(
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -324,7 +323,6 @@ export default function ResultsDashboard() {
         return {
           quiz_id,
           role,
-          quiz_difficulty: difficulty,
           details: sorted,
           scoreDistribution: getScoreBins(sorted),
           created_at: sorted[0]?.created_at || new Date().toISOString(),
@@ -532,11 +530,6 @@ export default function ResultsDashboard() {
                                   <CardTitle className="text-2xl md:text-3xl font-bold">
                                     {quiz.role} Quiz
                                   </CardTitle>
-                                  {quiz.quiz_difficulty && (
-                                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 text-white">
-                                      {quiz.quiz_difficulty}
-                                    </span>
-                                  )}
                                 </div>
                                 <CardDescription className="mt-2 text-gray-400">
                                   Click bars to filter candidates by score range

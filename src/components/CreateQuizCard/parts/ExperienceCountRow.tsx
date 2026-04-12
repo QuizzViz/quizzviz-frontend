@@ -8,47 +8,47 @@ import { useUserPlan } from "@/hooks/useUserPlan";
 import { getPlanLimits } from "@/config/plans";
 import Link from "next/link";
 
-const defaultDifficulty = 'Bachelors Level';
+const defaultExperience = '1-3';
 
-interface DifficultyCountRowProps {
-  difficulty: string;
-  setDifficulty: (v: string) => void;
+interface ExperienceCountRowProps {
+  experience: string;
+  setExperience: (v: string) => void;
   count: number;
   setCount: (v: number) => void;
   maxQuestions?: number;
   className?: string;
 }
 
-const DifficultyCountRow: FC<DifficultyCountRowProps> = ({
-  difficulty: propDifficulty,
-  setDifficulty,
+const ExperienceCountRow: FC<ExperienceCountRowProps> = ({
+  experience: propExperience,
+  setExperience,
   count,
   setCount,
   maxQuestions = 100,
   className = ''
 }) => {
-  // Ensure difficulty is never undefined, fallback to default
-  const difficulty = propDifficulty || defaultDifficulty;
+  // Ensure experience is never undefined, fallback to default
+  const experience = propExperience || defaultExperience;
   const { data: userPlan } = useUserPlan();
   const planName = userPlan?.plan_name || 'Free';
   const currentPlan = getPlanLimits(planName);
   return (
     <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${className}`}>
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-foreground block">Difficulty Level</Label>
+        <Label className="text-sm font-medium text-foreground block">Experience Level</Label>
         <Select 
-          value={difficulty || defaultDifficulty} 
-          onValueChange={setDifficulty}
-          defaultValue={defaultDifficulty}
+          value={experience || defaultExperience} 
+          onValueChange={setExperience}
+          defaultValue={defaultExperience}
         >
           <SelectTrigger className="bg-background/50 border border-border/50 text-foreground h-10 w-full rounded-md [&>span]:w-full [&>span]:px-3 [&>span]:py-2 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:ring-transparent">
-            <SelectValue>{difficulty || defaultDifficulty}</SelectValue>
+            <SelectValue>{experience || defaultExperience}</SelectValue>
           </SelectTrigger>
           <SelectContent className="bg-background border-border text-foreground">
-            <SelectItem value="High School Level">High School level</SelectItem>
-            <SelectItem value="Bachelors Level">Bachelors Level</SelectItem>
-            <SelectItem value="Masters Level">Masters level</SelectItem>
-            <SelectItem value="PhD Level">PhD level</SelectItem>
+            <SelectItem value="0-1">0-1</SelectItem>
+            <SelectItem value="1-3">1-3</SelectItem>
+            <SelectItem value="3-5">3-5</SelectItem>
+            <SelectItem value="5+">5+</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -69,4 +69,4 @@ const DifficultyCountRow: FC<DifficultyCountRowProps> = ({
   );
 };
 
-export default DifficultyCountRow
+export default ExperienceCountRow

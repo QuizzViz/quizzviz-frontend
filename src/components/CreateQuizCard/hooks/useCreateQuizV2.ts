@@ -22,8 +22,8 @@ interface UseCreateQuizReturn {
   // Form state
   topic: string;
   setTopic: (topic: string) => void;
-  difficulty: string;
-  setDifficulty: (difficulty: string) => void;
+  experience: string;
+  setExperience: (experience: string) => void;
   count: number;
   setCount: (count: number) => void;
   balance: number[];
@@ -56,7 +56,7 @@ interface UseCreateQuizReturn {
 export function useCreateQuizV2(): UseCreateQuizReturn {
   // form state
   const [topic, setTopic] = useState("");
-  const [difficulty, setDifficulty] = useState("Bachelors");
+  const [experience, setExperience] = useState("1-3");
   const [count, setCount] = useState(5);
   const [balance, setBalance] = useState<number[]>([50]);
 
@@ -72,10 +72,10 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
 
   // typing steps
   const steps = [
-    "🔍 Parsing and understanding the topic semantics...",
-    "⚖️ Balancing code-analysis and theoretical coverage...",
-    "🧩 Generating question templates & code scaffolds...",
-    "✅ Validating difficulty and finalizing the quiz...",
+    " Parsing and understanding the topic semantics...",
+    " Balancing code-analysis and theoretical coverage...",
+    " Generating question templates & code scaffolds...",
+    " Validating difficulty and finalizing the quiz...",
   ];
   const stepIcons = [Cpu, Code, Sparkles, CheckCircle];
 
@@ -134,18 +134,18 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
     fetchCompanyInfo();
   }, [isLoaded, user]);
 
-  const difficultyToApi = (val: string) => {
+  const experienceToApi = (val: string) => {
     switch (val) {
-      case "High School":
-        return "High School Level";
-      case "Bachelors":
-        return "Bachelors Level";
-      case "Masters":
-        return "Masters Level";
-      case "PhD":
-        return "PhD Level";
+      case "0-1":
+        return "0-1";
+      case "1-3":
+        return "1-3";
+      case "3-5":
+        return "3-5";
+      case "5+":
+        return "5+";
       default:
-        return "Bachelors Level";
+        return "1-3";
     }
   };
 
@@ -169,8 +169,8 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       setError("Role is required");
       return;
     }
-    if (!difficulty) {
-      setError("Difficulty is required");
+    if (!experience) {
+      setError("Experience is required");
       return;
     }
     if (!techStack || !Array.isArray(techStack) || techStack.length === 0) {
@@ -214,7 +214,7 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       const codePct = Math.max(0, Math.min(100, codePercentage));
       const payload = {
         topic: topic.trim(),
-        difficulty: difficultyToApi(difficulty),
+        experience: experienceToApi(experience),
         num_questions: numQuestions,
         theory_questions_percentage: 100 - codePct,
         code_analysis_questions_percentage: codePct,
@@ -303,7 +303,7 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       setIsFetching(false);
       setTimeout(() => setIsReasoning(false), 400);
     }
-  }, [isReasoning, isFetching, count, topic, difficulty, balance, quizGeneration, user?.id, safeCompleteGeneration, companyInfo]);
+  }, [isReasoning, isFetching, count, topic, experience, balance, quizGeneration, user?.id, safeCompleteGeneration, companyInfo]);
 
   // Typewriter effect and progress
   useEffect(() => {
@@ -381,8 +381,8 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
     // form state
     topic,
     setTopic,
-    difficulty,
-    setDifficulty,
+    experience,
+    setExperience,
     count,
     setCount,
     balance,

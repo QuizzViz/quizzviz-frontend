@@ -106,7 +106,7 @@ const HeroSection: FC = () => {
     { id: '2', name: 'Git', weight: 10 },
     { id: '3', name: 'SQL', weight: 20 }
   ]);
-  const [difficulty, setDifficulty] = useState('Bachelors Level');
+  const [experience, setExperience] = useState('1-3');
   const [count, setCount] = useState(5);
   const [codePercentage, setCodePercentage] = useState(50);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -425,7 +425,7 @@ const HeroSection: FC = () => {
                       <Label htmlFor="difficulty" className="text-white font-medium text-sm">
                         Difficulty Level
                       </Label>
-                      <Select value={difficulty} onValueChange={setDifficulty}>
+                      <Select value={experience} onValueChange={setExperience}>
                         <SelectTrigger className="h-10 bg-white/5 border border-white/10 text-white text-sm focus:border-blue-500/50 transition-colors rounded-lg">
                           <SelectValue placeholder="Select difficulty" />
                         </SelectTrigger>

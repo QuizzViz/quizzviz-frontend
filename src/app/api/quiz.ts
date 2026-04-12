@@ -119,7 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     interface QuizRequest {
       userId?: string;
       topic: string;
-      difficulty: string;
+      experience: string;
       questionCount: number;
       questionType: string;
       [key: string]: any; // Allow additional properties

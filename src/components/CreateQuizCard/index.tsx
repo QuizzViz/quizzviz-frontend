@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import QuizHeader from "./parts/QuizHeader";
-import DifficultyCountRow from "./parts/DifficultyCountRow";
+import ExperienceCountRow from "./parts/ExperienceCountRow";
 import CodeTheorySlider from "./parts/CodeTheorySlider";
 import GenerateButton from "./parts/GenerateButton";
 import ReasoningPanel from "./parts/ReasoningPanel";
@@ -215,8 +215,8 @@ export default function CreateQuizCard({
     // form
     topic,
     setTopic,
-    difficulty,
-    setDifficulty,
+    experience,
+    setExperience,
     count,
     setCount,
     // request
@@ -336,10 +336,10 @@ export default function CreateQuizCard({
             />
           </div>
 
-          {/* Use the same DifficultyCountRow for both mobile and desktop */}
-          <DifficultyCountRow
-              difficulty={difficulty}
-              setDifficulty={setDifficulty}
+          {/* Use the same ExperienceCountRow for both mobile and desktop */}
+          <ExperienceCountRow
+              experience={experience}
+              setExperience={setExperience}
               count={count}
               setCount={setCount}
               maxQuestions={maxQuestions}
