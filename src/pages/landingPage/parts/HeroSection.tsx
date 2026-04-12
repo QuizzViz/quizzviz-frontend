@@ -84,11 +84,17 @@ const ROLES = [
 ].sort();
 
 const TECHNOLOGIES = [
-  "JavaScript", "Python", "Java", "TypeScript", "C++", "C#", "Ruby", "Go", "Rust", "PHP",
-  "React", "Vue", "Angular", "Svelte", "Node.js", "Django", "Flask", "Spring", "Express",
-  "Docker", "Kubernetes", "AWS", "Azure", "GCP", "PostgreSQL", "MongoDB", "MySQL", "Redis",
-  "Git", "GitHub", "GitLab", "Jenkins", "Terraform", "Ansible",
-  "System Design", "Networking", "Database", "OOP", "DSA"
+    "Python", "Java", "JavaScript", "TypeScript", "C", "C++", "C#", "Go", "Rust", "Ruby", "PHP",
+    "Swift", "Kotlin", "Scala", "Perl", "Haskell", "MATLAB", "R", "SQL", "HTML5", "CSS3", "React", "Angular", "Vue", "Svelte", "Django", "Flask", "FastAPI",
+    "Spring", "Express", "NextJS", "NestJS", "DotNet", ".NET", "Bootstrap", "Tailwind CSS", "jQuery",
+    "MERN Stack", "MEAN Stack", "LAMP Stack", "JAMStack", "MEVN Stack",
+    "Docker", "Kubernetes", "Terraform", "Ansible", "Jenkins", "Git", "GitHub", "GitLab", "CI/CD",
+    "PostgreSQL", "MySQL", "MongoDB", "Redis", "SQLite", "Oracle", "DynamoDB", "Firebase", "Supabase",
+    "Amazon Web Services (AWS)", "Microsoft Azure", "Google Cloud Platform (GCP)",
+    "Compiler", "Interpreter", "Operating System", "Linux", "Unix", "Bash", "Shell", "Command Line", "API",
+    "System Design", "Networking", "Database", "OOP", "DSA",
+    "Node.js", "Maven", "GCC", "Make", "GDB", "CMake", "Cargo", "Ruby on Rails", "Laravel", "Xcode",
+    "Redux", "Vuex", "Postman", "Vite", "Docker Compose", "Authentication", "Entity Framework"
 ].sort();
 
 const HeroSection: FC = () => {
@@ -107,17 +113,106 @@ const HeroSection: FC = () => {
   const [techSearch, setTechSearch] = useState('');
   const [showTechDropdown, setShowTechDropdown] = useState(false);
 
-  // Auto-select default stacks for Associate Software Engineer (Open Stack) role
+  // Role-based tech stack mapping
+  const getRoleBasedTechStack = (selectedRole: string) => {
+    const roleTechMap: { [key: string]: string[] } = {
+      "Python Developer": ["Python", "Django", "Flask", "FastAPI", "PostgreSQL"],
+      "Java Developer": ["Java", "Spring", "Maven", "MySQL", "Oracle"],
+      "JavaScript Developer": ["JavaScript", "React", "Node.js", "Express", "MongoDB"],
+      "TypeScript Developer": ["TypeScript", "React", "NextJS", "Node.js", "PostgreSQL"],
+      "C Developer": ["C", "GCC", "Make", "GDB", "Linux"],
+      "C++ Developer": ["C++", "GCC", "CMake", "GDB", "Linux"],
+      "C# Developer": ["C#", ".NET", "Entity Framework", "MySQL", "Microsoft Azure"],
+      "Go Developer": ["Go", "Docker", "Kubernetes", "PostgreSQL", "API"],
+      "Rust Developer": ["Rust", "Cargo", "Linux", "API", "Database"],
+      "Ruby Developer": ["Ruby", "Ruby on Rails", "PostgreSQL", "Redis", "API"],
+      "PHP Developer": ["PHP", "Laravel", "MySQL", "Redis", "API"],
+      "Swift Developer": ["Swift", "Xcode", "API", "Database", "Git"],
+      "Kotlin Developer": ["Kotlin", "Android", "API", "Database", "Git"],
+      "Scala Developer": ["Scala", "Java", "API", "Database", "Git"],
+      "Perl Developer": ["Perl", "Linux", "API", "Database", "Git"],
+      "Haskell Developer": ["Haskell", "Linux", "API", "Database", "Git"],
+      "MATLAB Developer": ["MATLAB", "API", "Database", "Git", "Linux"],
+      "R Developer": ["R", "API", "Database", "Git", "Linux"],
+      "SQL Developer": ["SQL", "PostgreSQL", "MySQL", "Oracle", "Redis"],
+      "HTML Developer": ["HTML5", "CSS3", "JavaScript", "Bootstrap", "jQuery"],
+      "CSS Developer": ["CSS3", "Bootstrap", "Tailwind CSS", "HTML5", "JavaScript"],
+      "React Developer": ["React", "JavaScript", "TypeScript", "Redux", "NextJS"],
+      "Angular Developer": ["Angular", "TypeScript", "JavaScript", "Git", "API"],
+      "Vue Developer": ["Vue", "JavaScript", "TypeScript", "Vuex", "Git"],
+      "Svelte Developer": ["Svelte", "JavaScript", "TypeScript", "Vite", "Git"],
+      "Django Developer": ["Django", "Python", "PostgreSQL", "Redis", "Docker"],
+      "Flask Developer": ["Flask", "Python", "PostgreSQL", "Redis", "API"],
+      "FastAPI Developer": ["FastAPI", "Python", "PostgreSQL", "Docker", "API"],
+      "Spring Developer": ["Spring", "Java", "Maven", "MySQL", "API"],
+      "Express Developer": ["Express", "Node.js", "JavaScript", "MongoDB", "API"],
+      "NextJS Developer": ["NextJS", "React", "TypeScript", "Tailwind CSS", "Vercel"],
+      "NestJS Developer": ["NestJS", "TypeScript", "Express", "PostgreSQL", "API"],
+      ".NET Developer": [".NET", "C#", "Entity Framework", "Microsoft Azure", "Git"],
+      "Bootstrap Developer": ["Bootstrap", "CSS3", "HTML5", "JavaScript", "jQuery"],
+      "Tailwind CSS Developer": ["Tailwind CSS", "CSS3", "HTML5", "JavaScript", "React"],
+      "jQuery Developer": ["jQuery", "JavaScript", "HTML5", "CSS3", "API"],
+      "Docker Engineer": ["Docker", "Kubernetes", "Docker Compose", "Linux", "CI/CD"],
+      "Kubernetes Engineer": ["Kubernetes", "Docker", "Linux", "CI/CD", "API"],
+      "Terraform Engineer": ["Terraform", "Amazon Web Services (AWS)", "Microsoft Azure", "Google Cloud Platform (GCP)", "Git"],
+      "Ansible Engineer": ["Ansible", "Python", "Linux", "Git", "API"],
+      "Jenkins Engineer": ["Jenkins", "CI/CD", "Docker", "Linux", "Git"],
+      "Git Specialist": ["Git", "GitHub", "GitLab", "Linux", "API"],
+      "GitHub Specialist": ["GitHub", "Git", "CI/CD", "API", "Linux"],
+      "GitLab Specialist": ["GitLab", "Git", "CI/CD", "Linux", "API"],
+      "CI CD Engineer": ["CI/CD", "Jenkins", "Docker", "Linux", "Git"],
+      "PostgreSQL Developer": ["PostgreSQL", "SQL", "Python", "Node.js", "Redis"],
+      "MySQL Developer": ["MySQL", "SQL", "PHP", "Node.js", "MongoDB"],
+      "MongoDB Developer": ["MongoDB", "Node.js", "Express", "API", "Database"],
+      "Redis Developer": ["Redis", "Node.js", "Python", "API", "Database"],
+      "SQLite Developer": ["SQLite", "SQL", "Python", "API", "Database"],
+      "Oracle Database Developer": ["Oracle", "SQL", "Java", "API", "Database"],
+      "DynamoDB Developer": ["DynamoDB", "Amazon Web Services (AWS)", "API", "Database", "Git"],
+      "Firebase Developer": ["Firebase", "Google Cloud Platform (GCP)", "React", "Node.js", "API"],
+      "Supabase Developer": ["Supabase", "PostgreSQL", "React", "Node.js", "Authentication"],
+      "AWS Cloud Engineer": ["Amazon Web Services (AWS)", "Docker", "Linux", "API", "Git"],
+      "Azure Cloud Engineer": ["Microsoft Azure", "Docker", "Linux", "API", "Git"],
+      "GCP Cloud Engineer": ["Google Cloud Platform (GCP)", "Docker", "Linux", "API", "Git"],
+      "Compiler Engineer": ["Compiler", "C++", "GCC", "Linux", "Git"],
+      "Interpreter Engineer": ["Interpreter", "Python", "Java", "JavaScript", "Linux"],
+      "Operating System Engineer": ["Operating System", "Linux", "C", "Git", "API"],
+      "Linux Engineer": ["Linux", "Bash", "Shell", "Git", "API"],
+      "Unix Engineer": ["Unix", "Shell", "C", "Git", "API"],
+      "Bash Engineer": ["Bash", "Shell", "Linux", "Git", "API"],
+      "Shell Scripting Engineer": ["Shell", "Bash", "Linux", "Git", "API"],
+      "Command Line Engineer": ["Command Line", "Linux", "Bash", "Git", "API"],
+      "API Developer": ["API", "Postman", "Authentication", "Git", "Linux"],
+      "Software Engineer": ["System Design", "OOP", "DSA", "Database", "Networking"],
+      "Associate Software Engineer (ASE)": ["System Design", "OOP", "DSA", "Database", "Networking"],
+      "Associate Software Engineer (Open Stack)": ["System Design", "Networking", "Database", "OOP", "DSA"]
+    };
+
+    const techStack = roleTechMap[selectedRole];
+    if (!techStack || techStack.length === 0) {
+      return [];
+    }
+
+    // Filter to only include technologies that exist in the TECHNOLOGIES array
+    const validTechs = techStack.filter(tech => TECHNOLOGIES.includes(tech));
+    
+    // Take first 3-4 technologies and distribute weights evenly
+    const selectedTechs = validTechs.slice(0, 4);
+    const weight = Math.floor(100 / selectedTechs.length);
+    
+    return selectedTechs.map((tech, index) => ({
+      id: (index + 1).toString(),
+      name: tech,
+      weight: index === selectedTechs.length - 1 ? 100 - (weight * (selectedTechs.length - 1)) : weight
+    }));
+  };
+
+  // Auto-select default stacks based on role
   useEffect(() => {
-    if (role === 'Associate Software Engineer (Open Stack)') {
-      const defaultStacks = [
-        { id: '1', name: 'System Design', weight: 20 },
-        { id: '2', name: 'Networking', weight: 20 },
-        { id: '3', name: 'Database', weight: 20 },
-        { id: '4', name: 'OOP', weight: 20 },
-        { id: '5', name: 'DSA', weight: 20 }
-      ];
-      setTechStack(defaultStacks);
+    if (role) {
+      const defaultStacks = getRoleBasedTechStack(role);
+      if (defaultStacks.length > 0) {
+        setTechStack(defaultStacks);
+      }
     }
   }, [role]);
 
