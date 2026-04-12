@@ -12,7 +12,7 @@ export const QuizLibrary: FC<{
     completed: number; 
     rating: number; 
     subject: string; 
-    difficulty: string;
+    experience: string;
     is_publish?: boolean;
   }[];
 }> = ({ items }) => {
@@ -65,7 +65,7 @@ export const QuizLibrary: FC<{
                 )}
               </div>
               <Badge variant="outline" className="text-xs border-gray-200 text-gray-200 group-hover:border-white group-hover:text-white transition-all duration-300">
-                {quiz.difficulty}
+                {quiz.experience}
               </Badge>
             </div>
             </CardContent>

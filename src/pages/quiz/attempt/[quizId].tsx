@@ -31,7 +31,7 @@ interface QuizData {
   quiz_id: string;
   role: string;
   techStack: Array<{name: string; weight: number }>;
-  difficulty: string;
+  experience: string;
   num_questions: number;
   questions: Question[];
   quiz_time: number;
@@ -766,7 +766,7 @@ if (typeof data.quiz === 'string') {
           quiz_id: data.quiz_id || data.id,
           role: data.role,
           techStack: data.techStack,
-          difficulty: data.difficulty,
+          experience: data.experience,
           num_questions: data.num_questions || parsedQuiz.length,
           questions: parsedQuiz,
           quiz_time: (data.num_questions || parsedQuiz.length) * 3 * 60, // 3 minutes per question
@@ -932,7 +932,7 @@ if (typeof data.quiz === 'string') {
                   {quizData?.role } Quiz
                 </h1>
                 <p className="text-gray-400">
-                  {quizData?.difficulty ? `${quizData.difficulty.charAt(0).toUpperCase() + quizData.difficulty.slice(1)}` : 'Quiz'}
+                  {quizData?.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)}` : 'Quiz'}
                 </p>
               </div>
 
@@ -1255,8 +1255,8 @@ if (typeof data.quiz === 'string') {
                         <span className="text-white font-medium">{quizData.role}</span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
-                        <span className="text-gray-400">Difficulty:</span>
-                        <span className="text-white font-medium capitalize">{quizData.difficulty}</span>
+                        <span className="text-gray-400">Experience:</span>
+                        <span className="text-white font-medium capitalize">{quizData.experience}</span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                         <span className="text-gray-400">Questions:</span>
