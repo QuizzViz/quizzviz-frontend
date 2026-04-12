@@ -12,30 +12,37 @@ type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 
 const VIOLATION_TIMEOUT = 10;
 
-
 // ─── Face identity config ─────────────────────────────────────────────────────
 const IDENTITY_CALIBRATION_FRAMES = 30;
 
-// ── FIXED thresholds ──────────────────────────────────────────────────────────
-// Bhattacharyya on a COMBINED colour+texture descriptor is more stable than
-// grayscale-only.  Lighting changes shift brightness but not hue ratios much.
+// ── Thresholds (balanced: catches person-swap, tolerates lighting) ────────────
 //
-// Hard fail: similarity must stay below this for HARD_FAIL_FRAMES consecutive
-// frames before terminating.  A single dark frame won't fire this.
-const APPEARANCE_HARD_FAIL        = 0.62;  // lower = only fire on a clearly different face
-const APPEARANCE_HARD_FAIL_FRAMES = 8;     // must persist across 8 frames (~1.6 s at 5 fps)
+// Strategy:
+//   • Sudden-drop guard   → catches an abrupt face-swap in 1–2 frames
+//   • Hard-fail streak    → catches a sustained low similarity (different person
+//                           who happens to score near the boundary)
+//   • Soft-fail streak    → shows a warning before terminating for borderline cases
+//
+// Key insight: EMA with alpha=0.35 dampens a sudden raw drop of ~0.30 to only
+// ~0.10 in the smoothed signal.  So the sudden-drop guard MUST use the RAW
+// similarity delta, not the smoothed one.  EMA is only used for the streak
+// checks (where we want noise immunity over multiple frames).
 
-// Soft fail: sustained lower-confidence mismatch
-const APPEARANCE_SOFT_FAIL        = 0.72;
-const APPEARANCE_MISMATCH_FRAMES  = 12;    // slower — lighting transitions can last ~1 s
+const APPEARANCE_HARD_FAIL        = 0.70;  // raw similarity — clearly different face
+const APPEARANCE_HARD_FAIL_FRAMES = 5;     // 5 consecutive frames → ~1 s at 5 fps
 
-// Sudden-drop guard: lighting changes ramp slowly; a real face-swap is abrupt.
-// We use a SMOOTHED similarity (EMA) so a single bad frame doesn't trigger this.
-const SUDDEN_DROP_THRESHOLD = 0.20;   // was 0.15 — too tight for a light flicker
-const SUDDEN_DROP_EMA_ALPHA = 0.35;   // EMA weight for current frame (lower = smoother)
+const APPEARANCE_SOFT_FAIL        = 0.78;  // raw similarity — borderline mismatch
+const APPEARANCE_MISMATCH_FRAMES  = 8;     // 8 frames sustained warning → terminate
 
-const BASELINE_ADAPT_RATE = 0.008;    // slightly slower adaptation
+// Sudden-drop guard uses RAW delta (not smoothed) so a face-swap isn't hidden
+// by EMA dampening.  Lighting changes are gradual (Δ < 0.05/frame); face-swaps are abrupt (Δ > 0.15).
+const SUDDEN_DROP_THRESHOLD = 0.12;
 
+// EMA is used only to smooth the value fed to streak counters (not drop guard)
+const SIMILARITY_EMA_ALPHA  = 0.40;
+
+// Baseline adaptation — ONLY when very confident; stops new-face learning
+const BASELINE_ADAPT_RATE   = 0.005;
 
 // Phone detection
 const PHONE_DETECTION_INTERVAL_MS = 200;
@@ -48,10 +55,10 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
   isActive = true,
   isStarted = false,
 }) => {
-  const videoRef   = useRef<HTMLVideoElement>(null);
-  const streamRef  = useRef<MediaStream | null>(null);
+  const videoRef    = useRef<HTMLVideoElement>(null);
+  const streamRef   = useRef<MediaStream | null>(null);
   const faceMeshRef = useRef<any>(null);
-  const cameraRef  = useRef<any>(null);
+  const cameraRef   = useRef<any>(null);
 
   const violationIntervalRef      = useRef<NodeJS.Timeout | null>(null);
   const phoneDetectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -62,37 +69,39 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
   const cocoModelRef   = useRef<any>(null);
   const phoneCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // ─── Face appearance identity (pixel-based) ───────────────────────────────
-  const faceHistogramRef          = useRef<number[] | null>(null);
-  const calibrationHistogramsRef  = useRef<number[][]>([]);
-  const appearanceMismatchRef     = useRef(0);
-  const hardFailStreakRef         = useRef(0);   // NEW: consecutive hard-fail frames
+  // ─── Face appearance identity ──────────────────────────────────────────────
+  const faceHistogramRef         = useRef<number[] | null>(null);
+  const calibrationHistogramsRef = useRef<number[][]>([]);
+  const appearanceMismatchRef    = useRef(0);
+  const hardFailStreakRef        = useRef(0);
 
-  // ── FIXED: smoothed similarity via EMA so single noisy frames are ignored ──
+  // EMA of raw similarity — used ONLY for streak threshold checks
   const smoothedSimilarityRef = useRef(1.0);
+  // Previous RAW similarity — used for the sudden-drop guard
+  const prevRawSimilarityRef  = useRef(1.0);
 
-  // Offscreen canvas for face crop + histogram extraction
+  // Offscreen canvas for face crop
   const faceCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const multiFaceFrameCountRef = useRef(0);
+  const multiFaceFrameCountRef    = useRef(0);
   const MULTI_FACE_CONFIRM_FRAMES = 4;
 
-  // Always-current prop refs (avoids stale closure)
+  // Always-current prop refs
   const onViolationRef = useRef(onViolation);
   const onEndRef       = useRef(onEnd);
   useEffect(() => { onViolationRef.current = onViolation; }, [onViolation]);
-  useEffect(() => { onEndRef.current = onEnd; }, [onEnd]);
+  useEffect(() => { onEndRef.current = onEnd; },           [onEnd]);
 
   // UI state
-  const [status,            setStatus]            = useState<'idle'|'loading'|'active'|'error'>('idle');
-  const [violationCountdown,setViolationCountdown] = useState<number | null>(null);
-  const [currentViolation,  setCurrentViolation]   = useState('');
-  const [faceCount,         setFaceCount]          = useState(0);
-  const [phoneDetected,     setPhoneDetected]      = useState(false);
-  const [calibrated,        setCalibrated]         = useState(false);
-  const [calibrationPct,    setCalibrationPct]     = useState(0);
+  const [status,             setStatus]             = useState<'idle'|'loading'|'active'|'error'>('idle');
+  const [violationCountdown, setViolationCountdown] = useState<number | null>(null);
+  const [currentViolation,   setCurrentViolation]   = useState('');
+  const [faceCount,          setFaceCount]          = useState(0);
+  const [phoneDetected,      setPhoneDetected]      = useState(false);
+  const [calibrated,         setCalibrated]         = useState(false);
+  const [calibrationPct,     setCalibrationPct]     = useState(0);
 
-  // ─── Cleanup ─────────────────────────────────────────────────────────────
+  // ─── Cleanup ──────────────────────────────────────────────────────────────
   const cleanup = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop());
@@ -148,7 +157,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     setCurrentViolation('');
   }, []);
 
-  // ─── Real face check ──────────────────────────────────────────────────────
+  // ─── Real face sanity check ───────────────────────────────────────────────
   const isRealFace = (landmarks: any[]): boolean => {
     if (!landmarks || landmarks.length < 200) return false;
     const f = landmarks[10], c = landmarks[152],
@@ -156,12 +165,13 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     return Math.abs(c.y - f.y) > 0.04 && Math.abs(r.x - l.x) > 0.03;
   };
 
+  // ─── Histogram extraction (3-channel: brightness + 2 colour opponents) ────
+  //
+  // Colour-opponent channels (R-G)/(R+G+B) and B/(R+G+B) are invariant to
+  // uniform brightness scaling, so they stay stable across lighting changes
+  // while clearly differing between people with different skin/hair tones.
   const CROP_SIZE = 32;
-  // ── FIXED: use separate bins for brightness + two colour-ratio channels ────
-  // Each channel has HIST_BINS bins → total descriptor length = 3 × HIST_BINS.
-  // Colour ratios (R/G, B/G) are largely invariant to uniform lighting changes
-  // (they shift together so the ratio stays constant).
-  const HIST_BINS = 32;
+  const HIST_BINS = 32;  // per channel → 96-element descriptor total
 
   const extractFaceHistogram = (
     landmarks: any[],
@@ -171,7 +181,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return null;
 
-    // Bounding box from landmarks (normalised 0–1 coords)
     let minX = 1, minY = 1, maxX = 0, maxY = 0;
     for (const lm of landmarks) {
       if (lm.x < minX) minX = lm.x;
@@ -182,7 +191,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     const vw = videoEl.videoWidth  || 320;
     const vh = videoEl.videoHeight || 240;
-
     const padX = (maxX - minX) * 0.10;
     const padY = (maxY - minY) * 0.10;
     const sx = Math.max(0, (minX - padX) * vw);
@@ -199,8 +207,8 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const imageData   = ctx.getImageData(0, 0, CROP_SIZE, CROP_SIZE).data;
     const totalPixels = CROP_SIZE * CROP_SIZE;
 
-    // ── Channel 1: mean-normalised brightness (lighting-compensated) ─────────
-    const grays: number[] = new Array(totalPixels);
+    // Channel 1: mean-normalised luminance (compensates global brightness shift)
+    const grays = new Array(totalPixels);
     let meanGray = 0;
     for (let i = 0, p = 0; i < imageData.length; i += 4, p++) {
       const g = 0.299 * imageData[i] + 0.587 * imageData[i + 1] + 0.114 * imageData[i + 2];
@@ -212,50 +220,36 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const histGray = new Array(HIST_BINS).fill(0);
     for (let p = 0; p < totalPixels; p++) {
       const shifted = Math.max(0, Math.min(255, grays[p] - meanGray + 128));
-      const bin = Math.min(HIST_BINS - 1, Math.floor((shifted / 255) * HIST_BINS));
-      histGray[bin]++;
+      histGray[Math.min(HIST_BINS - 1, Math.floor((shifted / 255) * HIST_BINS))]++;
     }
 
-    // ── Channel 2: R/(G+1) ratio — lighting-invariant colour signature ────────
-    // Under a uniform brightness change R, G, B all scale by the same factor k,
-    // so R/(G+1) ≈ kR/(kG+1) only for large G.  To be more precise we use the
-    // normalised opponent channel: (R - G) / (R + G + B + 1).
+    // Channel 2: (R-G)/(R+G+B+1) — lighting-invariant red-green opponent
     const histRG = new Array(HIST_BINS).fill(0);
     for (let i = 0; i < imageData.length; i += 4) {
       const r = imageData[i], g = imageData[i + 1], b = imageData[i + 2];
-      const sum = r + g + b + 1;
-      // opponent channel in [-1, 1] → shift to [0, 1]
-      const rg = (r - g) / sum + 0.5;
-      const bin = Math.min(HIST_BINS - 1, Math.floor(rg * HIST_BINS));
-      histRG[bin]++;
+      const rg = (r - g) / (r + g + b + 1) + 0.5;  // [-1,1] → [0,1]
+      histRG[Math.min(HIST_BINS - 1, Math.floor(rg * HIST_BINS))]++;
     }
 
-    // ── Channel 3: B/(R+G+B+1) — second colour opponent channel ─────────────
+    // Channel 3: B/(R+G+B+1) — lighting-invariant blue-yellow opponent
     const histBY = new Array(HIST_BINS).fill(0);
     for (let i = 0; i < imageData.length; i += 4) {
       const r = imageData[i], g = imageData[i + 1], b = imageData[i + 2];
-      const sum = r + g + b + 1;
-      const by = b / sum;  // in [0, 1]
-      const bin = Math.min(HIST_BINS - 1, Math.floor(by * HIST_BINS));
-      histBY[bin]++;
+      const by = b / (r + g + b + 1);
+      histBY[Math.min(HIST_BINS - 1, Math.floor(by * HIST_BINS))]++;
     }
 
-    // Normalise all three channels and concatenate
     const norm = (h: number[]) => h.map(v => v / totalPixels);
     return [...norm(histGray), ...norm(histRG), ...norm(histBY)];
   };
 
-  // Bhattacharyya coefficient — measures overlap between two histograms (0–1)
+  // Bhattacharyya coefficient (0 = nothing in common, 1 = identical)
   const bhattacharyya = (h1: number[], h2: number[]): number => {
     let sum = 0;
-    for (let i = 0; i < h1.length; i++) {
-      sum += Math.sqrt(h1[i] * h2[i]);
-    }
-    // Clamp to [0, 1] — floating-point noise can push it slightly over 1
+    for (let i = 0; i < h1.length; i++) sum += Math.sqrt(h1[i] * h2[i]);
     return Math.min(1, sum);
   };
 
-  // Average a set of histograms component-wise
   const averageHistograms = (hists: number[][]): number[] => {
     const len = hists[0].length;
     const avg = new Array(len).fill(0);
@@ -271,10 +265,10 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const leftEarInner = landmarks[93], rightEarInner = landmarks[323];
     const noseBridge = landmarks[168];
 
-    const eyeSpan    = Math.abs(rightEye.x - leftEye.x);
-    const scale      = Math.max(eyeSpan, 0.01);
-    const eyeCenterX = (leftEye.x + rightEye.x) / 2;
-    const eyeCenterY = (leftEye.y + rightEye.y) / 2;
+    const eyeSpan     = Math.abs(rightEye.x - leftEye.x);
+    const scale       = Math.max(eyeSpan, 0.01);
+    const eyeCenterX  = (leftEye.x + rightEye.x) / 2;
+    const eyeCenterY  = (leftEye.y + rightEye.y) / 2;
     const faceCenterX = (noseTip.x + forehead.x) / 2;
 
     const hOffset      = (eyeCenterX - faceCenterX) / scale;
@@ -293,16 +287,14 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const bridgeChinRatio = faceHeight > 0.01 ? Math.abs(noseBridge.y - chin.y) / faceHeight : 0.5;
     const chinBelowEyes   = (chin.y - eyeCenterY) / scale;
 
-    const lookingDown = foreheadRatio < 0.40 || eyeToNoseY < -0.85 ||
-                        bridgeChinRatio < 0.66 || chinBelowEyes > 2.4;
-    const lookingUp   = foreheadRatio > 0.60 && eyeToNoseY > -0.30;
-
-    if (lookingDown) return 'down';
-    if (lookingUp)   return 'up';
+    if (foreheadRatio < 0.40 || eyeToNoseY < -0.85 || bridgeChinRatio < 0.66 || chinBelowEyes > 2.4)
+      return 'down';
+    if (foreheadRatio > 0.60 && eyeToNoseY > -0.30)
+      return 'up';
     return 'center';
   };
 
-  // ─── Main face detection handler (via ref — never stale) ─────────────────
+  // ─── Main face detection handler ──────────────────────────────────────────
   const processFaceDetectionRef = useRef<(results: any) => void>(() => {});
 
   processFaceDetectionRef.current = (results: any) => {
@@ -337,9 +329,8 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     // ── Multiple faces ────────────────────────────────────────────────────────
     if (realFaces.length > 1) {
       multiFaceFrameCountRef.current += 1;
-      if (multiFaceFrameCountRef.current >= MULTI_FACE_CONFIRM_FRAMES) {
+      if (multiFaceFrameCountRef.current >= MULTI_FACE_CONFIRM_FRAMES)
         terminate('Multiple faces detected');
-      }
       return;
     }
 
@@ -347,7 +338,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const primaryFace = realFaces[0];
     const videoEl     = videoRef.current;
     const canvas      = faceCanvasRef.current;
-
     if (!videoEl || !canvas) return;
 
     // ── CALIBRATION ───────────────────────────────────────────────────────────
@@ -363,11 +353,12 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       setCalibrationPct(pct);
 
       if (calibrationHistogramsRef.current.length >= IDENTITY_CALIBRATION_FRAMES) {
-        faceHistogramRef.current = averageHistograms(calibrationHistogramsRef.current);
+        faceHistogramRef.current      = averageHistograms(calibrationHistogramsRef.current);
         calibrationHistogramsRef.current = [];
-        appearanceMismatchRef.current = 0;
-        hardFailStreakRef.current = 0;
-        smoothedSimilarityRef.current = 1.0;
+        appearanceMismatchRef.current    = 0;
+        hardFailStreakRef.current         = 0;
+        smoothedSimilarityRef.current     = 1.0;
+        prevRawSimilarityRef.current      = 1.0;
         setCalibrated(true);
         console.log('[Proctoring] Face baseline locked ✓');
       }
@@ -380,26 +371,29 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     const rawSimilarity = bhattacharyya(currentHist, faceHistogramRef.current);
 
-    // ── FIXED: EMA smoothing — prevents single-frame noise (lighting flicker,
-    //    motion blur, codec artifact) from triggering false positives ──────────
-    const prevSmoothed = smoothedSimilarityRef.current;
-    const smoothed = prevSmoothed * (1 - SUDDEN_DROP_EMA_ALPHA) + rawSimilarity * SUDDEN_DROP_EMA_ALPHA;
-    smoothedSimilarityRef.current = smoothed;
+    // ── Guard 1: SUDDEN DROP on RAW similarity ────────────────────────────────
+    // Must use raw (not EMA-smoothed) delta so EMA dampening doesn't hide a swap.
+    // Lighting changes are gradual (Δ < 0.05/frame); face-swaps are abrupt (Δ > 0.15).
+    const rawDrop = prevRawSimilarityRef.current - rawSimilarity;
+    prevRawSimilarityRef.current = rawSimilarity;  // update BEFORE any early return
 
-    // ── FIXED: Sudden-drop guard uses SMOOTHED value — a gradual lighting
-    //    change ramps smoothly and won't exceed the threshold; only an abrupt
-    //    face-swap (instantaneous similarity collapse) will fire it ────────────
-    const drop = prevSmoothed - smoothed;
-    if (drop > SUDDEN_DROP_THRESHOLD) {
-      console.warn('[Proctoring] Sudden identity drop (smoothed):', drop.toFixed(4));
+    if (rawDrop > SUDDEN_DROP_THRESHOLD) {
+      console.warn('[Proctoring] Sudden raw drop:', rawDrop.toFixed(4), 'raw:', rawSimilarity.toFixed(4));
       terminate('Person changed – sudden identity change detected.');
       return;
     }
 
-    // console.log('[Proctoring] similarity raw/smoothed:', rawSimilarity.toFixed(3), smoothed.toFixed(3));
+    // EMA for streak checks only (noise immunity over multiple frames)
+    smoothedSimilarityRef.current =
+      smoothedSimilarityRef.current * (1 - SIMILARITY_EMA_ALPHA) +
+      rawSimilarity                 * SIMILARITY_EMA_ALPHA;
+    const smoothed = smoothedSimilarityRef.current;
 
-    // ── FIXED: Hard fail requires HARD_FAIL_FRAMES consecutive frames below
-    //    threshold — a momentary dark frame or glare won't terminate the exam ──
+    // Uncomment to tune thresholds:
+    // console.log('[Proctoring] raw:', rawSimilarity.toFixed(3), 'smoothed:', smoothed.toFixed(3));
+
+    // ── Guard 2: HARD FAIL streak ─────────────────────────────────────────────
+    // Requires sustained low similarity — a brief glare or shadow won't fire this.
     if (smoothed < APPEARANCE_HARD_FAIL) {
       hardFailStreakRef.current += 1;
       console.warn(
@@ -409,12 +403,12 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       if (hardFailStreakRef.current >= APPEARANCE_HARD_FAIL_FRAMES) {
         terminate('Person changed – exam terminated. A different person was detected on camera.');
       }
-      return;
+      return;  // keep counting; don't reset streak by falling through
     }
 
-    // ── Soft fail: sustained lower-confidence mismatch ────────────────────────
+    // ── Guard 3: SOFT FAIL streak ─────────────────────────────────────────────
     if (smoothed < APPEARANCE_SOFT_FAIL) {
-      hardFailStreakRef.current = 0;          // not a hard fail — reset that streak
+      hardFailStreakRef.current = 0;
       appearanceMismatchRef.current += 1;
       console.warn(
         '[Proctoring] Soft mismatch', appearanceMismatchRef.current,
@@ -429,14 +423,13 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       return;
     }
 
-    // ── Identity confirmed ────────────────────────────────────────────────────
-    hardFailStreakRef.current = 0;
+    // ── Identity confirmed — reset all counters ───────────────────────────────
+    hardFailStreakRef.current     = 0;
     appearanceMismatchRef.current = 0;
 
-    // ── Adapt baseline ONLY when very confident (prevents new-face learning) ──
-    // A slow lighting drift shifts similarity down gradually — the EMA smoothing
-    // catches this early enough to adapt the baseline before it hits soft-fail.
-    if (smoothed > 0.88) {
+    // Adapt baseline only when very confident — prevents gradual new-face learning.
+    // Only adapt when clearly same person (smoothed > 0.90) to absorb slow lighting drift.
+    if (smoothed > 0.90) {
       const baseline = faceHistogramRef.current!;
       faceHistogramRef.current = baseline.map(
         (b, i) => b * (1 - BASELINE_ADAPT_RATE) + currentHist[i] * BASELINE_ADAPT_RATE
@@ -462,7 +455,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       await tf.ready();
 
       const cocoSsd = await import('@tensorflow-models/coco-ssd');
-      const model = await cocoSsd.load({ base: 'mobilenet_v2' });
+      const model   = await cocoSsd.load({ base: 'mobilenet_v2' });
       cocoModelRef.current = model;
 
       const offscreen = document.createElement('canvas');
@@ -502,7 +495,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     try {
       const fc = document.createElement('canvas');
-      fc.width = 32; fc.height = 32;
+      fc.width = CROP_SIZE; fc.height = CROP_SIZE;
       faceCanvasRef.current = fc;
 
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -534,7 +527,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5,
       });
-
       faceMesh.onResults((results: any) => processFaceDetectionRef.current(results));
       faceMeshRef.current = faceMesh;
 
