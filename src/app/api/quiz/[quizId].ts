@@ -161,7 +161,7 @@ export default async function handler(
           const quizData = {
             quiz_id: response.quiz_id || quizId,
             role: response.role,
-            difficulty: response.difficulty || 'Medium',
+            experience: response.experience || '1-3',
             questions: questions,
             quiz_key: response.quiz_key || '',
             quiz_time: response.quiz_time || 1800, // 30 minutes default
@@ -192,7 +192,7 @@ export default async function handler(
         // Prepare the request body according to the required format
         const updateData = {
           topic: req.body.topic,
-          difficulty: req.body.difficulty || 'High School Level',
+          difficulty: req.body.difficulty || '1-3',
           num_questions: req.body.num_questions || 0,
           theory_questions_percentage: req.body.theory_questions_percentage || 0,
           code_analysis_questions_percentage: req.body.code_analysis_questions_percentage || 0,

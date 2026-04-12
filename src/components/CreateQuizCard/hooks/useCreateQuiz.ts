@@ -22,8 +22,8 @@ interface UseCreateQuizReturn {
   // Form state
   role: string;
   setRole: (role: string) => void;
-  difficulty: string;
-  setDifficulty: (difficulty: string) => void;
+  experience: string;
+  setExperience: (experience: string) => void;
   count: number;
   setCount: (count: number) => void;
   balance: number[];
@@ -59,7 +59,7 @@ interface UseCreateQuizReturn {
 export function useCreateQuiz(): UseCreateQuizReturn {
   // form state
   const [role, setRole] = useState("");
-  const [difficulty, setDifficulty] = useState("Bachelors");
+  const [experience, setExperience] = useState("1-3");
   const [count, setCount] = useState(5);
   const [balance, setBalance] = useState<number[]>([50]);
 
@@ -137,18 +137,18 @@ export function useCreateQuiz(): UseCreateQuizReturn {
     fetchCompanyInfo();
   }, [isLoaded, user]);
 
-  const difficultyToApi = (val: string) => {
+  const experienceToApi = (val: string) => {
     switch (val) {
-      case "High School":
-        return "High School Level";
-      case "Bachelors":
-        return "Bachelors Level";
-      case "Masters":
-        return "Masters Level";
-      case "PhD":
-        return "PhD Level";
+      case "0-1":
+        return "0-1";
+      case "1-3":
+        return "1-3";
+      case "3-5":
+        return "3-5";
+      case "5+":
+        return "5+";
       default:
-        return "Bachelors Level";
+        return "1-3";
     }
   };
 
@@ -181,8 +181,8 @@ export function useCreateQuiz(): UseCreateQuizReturn {
     setError("At least one technology is required in the tech stack");
     return;
   }
-  if (!difficulty) {
-    setError("Difficulty is required");
+  if (!experience) {
+    setError("Experience is required");
     return;
   }
   
@@ -195,7 +195,7 @@ export function useCreateQuiz(): UseCreateQuizReturn {
     const codePct = Math.max(0, Math.min(100, codePercentage));
     const payload = {
       role: role.trim(),  // Using role as the role
-      difficulty: difficultyToApi(difficulty),
+      experience: experienceToApi(experience),
       num_questions: numQuestions,
       theory_questions_percentage: 100 - codePct,
       code_analysis_questions_percentage: codePct,
@@ -278,7 +278,7 @@ export function useCreateQuiz(): UseCreateQuizReturn {
       setIsFetching(false);
       setTimeout(() => setIsReasoning(false), 400);
     }
-  }, [isReasoning, isFetching, count, role, difficulty, balance, quizGeneration, user?.id, safeCompleteGeneration, companyInfo]);
+  }, [isReasoning, isFetching, count, role, experience, balance, quizGeneration, user?.id, safeCompleteGeneration, companyInfo]);
 
   // Typewriter effect and progress
   useEffect(() => {
@@ -356,8 +356,8 @@ export function useCreateQuiz(): UseCreateQuizReturn {
     // form state
     role,
     setRole,
-    difficulty,
-    setDifficulty,
+    experience,
+    setExperience,
     count,
     setCount,
     balance,

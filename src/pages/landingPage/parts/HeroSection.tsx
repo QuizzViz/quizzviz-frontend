@@ -106,7 +106,7 @@ const HeroSection: FC = () => {
     { id: '2', name: 'Git', weight: 10 },
     { id: '3', name: 'SQL', weight: 20 }
   ]);
-  const [difficulty, setDifficulty] = useState('Bachelors Level');
+  const [experience, setExperience] = useState('1-3');
   const [count, setCount] = useState(5);
   const [codePercentage, setCodePercentage] = useState(50);
   const [isGenerating, setIsGenerating] = useState(false);

@@ -315,7 +315,7 @@ export default function ResultsDashboard() {
       .map(([quiz_id, details]) => {
         const first = details[0];
         const role = first.result.role || first.role || "Quiz";
-        const difficulty = first.quiz_difficulty;
+        const experience = first.quiz_experience;
 
         const sorted = [...details].sort(
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -324,7 +324,7 @@ export default function ResultsDashboard() {
         return {
           quiz_id,
           role,
-          quiz_difficulty: difficulty,
+          quiz_experience: experience,
           details: sorted,
           scoreDistribution: getScoreBins(sorted),
           created_at: sorted[0]?.created_at || new Date().toISOString(),

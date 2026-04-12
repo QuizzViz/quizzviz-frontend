@@ -18,7 +18,7 @@ type PublishedQuiz = {
   quiz_time: number;
   quiz_expiration_time: string;
   topic: string;
-  difficulty: string;
+  experience: string;
   num_questions: number;
   theory_questions_percentage: number;
   code_analysis_questions_percentage: number;
