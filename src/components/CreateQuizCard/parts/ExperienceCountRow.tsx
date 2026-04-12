@@ -35,7 +35,7 @@ const ExperienceCountRow: FC<ExperienceCountRowProps> = ({
   return (
     <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${className}`}>
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-foreground block">Experience Level</Label>
+        <Label className="text-sm font-medium text-foreground block"> Experience (Years)</Label>
         <Select 
           value={experience || defaultExperience} 
           onValueChange={setExperience}

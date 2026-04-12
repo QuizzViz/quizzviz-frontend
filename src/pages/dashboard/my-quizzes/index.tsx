@@ -231,7 +231,7 @@ export default function MyQuizzesPage() {
                                   </div>
                                 )}
                               </div>
-                              <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience}</Badge>
+                              <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience} yrs</Badge>
                             </div>
                             <CardDescription className="text-white/70">
                               <span className="font-medium text-white">{q.num_questions}</span> questions

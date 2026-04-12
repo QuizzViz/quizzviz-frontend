@@ -98,7 +98,7 @@ export function QuizHeader({
             {quiz.role} Quiz
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-white/70">
-            <Badge variant="secondary">{quiz.experience}</Badge>
+            <Badge variant="secondary">{quiz.experience} yrs</Badge>
             <span>• {questionsCount} questions</span>
             <span>• Theory {quiz.theory_questions_percentage}%</span>
             <span>• Code {quiz.code_analysis_questions_percentage}%</span>

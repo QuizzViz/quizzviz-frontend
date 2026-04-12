@@ -932,7 +932,7 @@ if (typeof data.quiz === 'string') {
                   {quizData?.role } Quiz
                 </h1>
                 <p className="text-gray-400">
-                  {quizData?.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)}` : 'Quiz'}
+                  {quizData?.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)} yrs` : 'Quiz'}
                 </p>
               </div>
 
@@ -1256,7 +1256,7 @@ if (typeof data.quiz === 'string') {
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                         <span className="text-gray-400">Experience:</span>
-                        <span className="text-white font-medium capitalize">{quizData.experience}</span>
+                        <span className="text-white font-medium capitalize">{quizData.experience} yrs</span>
                       </div>
                       <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
                         <span className="text-gray-400">Questions:</span>

@@ -2479,7 +2479,7 @@ export default function QuizPage({ params }: PageProps) {
                 </div>
                 <h1 className="text-3xl font-bold text-white mb-2">{quizData?.role} Quiz</h1>
                 <p className="text-gray-400">
-                  {quizData?.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)}` : 'Quiz'}
+                  {quizData?.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)} yrs` : 'Quiz'}
                 </p>
               </div>
 
@@ -2751,7 +2751,7 @@ export default function QuizPage({ params }: PageProps) {
                     <div className="space-y-3">
                       {[
                         { label: 'Role', value: quizData.role },
-                        { label: 'Experience', value: <span className="capitalize">{quizData.experience}</span> },
+                        { label: 'Experience', value: <span className="capitalize">{quizData.experience} yrs</span> },
                         { label: 'Questions', value: quizData.quiz.length },
                         { label: 'Time Limit', value: `${quizData.quiz_time} min` },
                       ].map(({ label, value }) => (
