@@ -1,7 +1,7 @@
 'use client';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FC, useState } from "react";
+import { FC, useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Zap, X, Code, BookOpen, Search } from "lucide-react";
@@ -78,14 +78,17 @@ const ROLES = [
   "Shell Scripting Engineer",
   "Command Line Engineer",
   "API Developer",
-  "Software Engineer"
+  "Software Engineer",
+  "Associate Software Engineer (ASE)",
+  "Associate Software Engineer (Open Stack)"
 ].sort();
 
 const TECHNOLOGIES = [
   "JavaScript", "Python", "Java", "TypeScript", "C++", "C#", "Ruby", "Go", "Rust", "PHP",
   "React", "Vue", "Angular", "Svelte", "Node.js", "Django", "Flask", "Spring", "Express",
   "Docker", "Kubernetes", "AWS", "Azure", "GCP", "PostgreSQL", "MongoDB", "MySQL", "Redis",
-  "Git", "GitHub", "GitLab", "Jenkins", "Terraform", "Ansible"
+  "Git", "GitHub", "GitLab", "Jenkins", "Terraform", "Ansible",
+  "System Design", "Networking", "Database", "OOP", "DSA"
 ].sort();
 
 const HeroSection: FC = () => {
@@ -103,6 +106,20 @@ const HeroSection: FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [techSearch, setTechSearch] = useState('');
   const [showTechDropdown, setShowTechDropdown] = useState(false);
+
+  // Auto-select default stacks for Associate Software Engineer (Open Stack) role
+  useEffect(() => {
+    if (role === 'Associate Software Engineer (Open Stack)') {
+      const defaultStacks = [
+        { id: '1', name: 'System Design', weight: 20 },
+        { id: '2', name: 'Networking', weight: 20 },
+        { id: '3', name: 'Database', weight: 20 },
+        { id: '4', name: 'OOP', weight: 20 },
+        { id: '5', name: 'DSA', weight: 20 }
+      ];
+      setTechStack(defaultStacks);
+    }
+  }, [role]);
 
   const updateCount = (value: number) => {
     const min = 1;
