@@ -70,7 +70,9 @@ const ROLES = [
   "Shell Scripting Engineer",
   "Command Line Engineer",
   "API Developer",
-  "Software Engineer"
+  "Software Engineer",
+  "Associate Software Engineer (ASE)",
+  "Associate Software Engineer (Open Stack)"
 ].sort();
 
 interface RoleSelectProps {
