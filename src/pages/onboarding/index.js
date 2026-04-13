@@ -407,7 +407,8 @@ export default function OnboardingPage() {
       if (checkData.exists && checkData.companies?.length > 0) {
         toast({
           title: 'Company Already Exists',
-          description: 'Redirecting to dashboard...'
+          description: 'Redirecting to dashboard...',
+          className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
         });
 
         // Hard redirect immediately

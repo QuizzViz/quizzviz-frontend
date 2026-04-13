@@ -115,7 +115,13 @@ const currentPlan = getPlanLimits(userPlan?.plan_name || 'Free');
           title: "Quiz generated successfully!",
           description: `${data.role || 'Your quiz'} is ready. Click to view it now.`,
           duration: 10000,
-          onClick: goToQuiz,
+          onClick: (e) => {
+            // Prevent navigation if clicking on close button or its child elements
+            if (e.target instanceof Element && (e.target.closest('[toast-close]') || e.target.getAttribute('toast-close') === '')) {
+              return;
+            }
+            goToQuiz();
+          },
           className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
           action: (
             <button
@@ -137,7 +143,13 @@ const currentPlan = getPlanLimits(userPlan?.plan_name || 'Free');
           title: "Quiz generated successfully!",
           description: `${data.role || 'Your quiz'} is ready. Click to view it now.`,
           duration: 10000,
-          onClick: goToQuiz,
+          onClick: (e) => {
+            // Prevent navigation if clicking on close button or its child elements
+            if (e.target instanceof Element && (e.target.closest('[toast-close]') || e.target.getAttribute('toast-close') === '')) {
+              return;
+            }
+            goToQuiz();
+          },
           className: 'cursor-pointer border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
           action: (
             <button
