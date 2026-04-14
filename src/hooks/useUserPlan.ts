@@ -7,24 +7,41 @@ export interface UserPlanResponse {
   plan_name: 'Free' | 'Consumer' | 'Elite' | 'Business';
 }
 
+export interface CompanyResponse {
+  id: string;
+  name: string;
+  plan_name: 'Free' | 'Consumer' | 'Elite' | 'Business';
+  company_size: string;
+  owner_id: string;
+  owner_email: string;
+  company_id: string;
+}
+
 const fetchUserPlan = async (userId: string | null | undefined, getToken: () => Promise<string | null>): Promise<UserPlanResponse> => {
   if (!userId) throw new Error('User not authenticated');
   
   const token = await getToken();
   if (!token) throw new Error('No auth token');
 
-  const response = await fetch(`/api/user_plan/${userId}`, {
+  const response = await fetch(`/api/company/check?owner_id=${userId}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
-    console.log('Failed to fetch user plan, defaulting to Business for testing');
+    console.log('Failed to fetch company, defaulting to Free plan');
     return { plan_name: 'Free' };
   }
 
-  return response.json();
+  const data = await response.json();
+  
+  // If user has a company, return its plan_name, otherwise default to Free
+  if (data.exists && data.companies && data.companies.length > 0) {
+    return { plan_name: data.companies[0].plan_name || 'Free' };
+  }
+  
+  return { plan_name: 'Free' };
 };
 
 export const useUserPlan = () => {
@@ -47,32 +64,6 @@ export const useUserPlan = () => {
   });
 };
 
-// Update user plan
-export const updateUserPlan = async (
-  userId: string,
-  planName: PlanType,
-  getToken: () => Promise<string | null>
-): Promise<UserPlanResponse> => {
-  if (!userId || !planName) throw new Error('User ID and plan name are required');
-  
-  const token = await getToken();
-  if (!token) throw new Error('No auth token');
-
-  const response = await fetch(`/api/user_plan/${userId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({ plan_name: planName }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to update user plan');
-  }
-
-  return response.json();
-};
 
 // Utility function to check plan features
 export const hasFeatureAccess = (
