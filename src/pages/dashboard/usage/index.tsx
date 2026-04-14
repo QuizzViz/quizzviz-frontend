@@ -1,10 +1,10 @@
 'use client';
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuizUsage } from "@/hooks/useQuizUsage";
 import { useCompanyUsage } from "@/hooks/useCompanyUsage";
 import { DashboardHeader } from "@/components/Dashboard/Header";
-import { Loader2, RefreshCw, Clock } from "lucide-react";
+import { Loader2, Calendar, BarChart3, RefreshCw, Zap, Clock, Users, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { useState } from "react";
@@ -15,153 +15,41 @@ import Head from "next/head";
 const MONTHLY_QUIZ_LIMIT = 15;
 const CANDIDATE_LIMIT = 500;
 
-// Format time helper
-const formatTime = (date: Date) => {
-  return date.toLocaleTimeString('en-US', {
+// Format date helper
+const formatDate = (date: any) => {
+  return new Date(date).toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit',
+    minute: '2-digit'
   });
 };
 
-// Format reset date — first day of next month
-const getResetDate = () => {
-  const now = new Date();
-  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return next.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-};
-
-// ─── Metric Card ─────────────────────────────────────────────────────────────
-
-interface MetricCardProps {
-  label: string;
-  current: number;
-  limit: number;
-  color: 'purple' | 'teal';
-}
-
-const MetricCard = ({ label, current, limit, color }: MetricCardProps) => {
-  const pct = Math.min((current / limit) * 100, 100);
-  const remaining = Math.max(limit - current, 0);
-  const isWarn = pct > 66 && pct < 90;
-  const isDanger = pct >= 90;
-
-  const barBase =
-    color === 'purple'
-      ? 'from-purple-500 to-pink-500'
-      : 'from-blue-400 to-cyan-400';
-
-  const barWarn = 'from-yellow-500 to-amber-500';
-  const barDanger = 'from-red-500 to-rose-500';
-
-  const barClass = isDanger ? barDanger : isWarn ? barWarn : barBase;
-
-  const remainColor = isDanger
-    ? 'text-red-400'
-    : isWarn
-    ? 'text-yellow-400'
-    : color === 'purple'
-    ? 'text-purple-400'
-    : 'text-cyan-400';
-
-  const accentBorder =
-    color === 'purple'
-      ? 'border-purple-500/20 hover:border-purple-500/40'
-      : 'border-blue-500/20 hover:border-blue-500/40';
-
-  const trackBg =
-    color === 'purple' ? 'bg-purple-500/15' : 'bg-blue-500/15';
-
-  return (
-    <Card
-      className={`bg-black/30 backdrop-blur-lg border ${accentBorder} rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.01]`}
-    >
-      <CardContent className="p-6 space-y-5">
-        {/* Label */}
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-          {label}
-        </p>
-
-        {/* Numbers */}
-        <div className="flex items-baseline justify-between">
-          <div className="flex items-baseline gap-2">
-            <span className="text-5xl font-bold text-white leading-none">
-              {current}
-            </span>
-            <span className="text-lg text-gray-500">/ {limit}</span>
-          </div>
-          <div className="text-right">
-            <span className={`text-2xl font-bold ${remainColor}`}>
-              {remaining}
-            </span>
-            <p className="text-xs text-gray-500 mt-0.5">remaining</p>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="space-y-2">
-          <div className={`h-2 w-full ${trackBg} rounded-full overflow-hidden`}>
-            <div
-              className={`h-full rounded-full bg-gradient-to-r ${barClass} transition-all duration-700`}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <p className="text-xs text-gray-500">{Math.round(pct)}% used this month</p>
-        </div>
-
-        {/* Warning banner */}
-        {(isWarn || isDanger) && (
-          <div
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
-              isDanger
-                ? 'bg-red-500/10 text-red-400'
-                : 'bg-yellow-500/10 text-yellow-400'
-            }`}
-          >
-            <span>{isDanger ? '🔴' : '⚠️'}</span>
-            <span>
-              {isDanger
-                ? `You've reached your ${label.toLowerCase()} limit`
-                : `Only ${remaining} ${label.toLowerCase()} remaining`}
-            </span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-// ─── Loading Skeleton ─────────────────────────────────────────────────────────
-
+// Loading Skeleton Component
 const LoadingCard = () => (
-  <Card className="bg-black/30 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden">
-    <CardContent className="p-6 space-y-5">
-      <div className="h-3 w-20 bg-white/10 rounded animate-pulse" />
-      <div className="h-12 w-36 bg-white/15 rounded animate-pulse" />
-      <div className="h-2 w-full bg-white/10 rounded-full animate-pulse" />
+  <Card className="bg-black/30 backdrop-blur-lg border border-white/10 overflow-hidden relative">
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+    <CardHeader className="space-y-2 pb-3 border-b border-white/10">
+      <div className="h-4 w-24 bg-white/10 rounded animate-pulse" />
+    </CardHeader>
+    <CardContent className="space-y-3 p-6">
+      <div className="h-8 w-32 bg-white/20 rounded animate-pulse" />
+      <div className="h-2 w-full bg-white/10 rounded animate-pulse" />
     </CardContent>
   </Card>
 );
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
 const UsagePage = () => {
-  const {
-    data: usageData,
-    isLoading: isQuizUsageLoading,
-    error: quizUsageError,
-    refetch: refetchQuizUsage,
-  } = useQuizUsage();
-  const {
-    data: companyUsageData,
-    isLoading: isCompanyUsageLoading,
-    error: companyUsageError,
-    refetch: refetchCompanyUsage,
-  } = useCompanyUsage();
-
+  const { data: usageData, isLoading: isQuizUsageLoading, error: quizUsageError, refetch: refetchQuizUsage } = useQuizUsage();
+  const { data: companyUsageData, isLoading: isCompanyUsageLoading, error: companyUsageError, refetch: refetchCompanyUsage } = useCompanyUsage();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
-
+  
   const currentMonth = usageData?.current_month;
+  const monthlyBreakdown = usageData?.monthly_breakdown || [];
+  const totalQuizzes = usageData?.total_quizzes || 0;
+  
   const isLoading = isQuizUsageLoading || isCompanyUsageLoading;
   const error = quizUsageError || companyUsageError;
 
@@ -174,11 +62,12 @@ const UsagePage = () => {
       setIsRefreshing(false);
     }
   };
+  
+  // Calculate usage percentage for progress bar
+  const currentUsage = currentMonth?.quiz_count || 0;
+  const usagePercentage = Math.min((currentUsage / MONTHLY_QUIZ_LIMIT) * 100, 100);
+  const remainingQuizzes = Math.max(MONTHLY_QUIZ_LIMIT - currentUsage, 0);
 
-  const candidateCount = companyUsageData?.current_month?.unique_candidates ?? 0;
-  const quizCount = currentMonth?.quiz_count ?? 0;
-
-  // ── Loading ──
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-background">
@@ -186,15 +75,17 @@ const UsagePage = () => {
         <div className="flex-1 overflow-y-auto">
           <DashboardHeader />
           <div className="p-6 space-y-6">
+            {/* Loading State with Gradient Spinner */}
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <div className="relative w-14 h-14">
-                <div className="absolute inset-0 border-4 border-white/10 rounded-full" />
-                <div className="absolute inset-0 border-4 border-transparent border-t-green-400 border-r-blue-400 rounded-full animate-spin" />
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-white/10 rounded-full" />
+                <div className="w-16 h-16 border-4 border-transparent rounded-full border-t-green-400 border-r-blue-400 animate-spin absolute top-0 left-0" />
               </div>
-              <p className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent font-semibold text-sm">
-                Loading usage data...
+              <p className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent font-semibold">
+                Loading your usage data ...
               </p>
             </div>
+
             <div className="grid gap-6 md:grid-cols-2">
               <LoadingCard />
               <LoadingCard />
@@ -205,7 +96,6 @@ const UsagePage = () => {
     );
   }
 
-  // ── Error ──
   if (error) {
     return (
       <div className="flex min-h-screen bg-background">
@@ -213,15 +103,15 @@ const UsagePage = () => {
         <div className="flex-1 overflow-y-auto">
           <DashboardHeader />
           <div className="p-6">
-            <Card className="bg-black/30 backdrop-blur-lg border border-red-500/20 rounded-2xl">
+            <Card className="bg-black/30 backdrop-blur-lg border border-red-500/20">
               <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 text-lg">
-                    ⚠
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                    <span className="text-red-400 text-xl">⚠</span>
                   </div>
                   <div>
-                    <p className="font-semibold text-white text-sm">Error loading usage data</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{error.message}</p>
+                    <p className="font-semibold text-white">Error loading usage data</p>
+                    <p className="text-sm text-gray-400">{error.message}</p>
                   </div>
                 </div>
               </CardContent>
@@ -232,89 +122,148 @@ const UsagePage = () => {
     );
   }
 
-  // ── Main ──
   return (
+
     <DashboardAccess>
-      <Head>
+    <Head>
         <title>Usage | QuizzViz</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
-      <div className="flex min-h-screen bg-background">
-        <DashboardSideBar />
-
-        <div className="flex-1 overflow-y-auto">
-          <DashboardHeader />
-
-          <div className="p-6 max-w-3xl space-y-8">
-
-            {/* ── Page header ── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">Usage</h1>
-                <p className="text-sm text-gray-400 mt-0.5">
-                  Your plan consumption for{' '}
-                  {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </p>
+    <div className="flex min-h-screen bg-background">
+      <DashboardSideBar />
+      <div className="flex-1 overflow-y-auto">
+        <DashboardHeader />
+        <div className="p-6 space-y-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-1">
+                <span className="bg-white bg-clip-text text-transparent">
+                  Usage
+                </span>
+              </h1>
+              <p className="text-gray-300 text-sm">Track your quiz generation usage</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Clock className="h-4 w-4" />
+                <span>Updated: {formatDate(lastUpdated)}</span>
               </div>
-
-              <Button
-                onClick={handleRefresh}
+              <Button 
+                onClick={handleRefresh} 
+                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl"
                 disabled={isRefreshing}
-                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md text-sm px-4 py-2 rounded-xl"
               >
                 {isRefreshing ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Refreshing...
+                    <span>Refreshing...</span>
                   </>
                 ) : (
                   <>
                     <RefreshCw className="h-4 w-4" />
-                    Refresh
+                    <span>Refresh</span>
                   </>
                 )}
               </Button>
             </div>
+          </div>
 
-            {/* ── Two metric cards ── */}
-            <div className="grid gap-5 sm:grid-cols-2">
-              <MetricCard
-                label="Candidates"
-                current={candidateCount}
-                limit={CANDIDATE_LIMIT}
-                color="purple"
-              />
-              <MetricCard
-                label="Quizzes"
-                current={quizCount}
-                limit={MONTHLY_QUIZ_LIMIT}
-                color="teal"
-              />
-            </div>
-
-            {/* ── Footer strip ── */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-4 rounded-2xl bg-white/5 border border-white/10">
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <span>
-                  Updated at{' '}
-                  <span className="text-white font-medium">{formatTime(lastUpdated)}</span>
-                </span>
-              </div>
-
-              <div className="h-px sm:h-5 w-full sm:w-px bg-white/10" />
-
-              <div className="text-sm text-gray-400">
-                Resets on{' '}
-                <span className="text-white font-medium">{getResetDate()}</span>
-              </div>
-            </div>
-
+          {/* Interactive Usage Charts */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Candidates Usage Bar Chart */}
+            <UsageBarChart 
+              current={companyUsageData?.current_month?.unique_candidates || 0}
+              limit={CANDIDATE_LIMIT}
+              title="Candidates This Month"
+            />
+            
+            {/* Quiz Usage Bar Chart */}
+            <UsageBarChart 
+              current={currentMonth?.quiz_count || 0}
+              limit={MONTHLY_QUIZ_LIMIT}
+              title="Quizzes This Month"
+            />
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
+        }
+      `}</style>
+    </div>
     </DashboardAccess>
+  );
+};
+
+// Interactive Bar Chart Component
+const UsageBarChart = ({ current, limit, title }: { current: number; limit: number; title: string }) => {
+  const percentage = Math.min((current / limit) * 100, 100);
+  const isNearLimit = percentage > 80 && percentage != 100;
+  const isAtLimit = percentage >= 100;
+  
+  return (
+    <Card className="bg-black/30 backdrop-blur-lg border border-white/10 shadow-xl rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300">
+      <CardHeader className="pb-3 border-b border-white/10">
+        <CardTitle className="text-sm font-medium text-gray-300 flex items-center">
+          <BarChart3 className="h-4 w-4 mr-2 text-blue-400" />
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-end justify-between mb-6">
+            <div>
+              <div className="text-5xl font-bold text-white mb-2">
+                {current}
+              </div>
+              <p className="text-sm text-gray-400">
+                of {limit} used
+              </p>
+            </div>
+            <div className="text-right">
+              <div className={`text-2xl font-bold ${isAtLimit ? 'text-red-400' : isNearLimit ? 'text-yellow-400' : 'text-green-400'}`}>
+                {limit - current}
+              </div>
+              <p className="text-xs text-gray-400">remaining</p>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-400">Usage</span>
+              <span className="font-medium text-white">{Math.round(percentage)}%</span>
+            </div>
+            <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden">
+              <div 
+                className={`h-full rounded-full transition-all duration-500 ${
+                  isAtLimit ? 'bg-gradient-to-r from-red-500 to-pink-500' : 
+                  isNearLimit ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : 
+                  'bg-gradient-to-r from-green-400 to-blue-500'
+                }`} 
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            {isNearLimit && (
+              <div className="flex items-center gap-2 text-xs text-yellow-400 bg-yellow-400/10 px-3 py-2 rounded-lg mt-3">
+                <span>⚠️</span>
+                <span>You're approaching your limit</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
