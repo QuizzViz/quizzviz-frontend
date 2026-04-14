@@ -33,12 +33,21 @@ export async function GET(
       );
     }
 
+    // Get auth token from request headers
+    const authHeader = request.headers.get('authorization');
+    const headers: Record<string, string> = {
+      'accept': 'application/json',
+    };
+
+    // Add auth token if present
+    if (authHeader) {
+      headers['authorization'] = authHeader;
+    }
+
     const response = await fetch(
       `${API_BASE_URL}/check/attempt/email/${encodeURIComponent(email)}/quiz/${encodeURIComponent(quizId)}`,
       {
-        headers: {
-          'accept': 'application/json',
-        },
+        headers,
         cache: 'no-store' // Ensure we don't get cached responses
       }
     );

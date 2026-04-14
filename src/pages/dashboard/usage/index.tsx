@@ -2,8 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuizUsage } from "@/hooks/useQuizUsage";
+import { useCompanyUsage } from "@/hooks/useCompanyUsage";
 import { DashboardHeader } from "@/components/Dashboard/Header";
-import { Loader2, Calendar, BarChart3, RefreshCw, Zap, Clock } from "lucide-react";
+import { Loader2, Calendar, BarChart3, RefreshCw, Zap, Clock, Users, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { useState } from "react";
@@ -39,18 +40,22 @@ const LoadingCard = () => (
 );
 
 const UsagePage = () => {
-  const { data: usageData, isLoading, error, refetch } = useQuizUsage();
+  const { data: usageData, isLoading: isQuizUsageLoading, error: quizUsageError, refetch: refetchQuizUsage } = useQuizUsage();
+  const { data: companyUsageData, isLoading: isCompanyUsageLoading, error: companyUsageError, refetch: refetchCompanyUsage } = useCompanyUsage();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   
   const currentMonth = usageData?.current_month;
   const monthlyBreakdown = usageData?.monthly_breakdown || [];
   const totalQuizzes = usageData?.total_quizzes || 0;
+  
+  const isLoading = isQuizUsageLoading || isCompanyUsageLoading;
+  const error = quizUsageError || companyUsageError;
 
   const handleRefresh = async () => {
     try {
       setIsRefreshing(true);
-      await refetch();
+      await Promise.all([refetchQuizUsage(), refetchCompanyUsage()]);
       setLastUpdated(new Date());
     } finally {
       setIsRefreshing(false);
@@ -246,6 +251,84 @@ const UsagePage = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Current Month Candidates Card */}
+            <Card className="bg-black/30 backdrop-blur-lg border border-white/10 shadow-xl rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300">
+              <CardHeader className="pb-3 border-b border-white/10">
+                <CardTitle className="text-sm font-medium text-gray-300 flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-purple-400" />
+                  Current Month Candidates
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-sm text-gray-400 mb-2">Unique Candidates</div>
+                    <div className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                      {companyUsageData?.current_month?.unique_candidates || 0}
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-white/10">
+                    <div className="text-sm text-gray-400 mb-2">Total Attempts</div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-white">
+                        {companyUsageData?.current_month?.total_attempts || 0}
+                      </span>
+                      <span className="text-sm text-gray-400">
+                        quiz attempts
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Previous Month Comparison Card */}
+            <Card className="bg-black/30 backdrop-blur-lg border border-white/10 shadow-xl rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300">
+              <CardHeader className="pb-3 border-b border-white/10">
+                <CardTitle className="text-sm font-medium text-gray-300 flex items-center">
+                  <TrendingUp className="h-4 w-4 mr-2 text-orange-400" />
+                  Month-over-Month Growth
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-6">
+                  <div>
+                    <div className="text-sm text-gray-400 mb-2">Previous Month Candidates</div>
+                    <div className="text-3xl font-bold text-white mb-1">
+                      {companyUsageData?.previous_month?.unique_candidates || 0}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {companyUsageData?.previous_month?.total_attempts || 0} total attempts
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-white/10">
+                    <div className="text-sm text-gray-400 mb-2">Growth Trend</div>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const current = companyUsageData?.current_month?.unique_candidates || 0;
+                        const previous = companyUsageData?.previous_month?.unique_candidates || 0;
+                        const growth = previous > 0 ? ((current - previous) / previous) * 100 : 0;
+                        const isPositive = growth > 0;
+                        
+                        return (
+                          <>
+                            <span className={`text-2xl font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                              {isPositive ? '+' : ''}{growth.toFixed(1)}%
+                            </span>
+                            <span className="text-sm text-gray-400">
+                              {isPositive ? 'increase' : 'decrease'}
+                            </span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

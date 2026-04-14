@@ -30,11 +30,20 @@ export async function DELETE(request: Request) {
 
     console.log('Making request to:', url);
 
+    // Get auth token from request headers
+    const authHeader = request.headers.get('authorization');
+    const headers: Record<string, string> = {
+      'accept': 'application/json',
+    };
+
+    // Add auth token if present
+    if (authHeader) {
+      headers['authorization'] = authHeader;
+    }
+
     const response = await fetch(url, {
       method: 'DELETE',
-      headers: {
-        'accept': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
