@@ -142,7 +142,7 @@ const UsagePage = () => {
                   Usage
                 </span>
               </h1>
-              <p className="text-gray-300 text-sm">Track your quiz generation usage</p>
+              <p className="text-gray-300 text-sm">Track your usage</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-400">
