@@ -45,11 +45,20 @@ export async function GET(request: NextRequest) {
 
     console.log('Making request to:', apiUrl.toString());
 
+    // Get auth token from request headers
+    const authHeader = request.headers.get('authorization');
+    const headers: Record<string, string> = {
+      'accept': 'application/json',
+    };
+
+    // Add auth token if present
+    if (authHeader) {
+      headers['authorization'] = authHeader;
+    }
+
     const response = await fetch(apiUrl.toString(), {
       method: 'GET',
-      headers: {
-        'accept': 'application/json',
-      },
+      headers,
     });
 
     console.log('Response status:', response.status);
