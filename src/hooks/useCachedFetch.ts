@@ -10,6 +10,21 @@ type FetchOptions = {
 type UseCachedFetchOptions<TData, TError> = FetchOptions & 
   Omit<UseQueryOptions<TData, TError, TData, QueryKey>, 'queryKey' | 'queryFn'>;
 
+// Helper function to get auth token from cookies
+const getAuthToken = () => {
+  if (typeof document === 'undefined') return null;
+  
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, ...values] = cookie.trim().split('=');
+    if (key && values.length > 0) {
+      acc[key] = values.join('=');
+    }
+    return acc;
+  }, {} as Record<string, string>);
+  
+  return cookies.__session || null;
+};
+
 export function useCachedFetch<TData = unknown, TError = Error>(
   queryKey: string | string[],
   url: string,
@@ -28,12 +43,20 @@ export function useCachedFetch<TData = unknown, TError = Error>(
   return useQuery<TData, TError, TData, QueryKey>({
     queryKey: queryKeyArray,
     queryFn: async () => {
+      // Get auth token and add to headers
+      const authToken = getAuthToken();
+      const requestHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...headers,
+      };
+      
+      if (authToken) {
+        requestHeaders['Authorization'] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
-        },
+        headers: requestHeaders,
         body: body ? JSON.stringify(body) : undefined,
       });
 

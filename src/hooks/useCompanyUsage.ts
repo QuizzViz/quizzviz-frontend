@@ -81,7 +81,11 @@ export function useCompanyUsage() {
     ['companyUsage', companyId || ''],
     companyId ? `/api/quiz_result/usage` : '',
     { 
-      enabled: Boolean(companyId)
+      enabled: Boolean(companyId),
+      headers: {
+        // Note: useCachedFetch will automatically include this in the request
+        // The backend API endpoint will handle authentication via getCompanyId()
+      }
     }
   );
 
