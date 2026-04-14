@@ -12,7 +12,7 @@ import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import Head from "next/head";
 
 // Constants
-const MONTHLY_QUIZ_LIMIT = 10;
+const MONTHLY_QUIZ_LIMIT = 15;
 const CANDIDATE_LIMIT = 500;
 
 // Format date helper
@@ -169,6 +169,100 @@ const UsagePage = () => {
             </div>
           </div>
 
+          {/* Usage Overview Cards */}
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Total Candidates Card */}
+            <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-lg border border-purple-500/20 shadow-xl rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center shadow-lg">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-white">
+                      {companyUsageData?.current_month?.unique_candidates || 0}
+                    </div>
+                    <p className="text-xs text-purple-300">unique</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-white">Total Candidates</h3>
+                  <p className="text-sm text-gray-400">This month's unique candidates</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <div className="h-2 w-full bg-purple-500/20 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-purple-400 to-pink-400 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(((companyUsageData?.current_month?.unique_candidates || 0) / CANDIDATE_LIMIT) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-purple-300 font-medium">
+                      {Math.round(Math.min(((companyUsageData?.current_month?.unique_candidates || 0) / CANDIDATE_LIMIT) * 100, 100))}%
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Total Quizzes Card */}
+            <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-lg border border-blue-500/20 shadow-xl rounded-2xl overflow-hidden hover:border-blue-500/30 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-400 to-cyan-400 flex items-center justify-center shadow-lg">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-white">
+                      {currentMonth?.quiz_count || 0}
+                    </div>
+                    <p className="text-xs text-blue-300">created</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-white">Total Quizzes</h3>
+                  <p className="text-sm text-gray-400">This month's quiz creations</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <div className="h-2 w-full bg-blue-500/20 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(((currentMonth?.quiz_count || 0) / MONTHLY_QUIZ_LIMIT) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-blue-300 font-medium">
+                      {Math.round(Math.min(((currentMonth?.quiz_count || 0) / MONTHLY_QUIZ_LIMIT) * 100, 100))}%
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Total Attempts Card */}
+            <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 backdrop-blur-lg border border-green-500/20 shadow-xl rounded-2xl overflow-hidden hover:border-green-500/30 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-green-400 to-emerald-400 flex items-center justify-center shadow-lg">
+                    <Zap className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-white">
+                      {companyUsageData?.current_month?.total_attempts || 0}
+                    </div>
+                    <p className="text-xs text-green-300">attempts</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-white">Total Attempts</h3>
+                  <p className="text-sm text-gray-400">This month's quiz attempts</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <div className="h-2 w-full bg-green-500/20 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full transition-all duration-500 animate-pulse" />
+                    </div>
+                    <span className="text-xs text-green-300 font-medium">active</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Interactive Usage Charts */}
           <div className="grid gap-6 md:grid-cols-2">
             {/* Candidates Usage Bar Chart */}
@@ -184,6 +278,109 @@ const UsagePage = () => {
               limit={MONTHLY_QUIZ_LIMIT}
               title="Quizzes This Month"
             />
+          </div>
+
+          {/* Growth Insights */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Growth Rate Card */}
+            <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10 backdrop-blur-lg border border-orange-500/20 shadow-xl rounded-2xl overflow-hidden hover:border-orange-500/30 transition-all duration-300 hover:shadow-2xl">
+              <CardHeader className="pb-3 border-b border-orange-500/20">
+                <CardTitle className="text-sm font-medium text-gray-300 flex items-center">
+                  <TrendingUp className="h-4 w-4 mr-2 text-orange-400" />
+                  Growth Rate
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-400">vs Previous Month</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {(() => {
+                          const current = companyUsageData?.current_month?.unique_candidates || 0;
+                          const previous = companyUsageData?.previous_month?.unique_candidates || 0;
+                          const growth = previous > 0 ? ((current - previous) / previous) * 100 : 0;
+                          const isPositive = growth > 0;
+                          
+                          return (
+                            <>
+                              <span className={`text-2xl font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                                {isPositive ? '+' : ''}{growth.toFixed(1)}%
+                              </span>
+                              <span className={`text-sm ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                                {isPositive ? 'increase' : 'decrease'}
+                              </span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-r from-orange-400 to-red-400 flex items-center justify-center shadow-lg">
+                      <TrendingUp className="h-8 w-8 text-white" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="text-center p-3 bg-white/5 rounded-lg">
+                      <div className="text-lg font-bold text-white">
+                        {companyUsageData?.current_month?.unique_candidates || 0}
+                      </div>
+                      <div className="text-xs text-gray-400">Current</div>
+                    </div>
+                    <div className="text-center p-3 bg-white/5 rounded-lg">
+                      <div className="text-lg font-bold text-white">
+                        {companyUsageData?.previous_month?.unique_candidates || 0}
+                      </div>
+                      <div className="text-xs text-gray-400">Previous</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Usage Efficiency Card */}
+            <Card className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 backdrop-blur-lg border border-indigo-500/20 shadow-xl rounded-2xl overflow-hidden hover:border-indigo-500/30 transition-all duration-300 hover:shadow-2xl">
+              <CardHeader className="pb-3 border-b border-indigo-500/20">
+                <CardTitle className="text-sm font-medium text-gray-300 flex items-center">
+                  <Clock className="h-4 w-4 mr-2 text-indigo-400" />
+                  Usage Efficiency
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-400">Avg. Attempts per Candidate</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-2xl font-bold text-indigo-400">
+                          {companyUsageData?.current_month?.unique_candidates > 0 
+                            ? ((companyUsageData?.current_month?.total_attempts || 0) / companyUsageData?.current_month?.unique_candidates).toFixed(1)
+                            : '0.0'
+                          }
+                        </span>
+                        <span className="text-sm text-gray-400">attempts</span>
+                      </div>
+                    </div>
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-400 to-purple-400 flex items-center justify-center shadow-lg">
+                      <Clock className="h-8 w-8 text-white" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="text-center p-3 bg-white/5 rounded-lg">
+                      <div className="text-lg font-bold text-white">
+                        {companyUsageData?.current_month?.total_attempts || 0}
+                      </div>
+                      <div className="text-xs text-gray-400">Total Attempts</div>
+                    </div>
+                    <div className="text-center p-3 bg-white/5 rounded-lg">
+                      <div className="text-lg font-bold text-white">
+                        {companyUsageData?.current_month?.unique_candidates || 0}
+                      </div>
+                      <div className="text-xs text-gray-400">Candidates</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -209,7 +406,7 @@ const UsagePage = () => {
 // Interactive Bar Chart Component
 const UsageBarChart = ({ current, limit, title }: { current: number; limit: number; title: string }) => {
   const percentage = Math.min((current / limit) * 100, 100);
-  const isNearLimit = percentage > 80;
+  const isNearLimit = percentage > 80 && percentage != 100;
   const isAtLimit = percentage >= 100;
   
   return (
