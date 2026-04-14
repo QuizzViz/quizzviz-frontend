@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getAuth } from "@clerk/nextjs/server";
 import { getCompanyId } from '@/lib/company';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}`;
@@ -24,29 +23,30 @@ interface CompanyUsageResponse {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get company ID using the same method as other quiz_result endpoints
-    const companyResult = await getCompanyId(request);
-    if ('error' in companyResult) {
-      console.error('Error getting company ID:', companyResult.error);
-      return companyResult.error;
+    // Get company ID from query parameters since auth is no longer required
+    const { searchParams } = new URL(request.url);
+    const company_id = searchParams.get('company_id');
+    
+    if (!company_id) {
+      return NextResponse.json(
+        { 
+          error: 'company_id is required',
+          details: 'Please provide company_id as a query parameter'
+        },
+        { status: 400 }
+      );
     }
-    const { company_id } = companyResult;
-    console.log('Company ID from token:', company_id);
+    
+    console.log('Company ID from query params:', company_id);
 
     // Build the URL for company usage endpoint
     const url = `${API_BASE_URL}/result/owner/${encodeURIComponent(company_id)}/usage`;
     console.log('Making request to:', url);
 
-    // Get auth token from request headers (same as main quiz_result route)
-    const authHeader = request.headers.get('authorization');
+    // No authentication needed - just accept headers
     const headers: Record<string, string> = {
       'accept': 'application/json',
     };
-
-    // Add auth token if present
-    if (authHeader) {
-      headers['authorization'] = authHeader;
-    }
 
     const response = await fetch(url, {
       method: 'GET',

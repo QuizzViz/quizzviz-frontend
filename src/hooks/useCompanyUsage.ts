@@ -79,13 +79,9 @@ export function useCompanyUsage() {
     refetch 
   } = useCachedFetch<CompanyUsageData>(
     ['companyUsage', companyId || ''],
-    companyId ? `/api/quiz_result/usage` : '',
+    companyId ? `/api/quiz_result/usage?company_id=${companyId}` : '',
     { 
-      enabled: Boolean(companyId),
-      headers: {
-        // Note: useCachedFetch will automatically include this in the request
-        // The backend API endpoint will handle authentication via getCompanyId()
-      }
+      enabled: Boolean(companyId)
     }
   );
 
