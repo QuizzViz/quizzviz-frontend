@@ -327,127 +327,79 @@ export default function TeamsPage() {
                 ) : members.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {members.map((member) => (
-                      <Card key={member.id} className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-[1.03] group">
-                        {/* Elegant Gradient Border Effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        <div className="absolute inset-px bg-gradient-to-br from-emerald-500/30 via-transparent to-blue-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                        
-                        {/* Card Content */}
-                        <div className="relative p-6">
-                          {/* Header with Enhanced Avatar */}
-                          <div className="flex items-start justify-between mb-6">
-                            <div className="flex items-center space-x-4">
-                              {/* Premium Avatar with Role-based Gradient */}
-                              <div className="relative group">
-                                <div className={`h-14 w-14 rounded-2xl p-[3px] transition-all duration-300 ${
-                                  member.role === 'OWNER' 
-                                    ? 'bg-gradient-to-br from-amber-400 via-orange-500 to-red-500' 
-                                    : member.role === 'ADMIN'
-                                    ? 'bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600'
-                                    : 'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600'
-                                }`}>
-                                  <div className="h-full w-full rounded-2xl bg-slate-900/90 backdrop-blur-sm flex items-center justify-center transition-all duration-300 group-hover:scale-110">
-                                    <FiUser className="h-7 w-7 text-white drop-shadow-lg" />
-                                  </div>
-                                </div>
-                                {/* Animated Status Indicator */}
-                                <div className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-3 border-slate-900/90 backdrop-blur-sm transition-all duration-300 ${
-                                  member.status === 'ACTIVE' 
-                                    ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/50' 
-                                    : 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/50 animate-pulse'
-                                }`}>
-                                  <div className="h-full w-full rounded-full bg-white/90 flex items-center justify-center">
-                                    <div className={`h-2 w-2 rounded-full ${
-                                      member.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-orange-500'
-                                    }`}></div>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              {/* Enhanced User Info */}
-                              <div className="flex-1">
-                                <h3 className="font-bold text-white text-xl mb-1 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                                  {member.name || member.invited_email || 'Team Member'}
-                                </h3>
-                                <p className="text-slate-400 text-sm font-medium">
-                                  {member.invited_email || member.name ? member.invited_email || member.name : `ID: ${member.user_id.slice(0, 8)}...`}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {/* Enhanced Role Badge */}
-                            <div className={`p-3 rounded-xl backdrop-blur-sm transition-all duration-300 ${
-                              member.role === 'OWNER' 
-                                ? 'bg-gradient-to-br from-amber-500/20 to-red-500/20 border border-amber-500/30'
-                                : member.role === 'ADMIN'
-                                ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30'
-                                : 'bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30'
-                            }`}>
-                              {getRoleIcon(member.role)}
-                            </div>
-                          </div>
+                      <div key={member.id}
+  className="relative bg-slate-900 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-colors duration-200 group"
+>
+  {/* Top: Avatar + Name + Role Icon */}
+  <div className="flex items-start justify-between mb-5">
+    <div className="flex items-center gap-4">
+      <div className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${
+        member.role === 'OWNER'
+          ? 'bg-amber-500/20 text-amber-300'
+          : member.role === 'ADMIN'
+          ? 'bg-blue-500/20 text-blue-300'
+          : 'bg-emerald-500/20 text-emerald-300'
+      }`}>
+        {(member.name || member.invited_email || 'TM')
+          .split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+      </div>
+      <div>
+        <p className="text-white font-medium text-[15px] leading-tight">
+          {member.name || member.invited_email || 'Team Member'}
+        </p>
+        <p className="text-white/50 text-[13px] mt-0.5">
+          {member.invited_email || `ID: ${member.user_id.slice(0, 8)}...`}
+        </p>
+      </div>
+    </div>
 
-                          {/* Enhanced Role and Status Pills */}
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center space-x-2">
-                              <Badge className={`px-4 py-2 rounded-full text-xs font-bold border-0 shadow-lg transition-all duration-300 ${
-                                member.role === 'OWNER' 
-                                  ? 'bg-gradient-to-r from-amber-500 to-red-500 text-white shadow-amber-500/30'
-                                  : member.role === 'ADMIN'
-                                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-blue-500/30'
-                                  : 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-emerald-500/30'
-                              }`}>
-                                {member.role}
-                              </Badge>
-                              <Badge className={`px-4 py-2 rounded-full text-xs font-bold border-0 shadow-lg transition-all duration-300 ${
-                                member.status === 'ACTIVE'
-                                  ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-emerald-500/30'
-                                  : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-orange-500/30 animate-pulse'
-                              }`}>
-                                {member.status}
-                              </Badge>
-                            </div>
-                          </div>
+    {/* Hover mail button */}
+    <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-8 w-8 rounded-lg border border-white/10 hover:border-white/20 hover:bg-white/5 flex items-center justify-center flex-shrink-0">
+      <FiMail className="h-3.5 w-3.5 text-white/50" />
+    </button>
+  </div>
 
-                          {/* Enhanced Additional Info */}
-                          <div className="space-y-4">
-                            {member.joined_at && (
-                              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-sm">
-                                <div className="flex items-center text-emerald-400 text-sm font-medium">
-                                  <div className="h-2 w-2 rounded-full bg-emerald-500 mr-3 shadow-lg shadow-emerald-500/50"></div>
-                                  <span className="text-emerald-300">Joined</span>
-                                  <span className="text-emerald-200 ml-auto font-medium">
-                                    {format(new Date(member.joined_at), 'MMM dd, yyyy')}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
+  {/* Divider */}
+  <div className="border-t border-white/10 mb-4" />
 
-                            {member.invited_email && member.status === 'INVITED' && (
-                              <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 backdrop-blur-sm">
-                                <div className="flex items-center text-amber-400 text-sm font-medium">
-                                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 p-2 mr-3 shadow-lg shadow-amber-500/30">
-                                    <FiMail className="h-4 w-4 text-white" />
-                                  </div>
-                                  <div>
-                                    <span className="text-amber-300">Invitation sent</span>
-                                    <p className="text-amber-200 text-xs mt-1">{member.invited_email}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+  {/* Role + Status Badges */}
+  <div className="flex items-center gap-2 mb-4">
+    <span className={`text-[11px] font-medium tracking-wide px-3 py-1 rounded-full border ${
+      member.role === 'OWNER'
+        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+        : member.role === 'ADMIN'
+        ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+    }`}>
+      {member.role}
+    </span>
+    <span className={`text-[11px] font-medium tracking-wide px-3 py-1 rounded-full border ${
+      member.status === 'ACTIVE'
+        ? 'bg-green-500/10 text-green-400 border-green-500/30'
+        : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+    }`}>
+      {member.status}
+    </span>
+  </div>
 
-                          {/* Enhanced Hover Action Buttons */}
-                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500">
-                            <div className="flex space-x-2">
-                              <Button size="sm" variant="outline" className="h-9 w-9 p-0 border-slate-600 hover:bg-slate-700 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 transition-all duration-300">
-                                <FiMail className="h-4 w-4 text-slate-400 group-hover:text-emerald-400 transition-colors duration-300" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
+  {/* Joined / Pending meta */}
+  <div className="flex items-center gap-2 text-[12px] text-white/40">
+    <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${
+      member.status === 'ACTIVE' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'
+    }`} />
+    {member.joined_at
+      ? `Joined ${format(new Date(member.joined_at), 'MMM dd, yyyy')}`
+      : 'Invitation pending'}
+  </div>
+
+  {/* Invite email notice */}
+  {member.invited_email && member.status === 'INVITED' && (
+    <div className="mt-4 flex items-center gap-2 text-[12px] text-white/40 bg-white/5 rounded-xl px-3 py-2.5">
+      <FiMail className="h-3.5 w-3.5 flex-shrink-0" />
+      {member.invited_email}
+    </div>
+  )}
+</div>
                     ))}
                   </div>
                 ) : (
