@@ -22,12 +22,12 @@ export async function POST(request) {
     }
 
     const requestData = await request.json();
-    const { company_id, company_name, name, invited_email, from_email, role } = requestData;
+    const { company_id, company_name, name, invited_email, role } = requestData;
 
     // Validate required fields
-    if (!company_id?.trim() || !company_name?.trim() || !name?.trim() || !invited_email?.trim() || !from_email?.trim() || !role?.trim()) {
+    if (!company_id?.trim() || !company_name?.trim() || !name?.trim() || !invited_email?.trim() || !role?.trim()) {
       return NextResponse.json(
-        { error: 'Missing required fields: company_id, company_name, name, invited_email, from_email, role' },
+        { error: 'Missing required fields: company_id, company_name, name, invited_email, role' },
         { status: 400 }
       );
     }
@@ -46,7 +46,6 @@ export async function POST(request) {
       company_name: company_name.trim(),
       name: name.trim(),
       invited_email: invited_email.trim().toLowerCase(),
-      from_email: from_email.trim().toLowerCase(),
       role: role.trim().toUpperCase()
     };
 
