@@ -83,7 +83,31 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     };
 
     checkCompanyAccess();
-  }, [isLoaded, user]);
+  }, [isLoaded, user, user?.unsafeMetadata?.companyId]);
+
+  // Separate effect to monitor metadata changes and re-check company access
+  useEffect(() => {
+    if (!user) return;
+    
+    const userCompanyId = user.unsafeMetadata?.companyId;
+    
+    if (userCompanyId && !company?.company_id) {
+      console.log('Metadata changed, re-checking company access');
+      const checkCompanyAccess = async () => {
+        try {
+          setCompany({
+            company_id: userCompanyId as string,
+            plan_name: (user.unsafeMetadata?.planName as string) || 'Free'
+          });
+          console.log('Company access re-granted via metadata update:', userCompanyId);
+        } catch (error) {
+          console.error('Error updating company state:', error);
+        }
+      };
+      
+      checkCompanyAccess();
+    }
+  }, [user?.unsafeMetadata?.companyId, company?.company_id]);
 
   // Show loading state in the page content instead
   if (!isLoaded || isLoadingCompany) {
