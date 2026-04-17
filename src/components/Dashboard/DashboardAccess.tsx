@@ -92,20 +92,16 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     const userCompanyId = user.unsafeMetadata?.companyId;
     
     if (userCompanyId && !company?.company_id) {
-      console.log('Metadata changed, re-checking company access');
-      const checkCompanyAccess = async () => {
-        try {
-          setCompany({
-            company_id: userCompanyId as string,
-            plan_name: (user.unsafeMetadata?.planName as string) || 'Free'
-          });
-          console.log('Company access re-granted via metadata update:', userCompanyId);
-        } catch (error) {
-          console.error('Error updating company state:', error);
-        }
-      };
-      
-      checkCompanyAccess();
+      console.log('Metadata changed, updating company access');
+      try {
+        setCompany({
+          company_id: userCompanyId as string,
+          plan_name: (user.unsafeMetadata?.planName as string) || 'Free'
+        });
+        console.log('Company access re-granted via metadata update:', userCompanyId);
+      } catch (error) {
+        console.error('Error updating company state:', error);
+      }
     }
   }, [user?.unsafeMetadata?.companyId, company?.company_id]);
 
