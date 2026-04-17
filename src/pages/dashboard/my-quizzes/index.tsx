@@ -70,7 +70,7 @@ export default function MyQuizzesPage() {
   const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
   const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') as string | null : null;
   const companyId = metadataCompanyId || localStorageCompanyId || '';
-  const companyName = user?.unsafeMetadata?.companyName as string || localStorage.getItem('userCompanyName') || 'Company';
+  const companyName = user?.unsafeMetadata?.companyName as string || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
   
   // Only make API call if we don't have company info from metadata (for company owners)
   const shouldFetchCompany = !metadataCompanyId && user;
