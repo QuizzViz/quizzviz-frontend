@@ -35,14 +35,27 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const fetchCompany = async () => {
+    const checkCompanyAccess = async () => {
       if (!isLoaded || !user) {
         setIsLoadingCompany(false);
         return;
       }
       
       try {
-        // Check if user has a company
+        // First check if user has company metadata (for invited members)
+        const userCompanyId = user.unsafeMetadata?.companyId;
+        
+        if (userCompanyId) {
+          // User has company metadata, set company info
+          setCompany({
+            company_id: userCompanyId as string,
+            plan_name: (user.unsafeMetadata?.planName as string) || 'Free'
+          });
+          console.log('Company access granted via metadata:', userCompanyId);
+          return;
+        }
+        
+        // If no metadata, check if user owns a company (for company owners)
         const checkResponse = await fetch(`/api/company/check?owner_id=${user.id}`);
         
         if (!checkResponse.ok) {
@@ -57,18 +70,19 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
         // If company exists in the response, use it
         if (checkData.exists && checkData.companies && checkData.companies.length > 0) {
           setCompany(checkData.companies[0]);
+          console.log('Company access granted via ownership:', checkData.companies[0].company_id);
         } else {
           setCompany(null);
         }
       } catch (error) {
-        console.error('Error fetching company:', error);
+        console.error('Error checking company access:', error);
         setCompany(null);
       } finally {
         setIsLoadingCompany(false);
       }
     };
 
-    fetchCompany();
+    checkCompanyAccess();
   }, [isLoaded, user]);
 
   // Show loading state in the page content instead

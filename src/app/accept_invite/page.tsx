@@ -99,12 +99,31 @@ export default function AcceptInvitePage() {
 
       // Wait for metadata to be fully processed, then redirect to dashboard
       setTimeout(async () => {
-        // Force a reload of user data to get updated metadata
-        if (user) {
-          await user.reload();
+        try {
+          // Force a reload of user data to get updated metadata
+          if (user) {
+            await user.reload();
+            
+            // Verify metadata was updated before redirecting
+            const updatedMetadata = user.unsafeMetadata;
+            console.log('User metadata after reload:', updatedMetadata);
+            
+            if (updatedMetadata?.companyId) {
+              console.log('Metadata confirmed, redirecting to dashboard');
+              router.push('/dashboard');
+            } else {
+              console.error('Metadata not updated, forcing redirect anyway');
+              router.push('/dashboard');
+            }
+          } else {
+            console.log('No user object, redirecting to dashboard');
+            router.push('/dashboard');
+          }
+        } catch (reloadError) {
+          console.error('Error during user reload:', reloadError);
+          router.push('/dashboard');
         }
-        router.push('/dashboard');
-      }, 2000);
+      }, 2500);
       
     } catch (error) {
       console.error('Error accepting invite:', error);
