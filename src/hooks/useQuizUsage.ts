@@ -44,22 +44,32 @@ export function useQuizUsage() {
   
   const plan = (user?.publicMetadata?.plan as string) || 'Free';
   
-  // Fetch company info using useCachedFetch
+  // Use the same approach as teams page - metadata first, then localStorage fallback
+  const metadataCompanyId = user?.unsafeMetadata?.companyId;
+  const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
+  const initialCompanyId = metadataCompanyId || localStorageCompanyId || '';
+  const companyName = user?.unsafeMetadata?.companyName || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
+  
+  // Only make API call if we don't have company info from metadata (for company owners)
+  const shouldFetchCompany = !metadataCompanyId && user;
   const { data: companyData, isLoading: isCompanyLoading, error: companyError } = useCachedFetch<{
     exists: boolean;
     companies: Array<{ id?: string; company_id?: string; name: string; owner_email?: string }>;
   }>(
     ['companyInfo', user?.id || ''],
-    user && isLoaded ? `/api/company/check?owner_id=${user.id}` : '',
-    { enabled: Boolean(user && isLoaded) }
+    shouldFetchCompany && isLoaded ? `/api/company/check?owner_id=${user.id}` : '',
+    { enabled: Boolean(user && isLoaded && shouldFetchCompany) }
   );
   
   // Process company info
-  const companyInfo = companyData?.exists && companyData.companies?.[0] ? {
+  const companyInfo = (metadataCompanyId || localStorageCompanyId) ? {
+    id: metadataCompanyId || localStorageCompanyId || '',
+    name: companyName,
+  } : (companyData?.exists && companyData.companies?.[0] ? {
     id: companyData.companies[0].company_id || companyData.companies[0].id || '',
     name: companyData.companies[0].name || 'Unnamed Company',
     owner_email: companyData.companies[0].owner_email,
-  } : null;
+  } : null);
   
   // Handle company fetch errors
   useEffect(() => {
@@ -75,15 +85,14 @@ export function useQuizUsage() {
   }, [companyError, toast, errorShown]);
 
   // Fetch quiz usage data using useCachedFetch
-  
-const companyId = companyInfo?.id;
- const { 
+  const companyId = companyInfo?.id || '';
+  const { 
     data, 
     isLoading: isLoadingUsage, 
     error: usageError, 
     refetch 
   } = useCachedFetch<QuizUsageData>(
-    ['quizUsage', companyId || ''],
+    ['quizUsage', companyId.toString()], // Ensure query key is always a string
     companyId ? `/api/quiz-usage` : '',
     { 
       enabled: Boolean(companyId)

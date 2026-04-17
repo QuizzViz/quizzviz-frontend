@@ -222,25 +222,30 @@ export default function ResultsDashboard() {
   const quizzesPerPage = 5;
   const dataFetched = useRef(false);
 
+  // Use the same approach as teams page - metadata first, then localStorage fallback
+  const metadataCompanyId = user?.unsafeMetadata?.companyId;
+  const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
+  const companyId = metadataCompanyId || localStorageCompanyId || '';
 
-  // Fetch company info
+  // Only make API call if we don't have company info from metadata (for company owners)
+  const shouldFetchCompany = !metadataCompanyId && user;
   const { data: companyData, isLoading: isCompanyLoading } = useCachedFetch<{
     companies: Array<{ id?: string; company_id?: string }>;
   }>(
     ['companyInfo', user?.id as string],
-    user ? `/api/company/check?owner_id=${user.id}` : '',
-    { enabled: Boolean(user) }
+    shouldFetchCompany ? `/api/company/check?owner_id=${user.id}` : '',
+    { enabled: Boolean(user && shouldFetchCompany) }
   );
 
-  const companyId = companyData?.companies?.[0]?.company_id || companyData?.companies?.[0]?.id;
+  // For company owners, get companyId from API response
+  const apiCompanyId = companyData?.companies?.[0]?.company_id || companyData?.companies?.[0]?.id;
+  const finalCompanyId = companyId || apiCompanyId || '';
 
   // Fetch quiz results
- const { data: quizResults, isLoading, refetch: refetchResults } = useCachedFetch<QuizResult[] | { results: QuizResult[] } | { error: string }>(
-    ['quizResults', companyId as string],
-    companyId ? `/api/quiz_result?company_id=${companyId}` : '',
-    { 
-      enabled: Boolean(companyId)
-    }
+  const { data: quizResults, isLoading, refetch: refetchResults } = useCachedFetch<QuizResult[] | { results: QuizResult[] } | { error: string }>(
+    ['quizResults', finalCompanyId as string],
+    finalCompanyId ? `/api/quiz_result?company_id=${finalCompanyId}` : '',
+    { enabled: Boolean(finalCompanyId) }
   );
 
 

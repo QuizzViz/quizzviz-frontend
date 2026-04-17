@@ -72,16 +72,31 @@ export default function MyQuizzesPage() {
   const companyId = metadataCompanyId || localStorageCompanyId || '';
   const companyName = user?.unsafeMetadata?.companyName as string || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
   
-  // Only make API call if we don't have company info from metadata (for company owners)
-  const shouldFetchCompany = !metadataCompanyId && user;
-  const companyUrl = shouldFetchCompany ? `/api/company/check?owner_id=${user.id}` : '';
+  // Determine which API endpoint to use
+  let companyUrl = '';
+  let fetchOptions = {};
+  
+  if (metadataCompanyId || localStorageCompanyId) {
+    // For invited members, use company-by-id endpoint
+    companyUrl = `/api/company/${companyId}`;
+    fetchOptions = { enabled: Boolean(isLoaded && (metadataCompanyId || localStorageCompanyId)) };
+  } else if (user) {
+    // For company owners, use owner-based endpoint
+    companyUrl = `/api/company/check?owner_id=${user.id}`;
+    fetchOptions = { enabled: Boolean(isLoaded && user) };
+  }
+  
   const { data: companyData, isLoading: isCompanyLoading, error: companyError } = useCachedFetch<{
-    exists: boolean;
-    companies: Array<{ id?: string; company_id?: string; name: string; owner_email?: string }>;
+    exists?: boolean;
+    companies?: Array<{ id?: string; company_id?: string; name: string; owner_email?: string }>;
+    id?: string;
+    company_id?: string;
+    name: string;
+    owner_email?: string;
   }>(
     ['companyInfo', companyId],
     companyUrl,
-    { enabled: Boolean(isLoaded && shouldFetchCompany) }
+    fetchOptions
   );
 
   // Update company info when data is loaded or when metadata is available
@@ -94,17 +109,28 @@ export default function MyQuizzesPage() {
 
       // For invited members, use metadata/localStorage first
       if (metadataCompanyId || localStorageCompanyId) {
-        setCompanyInfo({
-          id: metadataCompanyId || localStorageCompanyId || '',
-          name: companyName,
-          owner_email: user?.emailAddresses?.[0]?.emailAddress
-        });
+        // Try to get fresh data from API, but fall back to metadata
+        if (companyData && (companyData.id || companyData.company_id || companyData.name)) {
+          // New API response format - direct company object
+          setCompanyInfo({
+            id: companyData.company_id || companyData.id || companyId,
+            name: companyData.name || companyName,
+            owner_email: companyData.owner_email || user?.emailAddresses?.[0]?.emailAddress
+          });
+        } else {
+          // Fallback to metadata/localStorage
+          setCompanyInfo({
+            id: metadataCompanyId || localStorageCompanyId || '',
+            name: companyName,
+            owner_email: user?.emailAddresses?.[0]?.emailAddress
+          });
+        }
         setIsLoading(false);
         return;
       }
 
-      // For company owners, use API data
-      if (companyData?.exists && companyData.companies?.length > 0) {
+      // For company owners, use API data (old format with companies array)
+      if (companyData?.exists && companyData.companies && companyData.companies.length > 0) {
         const company = companyData.companies[0];
         setCompanyInfo({
           id: company.company_id || company.id || company.name,
@@ -126,7 +152,7 @@ export default function MyQuizzesPage() {
         setIsLoading(false);
       }
     }
-  }, [isLoaded, user, companyData, companyError, isCompanyLoading, router, metadataCompanyId, localStorageCompanyId, companyName]);
+  }, [isLoaded, user, companyData, companyError, isCompanyLoading, router, metadataCompanyId, localStorageCompanyId, companyName, companyId]);
 
   // Use cached fetch for quizzes
   const quizzesUrl = companyInfo?.id ? `/api/quizzes?companyId=${encodeURIComponent(companyInfo.id)}` : '';
