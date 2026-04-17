@@ -4,12 +4,13 @@ const CREATE_COMPANY_URL = process.env.NEXT_PUBLIC_CREATE_COMPANY_SERVICE_URL;
 
 export async function GET(
   request: Request,
-  { params }: { params: { company_id: string } }
+  { params }: { params: Promise<{ company_id: string }> }
 ) {
-  console.log('Company info request received for company_id:', params.company_id);
+  const resolvedParams = await params;
+  console.log('Company info request received for company_id:', resolvedParams.company_id);
   
   try {
-    const { company_id } = params;
+    const { company_id } = resolvedParams;
     
     if (!company_id) {
       console.error('No company_id provided in request');
