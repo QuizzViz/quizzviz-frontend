@@ -214,6 +214,7 @@ export async function GET(request) {
     }
 
     console.log('Making request to:', `${COMPANY_MEMBERS_URL}/members?company_id=${company_id.trim()}`);
+    console.log('COMPANY_MEMBERS_URL env var:', COMPANY_MEMBERS_URL);
     
     let response;
     try {
@@ -225,9 +226,13 @@ export async function GET(request) {
         },
       });
 
+      console.log('Backend response status:', response.status);
+      console.log('Backend response ok:', response.ok);
+
       let responseData;
       try {
         responseData = await response.json();
+        console.log('Backend response data:', responseData);
       } catch (jsonError) {
         console.error('Failed to parse response:', jsonError);
         responseData = {};
@@ -251,6 +256,10 @@ export async function GET(request) {
       }
 
       console.log('Company members fetched successfully:', responseData);
+      console.log('Response data type:', typeof responseData);
+      console.log('Is array?', Array.isArray(responseData));
+      console.log('Response data length:', responseData?.length);
+      
       return NextResponse.json(responseData);
       
     } catch (error) {
