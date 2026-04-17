@@ -66,8 +66,10 @@ export default function MyQuizzesPage() {
   
   const isBusinessPlan = plan === 'Business';
 
-  // Use cached fetch for company info
-  const companyId = user?.id || '';
+  // Use cached fetch for company info with localStorage fallback
+  const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
+  const localStorageCompanyId = localStorage.getItem('userCompanyId') as string | null;
+  const companyId = metadataCompanyId || localStorageCompanyId || user?.id || '';
   const companyUrl = user ? `/api/company/check?owner_id=${user.id}` : '';
   const { data: companyData, isLoading: isCompanyLoading, error: companyError } = useCachedFetch<{
     exists: boolean;

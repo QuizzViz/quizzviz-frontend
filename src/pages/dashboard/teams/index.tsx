@@ -65,8 +65,15 @@ export default function TeamsPage() {
   });
 
   useEffect(() => {
-    if (user?.unsafeMetadata?.companyId) {
-      setCompanyId(user.unsafeMetadata.companyId as string);
+    // Try to get company ID from metadata first, then fallback to localStorage
+    const metadataCompanyId = user?.unsafeMetadata?.companyId;
+    const localStorageCompanyId = localStorage.getItem('userCompanyId');
+    
+    if (metadataCompanyId) {
+      setCompanyId(metadataCompanyId as string);
+    } else if (localStorageCompanyId) {
+      setCompanyId(localStorageCompanyId);
+      console.log('Using company ID from localStorage:', localStorageCompanyId);
     } else {
       setCompanyId('quizzviz');
     }
