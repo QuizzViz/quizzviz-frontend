@@ -203,8 +203,8 @@ export default clerkMiddleware(async (auth, request) => {
     const { userId } = await auth();
 
     if (!userId) {
-      // Not signed in → redirect to signup
-      return NextResponse.redirect(new URL('/signup', request.url));
+      // Not signed in → redirect to signin
+      return NextResponse.redirect(new URL('/signin', request.url));
     }
 
     // Signed in → allow access (no metadata/company/plan checks anymore)
