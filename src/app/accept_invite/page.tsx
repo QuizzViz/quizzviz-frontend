@@ -74,6 +74,10 @@ export default function AcceptInvitePage() {
           const companyName = result.member?.company_name || 'QuizzViz';
           
           if (companyId) {
+            // Store company info in localStorage for dashboard to fetch
+            localStorage.setItem('userCompanyId', companyId);
+            localStorage.setItem('userCompanyName', companyName);
+            
             await user.update({
               unsafeMetadata: {
                 ...user.unsafeMetadata,
