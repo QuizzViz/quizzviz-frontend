@@ -66,6 +66,27 @@ export default function AcceptInvitePage() {
       // Remove token from localStorage
       localStorage.removeItem('invite-token');
       
+      // Update user metadata with company information
+      if (user) {
+        try {
+          const companyId = result.company_id || result.company?.id;
+          const companyName = result.company_name || result.company?.name || 'QuizzViz';
+          
+          if (companyId) {
+            await user.update({
+              unsafeMetadata: {
+                ...user.unsafeMetadata,
+                companyId: companyId,
+                companyName: companyName,
+                onboardingComplete: true
+              }
+            });
+          }
+        } catch (metadataError) {
+          console.error('Error updating user metadata:', metadataError);
+        }
+      }
+      
       toast({
         title: "Welcome to the Team!",
         description: "You have successfully joined the team.",
