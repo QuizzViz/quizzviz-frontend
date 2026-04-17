@@ -116,7 +116,6 @@ export default function TeamsPage() {
       
       // Get company name from user metadata or use a default
       const companyName = user?.unsafeMetadata?.companyName || 'QuizzViz';
-      const fromEmail = user?.primaryEmailAddress?.emailAddress || '';
       
       // Call the invite_member API
       const response = await fetch('/api/company-members/invite', {
@@ -130,7 +129,6 @@ export default function TeamsPage() {
           company_name: companyName,
           name: inviteForm.name,
           invited_email: inviteForm.email,
-          from_email: fromEmail,
           role: inviteForm.role
         })
       });
