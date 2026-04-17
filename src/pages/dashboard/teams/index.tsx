@@ -57,29 +57,50 @@ export default function TeamsPage() {
 
   // Get company ID from user metadata
   useEffect(() => {
+    console.log('User metadata:', user?.unsafeMetadata);
     if (user?.unsafeMetadata?.companyId) {
-      setCompanyId(user.unsafeMetadata.companyId as string);
+      const id = user.unsafeMetadata.companyId as string;
+      setCompanyId(id);
+      console.log('Company ID set from metadata:', id);
+    } else {
+      console.log('No companyId found in user metadata');
+      // Fallback for testing - use the company_id from the database
+      console.log('Using fallback company_id: quizzviz');
+      setCompanyId('quizzviz');
     }
   }, [user]);
 
   // Fetch company members
   const fetchMembers = async () => {
-    if (!companyId) return;
+    console.log('fetchMembers called, companyId:', companyId);
+    if (!companyId) {
+      console.log('No companyId, returning early');
+      return;
+    }
 
     setIsFetchingMembers(true);
     try {
       const token = await getToken();
+      console.log('Making fetch request to:', `/api/company-members?company_id=${companyId}`);
+      
       const response = await fetch(`/api/company-members?company_id=${companyId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
         throw new Error('Failed to fetch members');
       }
 
       const data = await response.json();
+      console.log('Fetched members data:', data);
+      console.log('Data type:', typeof data);
+      console.log('Is array?', Array.isArray(data));
+      console.log('Data length:', data?.length);
+      
       setMembers(data);
     } catch (error) {
       console.error('Error fetching members:', error);
