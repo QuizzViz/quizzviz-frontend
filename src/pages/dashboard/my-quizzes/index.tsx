@@ -66,21 +66,25 @@ export default function MyQuizzesPage() {
   
   const isBusinessPlan = plan === 'Business';
 
-  // Use cached fetch for company info with localStorage fallback
+  // Use the same approach as teams page - metadata first, then localStorage fallback
   const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
   const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') as string | null : null;
-  const companyId = metadataCompanyId || localStorageCompanyId || user?.id || '';
-  const companyUrl = user ? `/api/company/check?owner_id=${user.id}` : '';
+  const companyId = metadataCompanyId || localStorageCompanyId || '';
+  const companyName = user?.unsafeMetadata?.companyName as string || localStorage.getItem('userCompanyName') || 'Company';
+  
+  // Only make API call if we don't have company info from metadata (for company owners)
+  const shouldFetchCompany = !metadataCompanyId && user;
+  const companyUrl = shouldFetchCompany ? `/api/company/check?owner_id=${user.id}` : '';
   const { data: companyData, isLoading: isCompanyLoading, error: companyError } = useCachedFetch<{
     exists: boolean;
     companies: Array<{ id?: string; company_id?: string; name: string; owner_email?: string }>;
   }>(
     ['companyInfo', companyId],
     companyUrl,
-    { enabled: Boolean(isLoaded && user) }
+    { enabled: Boolean(isLoaded && shouldFetchCompany) }
   );
 
-  // Update company info when data is loaded
+  // Update company info when data is loaded or when metadata is available
   useEffect(() => {
     if (isLoaded) {
       if (!user) {
@@ -88,6 +92,18 @@ export default function MyQuizzesPage() {
         return;
       }
 
+      // For invited members, use metadata/localStorage first
+      if (metadataCompanyId || localStorageCompanyId) {
+        setCompanyInfo({
+          id: metadataCompanyId || localStorageCompanyId || '',
+          name: companyName,
+          owner_email: user?.emailAddresses?.[0]?.emailAddress
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // For company owners, use API data
       if (companyData?.exists && companyData.companies?.length > 0) {
         const company = companyData.companies[0];
         setCompanyInfo({
@@ -110,7 +126,7 @@ export default function MyQuizzesPage() {
         setIsLoading(false);
       }
     }
-  }, [isLoaded, user, companyData, companyError, isCompanyLoading, router]);
+  }, [isLoaded, user, companyData, companyError, isCompanyLoading, router, metadataCompanyId, localStorageCompanyId, companyName]);
 
   // Use cached fetch for quizzes
   const quizzesUrl = companyInfo?.id ? `/api/quizzes?companyId=${encodeURIComponent(companyInfo.id)}` : '';

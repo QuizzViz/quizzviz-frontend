@@ -116,8 +116,15 @@ export default function AcceptInvitePage() {
               console.log('Metadata confirmed, redirecting to dashboard');
               router.push('/dashboard');
             } else {
-              console.error('Metadata not updated, forcing redirect anyway');
-              router.push('/dashboard');
+              console.error('Metadata not updated, but localStorage has company info, redirecting to dashboard');
+              // Fallback to localStorage if metadata isn't updated yet
+              const localStorageCompanyId = localStorage.getItem('userCompanyId');
+              if (localStorageCompanyId) {
+                router.push('/dashboard');
+              } else {
+                console.error('No company info found, redirecting to onboarding');
+                router.push('/onboarding');
+              }
             }
           } else {
             console.log('No user object, redirecting to dashboard');
@@ -125,9 +132,15 @@ export default function AcceptInvitePage() {
           }
         } catch (reloadError) {
           console.error('Error during user reload:', reloadError);
-          router.push('/dashboard');
+          // Check localStorage as fallback
+          const localStorageCompanyId = localStorage.getItem('userCompanyId');
+          if (localStorageCompanyId) {
+            router.push('/dashboard');
+          } else {
+            router.push('/onboarding');
+          }
         }
-      }, 2500);
+      }, 1500);
       
     } catch (error) {
       console.error('Error accepting invite:', error);
