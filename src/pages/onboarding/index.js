@@ -441,7 +441,28 @@ export default function OnboardingPage() {
         throw new Error(err.error || 'Failed to create company');
       }
 
-      await res.json();
+      const companyData = await res.json();
+
+      // Create company member record for the owner
+      const memberResponse = await fetch('/api/company-members', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          user_id: user?.id,
+          company_id: companyData.id || companyData.company_id,
+          role: 'OWNER',
+          status: 'ACTIVE'
+        }),
+      });
+
+      if (!memberResponse.ok) {
+        const memberError = await memberResponse.json();
+        console.error('Failed to create company member record:', memberError);
+        // Don't fail the onboarding, just log the error
+      }
 
       toast({
         title: "Success!",
