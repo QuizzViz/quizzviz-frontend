@@ -112,17 +112,55 @@ export default function TeamsPage() {
     }
     setIsSubmittingInvite(true);
     try {
-      await getToken();
+      const token = await getToken();
+      
+      // Get company name from user metadata or use a default
+      const companyName = user?.unsafeMetadata?.companyName || 'QuizzViz';
+      const fromEmail = user?.primaryEmailAddress?.emailAddress || '';
+      
+      // Call the invite_member API
+      const response = await fetch('/api/company-members/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          company_id: companyId,
+          company_name: companyName,
+          name: inviteForm.name,
+          invited_email: inviteForm.email,
+          from_email: fromEmail,
+          role: inviteForm.role
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send invitation');
+      }
+
+      const result = await response.json();
+      
       toast({
-        title: "Invite Sent",
+        title: "Invite Sent Successfully!",
         description: `Invitation sent to ${inviteForm.email}`,
         className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
+      
       setInviteForm({ email: '', name: '', role: 'MEMBER' });
       setIsInviteDialogOpen(false);
+      
+      // Refresh members list to show the new invited member
+      fetchMembers();
+      
     } catch (error) {
       console.error('Error sending invite:', error);
-      toast({ title: "Error", description: "Failed to send invitation", variant: "destructive" });
+      toast({ 
+        title: "Error", 
+        description: error instanceof Error ? error.message : "Failed to send invitation", 
+        variant: "destructive" 
+      });
     } finally {
       setIsSubmittingInvite(false);
     }

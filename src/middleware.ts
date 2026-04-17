@@ -161,6 +161,9 @@ const isPublicRoute = createRouteMatcher([
   '/pricing',           // ← added pricing as public for simplicity
   '/onboarding',        // ← added onboarding as public (we handle redirect client-side)
   '/contact',           // ← added contact page as public
+  '/invite/(.*)',       // ← invite routes must be public for email links
+  '/auth/callback',      // ← auth callback for post-signup redirects
+  '/accept_invite',      // ← accept invite page needs to handle auth state
 ]);
 
 // Bot detection (kept)
