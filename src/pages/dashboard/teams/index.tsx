@@ -67,7 +67,7 @@ export default function TeamsPage() {
   useEffect(() => {
     // Try to get company ID from metadata first, then fallback to localStorage
     const metadataCompanyId = user?.unsafeMetadata?.companyId;
-    const localStorageCompanyId = localStorage.getItem('userCompanyId');
+    const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
     
     if (metadataCompanyId) {
       setCompanyId(metadataCompanyId as string);
