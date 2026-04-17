@@ -147,7 +147,7 @@ export default function ProfilePage() {
                     className="w-28 h-28 rounded-full border-2 border-white object-cover"
                   />
                   <h2 className="text-xl font-semibold">
-                    {companyInfo?.name || 'No Company'}
+                    {companyInfo ? companyInfo.name : 'No Company'}
                   </h2>
 
                   {/* Additional Info */}
