@@ -454,7 +454,8 @@ export default function OnboardingPage() {
           user_id: user?.id,
           company_id: companyData.id || companyData.company_id,
           role: 'OWNER',
-          status: 'ACTIVE'
+          status: 'ACTIVE',
+          name: user?.fullName || user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Team Owner'
         }),
       });
 

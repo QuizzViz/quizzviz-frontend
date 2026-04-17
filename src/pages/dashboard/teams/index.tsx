@@ -32,10 +32,12 @@ interface CompanyMember {
   joined_at?: string;
   created_at: string;
   updated_at: string;
+  name?: string;
 }
 
 interface InviteFormData {
   email: string;
+  name: string;
   role: 'OWNER' | 'ADMIN' | 'MEMBER';
 }
 
@@ -52,55 +54,39 @@ export default function TeamsPage() {
   const { toast } = useToast();
   const [inviteForm, setInviteForm] = useState<InviteFormData>({
     email: '',
+    name: '',
     role: 'MEMBER'
   });
 
   // Get company ID from user metadata
   useEffect(() => {
-    console.log('User metadata:', user?.unsafeMetadata);
     if (user?.unsafeMetadata?.companyId) {
       const id = user.unsafeMetadata.companyId as string;
       setCompanyId(id);
-      console.log('Company ID set from metadata:', id);
     } else {
-      console.log('No companyId found in user metadata');
       // Fallback for testing - use the company_id from the database
-      console.log('Using fallback company_id: quizzviz');
       setCompanyId('quizzviz');
     }
   }, [user]);
 
   // Fetch company members
   const fetchMembers = async () => {
-    console.log('fetchMembers called, companyId:', companyId);
-    if (!companyId) {
-      console.log('No companyId, returning early');
-      return;
-    }
+    if (!companyId) return;
 
     setIsFetchingMembers(true);
     try {
       const token = await getToken();
-      console.log('Making fetch request to:', `/api/company-members?company_id=${companyId}`);
-      
       const response = await fetch(`/api/company-members?company_id=${companyId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      console.log('Response status:', response.status);
-      
       if (!response.ok) {
         throw new Error('Failed to fetch members');
       }
 
       const data = await response.json();
-      console.log('Fetched members data:', data);
-      console.log('Data type:', typeof data);
-      console.log('Is array?', Array.isArray(data));
-      console.log('Data length:', data?.length);
-      
       setMembers(data);
     } catch (error) {
       console.error('Error fetching members:', error);
@@ -141,20 +127,20 @@ export default function TeamsPage() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'OWNER':
-        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+        return 'bg-gradient-to-r from-amber-500/20 to-red-500/20 text-amber-400 border border-amber-500/30 shadow-amber-500/20';
       case 'ADMIN':
-        return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+        return 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-400 border border-blue-500/30 shadow-blue-500/20';
       case 'MEMBER':
-        return 'bg-green-500/10 text-green-500 border-green-500/20';
+        return 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-400 border border-emerald-500/30 shadow-emerald-500/20';
       default:
-        return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+        return 'bg-gradient-to-r from-slate-500/20 to-gray-500/20 text-slate-400 border border-slate-500/30';
     }
   };
 
   const getStatusColor = (status: string) => {
     return status === 'ACTIVE' 
-      ? 'bg-green-500/10 text-green-500 border-green-500/20'
-      : 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+      ? 'bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-400 border border-emerald-500/30 shadow-emerald-500/20'
+      : 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30 shadow-amber-500/20';
   };
 
   const handleInviteSubmit = async (e: React.FormEvent) => {
@@ -181,7 +167,7 @@ export default function TeamsPage() {
       });
 
       // Reset form and close dialog
-      setInviteForm({ email: '', role: 'MEMBER' });
+      setInviteForm({ email: '', name: '', role: 'MEMBER' });
       setIsInviteDialogOpen(false);
       
     } catch (error) {
@@ -257,6 +243,19 @@ export default function TeamsPage() {
                       </DialogHeader>
                       <form onSubmit={handleInviteSubmit} className="space-y-4">
                         <div className="space-y-2">
+                          <Label htmlFor="name">Name</Label>
+                          <Input
+                            id="name"
+                            type="text"
+                            placeholder="Enter full name"
+                            value={inviteForm.name}
+                            onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
+                            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
                           <Label htmlFor="email">Email Address</Label>
                           <Input
                             id="email"
@@ -326,56 +325,128 @@ export default function TeamsPage() {
                     <LoadingSpinner text="Fetching team members..." />
                   </div>
                 ) : members.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {members.map((member) => (
-                      <Card key={member.id} className="bg-gray-900 border-gray-700">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <div className="h-8 w-8 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center">
-                                <FiUser className="h-4 w-4 text-white" />
+                      <Card key={member.id} className="relative overflow-hidden border-0 bg-gradient-to-br from-slate-900/90 via-slate-800/80 to-slate-900/90 backdrop-blur-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-[1.03] group">
+                        {/* Elegant Gradient Border Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div className="absolute inset-px bg-gradient-to-br from-emerald-500/30 via-transparent to-blue-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        
+                        {/* Card Content */}
+                        <div className="relative p-6">
+                          {/* Header with Enhanced Avatar */}
+                          <div className="flex items-start justify-between mb-6">
+                            <div className="flex items-center space-x-4">
+                              {/* Premium Avatar with Role-based Gradient */}
+                              <div className="relative group">
+                                <div className={`h-14 w-14 rounded-2xl p-[3px] transition-all duration-300 ${
+                                  member.role === 'OWNER' 
+                                    ? 'bg-gradient-to-br from-amber-400 via-orange-500 to-red-500' 
+                                    : member.role === 'ADMIN'
+                                    ? 'bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600'
+                                    : 'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600'
+                                }`}>
+                                  <div className="h-full w-full rounded-2xl bg-slate-900/90 backdrop-blur-sm flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                                    <FiUser className="h-7 w-7 text-white drop-shadow-lg" />
+                                  </div>
+                                </div>
+                                {/* Animated Status Indicator */}
+                                <div className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-3 border-slate-900/90 backdrop-blur-sm transition-all duration-300 ${
+                                  member.status === 'ACTIVE' 
+                                    ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/50' 
+                                    : 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/50 animate-pulse'
+                                }`}>
+                                  <div className="h-full w-full rounded-full bg-white/90 flex items-center justify-center">
+                                    <div className={`h-2 w-2 rounded-full ${
+                                      member.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-orange-500'
+                                    }`}></div>
+                                  </div>
+                                </div>
                               </div>
-                              <span className="text-white">
-                                {member.invited_email || `User ${member.user_id.slice(0, 8)}`}
-                              </span>
+                              
+                              {/* Enhanced User Info */}
+                              <div className="flex-1">
+                                <h3 className="font-bold text-white text-xl mb-1 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                                  {member.name || member.invited_email || 'Team Member'}
+                                </h3>
+                                <p className="text-slate-400 text-sm font-medium">
+                                  {member.invited_email || member.name ? member.invited_email || member.name : `ID: ${member.user_id.slice(0, 8)}...`}
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-1">
+                            
+                            {/* Enhanced Role Badge */}
+                            <div className={`p-3 rounded-xl backdrop-blur-sm transition-all duration-300 ${
+                              member.role === 'OWNER' 
+                                ? 'bg-gradient-to-br from-amber-500/20 to-red-500/20 border border-amber-500/30'
+                                : member.role === 'ADMIN'
+                                ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30'
+                                : 'bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30'
+                            }`}>
                               {getRoleIcon(member.role)}
                             </div>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-400">Role</span>
-                            <Badge className={getRoleColor(member.role)}>
-                              {member.role}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-400">Status</span>
-                            <Badge className={getStatusColor(member.status)}>
-                              {member.status}
-                            </Badge>
                           </div>
 
-                          {member.joined_at && (
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-400">Joined</span>
-                              <span className="text-sm text-white">
-                                {format(new Date(member.joined_at), 'MMM dd, yyyy')}
-                              </span>
+                          {/* Enhanced Role and Status Pills */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-2">
+                              <Badge className={`px-4 py-2 rounded-full text-xs font-bold border-0 shadow-lg transition-all duration-300 ${
+                                member.role === 'OWNER' 
+                                  ? 'bg-gradient-to-r from-amber-500 to-red-500 text-white shadow-amber-500/30'
+                                  : member.role === 'ADMIN'
+                                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-blue-500/30'
+                                  : 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-emerald-500/30'
+                              }`}>
+                                {member.role}
+                              </Badge>
+                              <Badge className={`px-4 py-2 rounded-full text-xs font-bold border-0 shadow-lg transition-all duration-300 ${
+                                member.status === 'ACTIVE'
+                                  ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-emerald-500/30'
+                                  : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-orange-500/30 animate-pulse'
+                              }`}>
+                                {member.status}
+                              </Badge>
                             </div>
-                          )}
+                          </div>
 
-                          {member.invited_email && member.status === 'INVITED' && (
-                            <div className="pt-2">
-                              <p className="text-xs text-orange-400">
-                                Invitation sent to {member.invited_email}
-                              </p>
+                          {/* Enhanced Additional Info */}
+                          <div className="space-y-4">
+                            {member.joined_at && (
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-sm">
+                                <div className="flex items-center text-emerald-400 text-sm font-medium">
+                                  <div className="h-2 w-2 rounded-full bg-emerald-500 mr-3 shadow-lg shadow-emerald-500/50"></div>
+                                  <span className="text-emerald-300">Joined</span>
+                                  <span className="text-emerald-200 ml-auto font-medium">
+                                    {format(new Date(member.joined_at), 'MMM dd, yyyy')}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {member.invited_email && member.status === 'INVITED' && (
+                              <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4 backdrop-blur-sm">
+                                <div className="flex items-center text-amber-400 text-sm font-medium">
+                                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 p-2 mr-3 shadow-lg shadow-amber-500/30">
+                                    <FiMail className="h-4 w-4 text-white" />
+                                  </div>
+                                  <div>
+                                    <span className="text-amber-300">Invitation sent</span>
+                                    <p className="text-amber-200 text-xs mt-1">{member.invited_email}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Enhanced Hover Action Buttons */}
+                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                            <div className="flex space-x-2">
+                              <Button size="sm" variant="outline" className="h-9 w-9 p-0 border-slate-600 hover:bg-slate-700 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 transition-all duration-300">
+                                <FiMail className="h-4 w-4 text-slate-400 group-hover:text-emerald-400 transition-colors duration-300" />
+                              </Button>
                             </div>
-                          )}
-                        </CardContent>
+                          </div>
+                        </div>
                       </Card>
                     ))}
                   </div>

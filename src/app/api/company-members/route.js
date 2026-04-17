@@ -32,7 +32,7 @@ export async function POST(request) {
       );
     }
 
-    const { user_id, company_id, role, status, id } = requestData;
+    const { user_id, company_id, role, status, id, name } = requestData;
     
     // Ensure user_id is set from the authenticated user if not provided
     const finalUserId = (user_id || userId)?.trim();
@@ -97,6 +97,7 @@ export async function POST(request) {
       company_id: company_id.trim(),
       role: role.trim().toUpperCase(),
       status: status.trim().toUpperCase(),
+      name: name?.trim() || null,
       joined_at: status.trim().toUpperCase() === 'ACTIVE' ? new Date().toISOString() : null
     };
 
@@ -213,9 +214,6 @@ export async function GET(request) {
       );
     }
 
-    console.log('Making request to:', `${COMPANY_MEMBERS_URL}/members?company_id=${company_id.trim()}`);
-    console.log('COMPANY_MEMBERS_URL env var:', COMPANY_MEMBERS_URL);
-    
     let response;
     try {
       response = await fetch(`${COMPANY_MEMBERS_URL}/members?company_id=${company_id.trim()}`, {
@@ -226,13 +224,9 @@ export async function GET(request) {
         },
       });
 
-      console.log('Backend response status:', response.status);
-      console.log('Backend response ok:', response.ok);
-
       let responseData;
       try {
         responseData = await response.json();
-        console.log('Backend response data:', responseData);
       } catch (jsonError) {
         console.error('Failed to parse response:', jsonError);
         responseData = {};
@@ -255,11 +249,6 @@ export async function GET(request) {
         );
       }
 
-      console.log('Company members fetched successfully:', responseData);
-      console.log('Response data type:', typeof responseData);
-      console.log('Is array?', Array.isArray(responseData));
-      console.log('Response data length:', responseData?.length);
-      
       return NextResponse.json(responseData);
       
     } catch (error) {
