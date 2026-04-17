@@ -23,7 +23,14 @@ export default function ProfilePage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch company info using useCachedFetch
+  // Use the same approach as teams page - metadata first, then localStorage fallback
+  const metadataCompanyId = user?.unsafeMetadata?.companyId;
+  const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
+  const companyId = metadataCompanyId || localStorageCompanyId || '';
+  const companyName = user?.unsafeMetadata?.companyName || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
+
+  // Only make API call if we don't have company info from metadata (for company owners)
+  const shouldFetchCompany = !metadataCompanyId && user;
   const { data: companyData, isLoading, error: fetchError } = useCachedFetch<{
     exists: boolean;
     companies: Array<{
@@ -35,12 +42,23 @@ export default function ProfilePage() {
     }>;
   }>(
     ['companyInfo', user?.id || ''],
-    user ? `/api/company/check?owner_id=${user.id}` : '',
-    { enabled: Boolean(user && isLoaded) }
+    shouldFetchCompany ? `/api/company/check?owner_id=${user.id}` : '',
+    { enabled: Boolean(user && isLoaded && shouldFetchCompany) }
   );
 
   // Process company data
   const companyInfo = useMemo(() => {
+    // For invited members, use metadata/localStorage
+    if (metadataCompanyId || localStorageCompanyId) {
+      return {
+        id: metadataCompanyId || localStorageCompanyId || '',
+        name: companyName,
+        owner_email: user?.emailAddresses?.[0]?.emailAddress || '',
+        created_at: new Date().toISOString()
+      };
+    }
+    
+    // For company owners, use API data
     if (!companyData?.exists || !companyData.companies?.length) {
       setError('No company found for this user');
       return null;
@@ -53,7 +71,7 @@ export default function ProfilePage() {
       owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress || (user?.emailAddresses?.[0]?.emailAddress as string) || '',
       created_at: company.created_at || new Date().toISOString()
     };
-  }, [companyData, user]);
+  }, [companyData, user, metadataCompanyId, localStorageCompanyId, companyName]);
 
   // Handle errors
   useEffect(() => {
