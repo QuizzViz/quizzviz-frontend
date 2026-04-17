@@ -292,9 +292,7 @@ export default function TeamsPage() {
                               <h3 className="text-white font-semibold text-lg leading-tight mb-1">
                                 {member.name ?? member.invited_email ?? 'Team Member'}
                               </h3>
-                              <p className="text-white/60 text-sm">
-                                {member.invited_email ? member.invited_email : `user_${member.user_id.slice(0, 8)}...`}
-                              </p>
+                             
                             </div>
                           </div>
 
