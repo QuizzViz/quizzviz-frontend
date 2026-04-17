@@ -117,7 +117,6 @@ export default function ProfilePage() {
       <Head>
         <title>Profile | QuizzViz</title>
         <link rel="icon" href="/favicon.ico" />
-
         <meta
           name="description"
           content="Manage your profile details and account information."
@@ -133,8 +132,7 @@ export default function ProfilePage() {
 
             {/* Main content */}
             <div className="flex-1 flex flex-col">
-              <DashboardHeader
-              />
+              <DashboardHeader />
 
               <main className="flex-1 p-6 space-y-6">
                 <h1 className="text-2xl font-semibold">Profile</h1>
@@ -147,12 +145,11 @@ export default function ProfilePage() {
                     className="w-28 h-28 rounded-full border-2 border-white object-cover"
                   />
                   <h2 className="text-xl font-semibold">
-                    {companyInfo ? companyInfo.name : 'No Company'}
+                    {companyInfo?.name as string || 'No Company'}
                   </h2>
 
                   {/* Additional Info */}
                   <div className="w-full mt-4 space-y-2">
-                   
                     <div className="flex justify-between border-b border-white/20 pb-2">
                       <span className="text-white/50">Joined:</span>
                       <span>
