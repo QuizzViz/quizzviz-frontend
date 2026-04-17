@@ -69,8 +69,9 @@ export default function AcceptInvitePage() {
       // Update user metadata with company information
       if (user) {
         try {
-          const companyId = result.company_id || result.company?.id;
-          const companyName = result.company_name || result.company?.name || 'QuizzViz';
+          // Extract company info from the API response
+          const companyId = result.company_id;
+          const companyName = result.member?.company_name || 'QuizzViz';
           
           if (companyId) {
             await user.update({
@@ -81,6 +82,9 @@ export default function AcceptInvitePage() {
                 onboardingComplete: true
               }
             });
+            console.log('Updated user metadata with company:', { companyId, companyName });
+          } else {
+            console.error('No company ID found in invite response');
           }
         } catch (metadataError) {
           console.error('Error updating user metadata:', metadataError);
@@ -93,10 +97,14 @@ export default function AcceptInvitePage() {
         className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
 
-      // Redirect to dashboard
-      setTimeout(() => {
+      // Wait for metadata to be fully processed, then redirect to dashboard
+      setTimeout(async () => {
+        // Force a reload of user data to get updated metadata
+        if (user) {
+          await user.reload();
+        }
         router.push('/dashboard');
-      }, 1500);
+      }, 2000);
       
     } catch (error) {
       console.error('Error accepting invite:', error);
