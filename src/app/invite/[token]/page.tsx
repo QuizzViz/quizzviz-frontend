@@ -17,18 +17,20 @@ export default function InvitePage() {
 
     const token = Array.isArray(params.token) ? params.token[0] : params.token;
     
-    // Store the invite token in localStorage
+    // Store invite token in localStorage immediately
     localStorage.setItem('invite-token', token);
     
-    if (!user) {
-      // No user signed in, redirect to signup
-      router.push('/signup');
-    } else {
-      // User is already signed in, redirect to accept invite page
-      router.push('/accept_invite');
-    }
-    
-    setIsLoading(false);
+    // Add a small delay to ensure localStorage is set
+    setTimeout(() => {
+      if (!user) {
+        // No user signed in, redirect to signup
+        router.push('/signup');
+      } else {
+        // User is already signed in, redirect to accept invite page
+        router.push('/accept_invite');
+      }
+      setIsLoading(false);
+    }, 100);
   }, [isLoaded, user, router, params.token]);
 
   if (!isLoaded || isLoading) {
