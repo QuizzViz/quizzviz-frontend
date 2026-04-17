@@ -517,7 +517,7 @@ export default function ResultsDashboard() {
                         const totalQ = topScorer?.result.total_questions ?? 0;
 
                         const totalAttempts = quiz.details.length;
-                        const uniqueCandidates = new Set(quiz.details.map((d) => d.username)).size;
+                        const uniqueCandidates = new Set(quiz.details.map((d) => d.user_email)).size;
 
                         return (
                           <Card
