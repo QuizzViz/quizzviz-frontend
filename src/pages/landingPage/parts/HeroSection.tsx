@@ -430,10 +430,10 @@ const HeroSection: FC = () => {
                           <SelectValue placeholder="Select experience" />
                         </SelectTrigger>
                         <SelectContent className="bg-gray-900 border-white/10">
-                          <SelectItem value="High School Level" className="text-white hover:bg-blue-500/20">High School Level</SelectItem>
-                          <SelectItem value="Bachelors Level" className="text-white hover:bg-blue-500/20">Bachelors Level</SelectItem>
-                          <SelectItem value="Masters Level" className="text-white hover:bg-blue-500/20">Masters Level</SelectItem>
-                          <SelectItem value="PhD Level" className="text-white hover:bg-blue-500/20">PhD Level</SelectItem>
+                          <SelectItem value="0-1" className="text-white hover:bg-blue-500/20">0-1 years</SelectItem>
+                          <SelectItem value="1-3" className="text-white hover:bg-blue-500/20">1-3 years</SelectItem>
+                          <SelectItem value="3-5" className="text-white hover:bg-blue-500/20">3-5 years</SelectItem>
+                          <SelectItem value="5+" className="text-white hover:bg-blue-500/20">5+ years</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
