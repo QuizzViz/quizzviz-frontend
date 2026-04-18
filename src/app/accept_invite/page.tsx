@@ -118,30 +118,31 @@ export default function AcceptInvitePage() {
       setIsRedirecting(true);
       setTimeout(async () => {
         try {
-          // Wait a bit to ensure company data is properly fetched
-          await new Promise(resolve => setTimeout(resolve, 800));
+          // Wait longer to ensure company data is properly fetched
+          await new Promise(resolve => setTimeout(resolve, 3000));
           
           // FIRST PRIORITY: Check sessionStorage - if exists, always redirect to dashboard
           const sessionStorageCompanyId = sessionStorage.getItem('company_id');
-          console.log('Redirect check - sessionStorageCompanyId:', sessionStorageCompanyId);
-          if (sessionStorageCompanyId) {
-            console.log('Company found in sessionStorage, redirecting to dashboard');
+          const localStorageCompanyId = localStorage.getItem('userCompanyId');
+          
+          // If either sessionStorage or localStorage has company_id, redirect to dashboard
+          if (sessionStorageCompanyId || localStorageCompanyId) {
+            console.log('Company found in storage, redirecting to dashboard');
             router.push('/dashboard');
             return;
           }
           
-          // SECONDARY: Only check metadata if sessionStorage doesn't exist
+          // SECONDARY: Only check metadata if no storage exists
           if (user) {
             await user.reload();
             
             const updatedMetadata = user.unsafeMetadata;
-            console.log('User metadata after reload:', updatedMetadata);
             
             if (updatedMetadata?.companyId) {
               console.log('Metadata confirmed, redirecting to dashboard');
               router.push('/dashboard');
             } else {
-              console.error('No company info found in sessionStorage or metadata, redirecting to onboarding');
+              console.error('No company info found in any storage, redirecting to onboarding');
               router.push('/onboarding');
             }
           } else {
@@ -150,17 +151,18 @@ export default function AcceptInvitePage() {
           }
         } catch (reloadError) {
           console.error('Error during user reload:', reloadError);
-          // Even on error, check sessionStorage first
+          // Even on error, check storage first
           const sessionStorageCompanyId = sessionStorage.getItem('company_id');
-          if (sessionStorageCompanyId) {
-            console.log('Using sessionStorage company_id despite error, redirecting to dashboard');
+          const localStorageCompanyId = localStorage.getItem('userCompanyId');
+          if (sessionStorageCompanyId || localStorageCompanyId) {
+            console.log('Using storage company_id despite error, redirecting to dashboard');
             router.push('/dashboard');
           } else {
             console.error('No company info found, redirecting to onboarding');
             router.push('/onboarding');
           }
         }
-      }, 1500); // Reduced timeout since we prioritize sessionStorage
+      }, 3000); // Increased timeout to ensure company data fetch completes
       
     } catch (error) {
       console.error('Error accepting invite:', error);
