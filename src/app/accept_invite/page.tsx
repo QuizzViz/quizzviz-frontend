@@ -67,9 +67,6 @@ export default function AcceptInvitePage() {
 
       const result = await response.json();
       
-      // Remove token from localStorage
-      localStorage.removeItem('invite-token');
-      
       // Update user metadata with company information
       if (user) {
         try {
@@ -128,6 +125,8 @@ export default function AcceptInvitePage() {
           // If either sessionStorage or localStorage has company_id, redirect to dashboard
           if (sessionStorageCompanyId || localStorageCompanyId) {
             console.log('Company found in storage, redirecting to dashboard');
+            // Remove token only after confirming redirect
+            localStorage.removeItem('invite-token');
             router.push('/dashboard');
             return;
           }
@@ -140,13 +139,19 @@ export default function AcceptInvitePage() {
             
             if (updatedMetadata?.companyId) {
               console.log('Metadata confirmed, redirecting to dashboard');
+              // Remove token only after confirming redirect
+              localStorage.removeItem('invite-token');
               router.push('/dashboard');
             } else {
               console.error('No company info found in any storage, redirecting to onboarding');
+              // Remove token even on error to prevent loops
+              localStorage.removeItem('invite-token');
               router.push('/onboarding');
             }
           } else {
             console.log('No user object, redirecting to onboarding');
+            // Remove token even on error to prevent loops
+            localStorage.removeItem('invite-token');
             router.push('/onboarding');
           }
         } catch (reloadError) {
@@ -156,9 +161,13 @@ export default function AcceptInvitePage() {
           const localStorageCompanyId = localStorage.getItem('userCompanyId');
           if (sessionStorageCompanyId || localStorageCompanyId) {
             console.log('Using storage company_id despite error, redirecting to dashboard');
+            // Remove token only after confirming redirect
+            localStorage.removeItem('invite-token');
             router.push('/dashboard');
           } else {
             console.error('No company info found, redirecting to onboarding');
+            // Remove token even on error to prevent loops
+            localStorage.removeItem('invite-token');
             router.push('/onboarding');
           }
         }
