@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, ReactNode } from "react";
 import { Cpu, Code, Sparkles, CheckCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useQuizGeneration } from "@/contexts/QuizGenerationContext";
-import { useCompanies } from "@/hooks/useCompanies";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 interface TopicError {
   error: string;
@@ -73,29 +73,15 @@ export function useCreateQuiz(): UseCreateQuizReturn {
   // auth
   const { user, isLoaded } = useUser();
 
-  // Get company_id directly from sessionStorage (for invited members) or useCompanies (for owners)
-  const sessionStorageCompanyId = typeof window !== 'undefined' ? sessionStorage.getItem('company_id') : null;
-  const { company, loading: isLoadingCompany } = useCompanies(sessionStorageCompanyId ? undefined : user?.id);
-
-  // Use sessionStorage company_id for invited members, API data for owners
-  const companyInfo: CompanyInfo | null = sessionStorageCompanyId ? {
-    id: sessionStorageCompanyId,
-    name: localStorage.getItem('userCompanyName') || 'Company',
-    owner_email: ''
-  } : company ? {
-    id: company.company_id,
-    name: company.name,
-    owner_email: company.owner_email
-  } : null;
+  // Use the same logic as profile page
+  const { companyInfo, isLoading: isLoadingCompany } = useCompanyInfo() as { companyInfo: CompanyInfo | null, isLoading: boolean };
 
   // Debug: Log what we're actually getting
   console.log('useCreateQuiz - Company data:', {
-    sessionStorageCompanyId,
-    company,
     companyInfo,
     companyId: companyInfo?.id,
     companyName: companyInfo?.name,
-    isInvitedMember: !!sessionStorageCompanyId
+    isLoadingCompany
   });
 
   // typing steps

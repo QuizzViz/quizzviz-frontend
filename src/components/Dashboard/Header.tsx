@@ -3,20 +3,16 @@ import { useEffect, useState } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs'; 
 import { LogoWithText } from '../LogoWithText';
 import UserAvatarDropdown from '../UserAvatarDropdown';
-import { useCompanies } from '../../hooks/useCompanies';
+import { useCompanyInfo } from '../../hooks/useCompanyInfo';
 
 export const DashboardHeader: React.FC = () => {
   const { user, isLoaded } = useUser();  
 
-  // Use user metadata first (like profile page), then fallback to useCompanies
-  const metadataCompanyName = user?.unsafeMetadata?.companyName;
-  const { company, loading, error } = useCompanies(user?.id);
-
-  // Get company name from metadata first, then from company data
-  const companyName = (metadataCompanyName as string) || (company?.name as string) || 'Company';
+  // Use the same logic as profile page
+  const { companyInfo, isLoading } = useCompanyInfo();
 
   // Show skeleton loader while loading
-  if (loading) {
+  if (isLoading) {
     return (
       <header className="px-6 py-4 border-b border-black bg-black flex items-center justify-between">
         <span> </span>
@@ -31,7 +27,7 @@ export const DashboardHeader: React.FC = () => {
     <header className="px-6 py-4 border-b border-black bg-black flex items-center justify-between">
       <span> </span>
       <UserAvatarDropdown 
-        userName={companyName || 'Company'}
+        userName={(companyInfo?.name as string) || 'Company'}
         userEmail={userEmail}
       />
     </header>
