@@ -33,16 +33,10 @@ export async function GET(
       );
     }
 
-    // Get auth token from request headers
-    const authHeader = request.headers.get('authorization');
+    // No authentication required for candidate check-attempt endpoint
     const headers: Record<string, string> = {
       'accept': 'application/json',
     };
-
-    // Add auth token if present
-    if (authHeader) {
-      headers['authorization'] = authHeader;
-    }
 
     const response = await fetch(
       `${API_BASE_URL}/check/attempt/email/${encodeURIComponent(email)}/quiz/${encodeURIComponent(quizId)}`,
