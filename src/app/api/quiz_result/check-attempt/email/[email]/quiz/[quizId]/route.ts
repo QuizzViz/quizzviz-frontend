@@ -26,9 +26,9 @@ export async function GET(
     const { email: encodedEmail, quizId } = await context.params;
     const email = decodeURIComponent(encodedEmail);
 
-    // Get companyId from query parameters
+    // Get company_id from query parameters
     const { searchParams } = new URL(request.url);
-    const companyId = searchParams.get('companyId');
+    const companyId = searchParams.get('company_id');
 
     if (!email || !quizId || !companyId) {
       return NextResponse.json(
@@ -43,7 +43,7 @@ export async function GET(
     };
 
     const response = await fetch(
-      `${API_BASE_URL}/check/attempt/email/${encodeURIComponent(email)}/quiz/${encodeURIComponent(quizId)}?companyId=${encodeURIComponent(companyId)}`,
+      `${API_BASE_URL}/check/attempt/email/${encodeURIComponent(email)}/quiz/${encodeURIComponent(quizId)}?company_id=${encodeURIComponent(companyId)}`,
       {
         headers,
         cache: 'no-store' // Ensure we don't get cached responses

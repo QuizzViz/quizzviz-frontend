@@ -179,7 +179,7 @@ export default function QuizPage({ params }: PageProps) {
     }
     try {
       const response = await fetch(
-        `/api/quiz_result/check-attempt/email/${encodeURIComponent(formData.email)}/quiz/${quizId}?companyId=${encodeURIComponent(companyId)}`
+        `/api/quiz_result/check-attempt/email/${encodeURIComponent(formData.email)}/quiz/${quizId}?company_id=${encodeURIComponent(companyId)}`
       );
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -652,7 +652,7 @@ export default function QuizPage({ params }: PageProps) {
     if (!formData?.name || !formData?.email) return false;
     try {
       const response = await fetch(
-        `/api/quiz_result/check-attempt/email/${encodeURIComponent(formData.email)}/quiz/${quizId}?companyId=${encodeURIComponent(companyId)}`
+        `/api/quiz_result/check-attempt/email/${encodeURIComponent(formData.email)}/quiz/${quizId}?company_id=${encodeURIComponent(companyId)}`
       );
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
