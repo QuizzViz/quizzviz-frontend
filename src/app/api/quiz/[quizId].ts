@@ -109,12 +109,14 @@ export default async function handler(
       return res.status(400).json({ error: 'Quiz ID is required' });
     }
 
-    // Encode user ID and quiz ID for URL
-    const encodedUserId = encodeURIComponent(userId as string);
+    // Get company ID from query params
+    const { company_id } = req.query;
     const encodedQuizId = encodeURIComponent(quizId as string);
     
-    // Construct the base URL with user ID and quiz ID
-    const baseUrl = `${BACKEND_BASE_URL}/user/${encodedUserId}/quizz/${encodedQuizId}`;
+    // Construct the base URL with company ID and quiz ID
+    const baseUrl = company_id 
+      ? `${BACKEND_BASE_URL}/user/${encodeURIComponent(company_id as string)}/quizz/${encodedQuizId}`
+      : `${BACKEND_BASE_URL}/quizz/${encodedQuizId}`;
     
     // Get auth headers with proper accept header
     const headers = getAuthHeaders(req.headers.cookie || '');

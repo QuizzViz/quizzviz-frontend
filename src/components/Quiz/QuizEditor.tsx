@@ -13,7 +13,7 @@ import { Pagination } from "./Pagination";
 import { QuestionForm } from "./QuestionForm";
 import { PublishModal } from "./PublishModal";
 import { ShareQuizModal } from "./ShareQuizModal";
-import { useCompanies } from "@/hooks/useCompanies";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 import {
   QuizSummary,
@@ -38,7 +38,7 @@ export function QuizEditor() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { company, loading: isCompanyLoading } = useCompanies(user?.id);
+  const { companyInfo, isLoading: isCompanyLoading } = useCompanyInfo();
 
   const [localQuestions, setLocalQuestions] = useState<QuizQuestion[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,10 +77,10 @@ export function QuizEditor() {
 
   // Fetch quiz data using react-query
   const { data: quizzesData, isLoading: isQuizzesLoading, error: quizzesError } = useQuery<QuizSummary[]>({
-    queryKey: ["quizzes", company?.company_id],
-    enabled: isUserLoaded && !!user?.id && !!company?.company_id && !isCompanyLoading,
+    queryKey: ["quizzes", companyInfo?.id],
+    enabled: isUserLoaded && !!user?.id && !!companyInfo?.id && !isCompanyLoading,
     queryFn: async () => {
-      const res = await fetch(`/api/quizzes?companyId=${encodeURIComponent(company!.company_id)}`);
+      const res = await fetch(`/api/quizzes?companyId=${encodeURIComponent(companyInfo!.id)}`);
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(errText || `Failed to fetch quizzes (${res.status})`);
@@ -130,9 +130,9 @@ export function QuizEditor() {
   // Fetch published quiz data if published
   const { data: publishedQuiz, isLoading: isLoadingPublished } = useQuery({
     queryKey: ["publishedQuiz", quizId],
-    enabled: !!currentQuiz?.is_publish && !!quizId && !!company?.company_id,
+    enabled: !!currentQuiz?.is_publish && !!quizId && !!companyInfo?.id,
     queryFn: async () => {
-      const res = await fetch(`/api/publish/${company!.company_id}/${quizId}`);
+      const res = await fetch(`/api/publish/${companyInfo!.id}/${quizId}`);
       if (!res.ok) throw new Error("Failed to fetch published quiz");
       const result = await res.json();
       return result.data;
@@ -167,7 +167,7 @@ export function QuizEditor() {
   // Save quiz to server
   const persistQuiz = useCallback(
     async (questions: QuizQuestion[]) => {
-      if (!currentQuiz || !user || !company?.company_id) return;
+      if (!currentQuiz || !user || !companyInfo?.id) return;
 
       try {
         const token = await getToken();
@@ -223,7 +223,7 @@ export function QuizEditor() {
 
   // Publish handler
   const handlePublishConfirm = async (secretKey: string) => {
-    if (!quizId || !user || !company?.company_id) return;
+    if (!quizId || !user || !companyInfo?.id) return;
 
     setIsPublishing(true);
 
@@ -336,7 +336,7 @@ export function QuizEditor() {
 
   // Delete entire quiz
   const handleDeleteQuiz = async () => {
-    if (!currentQuiz || !user || !company?.company_id) return;
+    if (!currentQuiz || !user || !companyInfo?.id) return;
 
     setIsPublishing(true);
 
@@ -395,7 +395,7 @@ export function QuizEditor() {
 
   // Copy link
   const handleCopyLink = useCallback(async () => {
-    if (!quizId || !company?.company_id) return;
+    if (!quizId || !companyInfo?.id) return;
     const url = `${origin}/${company.company_id}/quiz/${quizId}`;
     await navigator.clipboard.writeText(url);
     toast({
@@ -516,7 +516,7 @@ export function QuizEditor() {
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={company?.company_id ? `${origin}/${company.company_id}/take/quiz/${quizId}` : ""}
+        quizLink={companyInfo?.id ? `${origin}/${company.company_id}/take/quiz/${quizId}` : ""}
         quizKey={publishedQuiz?.quiz_key || publishSettings.secretKey || currentQuiz?.quiz_key || ""}
       />
 
@@ -532,7 +532,7 @@ export function QuizEditor() {
         onCopyLink={handleCopyLink}
         quizPublicLink={publicUrl}
         isPublished={isPublished}
-        companyId={company?.company_id}
+        companyId={companyInfo?.id}
       />
 
       <ConfirmationDialog
