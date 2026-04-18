@@ -18,6 +18,16 @@ export interface CompanyDetails {
 
 export async function getCompanyId(request: NextRequest): Promise<{ company_id: string } | { error: Response }> {
   try {
+    // First, try to get company_id from query parameters (for invited members)
+    const { searchParams } = new URL(request.url);
+    const queryCompanyId = searchParams.get('company_id');
+    
+    if (queryCompanyId) {
+      console.log('Found company_id in query params:', queryCompanyId);
+      return { company_id: queryCompanyId };
+    }
+    
+    // Fallback to original auth-based logic (for company owners)
     const { userId, getToken } = getAuth(request);
     
     if (!userId) {

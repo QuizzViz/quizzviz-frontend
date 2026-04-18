@@ -65,7 +65,7 @@ export function useCompanyUsage() {
   }, [companyError, toast, errorShown]);
 
   // Fetch company usage data using useCachedFetch
-  const companyId = companyInfo?.id;
+  const companyId = companyInfo?.id || '';
   const { 
     data, 
     isLoading: isLoadingUsage, 
@@ -73,7 +73,7 @@ export function useCompanyUsage() {
     refetch 
   } = useCachedFetch<CompanyUsageData>(
     ['companyUsage', companyId || ''],
-    companyId ? `/api/quiz_result/usage?company_id=${companyId}` : '',
+    companyId ? `/api/quiz_result/usage?company_id=${encodeURIComponent(companyId)}` : '',
     { 
       enabled: Boolean(companyId)
     }

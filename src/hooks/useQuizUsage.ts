@@ -77,7 +77,7 @@ export function useQuizUsage() {
     refetch 
   } = useCachedFetch<QuizUsageData>(
     ['quizUsage', companyId.toString()], // Ensure query key is always a string
-    companyId ? `/api/quiz-usage` : '',
+    companyId ? `/api/quiz-usage?company_id=${encodeURIComponent(companyId)}` : '',
     { 
       enabled: Boolean(companyId)
     }
