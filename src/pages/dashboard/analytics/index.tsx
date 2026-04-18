@@ -224,7 +224,7 @@ export default function ResultsDashboard() {
   const dataFetched = useRef(false);
 
   // Use the same logic as profile page
-  const { companyInfo, loading: isCompanyLoading, error: companyError } = useCompanyInfo();
+  const { companyInfo, isLoading: isCompanyLoading, error: companyError } = useCompanyInfo();
   const finalCompanyId = companyInfo?.id || '';
 
   // Fetch quiz results
