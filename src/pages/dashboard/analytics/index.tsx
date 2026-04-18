@@ -223,8 +223,8 @@ export default function ResultsDashboard() {
   const quizzesPerPage = 5;
   const dataFetched = useRef(false);
 
-  // Use useCompanies hook for consistent company fetching
-  const { company, loading: isCompanyLoading, error: companyError } = useCompanies(user?.id);
+  // Always use sessionStorage company_id (undefined userId triggers sessionStorage logic)
+  const { company, loading: isCompanyLoading, error: companyError } = useCompanies(undefined);
   const finalCompanyId = company?.company_id || '';
 
   // Fetch quiz results

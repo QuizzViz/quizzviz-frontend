@@ -5,6 +5,7 @@ import { useQuizUsage } from "@/hooks/useQuizUsage";
 import { useCompanyUsage } from "@/hooks/useCompanyUsage";
 import { useCompanies } from "@/hooks/useCompanies";
 import { DashboardHeader } from "@/components/Dashboard/Header";
+import { useUser } from "@clerk/nextjs";
 import { Loader2, Calendar, BarChart3, RefreshCw, Zap, Clock, Users, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
@@ -42,10 +43,14 @@ const LoadingCard = () => (
 );
 
 const UsagePage = () => {
+  const { user } = useUser();
   const { data: usageData, isLoading: isQuizUsageLoading, error: quizUsageError, refetch: refetchQuizUsage } = useQuizUsage();
   const { data: companyUsageData, isLoading: isCompanyUsageLoading, error: companyUsageError, refetch: refetchCompanyUsage } = useCompanyUsage();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  
+  // Always use sessionStorage company_id (undefined userId triggers sessionStorage logic)
+  const { company } = useCompanies(undefined);
   
   const currentMonth = usageData?.current_month;
   const monthlyBreakdown = usageData?.monthly_breakdown || [];
