@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, ReactNode } from "react";
 import { Cpu, Code, Sparkles, CheckCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useQuizGeneration } from "@/contexts/QuizGenerationContext";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 interface TopicError {
   error: string;
@@ -66,9 +67,8 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
   const [error, setError] = useState<string | ReactNode | null>(null);
   const [quizData, setQuizData] = useState<any>(null);
   
-  // Company state
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
-  const [isLoadingCompany, setIsLoadingCompany] = useState(true);
+  // Use the same logic as profile page
+  const { companyInfo, isLoading: isLoadingCompany } = useCompanyInfo();
 
   // typing steps
   const steps = [
@@ -90,49 +90,6 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
 
   // auth
   const { user, isLoaded } = useUser();
-
-  // Fetch company info on mount
-  useEffect(() => {
-    const fetchCompanyInfo = async () => {
-      if (!isLoaded || !user) {
-        setIsLoadingCompany(false);
-        return;
-      }
-      
-      try {
-        console.log('Fetching company info for user:', user.id);
-        const response = await fetch(`/api/company/check?owner_id=${user.id}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Company check failed:', response.status, errorText);
-          throw new Error(`Failed to fetch company information: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Company check response:', data);
-        
-        if (data.exists && data.companies && data.companies.length > 0) {
-          const company = data.companies[0];
-          console.log('Using company:', company);
-          
-          setCompanyInfo({
-            id: company.company_id || company.id || company.name,
-            name: company.name || company.company_id || 'Company',
-            owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress
-          });
-        } else {
-          console.warn('No company found for user');
-        }
-      } catch (error) {
-        console.error('Error fetching company info:', error);
-      } finally {
-        setIsLoadingCompany(false);
-      }
-    };
-    
-    fetchCompanyInfo();
-  }, [isLoaded, user]);
 
   const experienceToApi = (val: string) => {
     switch (val) {
@@ -195,6 +152,12 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       return;
     }
     
+    // Ensure we have a company ID
+    if (!companyInfo?.id) {
+      setError("Company information is required. Please refresh the page and try again.");
+      return;
+    }
+    
     // Update the balance state with the current code percentage
     setBalance([codePercentage]);
 
@@ -227,7 +190,7 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         })),
         is_deleted: false,
         is_publish: false,
-        company_id: companyInfo?.id || 'company_123'
+        company_id: companyInfo?.id || ''
       };
       
       console.log('Sending payload with tech stack:', JSON.stringify(payload, null, 2));
