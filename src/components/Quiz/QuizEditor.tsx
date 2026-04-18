@@ -532,7 +532,9 @@ export function QuizEditor() {
         quizLink={(() => {
           let companyId = companyInfo?.id;
           if (!companyId && typeof window !== 'undefined') {
-            companyId = sessionStorage.getItem('company_id') || localStorage.getItem('userCompanyId') || "";
+            const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+            const localStorageCompanyId = localStorage.getItem('userCompanyId');
+            companyId = sessionStorageCompanyId || localStorageCompanyId || "";
           }
           return companyId ? `${origin}/${companyId}/take/quiz/${quizId}` : "";
         })()}
@@ -540,7 +542,7 @@ export function QuizEditor() {
       />
 
       <PublishModal
-        isOpen={isPublishModalOpen}
+        // ... (rest of the code remains the same)
         onClose={() => setIsPublishModalOpen(false)}
         onPublish={handlePublishConfirm}
         quizId={quizId || ""}
@@ -551,8 +553,7 @@ export function QuizEditor() {
         onCopyLink={handleCopyLink}
         quizPublicLink={publicUrl}
         isPublished={isPublished}
-        companyId={companyInfo?.id}
-      />
+        companyId={companyInfo?.id} isOpen={false}      />
 
       <ConfirmationDialog
         isOpen={isDeleteDialogOpen}
