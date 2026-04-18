@@ -19,14 +19,8 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const [currentPath, setCurrentPath] = useState('');
 
   // Check if user is an invited member by checking sessionStorage first
-  const [isInvitedMember, setIsInvitedMember] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const companyId = sessionStorage.getItem('company_id');
-      setIsInvitedMember(!!companyId);
-    }
-  }, []);
+  // Do this immediately to avoid race conditions
+  const isInvitedMember = typeof window !== 'undefined' ? !!sessionStorage.getItem('company_id') : false;
 
   // For invited members, use undefined to force sessionStorage logic
   // For company owners, use user ID
