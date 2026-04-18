@@ -109,6 +109,17 @@ export default function AcceptInvitePage() {
       setIsRedirecting(true);
       setTimeout(async () => {
         try {
+          // Wait a bit to ensure company data is properly fetched
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Check if we have company info in sessionStorage
+          const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+          if (sessionStorageCompanyId) {
+            console.log('Company found in sessionStorage, redirecting to dashboard');
+            router.push('/dashboard');
+            return;
+          }
+          
           // Force a reload of user data to get updated metadata
           if (user) {
             await user.reload();
@@ -123,7 +134,6 @@ export default function AcceptInvitePage() {
             } else {
               console.error('Metadata not updated, but sessionStorage has company info, redirecting to dashboard');
               // Fallback to sessionStorage if metadata isn't updated yet
-              const sessionStorageCompanyId = sessionStorage.getItem('company_id');
               if (sessionStorageCompanyId) {
                 router.push('/dashboard');
               } else {
@@ -137,7 +147,7 @@ export default function AcceptInvitePage() {
           }
         } catch (reloadError) {
           console.error('Error during user reload:', reloadError);
-          // Always check sessionStorage as primary fallback for invited members
+          // Check sessionStorage as fallback
           const sessionStorageCompanyId = sessionStorage.getItem('company_id');
           if (sessionStorageCompanyId) {
             console.log('Using sessionStorage company_id, redirecting to dashboard');

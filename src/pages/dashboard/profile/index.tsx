@@ -68,7 +68,7 @@ export default function ProfilePage() {
     return {
       id: company.id || company.company_id || '',
       name: company.name || 'Unnamed Company',
-      owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress || (user?.emailAddresses?.[0]?.emailAddress as string) || '',
+      owner_email: company.owner_email || '',
       created_at: company.created_at || new Date().toISOString()
     };
   }, [companyData, user, metadataCompanyId, localStorageCompanyId, companyName]);
