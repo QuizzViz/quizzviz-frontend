@@ -223,12 +223,25 @@ export function QuizEditor() {
 
   // Publish handler
   const handlePublishConfirm = async (secretKey: string) => {
-    if (!quizId || !user || !companyInfo?.id) return;
+    console.log("Publishing quiz with companyInfo:", companyInfo);
+    console.log("Quiz ID:", quizId);
+    console.log("User:", user?.id);
+    
+    // Get company ID from multiple sources for fallback
+    let companyId = companyInfo?.id;
+    
+    // If companyInfo is not available, try sessionStorage
+    if (!companyId && typeof window !== 'undefined') {
+      const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+      if (sessionStorageCompanyId) {
+        companyId = sessionStorageCompanyId;
+      }
+      }
 
     setIsPublishing(true);
 
     try {
-      const publicLink = `${origin}/${companyInfo?.id}/take/quiz/${quizId}`;
+      const publicLink = `${origin}/${companyId}/take/quiz/${quizId}`;
 
       const updatedSettings = {
         ...publishSettings,
@@ -239,7 +252,7 @@ export function QuizEditor() {
 
       const payload = {
   quiz_id: quizId,
-  companyId: companyInfo?.id,
+  companyId: companyId,
   role: currentQuiz?.role ?? "",
   tech_stack: Array.isArray(currentQuiz?.techStack) 
     ? currentQuiz.techStack 
@@ -516,7 +529,13 @@ export function QuizEditor() {
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={companyInfo?.id ? `${origin}/${companyInfo?.id}/take/quiz/${quizId}` : ""}
+        quizLink={(() => {
+          let companyId = companyInfo?.id;
+          if (!companyId && typeof window !== 'undefined') {
+            companyId = sessionStorage.getItem('company_id') || localStorage.getItem('userCompanyId') || "";
+          }
+          return companyId ? `${origin}/${companyId}/take/quiz/${quizId}` : "";
+        })()}
         quizKey={publishedQuiz?.quiz_key || publishSettings.secretKey || currentQuiz?.quiz_key || ""}
       />
 
