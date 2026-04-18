@@ -2,7 +2,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from "@clerk/nextjs";
 import { useCachedFetch } from './useCachedFetch';
 import { useState, useEffect } from 'react';
-import { useCompanies } from './useCompanies';
+import { useCompanyInfo } from './useCompanyInfo';
 
 type ApiError = Error & {
   status?: number;
@@ -41,15 +41,8 @@ export function useCompanyUsage() {
   const { toast } = useToast();
   const [errorShown, setErrorShown] = useState(false);
   
-  // Use the new useCompanies hook for consistent company fetching
-  const { company, loading: isCompanyLoading, error: companyError } = useCompanies(user?.id);
-  
-  // Process company info
-  const companyInfo = company ? {
-    id: company.company_id,
-    name: company.name,
-    owner_email: company.owner_email,
-  } : null;
+  // Use the same logic as profile page
+  const { companyInfo, isLoading: isCompanyLoading, error: companyError } = useCompanyInfo();
   
   // Handle company fetch errors
   useEffect(() => {
