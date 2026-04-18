@@ -18,22 +18,23 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState('');
 
-  // Check if user is an invited member by checking sessionStorage first
-  // Do this immediately to avoid race conditions
+  // Check if user is an invited member by checking sessionStorage FIRST
+  // This must be determined BEFORE calling useCompanies to avoid race conditions
   const sessionStorageCompanyId = typeof window !== 'undefined' ? sessionStorage.getItem('company_id') : null;
   const isInvitedMember = !!sessionStorageCompanyId;
 
-  console.log('DashboardAccess Debug:', {
+  console.log('DashboardAccess Debug BEFORE useCompanies:', {
     sessionStorageCompanyId,
     isInvitedMember,
     userId: user?.id,
     isLoaded,
-    useCompaniesParam: isInvitedMember ? undefined : user?.id
+    willPassUndefinedToUseCompanies: isInvitedMember
   });
 
-  // For invited members, use undefined to force sessionStorage logic
-  // For company owners, use user ID
-  const { company, loading: isLoadingCompany, error } = useCompanies(isInvitedMember ? undefined : user?.id);
+  // CRITICAL: For invited members, pass undefined to force sessionStorage logic
+  // For company owners, pass user ID to fetch by owner_id
+  const useCompaniesParam = isInvitedMember ? undefined : user?.id;
+  const { company, loading: isLoadingCompany, error } = useCompanies(useCompaniesParam);
 
   useEffect(() => {
     // Set the current path on client-side only
@@ -59,8 +60,15 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
   const hasStorageCompanyId = sessionStorageCompanyId || localStorageCompanyId;
 
+  // CRITICAL: For invited members, always allow dashboard access even if company data is still loading
+  // This prevents the race condition where onboarding shows while company data is being fetched
+  if (isInvitedMember || hasStorageCompanyId) {
+    console.log('Invited member or storage detected, allowing dashboard access');
+    return <>{children}</>;
+  }
+
   // Check if user needs to create a company
-  // BUT only show onboarding if NO company_id in any storage AND not an invited member
+  // ONLY show onboarding if: no company data, not invited member, and no storage company_id
   if (!company && !isInvitedMember && !hasStorageCompanyId) {
     return (
       <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
