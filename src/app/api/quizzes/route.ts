@@ -285,8 +285,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Call unpublish endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${companyId}/quiz/${quizId}`, {
+    // First, unpublish from publish service
+    const publishResponse = await fetch(`${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${companyId}/quiz/${quizId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -295,16 +295,37 @@ export async function PUT(request: NextRequest) {
       }
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+    if (!publishResponse.ok) {
+      const errorData = await publishResponse.json().catch(() => ({}));
       throw new Error(errorData.detail || errorData.message || 'Failed to unpublish quiz');
     }
 
-    const data = await response.json();
+    // Second, update quiz generation service to set is_publish to false
+    const quizGenResponse = await fetch(`${BACKEND_BASE_URL}/user/${companyId}/quizz/${encodeURIComponent(quizId)}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-user-id': companyId
+      },
+      body: JSON.stringify({
+        is_publish: false,
+        public_link: null,
+        quiz_key: null
+      })
+    });
+
+    if (!quizGenResponse.ok) {
+      const errorData = await quizGenResponse.json().catch(() => ({}));
+      console.error('Failed to update quiz generation service:', errorData);
+      throw new Error(errorData.detail || errorData.message || 'Failed to update quiz status');
+    }
+
+    const publishData = await publishResponse.json();
     return NextResponse.json({
       success: true,
       message: 'Quiz unpublished successfully',
-      data
+      data: publishData
     });
 
   } catch (error: any) {
