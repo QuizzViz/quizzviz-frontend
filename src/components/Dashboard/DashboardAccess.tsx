@@ -46,7 +46,8 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   }
 
   // Check if user needs to create a company
-  if (!company) {
+  // BUT only show onboarding if NOT an invited member (no sessionStorage company_id)
+  if (!company && !isInvitedMember) {
     return (
       <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
         <div className="w-full max-w-md">
@@ -77,41 +78,13 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-/*
-// Show subscription prompt for non-Business plans, but not on the pricing page
-  if (company.plan_name !== 'Business' && !isPricingPage) {
-    return (
-      <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-black/30 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl">
-            <div className="text-center space-y-6">
-              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-r from-blue-500/20 to-green-500/20 flex items-center justify-center">
-                <Zap className="h-10 w-10 text-blue-400" />
-              </div>
-              <div className="space-y-3">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-teal-300 via-blue-400 to-blue-500 bg-clip-text text-transparent">
-                  Subscribe to Continue
-                </h2>
-                <p className="text-gray-300 text-base">
-                  Unlock all features and create quizzes by subscribing to our service.
-                </p>
-              </div>
-              <Button 
-                onClick={() => router.push('/pricing')}
-                className="w-full h-14 text-base font-bold bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl group rounded-xl"
-              >
-                <Zap className="w-5 h-5 mr-2" />
-                Subscribe Now
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+
+  // For invited members: if company data failed to load but sessionStorage exists, allow access
+  if (!company && isInvitedMember) {
+    console.log('Invited member: Company data failed to load but sessionStorage exists, allowing dashboard access');
+    return <>{children}</>;
   }
 
-*/
   // FREE ACCESS - Allow dashboard access for any user with a company
   return <>{children}</>;
 }
