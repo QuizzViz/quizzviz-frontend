@@ -34,25 +34,27 @@ export const clearCompanyId = () => {
   }
 };
 
-export function useCompanies(userId: string | undefined): UseCompaniesReturn {
+export function useCompanies(userId?: string): UseCompaniesReturn {
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCompany = async () => {
+      console.log('useCompanies: Starting fetch with userId:', userId);
       setLoading(true);
       setError(null);
 
+      let companyFound = false;
       try {
-        let companyFound = false;
-        
         // First try: fetch by user ID (for company owners)
         if (userId) {
+          console.log('useCompanies: Trying fetch by user ID:', userId);
           const response = await fetch(`/api/company/check?owner_id=${encodeURIComponent(userId)}`);
           
           if (response.ok) {
             const data = await response.json();
+            console.log('useCompanies: User ID fetch response:', data);
             
             if (data.companies?.[0]) {
               const companyData = data.companies[0];
@@ -62,19 +64,24 @@ export function useCompanies(userId: string | undefined): UseCompaniesReturn {
                 owner_email: companyData.owner_email || ''
               });
               companyFound = true;
+              console.log('useCompanies: Company found via user ID');
             }
+          } else {
+            console.log('useCompanies: User ID fetch failed:', response.status);
           }
         }
         
         // Second try: fetch by company_id from sessionStorage (for invited members)
         if (!companyFound) {
           const companyId = getCompanyId();
+          console.log('useCompanies: Trying fetch by company ID from sessionStorage:', companyId);
           
           if (companyId) {
             const response = await fetch(`/api/company/${encodeURIComponent(companyId)}`);
             
             if (response.ok) {
               const data = await response.json();
+              console.log('useCompanies: Company ID fetch response:', data);
               
               setCompany({
                 company_id: data.company_id || data.id,
@@ -82,22 +89,31 @@ export function useCompanies(userId: string | undefined): UseCompaniesReturn {
                 owner_email: data.owner_email || ''
               });
               companyFound = true;
-            } else if (response.status === 404) {
-              // Company not found, clear the stored company_id
-              clearCompanyId();
+              console.log('useCompanies: Company found via sessionStorage company ID');
+            } else {
+              console.log('useCompanies: Company ID fetch failed:', response.status);
+              if (response.status === 404) {
+                // Company not found, clear the stored company_id
+                clearCompanyId();
+              }
             }
+          } else {
+            console.log('useCompanies: No company ID found in sessionStorage');
           }
         }
         
         // If no company found after both attempts, set company to null
         if (!companyFound) {
+          console.log('useCompanies: No company found after all attempts');
           setCompany(null);
         }
       } catch (error) {
-        setError(error instanceof Error ? error.message : 'Failed to fetch company information');
+        console.error('Error fetching company:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch company');
         setCompany(null);
       } finally {
         setLoading(false);
+        console.log('useCompanies: Fetch completed, company:', companyFound ? 'found' : 'not found');
       }
     };
 

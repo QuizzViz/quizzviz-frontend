@@ -22,6 +22,13 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   // Do this immediately to avoid race conditions
   const isInvitedMember = typeof window !== 'undefined' ? !!sessionStorage.getItem('company_id') : false;
 
+  console.log('DashboardAccess Debug:', {
+    isInvitedMember,
+    sessionStorageCompanyId: typeof window !== 'undefined' ? sessionStorage.getItem('company_id') : null,
+    userId: user?.id,
+    isLoaded
+  });
+
   // For invited members, use undefined to force sessionStorage logic
   // For company owners, use user ID
   const { company, loading: isLoadingCompany, error } = useCompanies(isInvitedMember ? undefined : user?.id);
