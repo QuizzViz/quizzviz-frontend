@@ -53,7 +53,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
-import { useCompanies } from "@/hooks/useCompanies";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 type QuizResult = {
   quiz_id: string;
@@ -223,9 +223,9 @@ export default function ResultsDashboard() {
   const quizzesPerPage = 5;
   const dataFetched = useRef(false);
 
-  // Always try user ID first, fallback to sessionStorage automatically
-  const { company, loading: isCompanyLoading, error: companyError } = useCompanies(user?.id);
-  const finalCompanyId = company?.company_id || '';
+  // Use the same logic as profile page
+  const { companyInfo, loading: isCompanyLoading, error: companyError } = useCompanyInfo();
+  const finalCompanyId = companyInfo?.id || '';
 
   // Fetch quiz results
   const { data: quizResults, isLoading, refetch: refetchResults } = useCachedFetch<QuizResult[] | { results: QuizResult[] } | { error: string }>(
