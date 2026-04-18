@@ -73,15 +73,30 @@ export function useCreateQuiz(): UseCreateQuizReturn {
   // auth
   const { user, isLoaded } = useUser();
 
-  // Use the same useCompanies hook as the dashboard header
-  const { company, loading: isLoadingCompany } = useCompanies(user?.id);
+  // Get company_id directly from sessionStorage (for invited members) or useCompanies (for owners)
+  const sessionStorageCompanyId = typeof window !== 'undefined' ? sessionStorage.getItem('company_id') : null;
+  const { company, loading: isLoadingCompany } = useCompanies(sessionStorageCompanyId ? undefined : user?.id);
 
-  // Convert company data to companyInfo format
-  const companyInfo: CompanyInfo | null = company ? {
+  // Use sessionStorage company_id for invited members, API data for owners
+  const companyInfo: CompanyInfo | null = sessionStorageCompanyId ? {
+    id: sessionStorageCompanyId,
+    name: localStorage.getItem('userCompanyName') || 'Company',
+    owner_email: ''
+  } : company ? {
     id: company.company_id,
     name: company.name,
     owner_email: company.owner_email
   } : null;
+
+  // Debug: Log what we're actually getting
+  console.log('useCreateQuiz - Company data:', {
+    sessionStorageCompanyId,
+    company,
+    companyInfo,
+    companyId: companyInfo?.id,
+    companyName: companyInfo?.name,
+    isInvitedMember: !!sessionStorageCompanyId
+  });
 
   // typing steps
   const steps = [

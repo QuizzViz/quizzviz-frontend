@@ -26,6 +26,18 @@ export async function getCompanyId(request: NextRequest): Promise<{ company_id: 
       console.log('Found company_id in query params:', queryCompanyId);
       return { company_id: queryCompanyId };
     }
+
+    // Second, try to get company_id from request body (for invited members sending in POST body)
+    try {
+      const body = await request.json().catch(() => null);
+      if (body && body.company_id) {
+        console.log('Found company_id in request body:', body.company_id);
+        return { company_id: body.company_id };
+      }
+    } catch (e) {
+      // Ignore JSON parsing errors, continue to next method
+      console.log('Could not parse request body for company_id');
+    }
     
     // Fallback to original auth-based logic (for company owners)
     const { userId, getToken } = getAuth(request);
