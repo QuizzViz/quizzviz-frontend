@@ -117,7 +117,7 @@ const UsagePage = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-white">Error loading usage data</p>
-                    <p className="text-sm text-gray-400">{error.message}</p>
+                    <p className="text-sm text-gray-400">{typeof error === 'string' ? error : error.message}</p>
                   </div>
                 </div>
               </CardContent>
