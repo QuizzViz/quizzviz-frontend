@@ -43,7 +43,7 @@ export async function GET(
     };
 
     const response = await fetch(
-      `${API_BASE_URL}/check/attempt/email/${encodeURIComponent(email)}/quiz/${encodeURIComponent(quizId)}/company/${encodeURIComponent(companyId)}`,
+      `${API_BASE_URL}/check/attempt/email/${encodeURIComponent(email)}/quiz/${encodeURIComponent(quizId)}?companyId=${encodeURIComponent(companyId)}`,
       {
         headers,
         cache: 'no-store' // Ensure we don't get cached responses
