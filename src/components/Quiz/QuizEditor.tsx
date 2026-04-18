@@ -182,7 +182,7 @@ export function QuizEditor() {
           code_analysis_questions_percentage: currentQuiz.code_analysis_questions_percentage,
           quiz: questions,
           is_publish: currentQuiz.is_publish,
-          companyId: company.company_id,
+          companyId: companyInfo?.id,
         };
 
         console.log("payload :", payload)
@@ -202,7 +202,7 @@ export function QuizEditor() {
           throw new Error(err.error || `Update failed (${res.status})`);
         }
 
-        queryClient.invalidateQueries({ queryKey: ["quizzes", company.company_id] });
+        queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
 
         toast({
           title: "Saved",
@@ -228,7 +228,7 @@ export function QuizEditor() {
     setIsPublishing(true);
 
     try {
-      const publicLink = `${origin}/${company.company_id}/take/quiz/${quizId}`;
+      const publicLink = `${origin}/${companyInfo?.id}/take/quiz/${quizId}`;
 
       const updatedSettings = {
         ...publishSettings,
@@ -239,7 +239,7 @@ export function QuizEditor() {
 
       const payload = {
   quiz_id: quizId,
-  companyId: company.company_id,
+  companyId: companyInfo?.id,
   role: currentQuiz?.role ?? "",
   tech_stack: Array.isArray(currentQuiz?.techStack) 
     ? currentQuiz.techStack 
@@ -274,7 +274,7 @@ export function QuizEditor() {
       setIsShareModalOpen(true);
 
       queryClient.invalidateQueries({ queryKey: ["publishedQuiz", quizId] });
-      queryClient.invalidateQueries({ queryKey: ["quizzes", company.company_id] });
+      queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
 
       toast({
         title: "Published!",
@@ -346,12 +346,12 @@ export function QuizEditor() {
 
       // Add companyId as query parameter for DELETE request
       const res = await fetch(
-        `/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}?companyId=${encodeURIComponent(company.company_id)}`,
+        `/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}?companyId=${encodeURIComponent(companyInfo?.id)}`,
         {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
-            'x-company-id': company.company_id // Also add as header for redundancy
+            'x-company-id': companyInfo?.id // Also add as header for redundancy
           },
           credentials: "include",
         }
@@ -362,7 +362,7 @@ export function QuizEditor() {
       // If quiz is published, clean up from publish service
       if (isPublished) {
         await fetch(
-          `/api/publish/${company.company_id}/${currentQuiz.quiz_id}`,
+          `/api/publish/${companyInfo?.id}/${currentQuiz.quiz_id}`,
           {
             method: "DELETE",
             credentials: "include",
@@ -371,7 +371,7 @@ export function QuizEditor() {
       }
 
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["quizzes", company.company_id] });
+      queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
 
       toast({
         title: "Deleted",
@@ -396,7 +396,7 @@ export function QuizEditor() {
   // Copy link
   const handleCopyLink = useCallback(async () => {
     if (!quizId || !companyInfo?.id) return;
-    const url = `${origin}/${company.company_id}/quiz/${quizId}`;
+    const url = `${origin}/${companyInfo?.id}/quiz/${quizId}`;
     await navigator.clipboard.writeText(url);
     toast({
       title: "Copied!",
@@ -516,7 +516,7 @@ export function QuizEditor() {
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={companyInfo?.id ? `${origin}/${company.company_id}/take/quiz/${quizId}` : ""}
+        quizLink={companyInfo?.id ? `${origin}/${companyInfo?.id}/take/quiz/${quizId}` : ""}
         quizKey={publishedQuiz?.quiz_key || publishSettings.secretKey || currentQuiz?.quiz_key || ""}
       />
 
