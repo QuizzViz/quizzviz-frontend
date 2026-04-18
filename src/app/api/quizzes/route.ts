@@ -274,9 +274,11 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('PUT request body received:', body);
     const { quizId, is_publish, companyId } = body;
     
     if (!quizId || !companyId) {
+      console.log('Validation failed - missing quizId or companyId:', { quizId, companyId });
       return NextResponse.json(
         { error: 'Quiz ID and Company ID are required' },
         { status: 400 }
