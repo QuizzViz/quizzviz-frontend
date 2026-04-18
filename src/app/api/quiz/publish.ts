@@ -60,6 +60,7 @@ export default async function handler(
     // Prepare the request body for the external API
     const requestBody = {
       quiz_id,
+      company_id: req.body.companyId, // Add company_id from request body
       user_id: userId,
       title: title || topic || 'Untitled Quiz',
       topic: topic || 'General',

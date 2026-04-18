@@ -223,12 +223,34 @@ export function QuizEditor() {
 
   // Publish handler
   const handlePublishConfirm = async (secretKey: string) => {
-    if (!quizId || !user || !companyInfo?.id) return;
+    console.log("Publishing quiz with companyInfo:", companyInfo);
+    console.log("Quiz ID:", quizId);
+    console.log("User:", user?.id);
+    
+    // Get company ID from multiple sources for fallback
+    let companyId = companyInfo?.id;
+    
+    // If companyInfo is not available, try sessionStorage
+    if (!companyId && typeof window !== 'undefined') {
+      companyId = sessionStorage.getItem('company_id');
+      console.log("Fallback to sessionStorage company_id:", companyId);
+    }
+    
+    // If still not available, try localStorage
+    if (!companyId && typeof window !== 'undefined') {
+      companyId = localStorage.getItem('userCompanyId');
+      console.log("Fallback to localStorage company_id:", companyId);
+    }
+    
+    if (!quizId || !user || !companyId) {
+      console.error("Missing required data for publishing:", { quizId, user: !!user, companyId });
+      return;
+    }
 
     setIsPublishing(true);
 
     try {
-      const publicLink = `${origin}/${companyInfo?.id}/take/quiz/${quizId}`;
+      const publicLink = `${origin}/${companyId}/take/quiz/${quizId}`;
 
       const updatedSettings = {
         ...publishSettings,
@@ -239,7 +261,7 @@ export function QuizEditor() {
 
       const payload = {
   quiz_id: quizId,
-  companyId: companyInfo?.id,
+  companyId: companyId,
   role: currentQuiz?.role ?? "",
   tech_stack: Array.isArray(currentQuiz?.techStack) 
     ? currentQuiz.techStack 
@@ -516,7 +538,13 @@ export function QuizEditor() {
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={companyInfo?.id ? `${origin}/${companyInfo?.id}/take/quiz/${quizId}` : ""}
+        quizLink={(() => {
+          let companyId = companyInfo?.id;
+          if (!companyId && typeof window !== 'undefined') {
+            companyId = sessionStorage.getItem('company_id') || localStorage.getItem('userCompanyId');
+          }
+          return companyId ? `${origin}/${companyId}/take/quiz/${quizId}` : "";
+        })()}
         quizKey={publishedQuiz?.quiz_key || publishSettings.secretKey || currentQuiz?.quiz_key || ""}
       />
 
