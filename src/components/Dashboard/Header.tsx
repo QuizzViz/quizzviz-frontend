@@ -8,8 +8,12 @@ import { useCompanies } from '../../hooks/useCompanies';
 export const DashboardHeader: React.FC = () => {
   const { user, isLoaded } = useUser();  
 
-  // Always try user ID first, fallback to sessionStorage automatically
+  // Use user metadata first (like profile page), then fallback to useCompanies
+  const metadataCompanyName = user?.unsafeMetadata?.companyName;
   const { company, loading, error } = useCompanies(user?.id);
+
+  // Get company name from metadata first, then from company data
+  const companyName = (metadataCompanyName as string) || (company?.name as string) || 'Company';
 
   // Show skeleton loader while loading
   if (loading) {
@@ -27,7 +31,7 @@ export const DashboardHeader: React.FC = () => {
     <header className="px-6 py-4 border-b border-black bg-black flex items-center justify-between">
       <span> </span>
       <UserAvatarDropdown 
-        userName={company?.name || 'Company'}
+        userName={companyName || 'Company'}
         userEmail={userEmail}
       />
     </header>
