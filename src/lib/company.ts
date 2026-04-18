@@ -16,7 +16,7 @@ export interface CompanyDetails {
   updated_at: string;
 }
 
-export async function getCompanyId(request: NextRequest): Promise<{ company_id: string } | { error: Response }> {
+export async function getCompanyId(request: NextRequest, body?: any): Promise<{ company_id: string } | { error: Response }> {
   try {
     // First, try to get company_id from query parameters (for invited members)
     const { searchParams } = new URL(request.url);
@@ -28,11 +28,17 @@ export async function getCompanyId(request: NextRequest): Promise<{ company_id: 
     }
 
     // Second, try to get company_id from request body (for invited members sending in POST body)
+    if (body && body.company_id) {
+      console.log('Found company_id in request body:', body.company_id);
+      return { company_id: body.company_id };
+    }
+
+    // Try to parse body if not provided (for backward compatibility)
     try {
-      const body = await request.json().catch(() => null);
-      if (body && body.company_id) {
-        console.log('Found company_id in request body:', body.company_id);
-        return { company_id: body.company_id };
+      const parsedBody = await request.json().catch(() => null);
+      if (parsedBody && parsedBody.company_id) {
+        console.log('Found company_id in parsed request body:', parsedBody.company_id);
+        return { company_id: parsedBody.company_id };
       }
     } catch (e) {
       // Ignore JSON parsing errors, continue to next method
