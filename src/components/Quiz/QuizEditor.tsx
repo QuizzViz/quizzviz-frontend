@@ -532,7 +532,9 @@ export function QuizEditor() {
         quizLink={(() => {
           let companyId = companyInfo?.id;
           if (!companyId && typeof window !== 'undefined') {
-            companyId = sessionStorage.getItem('company_id') || localStorage.getItem('userCompanyId') || "";
+            const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+            const localStorageCompanyId = localStorage.getItem('userCompanyId');
+            companyId = sessionStorageCompanyId || localStorageCompanyId || "";
           }
           return companyId ? `${origin}/${companyId}/take/quiz/${quizId}` : "";
         })()}
