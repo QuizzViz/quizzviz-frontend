@@ -37,6 +37,7 @@ export function QuizHeader({
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const {company} = useCompanies(user?.id);
+  console.log('Company object from useCompanies:', company);
   if (!quiz) return null;
 
   const handleShareClick = () => {
