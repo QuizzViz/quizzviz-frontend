@@ -73,42 +73,68 @@ export async function GET(request: Request) {
   // Create a NextRequest object from the incoming request
   const nextRequest = new NextRequest(request);
   try {
-    const auth = getAuth(nextRequest);
-    const { userId } = auth;
+    // First check if company_id is provided in query params (for invited members)
+    const { searchParams } = new URL(request.url);
+    const queryCompanyId = searchParams.get('company_id');
     
-    if (!userId) {
-      return NextResponse.json(
-        { 
-          error: 'Unauthorized',
-          details: 'No user ID found in session'
-        },
-        { status: 401 }
-      );
-    }
+    let companyId: string;
+    
+    if (queryCompanyId) {
+      // Invited member - use company_id from query params
+      companyId = queryCompanyId;
+      console.log('Using company_id from query params for invited member:', companyId);
+    } else {
+      // Company owner - use authentication
+      const auth = getAuth(nextRequest);
+      const { userId } = auth;
+      
+      if (!userId) {
+        return NextResponse.json(
+          { 
+            error: 'Unauthorized',
+            details: 'No user ID found in session'
+          },
+          { status: 401 }
+        );
+      }
 
-    // Get the session token from cookies
-    const cookieHeader = nextRequest.cookies.toString();
-    const cookies = Object.fromEntries(
-      cookieHeader.split(';').map(c => {
-        const [key, ...vals] = c.trim().split('=');
-        return [key, vals.join('=')];
-      })
-    );
-    
-    const sessionToken = cookies.__session || '';
-    
-    if (!sessionToken) {
-      return NextResponse.json(
-        { 
-          error: 'Unauthorized',
-          details: 'No authentication token provided in cookies'
-        },
-        { status: 401 }
+      // Get the session token from cookies
+      const cookieHeader = nextRequest.cookies.toString();
+      const cookies = Object.fromEntries(
+        cookieHeader.split(';').map(c => {
+          const [key, ...vals] = c.trim().split('=');
+          return [key, vals.join('=')];
+        })
       );
-    }
+      
+      const sessionToken = cookies.__session || '';
+      
+      if (!sessionToken) {
+        return NextResponse.json(
+          { 
+            error: 'Unauthorized',
+            details: 'No authentication token provided in cookies'
+          },
+          { status: 401 }
+        );
+      }
 
-    // Get company ID for the user
-    const companyId = await getCompanyId(userId, sessionToken, request);
+      // Get company ID for the user
+      companyId = await getCompanyId(userId, sessionToken, request);
+    }
+    
+    // Get session token only if needed (for company owners)
+    let sessionToken = '';
+    if (!queryCompanyId) {
+      const cookieHeader = nextRequest.cookies.toString();
+      const cookies = Object.fromEntries(
+        cookieHeader.split(';').map(c => {
+          const [key, ...vals] = c.trim().split('=');
+          return [key, vals.join('=')];
+        })
+      );
+      sessionToken = cookies.__session || '';
+    }
     
     // Log the request for debugging
     console.log('Sending request to quiz usage backend:', {
@@ -119,13 +145,19 @@ export async function GET(request: Request) {
     });
 
     // Make request to backend
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Add auth header only for company owners
+    if (sessionToken) {
+      headers['Authorization'] = `Bearer ${sessionToken}`;
+    }
+    
     const response = await fetch(
       `${BACKEND_BASE_URL}/user/${companyId}/quizzes/usage`,
       {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`
-        },
+        headers,
         next: { revalidate: 0 } // Disable caching
       }
     );

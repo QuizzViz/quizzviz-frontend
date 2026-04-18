@@ -1,5 +1,4 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getCompanyId } from '@/lib/company';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}`;
 
@@ -23,7 +22,7 @@ interface CompanyUsageResponse {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get company ID from query parameters since auth is no longer required
+    // Get company ID from query parameters (auth no longer required)
     const { searchParams } = new URL(request.url);
     const company_id = searchParams.get('company_id');
     

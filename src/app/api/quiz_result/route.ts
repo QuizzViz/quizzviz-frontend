@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { QuizResult, ErrorResponse } from '@/types/quizResult';
-import { getCompanyId } from '@/lib/company';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}`;
 
@@ -13,19 +12,21 @@ interface QuizResultResponse {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get company ID first
-    const companyResult = await getCompanyId(request);
-    if ('error' in companyResult) {
-      console.error('Error getting company ID:', companyResult.error);
-      return companyResult.error;
-    }
-    const { company_id } = companyResult;
-    console.log('Company ID from token:', company_id);
-
+    // Get company ID from query parameters (auth no longer required)
     const { searchParams } = new URL(request.url);
+    const company_id = searchParams.get('company_id');
     const quizId = searchParams.get('quiz_id');
     const skip = searchParams.get('skip') || '0';
     const limit = searchParams.get('limit') || '1000';
+
+    if (!company_id) {
+      return NextResponse.json(
+        { error: 'company_id is required as query parameter' },
+        { status: 400 }
+      );
+    }
+
+    console.log('Company ID from query params:', company_id);
 
     // Build the URL with query parameters
     let url: string;
@@ -101,17 +102,16 @@ export async function POST(request: NextRequest) {
     const requestBody = await request.json();
     console.log('Received request body:', JSON.stringify(requestBody, null, 2));
 
-    // Get company_id from request body first, fallback to auth token if not provided
-    let company_id = requestBody.company_id;
+    // Get company_id from request body (now required since auth is removed)
+    const company_id = requestBody.company_id;
     
-    // If company_id is not in request body, try to get it from auth token
     if (!company_id) {
-      const companyResult = await getCompanyId(request);
-      if ('error' in companyResult) {
-        console.warn('No company_id in request body and failed to get from auth:', companyResult.error);
-        return companyResult.error;
-      }
-      company_id = companyResult.company_id;
+      return NextResponse.json(
+        { 
+          detail: 'company_id is required in request body'
+        },
+        { status: 400 }
+      );
     }
 
     const { quiz_id, username, user_email, user_answers, result, attempt } = requestBody;
