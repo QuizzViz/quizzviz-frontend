@@ -3,31 +3,16 @@ import { useEffect, useState } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs'; 
 import { LogoWithText } from '../LogoWithText';
 import UserAvatarDropdown from '../UserAvatarDropdown';
-import { useCachedFetch } from '../../hooks/useCachedFetch';
-
-interface CompanyInfo {
-  name: string;
-  owner_email: string;
-}
+import { useCompanies } from '../../hooks/useCompanies';
 
 export const DashboardHeader: React.FC = () => {
-  const { isLoaded, getToken } = useAuth();
-  const { user, isLoaded: isUserLoaded } = useUser();  
+  const { user, isLoaded } = useUser();  
 
-  const userId = user?.id ?? '';
-  const companyUrl = isUserLoaded && userId ? `/api/company/check?owner_id=${encodeURIComponent(userId)}` : '';
-  
-  const { data, isLoading } = useCachedFetch<{ companies: CompanyInfo[] }>(
-    ['company', userId],
-    companyUrl,
-    {
-      enabled: isUserLoaded && !!userId,
-      select: (data) => data,
-    }
-  );
+  // Use useCompanies hook for consistent company fetching
+  const { company, loading, error } = useCompanies(user?.id);
 
   // Show skeleton loader while loading
-  if (isLoading) {
+  if (loading) {
     return (
       <header className="px-6 py-4 border-b border-black bg-black flex items-center justify-between">
         <span> </span>
@@ -36,14 +21,13 @@ export const DashboardHeader: React.FC = () => {
     );
   }
 
-  const companyInfo = data?.companies?.[0];
   const userEmail = user?.emailAddresses?.[0]?.emailAddress ?? '';
 
   return (
     <header className="px-6 py-4 border-b border-black bg-black flex items-center justify-between">
       <span> </span>
       <UserAvatarDropdown 
-        userName={companyInfo?.name || 'Company'}
+        userName={company?.name || 'Company'}
         userEmail={userEmail}
       />
     </header>
