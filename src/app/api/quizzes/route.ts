@@ -252,10 +252,61 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
-// PUT method (not implemented)
-export async function PUT() {
-  return new NextResponse(null, { 
-    status: 405,
-    headers: { 'Allow': 'GET, POST, DELETE' }
-  });
+// PUT method - for unpublishing quiz
+export async function PUT(request: NextRequest) {
+  try {
+    const { getToken, userId } = getAuth(request);
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const token = await getToken();
+    
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No token' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { quizId, is_publish, companyId } = body;
+    
+    if (!quizId || !companyId) {
+      return NextResponse.json(
+        { error: 'Quiz ID and Company ID are required' },
+        { status: 400 }
+      );
+    }
+
+    // Call unpublish endpoint
+    const response = await fetch(`${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${companyId}/quiz/${quizId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'x-company-id': companyId
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || errorData.message || 'Failed to unpublish quiz');
+    }
+
+    const data = await response.json();
+    return NextResponse.json({
+      success: true,
+      message: 'Quiz unpublished successfully',
+      data
+    });
+
+  } catch (error: any) {
+    console.error('Error in PUT /api/quizzes:', error);
+    return handleApiError(error);
+  }
 }
