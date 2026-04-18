@@ -403,7 +403,7 @@ export function QuizEditor() {
       description: "Quiz link copied to clipboard",
       className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
     });
-  }, [origin, quizId, company]);
+  }, [origin, quizId, companyInfo]);
 
   // FIXED: Open modal for editing with proper data population
   const handleOpenEditModal = (index: number) => {
