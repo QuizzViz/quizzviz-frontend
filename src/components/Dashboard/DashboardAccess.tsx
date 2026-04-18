@@ -18,8 +18,8 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState('');
 
-  // Use useCompanies hook for consistent company fetching
-  const { company, loading: isLoadingCompany, error } = useCompanies(user?.id);
+  // For invited members, always use sessionStorage company_id (undefined userId triggers sessionStorage logic)
+  const { company, loading: isLoadingCompany, error } = useCompanies(undefined);
 
   useEffect(() => {
     // Set the current path on client-side only

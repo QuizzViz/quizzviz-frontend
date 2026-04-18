@@ -8,8 +8,8 @@ import { useCompanies } from '../../hooks/useCompanies';
 export const DashboardHeader: React.FC = () => {
   const { user, isLoaded } = useUser();  
 
-  // Use useCompanies hook for consistent company fetching
-  const { company, loading, error } = useCompanies(user?.id);
+  // Always use sessionStorage company_id (undefined userId triggers sessionStorage logic)
+  const { company, loading, error } = useCompanies(undefined);
 
   // Show skeleton loader while loading
   if (loading) {
