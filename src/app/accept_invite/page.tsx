@@ -74,13 +74,21 @@ export default function AcceptInvitePage() {
       if (user) {
         try {
           // Extract company info from the API response
+          console.log('Full invitation response:', result);
           const companyId = result.company_id;
           const companyName = result.member?.company_name || 'QuizzViz';
           
+          console.log('Extracted company info:', { companyId, companyName });
+          
           if (companyId) {
             // Store company info in sessionStorage for dashboard to fetch
+            console.log('Storing company ID in sessionStorage:', companyId);
             storeCompanyId(companyId);
             localStorage.setItem('userCompanyName', companyName);
+            
+            // Verify it was stored
+            const storedCompanyId = sessionStorage.getItem('company_id');
+            console.log('Company ID stored in sessionStorage:', storedCompanyId);
             
             await user.update({
               unsafeMetadata: {
@@ -93,6 +101,7 @@ export default function AcceptInvitePage() {
             console.log('Updated user metadata with company:', { companyId, companyName });
           } else {
             console.error('No company ID found in invite response');
+            console.error('Full response structure:', JSON.stringify(result, null, 2));
           }
         } catch (metadataError) {
           console.error('Error updating user metadata:', metadataError);
@@ -114,6 +123,7 @@ export default function AcceptInvitePage() {
           
           // FIRST PRIORITY: Check sessionStorage - if exists, always redirect to dashboard
           const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+          console.log('Redirect check - sessionStorageCompanyId:', sessionStorageCompanyId);
           if (sessionStorageCompanyId) {
             console.log('Company found in sessionStorage, redirecting to dashboard');
             router.push('/dashboard');
