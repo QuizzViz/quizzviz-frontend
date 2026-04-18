@@ -48,12 +48,13 @@ export function QuizHeader({
       setIsUnpublishing(true);
       
       // Use PUT to update the quiz status and handle unpublishing
-      const response = await fetch(`/api/quiz/${quizId}`, {
+      const response = await fetch(`/api/quizzes`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          quizId,
           is_publish: false,
           companyId: company?.company_id
         })
