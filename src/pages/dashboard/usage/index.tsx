@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuizUsage } from "@/hooks/useQuizUsage";
 import { useCompanyUsage } from "@/hooks/useCompanyUsage";
-import { useCompanies } from "@/hooks/useCompanies";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { useUser } from "@clerk/nextjs";
 import { Loader2, Calendar, BarChart3, RefreshCw, Zap, Clock, Users, TrendingUp } from "lucide-react";
@@ -49,8 +49,8 @@ const UsagePage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   
-  // Always try user ID first, fallback to sessionStorage automatically
-  const { company } = useCompanies(user?.id);
+  // Use the same logic as profile page
+  const { companyInfo } = useCompanyInfo();
   
   const currentMonth = usageData?.current_month;
   const monthlyBreakdown = usageData?.monthly_breakdown || [];
