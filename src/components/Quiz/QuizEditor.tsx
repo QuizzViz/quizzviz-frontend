@@ -234,20 +234,6 @@ export function QuizEditor() {
     if (!companyId && typeof window !== 'undefined') {
       const sessionStorageCompanyId = sessionStorage.getItem('company_id');
       if (sessionStorageCompanyId) {
-        companyId = sessionStorageCompanyId;
-        console.log("Fallback to sessionStorage company_id:", companyId);
-      }
-    }
-    
-    // If still not available, try localStorage
-    if (!companyId && typeof window !== 'undefined') {
-      companyId = localStorage.getItem('userCompanyId');
-      console.log("Fallback to localStorage company_id:", companyId);
-    }
-    
-    if (!quizId || !user || !companyId) {
-      console.error("Missing required data for publishing:", { quizId, user: !!user, companyId });
-      return;
     }
 
     setIsPublishing(true);
