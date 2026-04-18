@@ -218,7 +218,7 @@ export function QuizEditor() {
         });
       }
     },
-    [currentQuiz, user, company, getToken, queryClient, toast]
+    [currentQuiz, user, companyInfo, getToken, queryClient, toast]
   );
 
   // Publish handler
