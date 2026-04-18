@@ -20,13 +20,15 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
 
   // Check if user is an invited member by checking sessionStorage first
   // Do this immediately to avoid race conditions
-  const isInvitedMember = typeof window !== 'undefined' ? !!sessionStorage.getItem('company_id') : false;
+  const sessionStorageCompanyId = typeof window !== 'undefined' ? sessionStorage.getItem('company_id') : null;
+  const isInvitedMember = !!sessionStorageCompanyId;
 
   console.log('DashboardAccess Debug:', {
+    sessionStorageCompanyId,
     isInvitedMember,
-    sessionStorageCompanyId: typeof window !== 'undefined' ? sessionStorage.getItem('company_id') : null,
     userId: user?.id,
-    isLoaded
+    isLoaded,
+    useCompaniesParam: isInvitedMember ? undefined : user?.id
   });
 
   // For invited members, use undefined to force sessionStorage logic
@@ -48,13 +50,18 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   }
 
   // Show loading state in the page content instead
+  // Give more time for company data to load, especially for invited members
   if (!isLoaded || isLoadingCompany) {
     return <>{children}</>;
   }
 
+  // Check both sessionStorage and localStorage for company_id
+  const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
+  const hasStorageCompanyId = sessionStorageCompanyId || localStorageCompanyId;
+
   // Check if user needs to create a company
-  // BUT only show onboarding if NOT an invited member (no sessionStorage company_id)
-  if (!company && !isInvitedMember) {
+  // BUT only show onboarding if NO company_id in any storage AND not an invited member
+  if (!company && !isInvitedMember && !hasStorageCompanyId) {
     return (
       <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
         <div className="w-full max-w-md">
@@ -86,9 +93,9 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // For invited members: if company data failed to load but sessionStorage exists, allow access
-  if (!company && isInvitedMember) {
-    console.log('Invited member: Company data failed to load but sessionStorage exists, allowing dashboard access');
+  // For invited members or users with storage: if company data failed to load but storage exists, allow access
+  if (!company && (isInvitedMember || hasStorageCompanyId)) {
+    console.log('User has storage company_id, allowing dashboard access despite fetch failure');
     return <>{children}</>;
   }
 
