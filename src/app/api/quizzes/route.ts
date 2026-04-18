@@ -163,13 +163,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get company ID first
-    const companyResult = await getCompanyId(request);
-    if ('error' in companyResult) {
-      return companyResult.error;
-    }
-    const { company_id } = companyResult;
-
     const { userId, getToken } = getAuth(request);
     
     if (!userId) {
@@ -189,6 +182,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    
+    // Get company ID by passing the body to avoid double-reading
+    const companyResult = await getCompanyId(request, body);
+    if ('error' in companyResult) {
+      return companyResult.error;
+    }
+    const { company_id } = companyResult;
+    
     // Add company_id to the request body
     body.company_id = company_id;
     const data = await createQuiz(company_id, token, body);
