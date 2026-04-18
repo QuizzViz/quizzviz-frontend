@@ -542,7 +542,7 @@ export function QuizEditor() {
       />
 
       <PublishModal
-        // ... (rest of the code remains the same)
+        isOpen={isPublishModalOpen}
         onClose={() => setIsPublishModalOpen(false)}
         onPublish={handlePublishConfirm}
         quizId={quizId || ""}
@@ -553,7 +553,8 @@ export function QuizEditor() {
         onCopyLink={handleCopyLink}
         quizPublicLink={publicUrl}
         isPublished={isPublished}
-        companyId={companyInfo?.id} isOpen={false}      />
+        companyId={companyInfo?.id}
+      />
 
       <ConfirmationDialog
         isOpen={isDeleteDialogOpen}
