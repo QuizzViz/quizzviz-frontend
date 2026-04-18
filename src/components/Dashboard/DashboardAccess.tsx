@@ -18,8 +18,19 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState('');
 
-  // Always try user ID first (for company owners), fallback to sessionStorage (for invited members)
-  const { company, loading: isLoadingCompany, error } = useCompanies(user?.id);
+  // Check if user is an invited member by checking sessionStorage first
+  const [isInvitedMember, setIsInvitedMember] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const companyId = sessionStorage.getItem('company_id');
+      setIsInvitedMember(!!companyId);
+    }
+  }, []);
+
+  // For invited members, use undefined to force sessionStorage logic
+  // For company owners, use user ID
+  const { company, loading: isLoadingCompany, error } = useCompanies(isInvitedMember ? undefined : user?.id);
 
   useEffect(() => {
     // Set the current path on client-side only

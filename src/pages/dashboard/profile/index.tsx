@@ -29,31 +29,64 @@ export default function ProfilePage() {
   const companyId = metadataCompanyId || localStorageCompanyId || '';
   const companyName = user?.unsafeMetadata?.companyName || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
 
-  // Only make API call if we don't have company info from metadata (for company owners)
-  const shouldFetchCompany = !metadataCompanyId && user;
+  // For invited members, fetch company data by company_id to get owner email
+  // For company owners, fetch by user_id
+  const fetchUrl = (metadataCompanyId || localStorageCompanyId) 
+    ? `/api/company/${encodeURIComponent((metadataCompanyId || localStorageCompanyId) as string)}`
+    : user?.id 
+    ? `/api/company/check?owner_id=${user.id}`
+    : '';
+    
   const { data: companyData, isLoading, error: fetchError } = useCachedFetch<{
-    exists: boolean;
-    companies: Array<{
+    exists?: boolean;
+    companies?: Array<{
       id?: string;
       company_id?: string;
       name: string;
       owner_email?: string;
       created_at?: string;
     }>;
+    // Single company object response
+    company_id?: string;
+    name?: string;
+    owner_email?: string;
+    created_at?: string;
   }>(
-    ['companyInfo', user?.id || ''],
-    shouldFetchCompany ? `/api/company/check?owner_id=${user.id}` : '',
-    { enabled: Boolean(user && isLoaded && shouldFetchCompany) }
+    ['companyInfo', user?.id || '', (metadataCompanyId || localStorageCompanyId || '') as string],
+    fetchUrl,
+    { enabled: Boolean(user && isLoaded && fetchUrl) }
   );
 
   // Process company data
   const companyInfo = useMemo(() => {
-    // For invited members, use metadata/localStorage
+    // For invited members, use metadata/localStorage but fetch company data to get owner email
     if (metadataCompanyId || localStorageCompanyId) {
+      const companyId = metadataCompanyId || localStorageCompanyId || '';
+      // For invited members, we need to fetch company data to get the correct owner email
+      // Handle both array response (from /api/company/check) and single object response (from /api/company/[id])
+      if (companyData) {
+        let company;
+        if (companyData.companies && companyData.companies.length > 0) {
+          // Array response from /api/company/check
+          company = companyData.companies[0];
+        } else if (companyData.company_id || companyData.name) {
+          // Single object response from /api/company/[id]
+          company = companyData;
+        }
+        
+        if (company) {
+          return {
+            id: companyId,
+            name: company.name || companyName,
+            owner_email: company.owner_email || (user?.emailAddresses && user.emailAddresses[0] && user.emailAddresses[0].emailAddress) || '',
+            created_at: company.created_at || new Date().toISOString()
+          };
+        }
+      }
       return {
-        id: metadataCompanyId || localStorageCompanyId || '',
+        id: companyId,
         name: companyName,
-        owner_email: user?.emailAddresses?.[0]?.emailAddress || '',
+        owner_email: (user?.emailAddresses && user.emailAddresses[0] && user.emailAddresses[0].emailAddress) || '',
         created_at: new Date().toISOString()
       };
     }
