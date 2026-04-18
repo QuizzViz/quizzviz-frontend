@@ -48,6 +48,14 @@ export function QuizHeader({
     try {
       setIsUnpublishing(true);
       
+      // Get companyId with multiple fallbacks
+      let companyId = company?.company_id;
+      if (!companyId && typeof window !== 'undefined') {
+        companyId = sessionStorage.getItem('company_id') || localStorage.getItem('userCompanyId') || "";
+      }
+      
+      console.log('Final companyId being sent:', companyId);
+      
       // Use PUT to update the quiz status and handle unpublishing
       const response = await fetch(`/api/quizzes`, {
         method: 'PUT',
@@ -57,7 +65,7 @@ export function QuizHeader({
         body: JSON.stringify({
           quizId,
           is_publish: false,
-          companyId: company?.company_id
+          companyId
         })
       });
 
