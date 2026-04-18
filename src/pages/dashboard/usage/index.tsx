@@ -49,10 +49,8 @@ const UsagePage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   
-  // Check if user is company owner (has company metadata) or invited member
-  const hasCompanyMetadata = !!user?.unsafeMetadata?.companyId;
-  // Company owners: use user ID. Invited members: use sessionStorage (undefined)
-  const { company } = useCompanies(hasCompanyMetadata ? user?.id : undefined);
+  // Always try user ID first, fallback to sessionStorage automatically
+  const { company } = useCompanies(user?.id);
   
   const currentMonth = usageData?.current_month;
   const monthlyBreakdown = usageData?.monthly_breakdown || [];

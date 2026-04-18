@@ -18,10 +18,8 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState('');
 
-  // Check if user is company owner (has company metadata) or invited member
-  const hasCompanyMetadata = !!user?.unsafeMetadata?.companyId;
-  // Company owners: use user ID. Invited members: use sessionStorage (undefined)
-  const { company, loading: isLoadingCompany, error } = useCompanies(hasCompanyMetadata ? user?.id : undefined);
+  // Always try user ID first (for company owners), fallback to sessionStorage (for invited members)
+  const { company, loading: isLoadingCompany, error } = useCompanies(user?.id);
 
   useEffect(() => {
     // Set the current path on client-side only
