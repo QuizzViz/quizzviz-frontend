@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
     
     // If no companyId in query params, try to get it from the user's company
     if (!company_id) {
-      const companyResult = await getCompanyId(request);
+      const companyResult = await getCompanyId(request); // Removed body parameter
       if ('error' in companyResult) {
         return companyResult.error;
       }

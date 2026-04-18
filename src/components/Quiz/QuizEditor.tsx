@@ -13,7 +13,7 @@ import { Pagination } from "./Pagination";
 import { QuestionForm } from "./QuestionForm";
 import { PublishModal } from "./PublishModal";
 import { ShareQuizModal } from "./ShareQuizModal";
-import { useCompanies } from "@/hooks/useCompanies";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 import {
   QuizSummary,
@@ -38,7 +38,7 @@ export function QuizEditor() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { company, loading: isCompanyLoading } = useCompanies(user?.id);
+  const { companyInfo, isLoading: isCompanyLoading } = useCompanyInfo();
 
   const [localQuestions, setLocalQuestions] = useState<QuizQuestion[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,10 +77,10 @@ export function QuizEditor() {
 
   // Fetch quiz data using react-query
   const { data: quizzesData, isLoading: isQuizzesLoading, error: quizzesError } = useQuery<QuizSummary[]>({
-    queryKey: ["quizzes", company?.company_id],
-    enabled: isUserLoaded && !!user?.id && !!company?.company_id && !isCompanyLoading,
+    queryKey: ["quizzes", companyInfo?.id],
+    enabled: isUserLoaded && !!user?.id && !!companyInfo?.id && !isCompanyLoading,
     queryFn: async () => {
-      const res = await fetch(`/api/quizzes?companyId=${encodeURIComponent(company!.company_id)}`);
+      const res = await fetch(`/api/quizzes?companyId=${encodeURIComponent(companyInfo!.id)}`);
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(errText || `Failed to fetch quizzes (${res.status})`);
@@ -130,9 +130,9 @@ export function QuizEditor() {
   // Fetch published quiz data if published
   const { data: publishedQuiz, isLoading: isLoadingPublished } = useQuery({
     queryKey: ["publishedQuiz", quizId],
-    enabled: !!currentQuiz?.is_publish && !!quizId && !!company?.company_id,
+    enabled: !!currentQuiz?.is_publish && !!quizId && !!companyInfo?.id,
     queryFn: async () => {
-      const res = await fetch(`/api/publish/${company!.company_id}/${quizId}`);
+      const res = await fetch(`/api/publish/${companyInfo!.id}/${quizId}`);
       if (!res.ok) throw new Error("Failed to fetch published quiz");
       const result = await res.json();
       return result.data;
@@ -167,7 +167,7 @@ export function QuizEditor() {
   // Save quiz to server
   const persistQuiz = useCallback(
     async (questions: QuizQuestion[]) => {
-      if (!currentQuiz || !user || !company?.company_id) return;
+      if (!currentQuiz || !user || !companyInfo?.id) return;
 
       try {
         const token = await getToken();
@@ -182,7 +182,7 @@ export function QuizEditor() {
           code_analysis_questions_percentage: currentQuiz.code_analysis_questions_percentage,
           quiz: questions,
           is_publish: currentQuiz.is_publish,
-          companyId: company.company_id,
+          companyId: companyInfo?.id,
         };
 
         console.log("payload :", payload)
@@ -202,7 +202,7 @@ export function QuizEditor() {
           throw new Error(err.error || `Update failed (${res.status})`);
         }
 
-        queryClient.invalidateQueries({ queryKey: ["quizzes", company.company_id] });
+        queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
 
         toast({
           title: "Saved",
@@ -223,12 +223,12 @@ export function QuizEditor() {
 
   // Publish handler
   const handlePublishConfirm = async (secretKey: string) => {
-    if (!quizId || !user || !company?.company_id) return;
+    if (!quizId || !user || !companyInfo?.id) return;
 
     setIsPublishing(true);
 
     try {
-      const publicLink = `${origin}/${company.company_id}/take/quiz/${quizId}`;
+      const publicLink = `${origin}/${companyInfo?.id}/take/quiz/${quizId}`;
 
       const updatedSettings = {
         ...publishSettings,
@@ -239,7 +239,7 @@ export function QuizEditor() {
 
       const payload = {
   quiz_id: quizId,
-  companyId: company.company_id,
+  companyId: companyInfo?.id,
   role: currentQuiz?.role ?? "",
   tech_stack: Array.isArray(currentQuiz?.techStack) 
     ? currentQuiz.techStack 
@@ -274,7 +274,7 @@ export function QuizEditor() {
       setIsShareModalOpen(true);
 
       queryClient.invalidateQueries({ queryKey: ["publishedQuiz", quizId] });
-      queryClient.invalidateQueries({ queryKey: ["quizzes", company.company_id] });
+      queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
 
       toast({
         title: "Published!",
@@ -336,7 +336,7 @@ export function QuizEditor() {
 
   // Delete entire quiz
   const handleDeleteQuiz = async () => {
-    if (!currentQuiz || !user || !company?.company_id) return;
+    if (!currentQuiz || !user || !companyInfo?.id) return;
 
     setIsPublishing(true);
 
@@ -346,12 +346,12 @@ export function QuizEditor() {
 
       // Add companyId as query parameter for DELETE request
       const res = await fetch(
-        `/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}?companyId=${encodeURIComponent(company.company_id)}`,
+        `/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}?companyId=${encodeURIComponent(companyInfo?.id)}`,
         {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
-            'x-company-id': company.company_id // Also add as header for redundancy
+            'x-company-id': companyInfo?.id // Also add as header for redundancy
           },
           credentials: "include",
         }
@@ -362,7 +362,7 @@ export function QuizEditor() {
       // If quiz is published, clean up from publish service
       if (isPublished) {
         await fetch(
-          `/api/publish/${company.company_id}/${currentQuiz.quiz_id}`,
+          `/api/publish/${companyInfo?.id}/${currentQuiz.quiz_id}`,
           {
             method: "DELETE",
             credentials: "include",
@@ -371,7 +371,7 @@ export function QuizEditor() {
       }
 
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["quizzes", company.company_id] });
+      queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
 
       toast({
         title: "Deleted",
@@ -395,8 +395,8 @@ export function QuizEditor() {
 
   // Copy link
   const handleCopyLink = useCallback(async () => {
-    if (!quizId || !company?.company_id) return;
-    const url = `${origin}/${company.company_id}/quiz/${quizId}`;
+    if (!quizId || !companyInfo?.id) return;
+    const url = `${origin}/${companyInfo?.id}/quiz/${quizId}`;
     await navigator.clipboard.writeText(url);
     toast({
       title: "Copied!",
@@ -516,7 +516,7 @@ export function QuizEditor() {
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={company?.company_id ? `${origin}/${company.company_id}/take/quiz/${quizId}` : ""}
+        quizLink={companyInfo?.id ? `${origin}/${companyInfo?.id}/take/quiz/${quizId}` : ""}
         quizKey={publishedQuiz?.quiz_key || publishSettings.secretKey || currentQuiz?.quiz_key || ""}
       />
 
@@ -532,7 +532,7 @@ export function QuizEditor() {
         onCopyLink={handleCopyLink}
         quizPublicLink={publicUrl}
         isPublished={isPublished}
-        companyId={company?.company_id}
+        companyId={companyInfo?.id}
       />
 
       <ConfirmationDialog
