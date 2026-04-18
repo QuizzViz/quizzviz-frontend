@@ -8,10 +8,8 @@ import { useCompanies } from '../../hooks/useCompanies';
 export const DashboardHeader: React.FC = () => {
   const { user, isLoaded } = useUser();  
 
-  // Check if user is company owner (has company metadata) or invited member
-  const hasCompanyMetadata = !!user?.unsafeMetadata?.companyId;
-  // Company owners: use user ID. Invited members: use sessionStorage (undefined)
-  const { company, loading, error } = useCompanies(hasCompanyMetadata ? user?.id : undefined);
+  // Always try user ID first, fallback to sessionStorage automatically
+  const { company, loading, error } = useCompanies(user?.id);
 
   // Show skeleton loader while loading
   if (loading) {

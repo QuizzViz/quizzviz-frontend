@@ -45,53 +45,56 @@ export function useCompanies(userId: string | undefined): UseCompaniesReturn {
       setError(null);
 
       try {
+        let companyFound = false;
+        
+        // First try: fetch by user ID (for company owners)
         if (userId) {
-          // Original logic: fetch by user ID (owner)
           const response = await fetch(`/api/company/check?owner_id=${encodeURIComponent(userId)}`);
           
-          if (!response.ok) {
-            throw new Error(`Failed to fetch company information`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.companies?.[0]) {
+              const companyData = data.companies[0];
+              setCompany({
+                company_id: companyData.company_id || companyData.id,
+                name: companyData.name,
+                owner_email: companyData.owner_email || ''
+              });
+              companyFound = true;
+            }
           }
-          
-          const data = await response.json();
-          
-          if (data.companies?.[0]) {
-            const companyData = data.companies[0];
-            setCompany({
-              company_id: companyData.company_id || companyData.id,
-              name: companyData.name,
-              owner_email: companyData.owner_email || ''
-            });
-          }
-        } else {
-          // New logic: fetch by company_id from sessionStorage (for invited members)
+        }
+        
+        // Second try: fetch by company_id from sessionStorage (for invited members)
+        if (!companyFound) {
           const companyId = getCompanyId();
           
-          if (!companyId) {
-            throw new Error('No user ID or company ID found');
-          }
-
-          const response = await fetch(`/api/company/${encodeURIComponent(companyId)}`);
-          
-          if (!response.ok) {
-            if (response.status === 404) {
+          if (companyId) {
+            const response = await fetch(`/api/company/${encodeURIComponent(companyId)}`);
+            
+            if (response.ok) {
+              const data = await response.json();
+              
+              setCompany({
+                company_id: data.company_id || data.id,
+                name: data.name,
+                owner_email: data.owner_email || ''
+              });
+              companyFound = true;
+            } else if (response.status === 404) {
               // Company not found, clear the stored company_id
               clearCompanyId();
-              throw new Error('Company not found. The invitation may have been revoked.');
             }
-            throw new Error(`Failed to fetch company information`);
           }
-          
-          const companyData = await response.json();
-          
-          setCompany({
-            company_id: companyData.company_id || companyData.id,
-            name: companyData.name,
-            owner_email: companyData.owner_email || ''
-          });
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch company');
+        
+        // If no company found after both attempts, set company to null
+        if (!companyFound) {
+          setCompany(null);
+        }
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to fetch company information');
         setCompany(null);
       } finally {
         setLoading(false);
