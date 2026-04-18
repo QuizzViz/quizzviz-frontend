@@ -110,9 +110,9 @@ export default function AcceptInvitePage() {
       setTimeout(async () => {
         try {
           // Wait a bit to ensure company data is properly fetched
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 800));
           
-          // Check if we have company info in sessionStorage
+          // FIRST PRIORITY: Check sessionStorage - if exists, always redirect to dashboard
           const sessionStorageCompanyId = sessionStorage.getItem('company_id');
           if (sessionStorageCompanyId) {
             console.log('Company found in sessionStorage, redirecting to dashboard');
@@ -120,11 +120,10 @@ export default function AcceptInvitePage() {
             return;
           }
           
-          // Force a reload of user data to get updated metadata
+          // SECONDARY: Only check metadata if sessionStorage doesn't exist
           if (user) {
             await user.reload();
             
-            // Verify metadata was updated before redirecting
             const updatedMetadata = user.unsafeMetadata;
             console.log('User metadata after reload:', updatedMetadata);
             
@@ -132,32 +131,26 @@ export default function AcceptInvitePage() {
               console.log('Metadata confirmed, redirecting to dashboard');
               router.push('/dashboard');
             } else {
-              console.error('Metadata not updated, but sessionStorage has company info, redirecting to dashboard');
-              // Fallback to sessionStorage if metadata isn't updated yet
-              if (sessionStorageCompanyId) {
-                router.push('/dashboard');
-              } else {
-                console.error('No company info found, redirecting to onboarding');
-                router.push('/onboarding');
-              }
+              console.error('No company info found in sessionStorage or metadata, redirecting to onboarding');
+              router.push('/onboarding');
             }
           } else {
-            console.log('No user object, redirecting to dashboard');
-            router.push('/dashboard');
+            console.log('No user object, redirecting to onboarding');
+            router.push('/onboarding');
           }
         } catch (reloadError) {
           console.error('Error during user reload:', reloadError);
-          // Check sessionStorage as fallback
+          // Even on error, check sessionStorage first
           const sessionStorageCompanyId = sessionStorage.getItem('company_id');
           if (sessionStorageCompanyId) {
-            console.log('Using sessionStorage company_id, redirecting to dashboard');
+            console.log('Using sessionStorage company_id despite error, redirecting to dashboard');
             router.push('/dashboard');
           } else {
             console.error('No company info found, redirecting to onboarding');
             router.push('/onboarding');
           }
         }
-      }, 2000); // Increased timeout to ensure company is fetched
+      }, 1500); // Reduced timeout since we prioritize sessionStorage
       
     } catch (error) {
       console.error('Error accepting invite:', error);
