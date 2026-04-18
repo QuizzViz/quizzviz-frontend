@@ -234,7 +234,9 @@ export function QuizEditor() {
     if (!companyId && typeof window !== 'undefined') {
       const sessionStorageCompanyId = sessionStorage.getItem('company_id');
       if (sessionStorageCompanyId) {
-    }
+        companyId = sessionStorageCompanyId;
+      }
+      }
 
     setIsPublishing(true);
 
@@ -530,7 +532,7 @@ export function QuizEditor() {
         quizLink={(() => {
           let companyId = companyInfo?.id;
           if (!companyId && typeof window !== 'undefined') {
-            companyId = sessionStorage.getItem('company_id') || localStorage.getItem('userCompanyId');
+            companyId = sessionStorage.getItem('company_id') || localStorage.getItem('userCompanyId') || "";
           }
           return companyId ? `${origin}/${companyId}/take/quiz/${quizId}` : "";
         })()}
