@@ -30,6 +30,9 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('company_id');
 
+    console.log('Debug - Received parameters:', { email, quizId, companyId });
+    console.log('Debug - Full request URL:', request.url);
+
     if (!email || !quizId || !companyId) {
       return NextResponse.json(
         { detail: 'Email, quiz ID, and company ID are required' },
@@ -42,8 +45,11 @@ export async function GET(
       'accept': 'application/json',
     };
 
+    const backendUrl = `${API_BASE_URL}/check/attempt/email/${encodeURIComponent(email)}/quiz/${encodeURIComponent(quizId)}?company_id=${encodeURIComponent(companyId)}`;
+    console.log('Debug - Backend URL:', backendUrl);
+
     const response = await fetch(
-      `${API_BASE_URL}/check/attempt/email/${encodeURIComponent(email)}/quiz/${encodeURIComponent(quizId)}?company_id=${encodeURIComponent(companyId)}`,
+      backendUrl,
       {
         headers,
         cache: 'no-store' // Ensure we don't get cached responses
