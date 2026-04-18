@@ -223,8 +223,10 @@ export default function ResultsDashboard() {
   const quizzesPerPage = 5;
   const dataFetched = useRef(false);
 
-  // Always use sessionStorage company_id (undefined userId triggers sessionStorage logic)
-  const { company, loading: isCompanyLoading, error: companyError } = useCompanies(undefined);
+  // Check if user is company owner (has company metadata) or invited member
+  const hasCompanyMetadata = !!user?.unsafeMetadata?.companyId;
+  // Company owners: use user ID. Invited members: use sessionStorage (undefined)
+  const { company, loading: isCompanyLoading, error: companyError } = useCompanies(hasCompanyMetadata ? user?.id : undefined);
   const finalCompanyId = company?.company_id || '';
 
   // Fetch quiz results
