@@ -2,6 +2,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from "@clerk/nextjs";
 import { useCachedFetch } from './useCachedFetch';
 import { useState, useEffect } from 'react';
+import { useCompanies } from './useCompanies';
 
 type ApiError = Error & {
   status?: number;
@@ -44,32 +45,15 @@ export function useQuizUsage() {
   
   const plan = (user?.publicMetadata?.plan as string) || 'Free';
   
-  // Use the same approach as teams page - metadata first, then localStorage fallback
-  const metadataCompanyId = user?.unsafeMetadata?.companyId;
-  const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
-  const initialCompanyId = metadataCompanyId || localStorageCompanyId || '';
-  const companyName = user?.unsafeMetadata?.companyName || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
-  
-  // Only make API call if we don't have company info from metadata (for company owners)
-  const shouldFetchCompany = !metadataCompanyId && user;
-  const { data: companyData, isLoading: isCompanyLoading, error: companyError } = useCachedFetch<{
-    exists: boolean;
-    companies: Array<{ id?: string; company_id?: string; name: string; owner_email?: string }>;
-  }>(
-    ['companyInfo', user?.id || ''],
-    shouldFetchCompany && isLoaded ? `/api/company/check?owner_id=${user.id}` : '',
-    { enabled: Boolean(user && isLoaded && shouldFetchCompany) }
-  );
+  // Use the new useCompanies hook for consistent company fetching
+  const { company, loading: isCompanyLoading, error: companyError } = useCompanies(user?.id);
   
   // Process company info
-  const companyInfo = (metadataCompanyId || localStorageCompanyId) ? {
-    id: metadataCompanyId || localStorageCompanyId || '',
-    name: companyName,
-  } : (companyData?.exists && companyData.companies?.[0] ? {
-    id: companyData.companies[0].company_id || companyData.companies[0].id || '',
-    name: companyData.companies[0].name || 'Unnamed Company',
-    owner_email: companyData.companies[0].owner_email,
-  } : null);
+  const companyInfo = company ? {
+    id: company.company_id,
+    name: company.name,
+    owner_email: company.owner_email,
+  } : null;
   
   // Handle company fetch errors
   useEffect(() => {
