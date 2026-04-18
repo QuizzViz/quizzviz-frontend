@@ -232,8 +232,11 @@ export function QuizEditor() {
     
     // If companyInfo is not available, try sessionStorage
     if (!companyId && typeof window !== 'undefined') {
-      companyId = sessionStorage.getItem('company_id');
-      console.log("Fallback to sessionStorage company_id:", companyId);
+      const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+      if (sessionStorageCompanyId) {
+        companyId = sessionStorageCompanyId;
+        console.log("Fallback to sessionStorage company_id:", companyId);
+      }
     }
     
     // If still not available, try localStorage
