@@ -58,6 +58,20 @@ export async function GET(
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
+      console.log('Debug - Backend error response:', error);
+      console.log('Debug - Backend response status:', response.status);
+      
+      // If quiz data not found, it might mean no one has attempted the quiz yet
+      // Allow the user to proceed with 0 attempts
+      if (error.detail === "Quiz data not found or access denied") {
+        console.log('Debug - No attempts found yet, allowing user to proceed');
+        return NextResponse.json({
+          email: email,
+          quiz_id: quizId,
+          attempts: 0
+        });
+      }
+      
       return NextResponse.json(
         error,
         { status: response.status }
