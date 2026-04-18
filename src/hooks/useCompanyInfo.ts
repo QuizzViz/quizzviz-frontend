@@ -22,9 +22,17 @@ export function useCompanyInfo() {
   // For company owners, fetch by user_id
   const fetchUrl = (metadataCompanyId || localStorageCompanyId) 
     ? `/api/company/${encodeURIComponent((metadataCompanyId || localStorageCompanyId) as string)}`
-    : user?.id 
-    ? `/api/company/check?owner_id=${user.id}`
-    : '';
+    : (() => {
+        // For invited members, check sessionStorage first
+        if (typeof window !== 'undefined') {
+          const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+          if (sessionStorageCompanyId) {
+            return `/api/company/${encodeURIComponent(sessionStorageCompanyId)}`;
+          }
+        }
+        // Fall back to owner check for company owners
+        return user?.id ? `/api/company/check?owner_id=${user.id}` : '';
+      })();
     
   const { data: companyData, isLoading, error: fetchError } = useCachedFetch<{
     exists?: boolean;
