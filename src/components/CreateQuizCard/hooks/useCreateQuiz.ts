@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, ReactNode } from "react";
 import { Cpu, Code, Sparkles, CheckCircle } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useQuizGeneration } from "@/contexts/QuizGenerationContext";
+import { useCompanies } from "@/hooks/useCompanies";
 
 interface TopicError {
   error: string;
@@ -69,16 +70,25 @@ export function useCreateQuiz(): UseCreateQuizReturn {
   const [error, setError] = useState<string | ReactNode | null>(null);
   const [quizData, setQuizData] = useState<any>(null);
   
-  // Company state
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
-  const [isLoadingCompany, setIsLoadingCompany] = useState(true);
+  // auth
+  const { user, isLoaded } = useUser();
+
+  // Use the same useCompanies hook as the dashboard header
+  const { company, loading: isLoadingCompany } = useCompanies(user?.id);
+
+  // Convert company data to companyInfo format
+  const companyInfo: CompanyInfo | null = company ? {
+    id: company.company_id,
+    name: company.name,
+    owner_email: company.owner_email
+  } : null;
 
   // typing steps
   const steps = [
-    "🔍 Parsing and understanding the role semantics...",
-    "⚖️ Balancing code-analysis and theoretical coverage...",
-    "🧩 Generating question templates & code scaffolds...",
-    "✅ Validating difficulty and finalizing the quiz...",
+    "Parsing and understanding the role semantics...",
+    "Balancing code-analysis and theoretical coverage...",
+    "Generating question templates & code scaffolds...",
+    "Validating difficulty and finalizing the quiz...",
   ];
   const stepIcons = [Cpu, Code, Sparkles, CheckCircle];
 
@@ -90,52 +100,6 @@ export function useCreateQuiz(): UseCreateQuizReturn {
   const TYPING_SPEED = 18;
   const HOLD_AFTER_TYPING = 900;
   const FINISH_HOLD = 600;
-
-  // auth
-  const { user, isLoaded } = useUser();
-
-  // Fetch company info on mount
-  useEffect(() => {
-    const fetchCompanyInfo = async () => {
-      if (!isLoaded || !user) {
-        setIsLoadingCompany(false);
-        return;
-      }
-      
-      try {
-        console.log('Fetching company info for user:', user.id);
-        const response = await fetch(`/api/company/check?owner_id=${user.id}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Company check failed:', response.status, errorText);
-          throw new Error(`Failed to fetch company information: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Company check response:', data);
-        
-        if (data.exists && data.companies && data.companies.length > 0) {
-          const company = data.companies[0];
-          console.log('Using company:', company);
-          
-          setCompanyInfo({
-            id: company.company_id || company.id || company.name,
-            name: company.name || company.company_id || 'Company',
-            owner_email: company.owner_email || user?.emailAddresses?.[0]?.emailAddress
-          });
-        } else {
-          console.warn('No company found for user');
-        }
-      } catch (error) {
-        console.error('Error fetching company info:', error);
-      } finally {
-        setIsLoadingCompany(false);
-      }
-    };
-    
-    fetchCompanyInfo();
-  }, [isLoaded, user]);
 
   const experienceToApi = (val: string) => {
     switch (val) {
