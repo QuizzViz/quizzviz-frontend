@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Loader2, Zap, Lock, ArrowRight, Building2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useCompanies } from '@/hooks/useCompanies';
 
 interface Company {
   company_id: string;
@@ -16,9 +16,10 @@ interface Company {
 export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
   const router = useRouter();
-  const [company, setCompany] = useState<Company | null>(null);
-  const [isLoadingCompany, setIsLoadingCompany] = useState(true);
   const [currentPath, setCurrentPath] = useState('');
+
+  // Use useCompanies hook for consistent company fetching
+  const { company, loading: isLoadingCompany, error } = useCompanies(user?.id);
 
   useEffect(() => {
     // Set the current path on client-side only
@@ -33,77 +34,6 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   if (isPricingPage) {
     return <>{children}</>;
   }
-
-  useEffect(() => {
-    const checkCompanyAccess = async () => {
-      if (!isLoaded || !user) {
-        setIsLoadingCompany(false);
-        return;
-      }
-      
-      try {
-        // First check if user has company metadata (for invited members)
-        const userCompanyId = user.unsafeMetadata?.companyId;
-        
-        if (userCompanyId) {
-          // User has company metadata, set company info
-          setCompany({
-            company_id: userCompanyId as string,
-            plan_name: (user.unsafeMetadata?.planName as string) || 'Free'
-          });
-          console.log('Company access granted via metadata:', userCompanyId);
-          return;
-        }
-        
-        // If no metadata, check if user owns a company (for company owners)
-        const checkResponse = await fetch(`/api/company/check?owner_id=${user.id}`);
-        
-        if (!checkResponse.ok) {
-          console.error('Failed to check company status');
-          setCompany(null);
-          setIsLoadingCompany(false);
-          return;
-        }
-
-        const checkData = await checkResponse.json();
-        
-        // If company exists in the response, use it
-        if (checkData.exists && checkData.companies && checkData.companies.length > 0) {
-          setCompany(checkData.companies[0]);
-          console.log('Company access granted via ownership:', checkData.companies[0].company_id);
-        } else {
-          setCompany(null);
-        }
-      } catch (error) {
-        console.error('Error checking company access:', error);
-        setCompany(null);
-      } finally {
-        setIsLoadingCompany(false);
-      }
-    };
-
-    checkCompanyAccess();
-  }, [isLoaded, user, user?.unsafeMetadata?.companyId]);
-
-  // Separate effect to monitor metadata changes and re-check company access
-  useEffect(() => {
-    if (!user) return;
-    
-    const userCompanyId = user.unsafeMetadata?.companyId;
-    
-    if (userCompanyId && !company?.company_id) {
-      console.log('Metadata changed, updating company access');
-      try {
-        setCompany({
-          company_id: userCompanyId as string,
-          plan_name: (user.unsafeMetadata?.planName as string) || 'Free'
-        });
-        console.log('Company access re-granted via metadata update:', userCompanyId);
-      } catch (error) {
-        console.error('Error updating company state:', error);
-      }
-    }
-  }, [user?.unsafeMetadata?.companyId, company?.company_id]);
 
   // Show loading state in the page content instead
   if (!isLoaded || isLoadingCompany) {

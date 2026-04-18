@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuizUsage } from "@/hooks/useQuizUsage";
 import { useCompanyUsage } from "@/hooks/useCompanyUsage";
+import { useCompanies } from "@/hooks/useCompanies";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { Loader2, Calendar, BarChart3, RefreshCw, Zap, Clock, Users, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
