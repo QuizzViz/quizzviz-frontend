@@ -2,6 +2,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from "@clerk/nextjs";
 import { useCachedFetch } from './useCachedFetch';
 import { useState, useEffect } from 'react';
+import { useCompanies } from './useCompanies';
 
 type ApiError = Error & {
   status?: number;
@@ -40,21 +41,14 @@ export function useCompanyUsage() {
   const { toast } = useToast();
   const [errorShown, setErrorShown] = useState(false);
   
-  // Fetch company info using useCachedFetch
-  const { data: companyData, isLoading: isCompanyLoading, error: companyError } = useCachedFetch<{
-    exists: boolean;
-    companies: Array<{ id?: string; company_id?: string; name: string; owner_email?: string }>;
-  }>(
-    ['companyInfo', user?.id || ''],
-    user && isLoaded ? `/api/company/check?owner_id=${user.id}` : '',
-    { enabled: Boolean(user && isLoaded) }
-  );
+  // Use the new useCompanies hook for consistent company fetching
+  const { company, loading: isCompanyLoading, error: companyError } = useCompanies(user?.id);
   
   // Process company info
-  const companyInfo = companyData?.exists && companyData.companies?.[0] ? {
-    id: companyData.companies[0].company_id || companyData.companies[0].id || '',
-    name: companyData.companies[0].name || 'Unnamed Company',
-    owner_email: companyData.companies[0].owner_email,
+  const companyInfo = company ? {
+    id: company.company_id,
+    name: company.name,
+    owner_email: company.owner_email,
   } : null;
   
   // Handle company fetch errors

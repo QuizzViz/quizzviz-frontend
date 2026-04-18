@@ -15,6 +15,9 @@ export default function AcceptInvitePage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [inviteStatus, setInviteStatus] = useState<'pending' | 'accepted' | 'error'>('pending');
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -102,7 +105,8 @@ export default function AcceptInvitePage() {
         className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
 
-      // Wait for metadata to be fully processed, then redirect to dashboard
+      // Set redirecting state and wait for metadata to be fully processed
+      setIsRedirecting(true);
       setTimeout(async () => {
         try {
           // Force a reload of user data to get updated metadata
@@ -133,15 +137,17 @@ export default function AcceptInvitePage() {
           }
         } catch (reloadError) {
           console.error('Error during user reload:', reloadError);
-          // Check sessionStorage as fallback
+          // Always check sessionStorage as primary fallback for invited members
           const sessionStorageCompanyId = sessionStorage.getItem('company_id');
           if (sessionStorageCompanyId) {
+            console.log('Using sessionStorage company_id, redirecting to dashboard');
             router.push('/dashboard');
           } else {
+            console.error('No company info found, redirecting to onboarding');
             router.push('/onboarding');
           }
         }
-      }, 1500);
+      }, 2000); // Increased timeout to ensure company is fetched
       
     } catch (error) {
       console.error('Error accepting invite:', error);
@@ -206,13 +212,18 @@ export default function AcceptInvitePage() {
 
             <button
               onClick={handleAcceptInvite}
-              disabled={isAccepting}
+              disabled={isAccepting || isRedirecting}
               className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 font-medium py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isAccepting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2 inline-block" />
                   Accepting Invitation...
+                </>
+              ) : isRedirecting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2 inline-block" />
+                  Setting up your dashboard...
                 </>
               ) : (
                 'Accept Invitation'
