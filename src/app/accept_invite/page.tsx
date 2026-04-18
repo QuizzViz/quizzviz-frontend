@@ -6,6 +6,7 @@ import { useUser, useAuth } from '@clerk/nextjs';
 import Head from 'next/head';
 import { LoadingSpinner } from '@/components/ui/loading';
 import { useToast } from '@/hooks/use-toast';
+import { storeCompanyId } from '@/hooks/useCompanies';
 
 export default function AcceptInvitePage() {
   const router = useRouter();
@@ -74,8 +75,8 @@ export default function AcceptInvitePage() {
           const companyName = result.member?.company_name || 'QuizzViz';
           
           if (companyId) {
-            // Store company info in localStorage for dashboard to fetch
-            localStorage.setItem('userCompanyId', companyId);
+            // Store company info in sessionStorage for dashboard to fetch
+            storeCompanyId(companyId);
             localStorage.setItem('userCompanyName', companyName);
             
             await user.update({
@@ -116,10 +117,10 @@ export default function AcceptInvitePage() {
               console.log('Metadata confirmed, redirecting to dashboard');
               router.push('/dashboard');
             } else {
-              console.error('Metadata not updated, but localStorage has company info, redirecting to dashboard');
-              // Fallback to localStorage if metadata isn't updated yet
-              const localStorageCompanyId = localStorage.getItem('userCompanyId');
-              if (localStorageCompanyId) {
+              console.error('Metadata not updated, but sessionStorage has company info, redirecting to dashboard');
+              // Fallback to sessionStorage if metadata isn't updated yet
+              const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+              if (sessionStorageCompanyId) {
                 router.push('/dashboard');
               } else {
                 console.error('No company info found, redirecting to onboarding');
@@ -132,9 +133,9 @@ export default function AcceptInvitePage() {
           }
         } catch (reloadError) {
           console.error('Error during user reload:', reloadError);
-          // Check localStorage as fallback
-          const localStorageCompanyId = localStorage.getItem('userCompanyId');
-          if (localStorageCompanyId) {
+          // Check sessionStorage as fallback
+          const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+          if (sessionStorageCompanyId) {
             router.push('/dashboard');
           } else {
             router.push('/onboarding');
