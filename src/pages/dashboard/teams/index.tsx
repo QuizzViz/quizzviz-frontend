@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser, SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import { FiUsers, FiMail, FiPlus, FiRefreshCw } from "react-icons/fi";
+import { FiUsers, FiMail, FiPlus, FiRefreshCw, FiEdit, FiTrash } from "react-icons/fi";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
@@ -60,13 +60,15 @@ function getInitials(name?: string | null, email?: string | null): string {
 
 export default function TeamsPage() {
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth(); // Fix 1: was missing useAuth import
+  const { getToken } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [members, setMembers] = useState<CompanyMember[]>([]);
   const [isFetchingMembers, setIsFetchingMembers] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
+  const [editingMember, setEditingMember] = useState<CompanyMember | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string>("");
   const { userRole } = useUserRole(companyId);
   const { toast } = useToast();
@@ -217,6 +219,8 @@ export default function TeamsPage() {
       });
 
       fetchMembers();
+      setIsEditDialogOpen(false);
+      setEditingMember(null);
     } catch (error) {
       console.error("Error updating member:", error);
       toast({
@@ -293,7 +297,6 @@ export default function TeamsPage() {
 
   return (
     <DashboardAccess>
-      {/* Fix 2: Head was missing import */}
       <Head>
         <title>Teams | QuizzViz</title>
         <link rel="icon" href="/favicon.ico" />
@@ -316,7 +319,7 @@ export default function TeamsPage() {
               <DashboardHeader />
               <main className="flex-1 p-6 space-y-6">
 
-                {/* Fix 3: Restructured the broken nested divs in page header */}
+                {/* Page Header */}
                 <div className="flex items-center justify-between">
                   <div>
                     <h1 className="text-2xl font-semibold">Teams</h1>
@@ -326,7 +329,6 @@ export default function TeamsPage() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {/* Fix 4: Fixed the broken self-closing Button with misplaced children */}
                     {canManage && (
                       <Button
                         onClick={fetchMembers}
@@ -419,7 +421,6 @@ export default function TeamsPage() {
                             >
                               Cancel
                             </Button>
-                            {/* Fix 5: Fixed broken submit button JSX with mismatched fragments */}
                             <Button
                               type="submit"
                               disabled={isSubmittingInvite}
@@ -488,7 +489,7 @@ export default function TeamsPage() {
                           </button>
                         </div>
 
-                        {/* Fix 6: Completed the truncated Role and Status Badges section */}
+                        {/* Role and Status Badges */}
                         <div className="flex items-center gap-2 mb-4">
                           <span
                             className={`text-xs font-medium px-3 py-1 rounded-full border ${
@@ -538,6 +539,20 @@ export default function TeamsPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs"
+                                onClick={() => {
+                                  setEditingMember(member);
+                                  setIsEditDialogOpen(true);
+                                }}
+                              >
+                                <FiEdit className="h-3 w-3 mr-1" />
+                                Edit
+                              </Button>
+                            )}
+                            {userRole?.role === "OWNER" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
                                 onClick={() =>
                                   handleDeleteMember(
@@ -546,6 +561,7 @@ export default function TeamsPage() {
                                   )
                                 }
                               >
+                                <FiTrash className="h-3 w-3 mr-1" />
                                 Remove
                               </Button>
                             )}
@@ -555,7 +571,6 @@ export default function TeamsPage() {
                     ))}
                   </div>
                 ) : (
-                  /* Fix 7: Completed the truncated empty state section */
                   <div className="flex flex-col items-center justify-center py-24 text-center">
                     <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-white/5 mb-6">
                       <FiUsers className="h-12 w-12 text-white/50" />
@@ -575,10 +590,93 @@ export default function TeamsPage() {
                     </Button>
                   </div>
                 )}
+
               </main>
             </div>
           </div>
         </SignedIn>
+
+        {/* Edit Member Dialog */}
+        <Dialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+        >
+          <DialogContent className="bg-gray-900 border-gray-700 text-white">
+            <DialogHeader>
+              <DialogTitle>Edit Team Member</DialogTitle>
+            </DialogHeader>
+            {editingMember && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleUpdateMember(editingMember.id, {
+                    role: editingMember.role,
+                    name: editingMember.name,
+                  });
+                }}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Name</Label>
+                  <Input
+                    id="edit-name"
+                    type="text"
+                    placeholder="Enter full name"
+                    value={editingMember.name || ""}
+                    onChange={(e) =>
+                      setEditingMember({
+                        ...editingMember,
+                        name: e.target.value,
+                      })
+                    }
+                    className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-role">Role</Label>
+                  <Select
+                    value={editingMember.role}
+                    onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
+                      setEditingMember({
+                        ...editingMember,
+                        role: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="MEMBER">Member</SelectItem>
+                      <SelectItem value="ADMIN">Admin</SelectItem>
+                      <SelectItem value="OWNER">Owner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditDialogOpen(false);
+                      setEditingMember(null);
+                    }}
+                    className="border-gray-600 text-white hover:bg-gray-800"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110"
+                  >
+                    Update Member
+                  </Button>
+                </div>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <SignedOut>
           <div className="flex items-center justify-center h-screen">
