@@ -337,7 +337,10 @@ export default function TeamsPage() {
   // Debug logging
   console.log('Teams page - User role:', userRole);
   console.log('Teams page - Role loading:', roleLoading);
+  console.log('Teams page - User role role value:', userRole?.role);
   console.log('Teams page - Can invite members:', canPerformAction(userRole, 'invite_members'));
+  console.log('Teams page - Can manage roles:', canPerformAction(userRole, 'manage_roles'));
+  console.log('Teams page - Can delete company:', canPerformAction(userRole, 'delete_company'));
 
   // Invite dialog
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -396,6 +399,64 @@ export default function TeamsPage() {
       toast({
         title: "Error",
         description: "Failed to fetch team members",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetchingMembers(false);
+    }
+  };
+
+  // ── Refresh members and role ───────────────────────────────────────────────────
+  const refreshMembersAndRole = async () => {
+    if (!companyId) return;
+    setIsFetchingMembers(true);
+    
+    try {
+      const token = await getToken();
+      
+      // Fetch both members and role simultaneously
+      const [membersResponse, roleResponse] = await Promise.all([
+        fetch(
+          `/api/company-members?company_id=${companyId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ),
+        fetch(
+          `/api/company-members/role?user_id=${user?.id}&company_id=${companyId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      ]);
+
+      if (!membersResponse.ok) throw new Error("Failed to fetch members");
+      if (!roleResponse.ok) throw new Error("Failed to fetch role");
+
+      const membersData = await membersResponse.json();
+      const roleData = await roleResponse.json();
+      
+      setMembers(membersData);
+      
+      // Update role directly
+      console.log('Role fetched from refresh:', roleData);
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('userRole', JSON.stringify(roleData));
+        sessionStorage.setItem('userCompanyId', companyId);
+      }
+      
+      // Trigger role update
+      setTimeout(() => {
+        window.dispatchEvent(new Event('storage'));
+      }, 100);
+      
+      toast({
+        title: "Refreshed",
+        description: "Team members and permissions updated",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+      });
+      
+    } catch (error) {
+      console.error("Error refreshing:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh team members",
         variant: "destructive",
       });
     } finally {
@@ -732,7 +793,7 @@ export default function TeamsPage() {
 
                     {/* Refresh */}
                     <Button
-                      onClick={fetchMembers}
+                      onClick={refreshMembersAndRole}
                       disabled={isFetchingMembers}
                       className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 flex items-center gap-2 px-4 py-2 rounded-xl"
                     >
