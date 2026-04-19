@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('Fetching member role:', { user_id, company_id });
+    console.log('COMPANY_MEMBERS_URL:', COMPANY_MEMBERS_URL);
 
     // Check if COMPANY_MEMBERS_URL is configured
     if (!COMPANY_MEMBERS_URL) {
@@ -51,9 +52,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const fullUrl = `${COMPANY_MEMBERS_URL}/member/role?user_id=${encodeURIComponent(user_id.trim())}&company_id=${encodeURIComponent(company_id.trim())}`;
+    console.log('Full URL being called:', fullUrl);
+    console.log('Token available:', !!token);
+    console.log('Token length:', token?.length || 0);
+
     let response;
     try {
-      response = await fetch(`${COMPANY_MEMBERS_URL}/member/role?user_id=${encodeURIComponent(user_id.trim())}&company_id=${encodeURIComponent(company_id.trim())}`, {
+      response = await fetch(fullUrl, {
         method: 'GET',
         headers: {
           'accept': 'application/json',
@@ -75,6 +81,49 @@ export async function GET(request: NextRequest) {
           statusText: response.statusText,
           data: JSON.stringify(responseData, null, 2)
         });
+        
+        // If member not found (404), create a default member record
+        if (response.status === 404) {
+          console.log('Member not found in database, creating default member record');
+          
+          // Try to create member record
+          try {
+            const createResponse = await fetch(`${COMPANY_MEMBERS_URL}/member`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                user_id: user_id.trim(),
+                company_id: company_id.trim(),
+                role: 'MEMBER', // Default to MEMBER for new users
+                status: 'ACTIVE'
+              })
+            });
+            
+            if (createResponse.ok) {
+              console.log('Member record created successfully, fetching role again');
+              // Retry fetching the role after creating the member
+              const retryResponse = await fetch(`${COMPANY_MEMBERS_URL}/member/role?user_id=${encodeURIComponent(user_id.trim())}&company_id=${encodeURIComponent(company_id.trim())}`, {
+                method: 'GET',
+                headers: {
+                  'accept': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+              });
+              
+              if (retryResponse.ok) {
+                const retryData = await retryResponse.json();
+                console.log('Member role fetched after creation:', retryData);
+                return NextResponse.json(retryData);
+              }
+            }
+          } catch (createError) {
+            console.error('Failed to create member record:', createError);
+          }
+        }
         
         return NextResponse.json(
           { 
