@@ -35,15 +35,33 @@ export default function Dashboard() {
     }
   }, [isLoaded]);
 
-  // Show loading while fetching role
-  if (isLoading || roleLoading) {
-    return <PageLoading fullScreen />;
-  }
-
-  
-  // Show full page loading if Clerk is not loaded yet
-  if (!isLoaded) {
-    return <PageLoading fullScreen />;
+  // Show loading while fetching role or if Clerk is not loaded yet
+  if (isLoading || roleLoading || !isLoaded) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <SignedIn>
+          <div className="flex min-h-screen">
+            <div className="bg-white border-r border-white">
+              <DashboardSideBar />
+            </div>
+            <div className="flex-1 flex flex-col">
+              <DashboardHeader />
+              <main className="flex-1 flex items-center justify-center">
+                <PageLoading />
+              </main>
+            </div>
+          </div>
+        </SignedIn>
+        <SignedOut>
+          <div className="flex items-center justify-center h-screen">
+            <div className="text-center">
+              <h1 className="text-lg md:text-xl lg:text-2xl font-semibold mb-4 text-white">Redirecting to sign in...</h1>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
+          </div>
+        </SignedOut>
+      </div>
+    );
   }
 
   return (
