@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 
 export interface UserRole {
   id: string;
@@ -24,6 +24,7 @@ interface UseUserRoleReturn {
 
 export function useUserRole(companyId?: string): UseUserRoleReturn {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,12 +69,19 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
 
         console.log('Fetching user role:', { userId: user.id, companyId });
 
+        const token = await getToken();
+        if (!token) {
+          console.error('No auth token available');
+          throw new Error('No authentication token available');
+        }
+
         const response = await fetch(
           `/api/company-members/role?user_id=${encodeURIComponent(user.id)}&company_id=${encodeURIComponent(companyId)}`,
           {
             method: 'GET',
             headers: {
               'accept': 'application/json',
+              'Authorization': `Bearer ${token}`,
             },
           }
         );
