@@ -6,10 +6,11 @@ const COMPANY_MEMBERS_URL = process.env.NEXT_PUBLIC_COMPANY_MEMBERS_SERVICE_URL;
 // PUT - Update a company member (role)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('Starting company member update request for ID:', params.id);
+    const { id } = await params;
+    console.log('Starting company member update request for ID:', id);
     
     // Get token and user ID from request
     const { getToken, userId } = getAuth(request);
@@ -65,12 +66,12 @@ export async function PUT(
       role: role.trim().toUpperCase()
     };
 
-    console.log('Making PUT request to:', `${COMPANY_MEMBERS_URL}/member/${params.id}`);
+    console.log('Making PUT request to:', `${COMPANY_MEMBERS_URL}/member/${id}`);
     console.log('Request body:', JSON.stringify(requestBody, null, 2));
     
     let response;
     try {
-      response = await fetch(`${COMPANY_MEMBERS_URL}/member/${params.id}`, {
+      response = await fetch(`${COMPANY_MEMBERS_URL}/member/${id}`, {
         method: 'PUT',
         headers: {
           'accept': 'application/json',
@@ -130,10 +131,11 @@ export async function PUT(
 // DELETE - Remove a company member
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    console.log('Starting company member delete request for ID:', params.id);
+    const { id } = await params;
+    console.log('Starting company member delete request for ID:', id);
     
     // Get token from request
     const { getToken } = getAuth(request);
@@ -147,11 +149,11 @@ export async function DELETE(
       );
     }
 
-    console.log('Making DELETE request to:', `${COMPANY_MEMBERS_URL}/member/${params.id}`);
+    console.log('Making DELETE request to:', `${COMPANY_MEMBERS_URL}/member/${id}`);
     
     let response;
     try {
-      response = await fetch(`${COMPANY_MEMBERS_URL}/member/${params.id}`, {
+      response = await fetch(`${COMPANY_MEMBERS_URL}/member/${id}`, {
         method: 'DELETE',
         headers: {
           'accept': 'application/json',
