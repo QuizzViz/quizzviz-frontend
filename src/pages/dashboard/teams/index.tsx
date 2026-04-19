@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useUser, SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
+import { useCompanies } from "@/hooks/useCompanies";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import {
@@ -330,14 +331,16 @@ export default function TeamsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [members, setMembers] = useState<CompanyMember[]>([]);
   const [isFetchingMembers, setIsFetchingMembers] = useState(false);
-  const [companyId, setCompanyId] = useState<string>("");
-  const { userRole, loading: roleLoading } = useUserRole(companyId);
+  const { company } = useCompanies(user?.id);
+  const { userRole, loading: roleLoading } = useUserRole(company?.company_id || '');
   const { toast } = useToast();
 
   // Debug logging
+  console.log('Teams page - Company from useCompanies:', company);
   console.log('Teams page - User role:', userRole);
   console.log('Teams page - Role loading:', roleLoading);
   console.log('Teams page - User role role value:', userRole?.role);
+  console.log('Teams page - Company ID:', company?.company_id);
   console.log('Teams page - Can invite members:', canPerformAction(userRole, 'invite_members'));
   console.log('Teams page - Can manage roles:', canPerformAction(userRole, 'manage_roles'));
   console.log('Teams page - Can delete company:', canPerformAction(userRole, 'delete_company'));
@@ -358,24 +361,23 @@ export default function TeamsPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [isDeletingMember, setIsDeletingMember] = useState(false);
 
-  // ── Company ID ──────────────────────────────────────────────────────────────
+  // ── Company ID ──────────────────────────────────────────────────────────────// Simple loading state management
   useEffect(() => {
-    const metadataCompanyId = user?.unsafeMetadata?.companyId;
-    const localStorageCompanyId =
-      typeof window !== "undefined" ? localStorage.getItem("userCompanyId") : null;
-    if (metadataCompanyId) setCompanyId(metadataCompanyId as string);
-    else if (localStorageCompanyId) setCompanyId(localStorageCompanyId);
-    else setCompanyId("quizzviz");
-  }, [user]);
+    if (isLoaded && !user) {
+      router.push("/signin");
+    } else if (isLoaded) {
+      setIsLoading(false);
+    }
+  }, [isLoaded, user, router]);
 
   // ── Fetch members ───────────────────────────────────────────────────────────
   const fetchMembers = async () => {
-    if (!companyId) return;
+    if (!company?.company_id) return;
     setIsFetchingMembers(true);
     try {
       const token = await getToken();
       const response = await fetch(
-        `/api/company-members?company_id=${companyId}`,
+        `/api/company-members?company_id=${company.company_id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!response.ok) throw new Error("Failed to fetch members");
@@ -408,7 +410,7 @@ export default function TeamsPage() {
 
   // ── Refresh members and role ───────────────────────────────────────────────────
   const refreshMembersAndRole = async () => {
-    if (!companyId) return;
+    if (!company?.company_id) return;
     setIsFetchingMembers(true);
     
     try {
@@ -417,11 +419,11 @@ export default function TeamsPage() {
       // Fetch both members and role simultaneously
       const [membersResponse, roleResponse] = await Promise.all([
         fetch(
-          `/api/company-members?company_id=${companyId}`,
+          `/api/company-members?company_id=${company?.company_id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         ),
         fetch(
-          `/api/company-members/role?user_id=${user?.id}&company_id=${companyId}`,
+          `/api/company-members/role?user_id=companyd}&company_id=${company?.company_id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         )
       ]);
@@ -438,7 +440,9 @@ export default function TeamsPage() {
       console.log('Role fetched from refresh:', roleData);
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('userRole', JSON.stringify(roleData));
-        sessionStorage.setItem('userCompanyId', companyId);
+        sessionStorage.setItem('userCompanyId', company?.company_id || '');
+        // Also update localStorage for consistency
+        localStorage.setItem('userCompanyId', company?.company_id || '');
       }
       
       // Trigger role update
@@ -464,7 +468,7 @@ export default function TeamsPage() {
     }
   };
 
-  useEffect(() => { if (companyId) fetchMembers(); }, [companyId]);
+  useEffect(() => { if (company?.company_id) fetchMembers(); }, [company?.company_id]);
 
   useEffect(() => {
     if (isLoaded && !user) router.push("/signin");
@@ -495,7 +499,7 @@ export default function TeamsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          company_id: companyId,
+          company_id: company?.company_id,
           company_name: user?.unsafeMetadata?.companyName || "QuizzViz",
           name: inviteForm.name,
           invited_email: inviteForm.email,
