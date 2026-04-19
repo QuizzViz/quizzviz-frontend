@@ -257,7 +257,11 @@ export default function MyQuizzesPage() {
                 ) : (
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {quizzes.map((q) => (
-                      <div key={q.quiz_id} className="group block">
+                      <Link
+                        key={q.quiz_id}
+                        href={`/quiz/${q.quiz_id}`}
+                        className="group block"
+                      >
                         <Card className="relative overflow-hidden cursor-pointer border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-900 transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-blue-500/10 group-hover:border-white/20">
                           <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-[radial-gradient(600px_circle_at_var(--x,50%)_var(--y,50%),rgba(59,130,246,0.08),transparent_40%)]" />
                           <CardHeader>
@@ -338,7 +342,7 @@ export default function MyQuizzesPage() {
                             </div>
                           </CardContent>
                         </Card>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}
