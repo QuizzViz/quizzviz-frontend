@@ -9,6 +9,8 @@ import Head from "next/head";
 import Link from "next/link";
 import { MoreVertical, Trash2 } from "lucide-react";
 import { useUserPlanContext } from "@/contexts/UserPlanContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { canPerformAction } from "@/utils/rolePermissions";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
@@ -70,6 +72,9 @@ export default function MyQuizzesPage() {
   const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
   const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') as string | null : null;
   const companyId = metadataCompanyId || localStorageCompanyId || '';
+  
+  // Now get user role after companyId is defined
+  const { userRole, loading: roleLoading } = useUserRole(companyId);
   const companyName = user?.unsafeMetadata?.companyName as string || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
   
   // Determine which API endpoint to use
@@ -252,12 +257,7 @@ export default function MyQuizzesPage() {
                 ) : (
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {quizzes.map((q) => (
-                      <Link
-                        key={q.quiz_id}
-                        href={`/quiz/${q.quiz_id}`}
-                        rel="noopener noreferrer"
-                        className="group block"
-                      >
+                      <div key={q.quiz_id} className="group block">
                         <Card className="relative overflow-hidden cursor-pointer border-white/10 bg-gradient-to-br from-zinc-950 to-zinc-900 transition-all duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-blue-500/10 group-hover:border-white/20">
                           <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-[radial-gradient(600px_circle_at_var(--x,50%)_var(--y,50%),rgba(59,130,246,0.08),transparent_40%)]" />
                           <CardHeader>
@@ -275,7 +275,33 @@ export default function MyQuizzesPage() {
                                   </div>
                                 )}
                               </div>
-                              <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience} yrs</Badge>
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience} yrs</Badge>
+                                
+                                {/* Delete dropdown - Only show if user can delete quizzes */}
+                                {!roleLoading && canPerformAction(userRole, 'delete_quiz', { isQuizOwner: q.user_id === user?.id }) ? (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-white/[0.1]">
+                                        <span className="sr-only">Open menu</span>
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="bg-[#161c2a] border border-white/10">
+                                      <DropdownMenuItem
+                                        className="text-red-400 hover:text-red-300 hover:bg-red-500/[0.1] focus:text-red-300 focus:bg-red-500/[0.1]"
+                                        onClick={() => {
+                                          setQuizToDelete(q.quiz_id);
+                                          setDeleteDialogOpen(true);
+                                        }}
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete Quiz
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                ) : null}
+                              </div>
                             </div>
                             <CardDescription className="text-white/70">
                               <span className="font-medium text-white">{q.num_questions}</span> questions
@@ -312,7 +338,7 @@ export default function MyQuizzesPage() {
                             </div>
                           </CardContent>
                         </Card>
-                      </Link>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -329,6 +355,30 @@ export default function MyQuizzesPage() {
             </div>
           </div>
         </SignedOut>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent className="bg-[#161c2a] border border-white/10 text-white">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-white">Delete Quiz</AlertDialogTitle>
+              <AlertDialogDescription className="text-white/70">
+                Are you sure you want to delete this quiz? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-white/10 text-white hover:bg-white/20">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => quizToDelete && handleDeleteQuiz(quizToDelete)}
+                className="bg-red-600 text-white hover:bg-red-700"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardAccess>
   );
