@@ -342,9 +342,22 @@ export default function TeamsPage() {
   console.log('Teams page - Role loading:', roleLoading);
   console.log('Teams page - User role role value:', userRole?.role);
   console.log('Teams page - Company ID:', company?.company_id);
-  console.log('Teams page - Can invite members:', canPerformAction(userRole, 'invite_members'));
-  console.log('Teams page - Can manage roles:', canPerformAction(userRole, 'manage_roles'));
-  console.log('Teams page - Can delete company:', canPerformAction(userRole, 'delete_company'));
+  
+  // Detailed permission debugging
+  const canInvite = canPerformAction(userRole, 'invite_members');
+  const canManage = canPerformAction(userRole, 'manage_roles');
+  const canDelete = canPerformAction(userRole, 'delete_company');
+  
+  console.log('Teams page - Permission check details:', {
+    userRole: userRole,
+    userRoleExists: !!userRole,
+    userRoleRole: userRole?.role,
+    roleLoading,
+    canInvite,
+    canManage,
+    canDelete,
+    shouldShowInviteButton: !roleLoading && canInvite
+  });
   
   // Additional debugging for role fetching
   useEffect(() => {
@@ -701,7 +714,7 @@ export default function TeamsPage() {
                   <div className="flex items-center gap-3">
 
                     {/* Invite Member */}
-                    {!roleLoading && canPerformAction(userRole, 'invite_members') ? (
+                    {(!roleLoading && canInvite) ? (
                       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                         <DialogTrigger asChild>
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
