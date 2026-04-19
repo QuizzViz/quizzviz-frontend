@@ -25,6 +25,11 @@ export async function GET(request: NextRequest) {
     const user_id = searchParams.get('user_id');
     const company_id = searchParams.get('company_id');
 
+    console.log('Raw URL:', request.url);
+    console.log('All search params:', Object.fromEntries(searchParams.entries()));
+    console.log('Extracted user_id:', user_id);
+    console.log('Extracted company_id:', company_id);
+
     if (!user_id?.trim() || !company_id?.trim()) {
       console.error('Missing required query parameters:', { user_id, company_id });
       return NextResponse.json(
