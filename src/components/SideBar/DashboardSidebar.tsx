@@ -111,7 +111,7 @@ export default function DashboardSidebar({
     { name: "Usage", href: "/dashboard/usage", Icon: (props) => <FiCreditCard {...props} /> },
     { name: "Profile", href: "/dashboard/profile", Icon: (props) => <FiUser {...props} /> },
     { name: "Teams", href: "/dashboard/teams", Icon: (props) => <FiUsers {...props} /> },
-    { name: "Settings", href: "/dashboard/settings", Icon: (props) => <FiSettings {...props} /> },
+    // { name: "Settings", href: "/dashboard/settings", Icon: (props) => <FiSettings {...props} /> },
     { name: "Feedback", href: "/dashboard/feedback", Icon: (props) => <FiMessageSquare {...props} /> },
     { name: "Report a Bug", href: "/dashboard/report-bug", Icon: (props) => <FiAlertTriangle {...props} /> },
   ];
