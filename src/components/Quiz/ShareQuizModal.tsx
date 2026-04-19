@@ -152,9 +152,6 @@ export function ShareQuizModal({ isOpen, onClose, quizLink, quizKey }: ShareQuiz
                   {copied === 'key' ? <Check className="h-4 w-4" /> : <Key className="h-4 w-4" />}
                 </Button>
               </div>
-              <p className="text-xs text-gray-400 mt-2 px-1">
-                Share this key <span className="text-amber-300">only with authorized participants</span>
-              </p>
             </div>
           )}
         </div>

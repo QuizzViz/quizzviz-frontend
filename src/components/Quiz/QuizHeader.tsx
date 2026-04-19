@@ -51,6 +51,9 @@ export function QuizHeader({
   console.log('Can update quiz:', canPerformAction(userRole, 'update_quiz', { isQuizOwner: quiz.user_id === user?.id }));
   console.log('Quiz settings:', settings);
   console.log('Secret key available:', !!settings?.secretKey);
+  console.log('Secret key value:', settings?.secretKey);
+  console.log('Quiz published status:', isPublished);
+  console.log('Full settings object:', JSON.stringify(settings, null, 2));
 
   const handleShareClick = () => {
     setIsShareModalOpen(true);
@@ -151,14 +154,18 @@ export function QuizHeader({
             >
               Publish Quiz
             </Button>
-          ))}
-          <Button 
-            className="bg-green-600 hover:bg-green-700 text-white pointer-events-auto"
-            onClick={handleShareClick}
-          >
-            <Share2 className="h-4 w-4 mr-2" />
-            Share Quiz
-          </Button>
+          }
+          
+          {/* Share Quiz - Only show when quiz is published */}
+          {isPublished && (
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white pointer-events-auto"
+              onClick={handleShareClick}
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share Quiz
+            </Button>
+          )}
           {!roleLoading && canPerformAction(userRole, 'delete_quiz', { isQuizOwner: quiz.user_id === user?.id }) && (
             <Button 
               variant="destructive" 
