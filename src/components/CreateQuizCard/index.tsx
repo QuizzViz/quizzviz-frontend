@@ -27,13 +27,15 @@ interface CreateQuizCardProps {
   maxQuestions?: number;
   isLimitReached?: boolean;
   onUpgradeClick?: () => void;
+  userRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
 }
 
 // Main container composing all sub-parts and business logic via a hook
 export default function CreateQuizCard({ 
   maxQuestions: propMaxQuestions, 
   isLimitReached = false,
-  onUpgradeClick
+  onUpgradeClick,
+  userRole
 }: CreateQuizCardProps) {
   const maxQuestions = propMaxQuestions || 100; // Default to Business plan limit
   const [codePercentage, setCodePercentage] = useState(50);
@@ -286,6 +288,12 @@ export default function CreateQuizCard({
   };
 
   const handleGenerateClick = (codePct: number) => {
+    // Check role-based permissions
+    if (userRole && userRole !== 'OWNER' && userRole !== 'ADMIN') {
+      setError("Only owners and admins can generate quizzes");
+      return;
+    }
+    
     if (isLimitReached && onUpgradeClick) {
       onUpgradeClick();
       return;

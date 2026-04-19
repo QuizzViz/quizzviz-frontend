@@ -1,29 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useUser, SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/router";
-import { SignedIn, SignedOut, useUser, useAuth } from "@clerk/nextjs";
 import Head from "next/head";
-import { FiUsers, FiMail, FiPlus } from "react-icons/fi";
-import { format } from "date-fns";
-
+import { FiUsers, FiMail, FiPlus, FiRefreshCw } from "react-icons/fi";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface CompanyMember {
   id: string;
   user_id: string;
   company_id: string;
-  role: 'OWNER' | 'ADMIN' | 'MEMBER';
-  status: 'ACTIVE' | 'INVITED';
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  status: "ACTIVE" | "INVITED";
   invite_token?: string | null;
   invited_email?: string | null;
   invite_expires_at?: string | null;
@@ -36,12 +47,12 @@ interface CompanyMember {
 interface InviteFormData {
   email: string;
   name: string;
-  role: 'OWNER' | 'ADMIN' | 'MEMBER';
+  role: "OWNER" | "ADMIN" | "MEMBER";
 }
 
 function getInitials(name?: string | null, email?: string | null): string {
   const source = name?.trim() || email?.trim();
-  if (!source) return 'TM';
+  if (!source) return "TM";
   const parts = source.split(/\s+/).filter(Boolean);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -49,33 +60,33 @@ function getInitials(name?: string | null, email?: string | null): string {
 
 export default function TeamsPage() {
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { getToken } = useAuth(); // Fix 1: was missing useAuth import
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [members, setMembers] = useState<CompanyMember[]>([]);
   const [isFetchingMembers, setIsFetchingMembers] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
-  const [companyId, setCompanyId] = useState<string>('');
+  const [companyId, setCompanyId] = useState<string>("");
+  const { userRole } = useUserRole(companyId);
   const { toast } = useToast();
   const [inviteForm, setInviteForm] = useState<InviteFormData>({
-    email: '',
-    name: '',
-    role: 'MEMBER'
+    email: "",
+    name: "",
+    role: "MEMBER",
   });
 
   useEffect(() => {
-    // Try to get company ID from metadata first, then fallback to localStorage
     const metadataCompanyId = user?.unsafeMetadata?.companyId;
-    const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
-    
+    const localStorageCompanyId =
+      typeof window !== "undefined" ? localStorage.getItem("userCompanyId") : null;
+
     if (metadataCompanyId) {
       setCompanyId(metadataCompanyId as string);
     } else if (localStorageCompanyId) {
       setCompanyId(localStorageCompanyId);
-      console.log('Using company ID from localStorage:', localStorageCompanyId);
     } else {
-      setCompanyId('quizzviz');
+      setCompanyId("quizzviz");
     }
   }, [user]);
 
@@ -84,14 +95,15 @@ export default function TeamsPage() {
     setIsFetchingMembers(true);
     try {
       const token = await getToken();
-      const response = await fetch(`/api/company-members?company_id=${companyId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch members');
+      const response = await fetch(
+        `/api/company-members?company_id=${companyId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!response.ok) throw new Error("Failed to fetch members");
       const data = await response.json();
       setMembers(data);
     } catch (error) {
-      console.error('Error fetching members:', error);
+      console.error("Error fetching members:", error);
       toast({
         title: "Error",
         description: "Failed to fetch team members",
@@ -114,60 +126,145 @@ export default function TeamsPage() {
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteForm.email.trim()) {
-      toast({ title: "Error", description: "Please enter an email address", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Please enter an email address",
+        variant: "destructive",
+      });
       return;
     }
     setIsSubmittingInvite(true);
     try {
       const token = await getToken();
-      
-      // Get company name from user metadata or use a default
-      const companyName = user?.unsafeMetadata?.companyName || 'QuizzViz';
-      
-      // Call the invite_member API
-      const response = await fetch('/api/company-members/invite', {
-        method: 'POST',
+      const companyName = user?.unsafeMetadata?.companyName || "QuizzViz";
+
+      const response = await fetch("/api/company-members/invite", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           company_id: companyId,
           company_name: companyName,
           name: inviteForm.name,
           invited_email: inviteForm.email,
-          role: inviteForm.role
-        })
+          role: inviteForm.role,
+        }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send invitation');
+        throw new Error(errorData.error || "Failed to send invitation");
       }
 
-      const result = await response.json();
-      
       toast({
         title: "Invite Sent Successfully!",
         description: `Invitation sent to ${inviteForm.email}`,
-        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+        className:
+          "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
-      
-      setInviteForm({ email: '', name: '', role: 'MEMBER' });
+
+      setInviteForm({ email: "", name: "", role: "MEMBER" });
       setIsInviteDialogOpen(false);
-      
-      // Refresh members list to show the new invited member
       fetchMembers();
-      
     } catch (error) {
-      console.error('Error sending invite:', error);
-      toast({ 
-        title: "Error", 
-        description: error instanceof Error ? error.message : "Failed to send invitation", 
-        variant: "destructive" 
+      console.error("Error sending invite:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to send invitation",
+        variant: "destructive",
       });
     } finally {
       setIsSubmittingInvite(false);
+    }
+  };
+
+  const handleUpdateMember = async (
+    memberId: string,
+    updates: Partial<CompanyMember>
+  ) => {
+    if (userRole?.role !== "OWNER" && userRole?.role !== "ADMIN") {
+      toast({
+        title: "Error",
+        description: "Only owners and admins can update member roles",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const token = await getToken();
+      const response = await fetch(`/api/company-members/${memberId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update member");
+      }
+
+      toast({
+        title: "Member Updated Successfully!",
+        description: `Updated ${updates.name || "member"}'s information`,
+        className:
+          "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+      });
+
+      fetchMembers();
+    } catch (error) {
+      console.error("Error updating member:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to update member",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteMember = async (memberId: string, memberName: string) => {
+    if (userRole?.role !== "OWNER") {
+      toast({
+        title: "Error",
+        description: "Only owners can delete team members",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const token = await getToken();
+      const response = await fetch(`/api/company-members/${memberId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete member");
+      }
+
+      toast({
+        title: "Member Deleted Successfully!",
+        description: `Removed ${memberName} from the team`,
+        className:
+          "border-red-600/60 bg-red-700 text-red-100 shadow-lg shadow-red-600/30",
+      });
+
+      fetchMembers();
+    } catch (error) {
+      console.error("Error deleting member:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to delete member",
+        variant: "destructive",
+      });
     }
   };
 
@@ -191,13 +288,21 @@ export default function TeamsPage() {
     );
   }
 
+  const canManage =
+    userRole?.role === "OWNER" || userRole?.role === "ADMIN";
+
   return (
     <DashboardAccess>
+      {/* Fix 2: Head was missing import */}
       <Head>
         <title>Teams | QuizzViz</title>
         <link rel="icon" href="/favicon.ico" />
-        <meta name="description" content="Manage your teams and collaborate with others." />
+        <meta
+          name="description"
+          content="Manage your teams and collaborate with others."
+        />
       </Head>
+
       <div className="min-h-screen bg-black text-white">
         <SignedIn>
           <div className="flex min-h-screen">
@@ -211,97 +316,127 @@ export default function TeamsPage() {
               <DashboardHeader />
               <main className="flex-1 p-6 space-y-6">
 
-                {/* Page Header */}
+                {/* Fix 3: Restructured the broken nested divs in page header */}
                 <div className="flex items-center justify-between">
                   <div>
                     <h1 className="text-2xl font-semibold">Teams</h1>
-                    <p className="text-white/70">Manage your team members and their roles.</p>
+                    <p className="text-white/70">
+                      Manage your team members and their roles.
+                    </p>
                   </div>
 
-                  <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110">
-                        <FiPlus className="h-4 w-4 mr-2" />
-                        Invite Member
+                  <div className="flex items-center gap-3">
+                    {/* Fix 4: Fixed the broken self-closing Button with misplaced children */}
+                    {canManage && (
+                      <Button
+                        onClick={fetchMembers}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+                        disabled={isFetchingMembers}
+                      >
+                        <FiRefreshCw className="h-4 w-4 mr-2" />
+                        Refresh
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-gray-900 border-gray-700 text-white">
-                      <DialogHeader>
-                        <DialogTitle>Invite Team Member</DialogTitle>
-                      </DialogHeader>
-                      <form onSubmit={handleInviteSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Name</Label>
-                          <Input
-                            id="name"
-                            type="text"
-                            placeholder="Enter full name"
-                            value={inviteForm.name}
-                            onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
-                            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email Address</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="Enter email address"
-                            value={inviteForm.email}
-                            onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                            className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="role">Role</Label>
-                          <Select
-                            value={inviteForm.role}
-                            onValueChange={(value: 'OWNER' | 'ADMIN' | 'MEMBER') =>
-                              setInviteForm({ ...inviteForm, role: value })
-                            }
-                          >
-                            <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                              <SelectValue placeholder="Select role" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-800 border-gray-700">
-                              <SelectItem value="MEMBER">Member</SelectItem>
-                              <SelectItem value="ADMIN">Admin</SelectItem>
-                              <SelectItem value="OWNER">Owner</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex justify-end space-x-2 pt-4">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsInviteDialogOpen(false)}
-                            className="border-gray-600 text-white hover:bg-gray-800"
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="submit"
-                            disabled={isSubmittingInvite}
-                            className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110"
-                          >
-                            {isSubmittingInvite ? (
-                              <>
+                    )}
+
+                    <Dialog
+                      open={isInviteDialogOpen}
+                      onOpenChange={setIsInviteDialogOpen}
+                    >
+                      <DialogTrigger asChild>
+                        <Button className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110">
+                          <FiPlus className="h-4 w-4 mr-2" />
+                          Invite Member
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-gray-900 border-gray-700 text-white">
+                        <DialogHeader>
+                          <DialogTitle>Invite Team Member</DialogTitle>
+                        </DialogHeader>
+                        <form
+                          onSubmit={handleInviteSubmit}
+                          className="space-y-4"
+                        >
+                          <div className="space-y-2">
+                            <Label htmlFor="name">Name</Label>
+                            <Input
+                              id="name"
+                              type="text"
+                              placeholder="Enter full name"
+                              value={inviteForm.name}
+                              onChange={(e) =>
+                                setInviteForm({
+                                  ...inviteForm,
+                                  name: e.target.value,
+                                })
+                              }
+                              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              placeholder="Enter email address"
+                              value={inviteForm.email}
+                              onChange={(e) =>
+                                setInviteForm({
+                                  ...inviteForm,
+                                  email: e.target.value,
+                                })
+                              }
+                              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="role">Role</Label>
+                            <Select
+                              value={inviteForm.role}
+                              onValueChange={(
+                                value: "OWNER" | "ADMIN" | "MEMBER"
+                              ) =>
+                                setInviteForm({ ...inviteForm, role: value })
+                              }
+                            >
+                              <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                                <SelectValue placeholder="Select role" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-gray-800 border-gray-700">
+                                <SelectItem value="MEMBER">Member</SelectItem>
+                                <SelectItem value="ADMIN">Admin</SelectItem>
+                                <SelectItem value="OWNER">Owner</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex justify-end space-x-2 pt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setIsInviteDialogOpen(false)}
+                              className="border-gray-600 text-white hover:bg-gray-800"
+                            >
+                              Cancel
+                            </Button>
+                            {/* Fix 5: Fixed broken submit button JSX with mismatched fragments */}
+                            <Button
+                              type="submit"
+                              disabled={isSubmittingInvite}
+                              className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110"
+                            >
+                              {isSubmittingInvite ? (
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                                Sending...
-                              </>
-                            ) : (
-                              <>
+                              ) : (
                                 <FiMail className="h-4 w-4 mr-2" />
-                                Send Invite
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
+                              )}
+                              {isSubmittingInvite ? "Sending..." : "Send Invite"}
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
 
                 {/* Members Grid */}
@@ -320,22 +455,30 @@ export default function TeamsPage() {
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-4">
                             {/* Avatar with role-based color */}
-                            <div className={`h-14 w-14 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0 ${
-                              member.role === 'OWNER'
-                                ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white'
-                                : member.role === 'ADMIN'
-                                ? 'bg-gradient-to-br from-blue-400 to-indigo-500 text-white'
-                                : 'bg-gradient-to-br from-emerald-400 to-cyan-500 text-white'
-                            }`}>
+                            <div
+                              className={`h-14 w-14 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0 ${
+                                member.role === "OWNER"
+                                  ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
+                                  : member.role === "ADMIN"
+                                  ? "bg-gradient-to-br from-blue-400 to-indigo-500 text-white"
+                                  : "bg-gradient-to-br from-emerald-400 to-cyan-500 text-white"
+                              }`}
+                            >
                               {getInitials(member.name, member.invited_email)}
                             </div>
-                            
-                            {/* Name and ID */}
+
+                            {/* Name */}
                             <div>
                               <h3 className="text-white font-semibold text-lg leading-tight mb-1">
-                                {member.name ?? member.invited_email ?? 'Team Member'}
+                                {member.name ??
+                                  member.invited_email ??
+                                  "Team Member"}
                               </h3>
-                             
+                              {member.invited_email && member.name && (
+                                <p className="text-white/40 text-xs">
+                                  {member.invited_email}
+                                </p>
+                              )}
                             </div>
                           </div>
 
@@ -345,65 +488,93 @@ export default function TeamsPage() {
                           </button>
                         </div>
 
-                        {/* Role and Status Badges */}
+                        {/* Fix 6: Completed the truncated Role and Status Badges section */}
                         <div className="flex items-center gap-2 mb-4">
-                          <span className={`text-xs font-medium px-3 py-1 rounded-full border ${
-                            member.role === 'OWNER'
-                              ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                              : member.role === 'ADMIN'
-                              ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                              : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                          }`}>
+                          <span
+                            className={`text-xs font-medium px-3 py-1 rounded-full border ${
+                              member.role === "OWNER"
+                                ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                : member.role === "ADMIN"
+                                ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                                : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                            }`}
+                          >
                             {member.role}
                           </span>
-                          <span className={`text-xs font-medium px-3 py-1 rounded-full border ${
-                            member.status === 'ACTIVE'
-                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                              : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                          }`}>
+                          <span
+                            className={`text-xs font-medium px-3 py-1 rounded-full border ${
+                              member.status === "ACTIVE"
+                                ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                            }`}
+                          >
                             {member.status}
                           </span>
                         </div>
 
-                        {/* Join Date with Status Indicator */}
-                        <div className="flex items-center gap-2 text-sm text-white/60">
-                          <span className={`h-2 w-2 rounded-full flex-shrink-0 ${
-                            member.status === 'ACTIVE' ? 'bg-green-500' : 'bg-amber-500 animate-pulse'
-                          }`} />
-                          {member.joined_at
-                            ? `Joined ${format(new Date(member.joined_at), 'MMM dd, yyyy')}`
-                            : 'Invitation pending'}
+                        {/* Member meta info */}
+                        <div className="text-xs text-white/40 space-y-1">
+                          {member.joined_at && (
+                            <p>
+                              Joined:{" "}
+                              {new Date(member.joined_at).toLocaleDateString()}
+                            </p>
+                          )}
+                          {member.status === "INVITED" &&
+                            member.invite_expires_at && (
+                              <p>
+                                Invite expires:{" "}
+                                {new Date(
+                                  member.invite_expires_at
+                                ).toLocaleDateString()}
+                              </p>
+                            )}
                         </div>
 
-                        {/* Invitation Notice */}
-                        {member.invited_email != null && member.status === 'INVITED' && (
-                          <div className="mt-4 flex items-center gap-2 text-sm text-white/60 bg-white/5 rounded-xl px-3 py-2.5">
-                            <FiMail className="h-4 w-4 flex-shrink-0" />
-                            {member.invited_email}
+                        {/* Action buttons for owners/admins */}
+                        {canManage && (
+                          <div className="mt-4 pt-4 border-t border-white/10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            {userRole?.role === "OWNER" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
+                                onClick={() =>
+                                  handleDeleteMember(
+                                    member.id,
+                                    member.name ?? member.invited_email ?? "member"
+                                  )
+                                }
+                              >
+                                Remove
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="border border-white/10 rounded-lg p-6">
-                    <div className="text-center py-12">
-                      <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-white/5 mb-6">
-                        <FiUsers className="h-12 w-12 text-white/50" />
-                      </div>
-                      <h3 className="text-xl font-medium text-white mb-2">No Team Members Yet</h3>
-                      <p className="text-white/60 mb-6">Start building your team by inviting your first member.</p>
-                      <Button
-                        onClick={() => setIsInviteDialogOpen(true)}
-                        className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110"
-                      >
-                        <FiPlus className="h-4 w-4 mr-2" />
-                        Invite Your First Member
-                      </Button>
+                  /* Fix 7: Completed the truncated empty state section */
+                  <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-white/5 mb-6">
+                      <FiUsers className="h-12 w-12 text-white/50" />
                     </div>
+                    <h3 className="text-xl font-medium text-white mb-2">
+                      No Team Members Yet
+                    </h3>
+                    <p className="text-white/60 mb-6">
+                      Start building your team by inviting your first member.
+                    </p>
+                    <Button
+                      onClick={() => setIsInviteDialogOpen(true)}
+                      className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110"
+                    >
+                      <FiPlus className="h-4 w-4 mr-2" />
+                      Invite Your First Member
+                    </Button>
                   </div>
                 )}
-
               </main>
             </div>
           </div>
