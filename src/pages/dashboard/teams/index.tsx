@@ -348,8 +348,9 @@ export default function TeamsPage() {
   const canManage = canPerformAction(userRole, 'manage_roles');
   const canDelete = canPerformAction(userRole, 'delete_company');
   
-  // Final fallback: if role is null but we have company data, assume OWNER
-  const fallbackRole = !userRole && company?.company_id && user?.id ? {
+  // More conservative fallback: only assume OWNER if user email matches company owner email
+  const fallbackRole = !userRole && company?.company_id && user?.id && 
+    company?.owner_email && user?.primaryEmailAddress?.emailAddress === company.owner_email ? {
     id: `fallback_${user.id}_${company.company_id}`,
     user_id: user.id,
     company_id: company.company_id,
@@ -388,41 +389,75 @@ export default function TeamsPage() {
   // Force role refresh on component mount if role is null
   useEffect(() => {
     if (!roleLoading && !userRole && company?.company_id && user?.id) {
-      console.log('Role is null, forcing refresh...');
+      console.log('Role is null, checking for stored roles before creating fallback...');
       
-      // Check if user is likely the company owner (company was found via user ID)
-      // This is a temporary fallback to ensure owners don't lose access
-      const isLikelyOwner = company?.owner_email && user?.primaryEmailAddress?.emailAddress === company.owner_email;
-      console.log('User email:', user?.primaryEmailAddress?.emailAddress);
-      console.log('Company owner email:', company?.owner_email);
-      console.log('Is likely owner:', isLikelyOwner);
-      
-      // Always set temporary OWNER role if we can't determine ownership
-      // This ensures owners never lose access
-      console.log('Setting temporary OWNER role as fallback');
-      const tempOwnerRole = {
-        id: `temp_${user.id}_${company.company_id}`,
-        user_id: user.id,
-        company_id: company.company_id,
-        role: 'OWNER' as const,
-        status: 'ACTIVE' as const,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      
-      // Store temporary role in both sessionStorage and localStorage
+      // First, check if we have any stored roles to restore
+      let shouldCreateFallback = true;
       if (typeof window !== 'undefined') {
-        sessionStorage.setItem('userRole', JSON.stringify(tempOwnerRole));
-        sessionStorage.setItem('userCompanyId', company.company_id);
-        localStorage.setItem('userRole', JSON.stringify(tempOwnerRole));
-        localStorage.setItem('userCompanyId', company.company_id);
-        console.log('Temporary OWNER role stored in both sessionStorage and localStorage');
+        try {
+          const sessionStorageRole = sessionStorage.getItem('userRole');
+          const localStorageRole = localStorage.getItem('userRole');
+          const storedRole = sessionStorageRole || localStorageRole;
+          
+          if (storedRole) {
+            const tempRole = JSON.parse(storedRole);
+            console.log('Found stored role:', tempRole.role);
+            // Restore the stored role
+            sessionStorage.setItem('userRole', JSON.stringify(tempRole));
+            sessionStorage.setItem('userCompanyId', company.company_id);
+            localStorage.setItem('userRole', JSON.stringify(tempRole));
+            localStorage.setItem('userCompanyId', company.company_id);
+            shouldCreateFallback = false;
+            
+            // Force refresh to pick up the stored role
+            setTimeout(() => {
+              window.dispatchEvent(new Event('storage'));
+            }, 50);
+          }
+        } catch (e) {
+          console.error('Error checking stored roles:', e);
+        }
       }
       
-      // Force refresh to pick up the temporary role
-      setTimeout(() => {
-        window.dispatchEvent(new Event('storage'));
-      }, 50);
+      // Only create fallback if no stored roles found
+      if (shouldCreateFallback) {
+        console.log('No stored roles found, checking if user is company owner...');
+        
+        // Check if user is likely the company owner
+        const isLikelyOwner = company?.owner_email && user?.primaryEmailAddress?.emailAddress === company.owner_email;
+        console.log('User email:', user?.primaryEmailAddress?.emailAddress);
+        console.log('Company owner email:', company?.owner_email);
+        console.log('Is likely owner:', isLikelyOwner);
+        
+        if (isLikelyOwner) {
+          console.log('User is likely owner, setting temporary OWNER role as fallback');
+          const tempOwnerRole = {
+            id: `temp_${user.id}_${company.company_id}`,
+            user_id: user.id,
+            company_id: company.company_id,
+            role: 'OWNER' as const,
+            status: 'ACTIVE' as const,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          
+          // Store temporary role in both sessionStorage and localStorage
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('userRole', JSON.stringify(tempOwnerRole));
+            sessionStorage.setItem('userCompanyId', company.company_id);
+            localStorage.setItem('userRole', JSON.stringify(tempOwnerRole));
+            localStorage.setItem('userCompanyId', company.company_id);
+            console.log('Temporary OWNER role stored in both sessionStorage and localStorage');
+          }
+          
+          // Force refresh to pick up the temporary role
+          setTimeout(() => {
+            window.dispatchEvent(new Event('storage'));
+          }, 50);
+        } else {
+          console.log('User is not owner, no fallback role will be set');
+        }
+      }
       return;
     }
   }, [roleLoading, userRole, company?.company_id, company?.owner_email, user?.id, user?.primaryEmailAddress?.emailAddress]);
@@ -466,16 +501,17 @@ export default function TeamsPage() {
       const data = await response.json();
       setMembers(data);
       
-      // Check if we have a temporary OWNER role before clearing
+      // Check if we have a temporary OWNER or ADMIN role before clearing
       let shouldPreserveTempRole = false;
       if (typeof window !== 'undefined') {
         try {
           const storedRole = sessionStorage.getItem('userRole');
           if (storedRole) {
             const tempRole = JSON.parse(storedRole);
-            if (tempRole.role === 'OWNER' && tempRole.id.startsWith('temp_')) {
+            // Preserve temporary OWNER roles and any ADMIN roles during refresh
+            if ((tempRole.role === 'OWNER' && tempRole.id.startsWith('temp_')) || tempRole.role === 'ADMIN') {
               shouldPreserveTempRole = true;
-              console.log('Preserving temporary OWNER role during member fetch');
+              console.log(`Preserving ${tempRole.role} role during member fetch`);
             }
           }
         } catch (e) {
