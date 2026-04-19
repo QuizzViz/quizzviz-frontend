@@ -336,6 +336,7 @@ export default function TeamsPage() {
   const { toast } = useToast();
 
   // Debug logging
+  console.log('Teams page - User ID:', user?.id);
   console.log('Teams page - Company from useCompanies:', company);
   console.log('Teams page - User role:', userRole);
   console.log('Teams page - Role loading:', roleLoading);
@@ -344,6 +345,16 @@ export default function TeamsPage() {
   console.log('Teams page - Can invite members:', canPerformAction(userRole, 'invite_members'));
   console.log('Teams page - Can manage roles:', canPerformAction(userRole, 'manage_roles'));
   console.log('Teams page - Can delete company:', canPerformAction(userRole, 'delete_company'));
+  
+  // Additional debugging for role fetching
+  useEffect(() => {
+    console.log('useUserRole hook state changed:', {
+      userRole,
+      roleLoading,
+      companyId: company?.company_id,
+      userId: user?.id
+    });
+  }, [userRole, roleLoading, company?.company_id, user?.id]);
 
   // Invite dialog
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
