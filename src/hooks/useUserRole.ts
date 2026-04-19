@@ -109,6 +109,31 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
     fetchUserRole();
   }, [user?.id, companyId]);
 
+  // Listen for storage events to force role refresh
+  useEffect(() => {
+    const handleStorageChange = () => {
+      console.log('Storage event detected, forcing role refresh...');
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('userCompanyId');
+      }
+      // Force refetch by triggering the main effect
+      setTimeout(() => {
+        setUserRole(null);
+      }, 50);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorageChange);
+      }
+    };
+  }, []);
+
   return { userRole, loading, error };
 }
 

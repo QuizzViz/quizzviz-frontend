@@ -378,6 +378,19 @@ export default function TeamsPage() {
       if (!response.ok) throw new Error("Failed to fetch members");
       const data = await response.json();
       setMembers(data);
+      
+      // Force role refresh to update permissions
+      console.log('Members fetched, forcing role refresh...');
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('userCompanyId');
+      }
+      
+      // Trigger a small delay to ensure role refetch
+      setTimeout(() => {
+        window.dispatchEvent(new Event('storage'));
+      }, 100);
+      
     } catch (error) {
       console.error("Error fetching members:", error);
       toast({
