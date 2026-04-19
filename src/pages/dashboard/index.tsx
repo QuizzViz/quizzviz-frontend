@@ -40,25 +40,7 @@ export default function Dashboard() {
     return <PageLoading fullScreen />;
   }
 
-  // Check if user has access to dashboard
-  if (!user || !company) {
-    return (
-      <DashboardAccess>
-        <div className="min-h-screen bg-black text-white">
-          <div className="flex items-center justify-center h-screen">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-              <p className="text-gray-400 mb-4">You need to be part of a company to access the dashboard.</p>
-              <Button onClick={() => router.push('/accept_invite')}>
-                Join Company
-              </Button>
-            </div>
-          </div>
-        </div>
-      </DashboardAccess>
-    );
-  }
-
+  
   // Show full page loading if Clerk is not loaded yet
   if (!isLoaded) {
     return <PageLoading fullScreen />;
