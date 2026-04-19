@@ -43,11 +43,14 @@ export function QuizHeader({
   console.log('Company object from useCompanies:', company);
   console.log('User role from useUserRole:', userRole);
   console.log('Role loading:', roleLoading);
+  
+  // Check if quiz exists before accessing its properties
+  if (!quiz) return null;
+  
   console.log('Can publish quiz:', canPerformAction(userRole, 'publish_quiz'));
   console.log('Can update quiz:', canPerformAction(userRole, 'update_quiz', { isQuizOwner: quiz.user_id === user?.id }));
   console.log('Quiz settings:', settings);
   console.log('Secret key available:', !!settings?.secretKey);
-  if (!quiz) return null;
 
   const handleShareClick = () => {
     setIsShareModalOpen(true);
