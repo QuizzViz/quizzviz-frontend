@@ -369,6 +369,24 @@ export default function TeamsPage() {
     });
   }, [userRole, roleLoading, company?.company_id, user?.id]);
 
+  // Force role refresh on component mount if role is null
+  useEffect(() => {
+    if (!roleLoading && !userRole && company?.company_id && user?.id) {
+      console.log('Role is null, forcing refresh...');
+      // Clear all cached role data
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('userRole');
+        sessionStorage.removeItem('userCompanyId');
+        localStorage.removeItem('userCompanyId');
+      }
+      
+      // Force refresh after a short delay
+      setTimeout(() => {
+        window.dispatchEvent(new Event('storage'));
+      }, 100);
+    }
+  }, [roleLoading, userRole, company?.company_id, user?.id]);
+
   // Invite dialog
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
