@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
+import { canPerformAction } from "@/utils/rolePermissions";
 
 interface CompanyMember {
   id: string;
@@ -459,7 +460,9 @@ export default function TeamsPage() {
                     </p>
                   </div>
 
+                  {/* ── FIX: right-side controls wrapper ── */}
                   <div className="flex items-center gap-3">
+
                     {/* Refresh */}
                     <Button
                       onClick={fetchMembers}
@@ -471,107 +474,114 @@ export default function TeamsPage() {
                     </Button>
 
                     {/* Invite Member */}
-                    <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
-                          <FiPlus className="h-4 w-4" />
-                          Invite Member
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
-                        <DialogHeader>
-                          <DialogTitle className="text-[17px] font-bold text-[#f0f4ff]">
-                            Invite Team Member
-                          </DialogTitle>
-                        </DialogHeader>
-                        <form onSubmit={handleInviteSubmit} className="space-y-4 pt-1">
-                          <div className="space-y-2">
-                            <Label htmlFor="name" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
-                              Name
-                            </Label>
-                            <Input
-                              id="name"
-                              type="text"
-                              placeholder="Enter full name"
-                              value={inviteForm.name}
-                              onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
-                              className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] placeholder-white/25 rounded-[11px] h-[42px]"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="email" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
-                              Email Address
-                            </Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              placeholder="Enter email address"
-                              value={inviteForm.email}
-                              onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                              className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] placeholder-white/25 rounded-[11px] h-[42px]"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="role" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
-                              Role
-                            </Label>
-                            <Select
-                              value={inviteForm.role}
-                              onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
-                                setInviteForm({ ...inviteForm, role: value })
-                              }
-                            >
-                              <SelectTrigger className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] rounded-[11px] h-[42px]">
-                                <SelectValue placeholder="Select role" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
-                                <SelectItem value="MEMBER">Member</SelectItem>
-                                <SelectItem value="ADMIN">Admin</SelectItem>
-                                <SelectItem value="OWNER">Owner</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="flex gap-[10px] pt-2">
-                            <Button
-                              type="button"
-                              onClick={() => setIsInviteDialogOpen(false)}
-                              className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="submit"
-                              disabled={isSubmittingInvite}
-                              className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
-                            >
-                              {isSubmittingInvite ? (
-                                <>
-                                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                                  Sending...
-                                </>
-                              ) : (
-                                <>
-                                  <FiMail className="h-4 w-4 mr-2" />
-                                  Send Invite
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
+                    {canPerformAction(userRole, 'invite_members') && (
+                      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
+                            <FiPlus className="h-4 w-4" />
+                            Invite Member
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
+                          <DialogHeader>
+                            <DialogTitle className="text-[17px] font-bold text-[#f0f4ff]">
+                              Invite Team Member
+                            </DialogTitle>
+                          </DialogHeader>
+                          <form onSubmit={handleInviteSubmit} className="space-y-4 pt-1">
+                            <div className="space-y-2">
+                              <Label htmlFor="name" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                                Name
+                              </Label>
+                              <Input
+                                id="name"
+                                type="text"
+                                placeholder="Enter full name"
+                                value={inviteForm.name}
+                                onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
+                                className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] placeholder-white/25 rounded-[11px] h-[42px]"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="email" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                                Email Address
+                              </Label>
+                              <Input
+                                id="email"
+                                type="email"
+                                placeholder="Enter email address"
+                                value={inviteForm.email}
+                                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                                className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] placeholder-white/25 rounded-[11px] h-[42px]"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="role" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                                Role
+                              </Label>
+                              <Select
+                                value={inviteForm.role}
+                                onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
+                                  setInviteForm({ ...inviteForm, role: value })
+                                }
+                              >
+                                <SelectTrigger className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] rounded-[11px] h-[42px]">
+                                  <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
+                                  <SelectItem value="MEMBER">Member</SelectItem>
+                                  <SelectItem value="ADMIN">Admin</SelectItem>
+                                  <SelectItem value="OWNER">Owner</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex gap-[10px] pt-2">
+                              <Button
+                                type="button"
+                                onClick={() => setIsInviteDialogOpen(false)}
+                                className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="submit"
+                                disabled={isSubmittingInvite}
+                                className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
+                              >
+                                {isSubmittingInvite ? (
+                                  <>
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                                    Sending...
+                                  </>
+                                ) : (
+                                  <>
+                                    <FiMail className="h-4 w-4 mr-2" />
+                                    Send Invite
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                    {/* ── END Invite Member ── */}
 
-                {/* Member count pill */}
-                {!isFetchingMembers && members.length > 0 && (
-                  <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] border border-white/[0.08] rounded-full px-3 py-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 block" />
-                    {members.length} member{members.length !== 1 ? "s" : ""}
+                    {/* Member count pill */}
+                    {!isFetchingMembers && members.length > 0 && (
+                      <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] border border-white/[0.08] rounded-full px-3 py-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 block" />
+                        {members.length} member{members.length !== 1 ? "s" : ""}
+                      </div>
+                    )}
+
                   </div>
-                )}
+                  {/* ── END right-side controls wrapper ── */}
+
+                </div>
+                {/* ── END Page header ── */}
 
                 {/* Members grid */}
                 {isFetchingMembers ? (

@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { toast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
+import { canPerformAction } from "@/utils/rolePermissions";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { Button } from "@/components/ui/button";
@@ -226,6 +228,7 @@ export default function ResultsDashboard() {
   // Use the same logic as profile page
   const { companyInfo, isLoading: isCompanyLoading, error: companyError } = useCompanyInfo();
   const finalCompanyId = companyInfo?.id || '';
+  const { userRole } = useUserRole(finalCompanyId);
 
   // Fetch quiz results
   const { data: quizResults, isLoading, refetch: refetchResults } = useCachedFetch<QuizResult[] | { results: QuizResult[] } | { error: string }>(
@@ -526,20 +529,22 @@ export default function ResultsDashboard() {
                                 </CardDescription>
                               </div>
 
-                              <Button
-                                variant="destructive"
-                                onClick={() =>
-                                  setShowDeleteQuizModal({
-                                    show: true,
-                                    quizId: quiz.quiz_id,
-                                    role: quiz.role,
-                                  })
-                                }
-                                className="gap-2"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Delete Quiz Data
-                              </Button>
+                              {canPerformAction(userRole, 'delete_analytics_all') && (
+                                <Button
+                                  variant="destructive"
+                                  onClick={() =>
+                                    setShowDeleteQuizModal({
+                                      show: true,
+                                      quizId: quiz.quiz_id,
+                                      role: quiz.role,
+                                    })
+                                  }
+                                  className="gap-2"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete Quiz Data
+                                </Button>
+                              )}
                             </CardHeader>
 
                             <CardContent className="pt-6 space-y-8">
