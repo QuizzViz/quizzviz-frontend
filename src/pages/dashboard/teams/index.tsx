@@ -326,19 +326,21 @@ export default function TeamsPage() {
                     <p className="text-white/70">
                       Manage your team members and their roles.
                     </p>
+                    {/* Debug Info */}
+                    <div className="mt-2 text-xs text-white/50">
+                      Debug: User Role: {userRole?.role || "Not loaded"} | Can Manage: {String(canManage)} | Company ID: {companyId}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {canManage && (
-                      <Button
-                        onClick={fetchMembers}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
-                        disabled={isFetchingMembers}
-                      >
-                        <FiRefreshCw className="h-4 w-4 mr-2" />
-                        Refresh
-                      </Button>
-                    )}
+                    <Button
+                      onClick={fetchMembers}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+                      disabled={isFetchingMembers}
+                    >
+                      <FiRefreshCw className="h-4 w-4 mr-2" />
+                      Refresh
+                    </Button>
 
                     <Dialog
                       open={isInviteDialogOpen}
@@ -533,40 +535,50 @@ export default function TeamsPage() {
                         </div>
 
                         {/* Action buttons for owners/admins */}
-                        {canManage && (
-                          <div className="mt-4 pt-4 border-t border-white/10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            {userRole?.role === "OWNER" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs"
-                                onClick={() => {
-                                  setEditingMember(member);
-                                  setIsEditDialogOpen(true);
-                                }}
-                              >
-                                <FiEdit className="h-3 w-3 mr-1" />
-                                Edit
-                              </Button>
-                            )}
-                            {userRole?.role === "OWNER" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
-                                onClick={() =>
-                                  handleDeleteMember(
-                                    member.id,
-                                    member.name ?? member.invited_email ?? "member"
-                                  )
-                                }
-                              >
-                                <FiTrash className="h-3 w-3 mr-1" />
-                                Remove
-                              </Button>
-                            )}
-                          </div>
-                        )}
+                        <div className="mt-4 pt-4 border-t border-white/10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs"
+                            onClick={() => {
+                              if (userRole?.role === "OWNER" || userRole?.role === "ADMIN") {
+                                setEditingMember(member);
+                                setIsEditDialogOpen(true);
+                              } else {
+                                toast({
+                                  title: "Permission Denied",
+                                  description: "Only owners and admins can edit team members",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            <FiEdit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
+                            onClick={() => {
+                              if (userRole?.role === "OWNER") {
+                                handleDeleteMember(
+                                  member.id,
+                                  member.name ?? member.invited_email ?? "member"
+                                );
+                              } else {
+                                toast({
+                                  title: "Permission Denied",
+                                  description: "Only owners can delete team members",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            <FiTrash className="h-3 w-3 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
