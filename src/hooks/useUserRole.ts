@@ -114,14 +114,15 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
       } catch (error) {
         console.error('Error fetching user role:', error);
         
-        // Fallback: check if there's a temporary role in sessionStorage
+        // Enhanced fallback: check stored roles with better persistence
         if (typeof window !== 'undefined') {
           try {
+            // Check sessionStorage first
             const storedRole = sessionStorage.getItem('userRole');
             const storedCompanyId = sessionStorage.getItem('userCompanyId');
             
             if (storedRole && storedCompanyId === companyId) {
-              console.log('Using temporary stored role as fallback');
+              console.log('Using sessionStorage role as fallback');
               const tempRole = JSON.parse(storedRole);
               setUserRole(tempRole);
               setError(null);
@@ -129,7 +130,7 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
               return;
             }
             
-            // Additional fallback: check localStorage as well
+            // Check localStorage as backup
             const localStorageRole = localStorage.getItem('userRole');
             const localStorageCompanyId = localStorage.getItem('userCompanyId');
             
@@ -137,9 +138,28 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
               console.log('Using localStorage role as fallback');
               const tempRole = JSON.parse(localStorageRole);
               setUserRole(tempRole);
-              // Also update sessionStorage for consistency
+              // Sync to sessionStorage for consistency
               sessionStorage.setItem('userRole', localStorageRole);
               sessionStorage.setItem('userCompanyId', localStorageCompanyId);
+              setError(null);
+              setLoading(false);
+              return;
+            }
+            
+            // Final fallback: if we have any stored role but company ID doesn't match, 
+            // try to use it anyway and update the company ID
+            const anyStoredRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole');
+            if (anyStoredRole) {
+              console.log('Using any available stored role as final fallback');
+              const tempRole = JSON.parse(anyStoredRole);
+              // Update company ID to current one
+              tempRole.company_id = companyId;
+              setUserRole(tempRole);
+              // Store updated role
+              sessionStorage.setItem('userRole', JSON.stringify(tempRole));
+              sessionStorage.setItem('userCompanyId', companyId);
+              localStorage.setItem('userRole', JSON.stringify(tempRole));
+              localStorage.setItem('userCompanyId', companyId);
               setError(null);
               setLoading(false);
               return;
