@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 
 export interface UserRole {
@@ -28,6 +28,10 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Add debugging to track role changes
+  const previousCompanyIdRef = useRef<string | undefined>();
+  const previousUserIdRef = useRef<string | undefined>();
+
   useEffect(() => {
     const fetchUserRole = async () => {
       if (!user?.id || !companyId) {
@@ -35,6 +39,27 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
         setUserRole(null);
         setLoading(false);
         return;
+      }
+
+      // Force refresh if user or company changed
+      const userChanged = previousUserIdRef.current !== user.id;
+      const companyChanged = previousCompanyIdRef.current !== companyId;
+      
+      if (userChanged || companyChanged) {
+        console.log('User or company changed, forcing role refresh:', { 
+          userChanged, 
+          companyChanged, 
+          previousUserId: previousUserIdRef.current, 
+          newUserId: user.id,
+          previousCompanyId: previousCompanyIdRef.current, 
+          newCompanyId: companyId 
+        });
+        
+        // Clear cached role when user/company changes
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('userRole');
+          sessionStorage.removeItem('userCompanyId');
+        }
       }
 
       try {
@@ -60,6 +85,10 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
 
         const data: UserRole = await response.json();
         console.log('User role fetched successfully:', data);
+        
+        // Update refs for next comparison
+        previousUserIdRef.current = user.id;
+        previousCompanyIdRef.current = companyId;
         
         // Store role in sessionStorage for easy access
         if (typeof window !== 'undefined') {
