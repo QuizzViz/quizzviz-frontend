@@ -8,6 +8,8 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useUser } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
 import {useCompanies} from "@/hooks/useCompanies";
+import { useUserRole } from "@/hooks/useUserRole";
+import { canPerformAction } from "@/utils/rolePermissions";
 interface QuizHeaderProps {
   quiz: QuizSummary | undefined;
   questionsCount: number;
@@ -37,6 +39,7 @@ export function QuizHeader({
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const {company} = useCompanies(user?.id);
+  const { userRole } = useUserRole(company?.company_id || '');
   console.log('Company object from useCompanies:', company);
   if (!quiz) return null;
 
@@ -124,24 +127,14 @@ export function QuizHeader({
               Add Question
             </Button>
           )}
-          {isPublished ? (
-            <>
-              <Button 
-                variant="outline"
-                className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto"
-                onClick={() => setIsUnpublishModalOpen(true)}
-              >
-                <EyeOff className="h-4 w-4 mr-2" />
-                Unpublish Quiz
-              </Button>
-              <Button 
-                className="bg-green-600 hover:bg-green-700 text-white pointer-events-auto"
-                onClick={handleShareClick}
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Share Quiz
-              </Button>
-            </>
+          {canPerformAction(userRole, 'publish_quiz') && (isPublished ? (
+            <Button 
+              className="bg-orange-600 hover:bg-orange-700 text-white pointer-events-auto"
+              onClick={() => setIsUnpublishModalOpen(true)}
+            >
+              <EyeOff className="h-4 w-4 mr-2" />
+              Unpublish Quiz
+            </Button>
           ) : (
             <Button 
               className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto"
@@ -149,14 +142,23 @@ export function QuizHeader({
             >
               Publish Quiz
             </Button>
-          )}
+          ))}
           <Button 
-            variant="destructive" 
-            className="pointer-events-auto hover:bg-red-700" 
-            onClick={onDelete}
+            className="bg-green-600 hover:bg-green-700 text-white pointer-events-auto"
+            onClick={handleShareClick}
           >
-            Delete Quiz
+            <Share2 className="h-4 w-4 mr-2" />
+            Share Quiz
           </Button>
+          {canPerformAction(userRole, 'delete_quiz', { isQuizOwner: quiz.user_id === user?.id }) && (
+            <Button 
+              variant="destructive" 
+              className="pointer-events-auto hover:bg-red-700" 
+              onClick={onDelete}
+            >
+              Delete Quiz
+            </Button>
+          )}
         </div>
       </div>
       
