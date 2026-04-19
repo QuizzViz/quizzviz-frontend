@@ -7,6 +7,7 @@ import Head from "next/head";
 import {
   FiUsers, FiMail, FiPlus, FiRefreshCw,
   FiEdit, FiTrash, FiShield, FiStar, FiUser, FiCalendar,
+  FiTrash2,
 } from "react-icons/fi";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
@@ -28,7 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { useUserRole } from "@/hooks/useUserRole";
+import { UserRole, useUserRole } from "@/hooks/useUserRole";
 import { canPerformAction, getActionAllowedRoles } from "@/utils/rolePermissions";
 
 interface CompanyMember {
@@ -127,10 +128,14 @@ function MemberCard({
   member,
   onEditRole,
   onDelete,
+  userRole,
+  roleLoading,
 }: {
   member: CompanyMember;
   onEditRole: (m: CompanyMember) => void;
   onDelete: (id: string, name: string) => void;
+  userRole: string | null;
+  roleLoading: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -197,7 +202,7 @@ function MemberCard({
                 </div>
                 
                 {/* Edit Role - Only OWNER can manage roles */}
-                {!roleLoading && canPerformAction(userRole, 'manage_roles') ? (
+                {!roleLoading && canPerformAction(userRole as unknown as UserRole, 'manage_roles') ? (
                   <button
                     onClick={() => { onEditRole(member); setMenuOpen(false); }}
                     className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors text-left"
@@ -220,7 +225,7 @@ function MemberCard({
                 <div className="h-px bg-white/[0.06] my-[3px]" />
                 
                 {/* Delete Member - Only OWNER can delete members */}
-                {!roleLoading && canPerformAction(userRole, 'delete_company') ? (
+                {!roleLoading && canPerformAction(userRole as unknown as UserRole, 'delete_company') ? (
                   <button
                     onClick={() => {
                       onDelete(member.id, member.name ?? member.invited_email ?? "member");
@@ -677,6 +682,8 @@ export default function TeamsPage() {
                         member={member}
                         onEditRole={(m) => { setEditingMember(m); setIsEditRoleOpen(true); }}
                         onDelete={promptDeleteMember}
+                        userRole={userRole as unknown as string}
+                        roleLoading={roleLoading}
                       />
                     ))}
                   </div>
