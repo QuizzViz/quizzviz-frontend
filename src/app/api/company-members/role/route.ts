@@ -41,18 +41,14 @@ export async function GET(request: NextRequest) {
 
     // Check if COMPANY_MEMBERS_URL is configured
     if (!COMPANY_MEMBERS_URL) {
-      console.log('COMPANY_MEMBERS_URL not configured, returning fallback role');
-      const fallbackRole = {
-        id: 'fallback-' + user_id,
-        user_id: user_id,
-        company_id: company_id,
-        role: 'OWNER', // Default to OWNER for testing
-        status: 'ACTIVE',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      return NextResponse.json(fallbackRole);
+      console.error('COMPANY_MEMBERS_URL not configured');
+      return NextResponse.json(
+        { 
+          error: 'Company members service not configured',
+          message: 'Please set NEXT_PUBLIC_COMPANY_MEMBERS_SERVICE_URL environment variable'
+        },
+        { status: 503 }
+      );
     }
 
     let response;
@@ -80,19 +76,15 @@ export async function GET(request: NextRequest) {
           data: JSON.stringify(responseData, null, 2)
         });
         
-        // Fallback: Return a default role for testing when external service fails
-        console.log('External service failed, returning fallback role');
-        const fallbackRole = {
-          id: 'fallback-' + user_id,
-          user_id: user_id,
-          company_id: company_id,
-          role: 'OWNER', // Default to OWNER for testing
-          status: 'ACTIVE',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        
-        return NextResponse.json(fallbackRole);
+        return NextResponse.json(
+          { 
+            error: 'Failed to fetch member role',
+            details: responseData,
+            status: response.status,
+            statusText: response.statusText
+          },
+          { status: response.status }
+        );
       }
 
       console.log('Member role fetched successfully:', responseData);
@@ -101,19 +93,13 @@ export async function GET(request: NextRequest) {
     } catch (error: unknown) {
       console.error('Error in member role fetch:', error);
       
-      // Fallback: Return a default role when external service is completely unavailable
-      console.log('External service unavailable, returning fallback role');
-      const fallbackRole = {
-        id: 'fallback-' + (user_id || 'unknown'),
-        user_id: user_id || 'unknown',
-        company_id: company_id || 'unknown',
-        role: 'OWNER', // Default to OWNER for testing
-        status: 'ACTIVE',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      return NextResponse.json(fallbackRole);
+      return NextResponse.json(
+        { 
+          error: 'External service error',
+          details: error instanceof Error ? error.message : 'Unknown error occurred'
+        },
+        { status: 503 }
+      );
     }
   } catch (error: unknown) {
     return NextResponse.json(
