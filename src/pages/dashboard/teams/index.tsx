@@ -434,7 +434,7 @@ export default function TeamsPage() {
           { headers: { Authorization: `Bearer ${token}` } }
         ),
         fetch(
-          `/api/company-members/role?user_id=companyd}&company_id=${company?.company_id}`,
+          `/api/company-members/role?user_id=${user?.id}&company_id=${company?.company_id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         )
       ]);
