@@ -86,8 +86,12 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
           }
         );
 
+        console.log('Role API response status:', response.status);
+        console.log('Role API response ok:', response.ok);
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
+          console.error('Role API error response:', errorData);
           throw new Error(errorData.error || 'Failed to fetch user role');
         }
 
@@ -107,6 +111,26 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
         setUserRole(data);
       } catch (error) {
         console.error('Error fetching user role:', error);
+        
+        // Fallback: check if there's a temporary role in sessionStorage
+        if (typeof window !== 'undefined') {
+          try {
+            const storedRole = sessionStorage.getItem('userRole');
+            const storedCompanyId = sessionStorage.getItem('userCompanyId');
+            
+            if (storedRole && storedCompanyId === companyId) {
+              console.log('Using temporary stored role as fallback');
+              const tempRole = JSON.parse(storedRole);
+              setUserRole(tempRole);
+              setError(null);
+              setLoading(false);
+              return;
+            }
+          } catch (parseError) {
+            console.error('Error parsing stored role:', parseError);
+          }
+        }
+        
         setError(error instanceof Error ? error.message : 'Failed to fetch user role');
         setUserRole(null);
       } finally {

@@ -373,6 +373,40 @@ export default function TeamsPage() {
   useEffect(() => {
     if (!roleLoading && !userRole && company?.company_id && user?.id) {
       console.log('Role is null, forcing refresh...');
+      
+      // Check if user is likely the company owner (company was found via user ID)
+      // This is a temporary fallback to ensure owners don't lose access
+      const isLikelyOwner = company?.owner_email && user?.primaryEmailAddress?.emailAddress === company.owner_email;
+      console.log('User email:', user?.primaryEmailAddress?.emailAddress);
+      console.log('Company owner email:', company?.owner_email);
+      console.log('Is likely owner:', isLikelyOwner);
+      
+      if (isLikelyOwner) {
+        console.log('User appears to be company owner, setting temporary OWNER role');
+        // Create a temporary owner role to prevent losing access
+        const tempOwnerRole = {
+          id: `temp_${user.id}_${company.company_id}`,
+          user_id: user.id,
+          company_id: company.company_id,
+          role: 'OWNER' as const,
+          status: 'ACTIVE' as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        // Store temporary role in sessionStorage
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('userRole', JSON.stringify(tempOwnerRole));
+          sessionStorage.setItem('userCompanyId', company.company_id);
+        }
+        
+        // Force refresh to pick up the temporary role
+        setTimeout(() => {
+          window.dispatchEvent(new Event('storage'));
+        }, 50);
+        return;
+      }
+      
       // Clear all cached role data
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('userRole');
@@ -385,7 +419,7 @@ export default function TeamsPage() {
         window.dispatchEvent(new Event('storage'));
       }, 100);
     }
-  }, [roleLoading, userRole, company?.company_id, user?.id]);
+  }, [roleLoading, userRole, company?.company_id, company?.owner_email, user?.id, user?.primaryEmailAddress?.emailAddress]);
 
   // Invite dialog
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
