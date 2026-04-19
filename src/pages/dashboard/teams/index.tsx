@@ -50,16 +50,24 @@ interface CompanyMember {
 const DisabledButtonWithTooltip = ({ 
   children, 
   permission, 
-  allowedRoles 
+  allowedRoles,
+  className = "",
+  variant = "outline"
 }: { 
   children: React.ReactNode; 
   permission: string; 
   allowedRoles: string; 
+  className?: string;
+  variant?: "outline" | "destructive" | "default" | "secondary" | "ghost" | "link";
 }) => (
   <TooltipProvider>
     <ShadTooltip>
       <TooltipTrigger asChild>
-        <Button disabled className="opacity-50 cursor-not-allowed">
+        <Button 
+          disabled 
+          className={`opacity-50 cursor-not-allowed ${className}`}
+          variant={variant}
+        >
           {children}
         </Button>
       </TooltipTrigger>
@@ -202,6 +210,7 @@ function MemberCard({
                     permission="manage_roles"
                     allowedRoles={getActionAllowedRoles('manage_roles')}
                     className="w-full"
+                    variant="outline"
                   >
                     <FiEdit className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
                     Edit role
@@ -219,7 +228,7 @@ function MemberCard({
                     }}
                     className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-red-400/80 hover:text-red-400 hover:bg-red-500/[0.1] transition-colors text-left"
                   >
-                    <FiTrash className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                    <FiTrash2 className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
                     Delete member
                   </button>
                 ) : (
@@ -227,8 +236,9 @@ function MemberCard({
                     permission="delete_company"
                     allowedRoles={getActionAllowedRoles('delete_company')}
                     className="w-full"
+                    variant="destructive"
                   >
-                    <FiTrash className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                    <FiTrash2 className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
                     Delete member
                   </DisabledButtonWithTooltip>
                 )}
