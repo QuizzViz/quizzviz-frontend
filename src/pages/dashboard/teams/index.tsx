@@ -495,20 +495,18 @@ export default function TeamsPage() {
                     <p className="text-white/40 text-sm mt-1">
                       Manage your team members and their roles.
                     </p>
+                    
+                    {/* Member count pill */}
+                    {!isFetchingMembers && members.length > 0 && (
+                      <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] border border-white/[0.08] rounded-full px-3 py-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 block" />
+                        {members.length} member{members.length !== 1 ? "s" : ""}
+                      </div>
+                    )}
                   </div>
 
                   {/* ── FIX: right-side controls wrapper ── */}
                   <div className="flex items-center gap-3">
-
-                    {/* Refresh */}
-                    <Button
-                      onClick={fetchMembers}
-                      disabled={isFetchingMembers}
-                      className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 flex items-center gap-2 px-4 py-2 rounded-xl"
-                    >
-                      <FiRefreshCw className={`h-4 w-4 ${isFetchingMembers ? "animate-spin" : ""}`} />
-                      Refresh
-                    </Button>
 
                     {/* Invite Member */}
                     {!roleLoading && canPerformAction(userRole, 'invite_members') ? (
@@ -536,13 +534,13 @@ export default function TeamsPage() {
                                 placeholder="Enter full name"
                                 value={inviteForm.name}
                                 onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
-                                className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] placeholder-white/25 rounded-[11px] h-[42px]"
+                                className="bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
                                 required
                               />
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="email" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
-                                Email Address
+                                Email
                               </Label>
                               <Input
                                 id="email"
@@ -550,7 +548,7 @@ export default function TeamsPage() {
                                 placeholder="Enter email address"
                                 value={inviteForm.email}
                                 onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                                className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] placeholder-white/25 rounded-[11px] h-[42px]"
+                                className="bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
                                 required
                               />
                             </div>
@@ -564,7 +562,7 @@ export default function TeamsPage() {
                                   setInviteForm({ ...inviteForm, role: value })
                                 }
                               >
-                                <SelectTrigger className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] rounded-[11px] h-[42px]">
+                                <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] border focus:border-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none border-0 outline-none">
                                   <SelectValue placeholder="Select role" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
@@ -577,7 +575,7 @@ export default function TeamsPage() {
                             <div className="flex gap-[10px] pt-2">
                               <Button
                                 type="button"
-                                onClick={() => setIsInviteDialogOpen(false)}
+                                onClick={() => { setIsInviteDialogOpen(false); setInviteForm({ email: "", name: "", role: "MEMBER" }); }}
                                 className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
                               >
                                 Cancel
@@ -612,13 +610,16 @@ export default function TeamsPage() {
                         Invite Member
                       </DisabledButtonWithTooltip>
                     )}
-                    {/* Member count pill */}
-                    {!isFetchingMembers && members.length > 0 && (
-                      <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] border border-white/[0.08] rounded-full px-3 py-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 block" />
-                        {members.length} member{members.length !== 1 ? "s" : ""}
-                      </div>
-                    )}
+
+                    {/* Refresh */}
+                    <Button
+                      onClick={fetchMembers}
+                      disabled={isFetchingMembers}
+                      className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 flex items-center gap-2 px-4 py-2 rounded-xl"
+                    >
+                      <FiRefreshCw className={`h-4 w-4 ${isFetchingMembers ? "animate-spin" : ""}`} />
+                      Refresh
+                    </Button>
 
                   </div>
                   {/* ── END right-side controls wrapper ── */}
