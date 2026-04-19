@@ -187,24 +187,51 @@ function MemberCard({
                 <div className="px-[14px] py-[8px] text-[10px] font-bold tracking-[0.8px] text-white/22 uppercase border-b border-white/[0.06]">
                   Actions
                 </div>
-                <button
-                  onClick={() => { onEditRole(member); setMenuOpen(false); }}
-                  className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors text-left"
-                >
-                  <FiEdit className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
-                  Edit role
-                </button>
+                
+                {/* Edit Role - Only OWNER can manage roles */}
+                {!roleLoading && canPerformAction(userRole, 'manage_roles') ? (
+                  <button
+                    onClick={() => { onEditRole(member); setMenuOpen(false); }}
+                    className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors text-left"
+                  >
+                    <FiEdit className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                    Edit role
+                  </button>
+                ) : (
+                  <DisabledButtonWithTooltip
+                    permission="manage_roles"
+                    allowedRoles={getActionAllowedRoles('manage_roles')}
+                    className="w-full"
+                  >
+                    <FiEdit className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                    Edit role
+                  </DisabledButtonWithTooltip>
+                )}
+                
                 <div className="h-px bg-white/[0.06] my-[3px]" />
-                <button
-                  onClick={() => {
-                    onDelete(member.id, member.name ?? member.invited_email ?? "member");
-                    setMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-red-400/80 hover:text-red-400 hover:bg-red-500/[0.1] transition-colors text-left"
-                >
-                  <FiTrash className="w-[15px] h-[15px] flex-shrink-0" />
-                  Remove member
-                </button>
+                
+                {/* Delete Member - Only OWNER can delete members */}
+                {!roleLoading && canPerformAction(userRole, 'delete_company') ? (
+                  <button
+                    onClick={() => {
+                      onDelete(member.id, member.name ?? member.invited_email ?? "member");
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-red-400/80 hover:text-red-400 hover:bg-red-500/[0.1] transition-colors text-left"
+                  >
+                    <FiTrash className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                    Delete member
+                  </button>
+                ) : (
+                  <DisabledButtonWithTooltip
+                    permission="delete_company"
+                    allowedRoles={getActionAllowedRoles('delete_company')}
+                    className="w-full"
+                  >
+                    <FiTrash className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                    Delete member
+                  </DisabledButtonWithTooltip>
+                )}
               </div>
             )}
           </div>
