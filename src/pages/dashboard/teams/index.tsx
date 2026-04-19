@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useUser, SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import { FiUsers, FiMail, FiPlus, FiRefreshCw, FiEdit, FiTrash, FiMoreVertical, FiShield, FiCalendar, FiUser } from "react-icons/fi";
+import { FiUsers, FiMail, FiPlus, FiRefreshCw, FiEdit, FiTrash, FiShield, FiStar, FiUser } from "react-icons/fi";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface CompanyMember {
   id: string;
@@ -58,6 +57,30 @@ function getInitials(name?: string | null, email?: string | null): string {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
+
+const roleConfig = {
+  OWNER: {
+    icon: FiStar,
+    gradient: "from-amber-400 to-orange-500",
+    badge: "bg-amber-500/15 text-amber-300 border-amber-500/25",
+    glow: "shadow-amber-500/10",
+    label: "Owner",
+  },
+  ADMIN: {
+    icon: FiShield,
+    gradient: "from-violet-400 to-indigo-500",
+    badge: "bg-violet-500/15 text-violet-300 border-violet-500/25",
+    glow: "shadow-violet-500/10",
+    label: "Admin",
+  },
+  MEMBER: {
+    icon: FiUser,
+    gradient: "from-emerald-400 to-cyan-500",
+    badge: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
+    glow: "shadow-emerald-500/10",
+    label: "Member",
+  },
+};
 
 export default function TeamsPage() {
   const { user, isLoaded } = useUser();
@@ -239,7 +262,7 @@ export default function TeamsPage() {
       }
 
       toast({
-        title: "Member Deleted Successfully!",
+        title: "Member Removed",
         description: `Removed ${memberName} from the team`,
         className:
           "border-red-600/60 bg-red-700 text-red-100 shadow-lg shadow-red-600/30",
@@ -299,37 +322,36 @@ export default function TeamsPage() {
             {/* Main content */}
             <div className="flex-1 flex flex-col">
               <DashboardHeader />
-              <main className="flex-1 p-6 space-y-6">
+              <main className="flex-1 p-6 space-y-8">
 
                 {/* Page Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Team Members</h1>
-                    <p className="text-gray-400">
+                    <h1 className="text-2xl font-semibold tracking-tight">Teams</h1>
+                    <p className="text-white/50 text-sm mt-1">
                       Manage your team members and their roles.
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {/* Refresh Button - Analytics Style */}
+                    {/* Refresh — now green gradient (was blue) */}
                     <Button
                       onClick={fetchMembers}
-                      variant="outline"
-                      className="border-gray-600 text-white hover:bg-gray-800 hover:text-white flex items-center gap-2"
+                      className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 px-4 py-2 rounded-lg flex items-center"
                       disabled={isFetchingMembers}
                     >
-                      <FiRefreshCw className={`h-4 w-4 ${isFetchingMembers ? 'animate-spin' : ''}`} />
+                      <FiRefreshCw className={`h-4 w-4 mr-2 ${isFetchingMembers ? "animate-spin" : ""}`} />
                       Refresh
                     </Button>
 
-                    {/* Invite Member Button - Blue */}
+                    {/* Invite Member — now solid blue (was green gradient) */}
                     <Dialog
                       open={isInviteDialogOpen}
                       onOpenChange={setIsInviteDialogOpen}
                     >
                       <DialogTrigger asChild>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
-                          <FiPlus className="h-4 w-4" />
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                          <FiPlus className="h-4 w-4 mr-2" />
                           Invite Member
                         </Button>
                       </DialogTrigger>
@@ -349,10 +371,7 @@ export default function TeamsPage() {
                               placeholder="Enter full name"
                               value={inviteForm.name}
                               onChange={(e) =>
-                                setInviteForm({
-                                  ...inviteForm,
-                                  name: e.target.value,
-                                })
+                                setInviteForm({ ...inviteForm, name: e.target.value })
                               }
                               className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                               required
@@ -366,10 +385,7 @@ export default function TeamsPage() {
                               placeholder="Enter email address"
                               value={inviteForm.email}
                               onChange={(e) =>
-                                setInviteForm({
-                                  ...inviteForm,
-                                  email: e.target.value,
-                                })
+                                setInviteForm({ ...inviteForm, email: e.target.value })
                               }
                               className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                               required
@@ -379,9 +395,7 @@ export default function TeamsPage() {
                             <Label htmlFor="role">Role</Label>
                             <Select
                               value={inviteForm.role}
-                              onValueChange={(
-                                value: "OWNER" | "ADMIN" | "MEMBER"
-                              ) =>
+                              onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
                                 setInviteForm({ ...inviteForm, role: value })
                               }
                             >
@@ -407,7 +421,7 @@ export default function TeamsPage() {
                             <Button
                               type="submit"
                               disabled={isSubmittingInvite}
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110"
                             >
                               {isSubmittingInvite ? (
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
@@ -429,155 +443,146 @@ export default function TeamsPage() {
                     <LoadingSpinner text="Fetching team members..." />
                   </div>
                 ) : members.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {members.map((member) => (
-                      <div
-                        key={member.id}
-                        className="group relative bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-2xl p-6 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
-                      >
-                        {/* Header with Avatar and Name */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-4">
-                            {/* Avatar with role-based color */}
-                            <div
-                              className={`h-16 w-16 rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-lg ${
-                                member.role === "OWNER"
-                                  ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
-                                  : member.role === "ADMIN"
-                                  ? "bg-gradient-to-br from-blue-400 to-indigo-500 text-white"
-                                  : "bg-gradient-to-br from-emerald-400 to-cyan-500 text-white"
-                              }`}
-                            >
-                              {getInitials(member.name, member.invited_email)}
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {members.map((member) => {
+                      const config = roleConfig[member.role];
+                      const RoleIcon = config.icon;
+                      return (
+                        <div
+                          key={member.id}
+                          className={`group relative bg-gradient-to-b from-slate-800/80 to-slate-900/80 border border-white/8 rounded-2xl overflow-hidden hover:border-white/15 transition-all duration-300 hover:shadow-xl ${config.glow}`}
+                        >
+                          {/* Subtle top accent line based on role */}
+                          <div className={`h-0.5 w-full bg-gradient-to-r ${config.gradient} opacity-60`} />
+
+                          <div className="p-5">
+                            {/* Top row: Avatar + Name + Mail icon */}
+                            <div className="flex items-start gap-4 mb-5">
+                              {/* Avatar */}
+                              <div className="relative flex-shrink-0">
+                                <div
+                                  className={`h-12 w-12 rounded-xl bg-gradient-to-br ${config.gradient} flex items-center justify-center text-sm font-bold text-white shadow-md`}
+                                >
+                                  {getInitials(member.name, member.invited_email)}
+                                </div>
+                                {/* Online/active indicator */}
+                                {member.status === "ACTIVE" && (
+                                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900" />
+                                )}
+                              </div>
+
+                              {/* Name & email */}
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-white font-semibold text-base leading-snug truncate">
+                                  {member.name ?? member.invited_email ?? "Team Member"}
+                                </h3>
+                                {member.invited_email && member.name && (
+                                  <p className="text-white/40 text-xs mt-0.5 truncate">
+                                    {member.invited_email}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Mail button */}
+                              <button className="opacity-0 group-hover:opacity-100 transition-all duration-200 h-8 w-8 rounded-lg border border-white/10 hover:border-white/20 hover:bg-white/5 flex items-center justify-center flex-shrink-0">
+                                <FiMail className="h-3.5 w-3.5 text-white/40" />
+                              </button>
                             </div>
 
-                            {/* Name */}
-                            <div>
-                              <h3 className="text-white font-semibold text-xl leading-tight mb-1">
-                                {member.name ??
-                                  member.invited_email ??
-                                  "Team Member"}
-                              </h3>
-                              {member.invited_email && member.name && (
-                                <p className="text-gray-400 text-sm">
-                                  {member.invited_email}
+                            {/* Role + Status badges */}
+                            <div className="flex items-center gap-2 mb-5">
+                              <span
+                                className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border ${config.badge}`}
+                              >
+                                <RoleIcon className="h-3 w-3" />
+                                {config.label}
+                              </span>
+                              <span
+                                className={`text-xs font-medium px-2.5 py-1 rounded-lg border ${
+                                  member.status === "ACTIVE"
+                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                    : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                }`}
+                              >
+                                {member.status === "ACTIVE" ? "Active" : "Invited"}
+                              </span>
+                            </div>
+
+                            {/* Meta info */}
+                            <div className="text-xs text-white/30 space-y-1 mb-5">
+                              {member.joined_at && (
+                                <p>
+                                  Joined{" "}
+                                  <span className="text-white/50">
+                                    {new Date(member.joined_at).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    })}
+                                  </span>
+                                </p>
+                              )}
+                              {member.status === "INVITED" && member.invite_expires_at && (
+                                <p>
+                                  Invite expires{" "}
+                                  <span className="text-amber-400/70">
+                                    {new Date(member.invite_expires_at).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                  </span>
                                 </p>
                               )}
                             </div>
-                          </div>
 
-                          {/* More Options Menu */}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+                            {/* Action buttons — visible on hover */}
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200">
                               <Button
-                                variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
-                              >
-                                <FiMoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                              <DropdownMenuItem
+                                variant="outline"
+                                className="flex-1 border-white/10 text-white/60 hover:text-white hover:bg-white/5 hover:border-white/20 text-xs h-8"
                                 onClick={() => {
                                   setEditingMember(member);
                                   setIsEditDialogOpen(true);
                                 }}
-                                className="text-gray-300 hover:text-white hover:bg-gray-700"
                               >
-                                <FiEdit className="h-4 w-4 mr-2" />
-                                Edit Member
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
+                                <FiEdit className="h-3 w-3 mr-1.5" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 border-red-500/20 text-red-400/70 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 text-xs h-8"
                                 onClick={() =>
                                   handleDeleteMember(
                                     member.id,
                                     member.name ?? member.invited_email ?? "member"
                                   )
                                 }
-                                className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
                               >
-                                <FiTrash className="h-4 w-4 mr-2" />
-                                Remove Member
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-
-                        {/* Role and Status Badges */}
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="flex items-center gap-2">
-                            <FiShield className="h-4 w-4 text-gray-400" />
-                            <span
-                              className={`text-sm font-medium px-3 py-1 rounded-full border ${
-                                member.role === "OWNER"
-                                  ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                                  : member.role === "ADMIN"
-                                  ? "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                                  : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                              }`}
-                            >
-                              {member.role}
-                            </span>
-                          </div>
-                          <span
-                            className={`text-sm font-medium px-3 py-1 rounded-full border ${
-                              member.status === "ACTIVE"
-                                ? "bg-green-500/20 text-green-400 border-green-500/30"
-                                : "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                            }`}
-                          >
-                            {member.status}
-                          </span>
-                        </div>
-
-                        {/* Member meta info */}
-                        <div className="space-y-2 text-sm text-gray-400">
-                          <div className="flex items-center gap-2">
-                            <FiUser className="h-4 w-4" />
-                            <span>
-                              {member.status === "ACTIVE" ? "Active Member" : "Pending Invitation"}
-                            </span>
-                          </div>
-                          {member.joined_at && (
-                            <div className="flex items-center gap-2">
-                              <FiCalendar className="h-4 w-4" />
-                              <span>
-                                Joined {new Date(member.joined_at).toLocaleDateString()}
-                              </span>
+                                <FiTrash className="h-3 w-3 mr-1.5" />
+                                Remove
+                              </Button>
                             </div>
-                          )}
-                          {member.status === "INVITED" &&
-                            member.invite_expires_at && (
-                              <div className="flex items-center gap-2">
-                                <FiCalendar className="h-4 w-4" />
-                                <span>
-                                  Expires {new Date(
-                                    member.invite_expires_at
-                                  ).toLocaleDateString()}
-                                </span>
-                              </div>
-                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-24 text-center">
-                    <div className="mx-auto flex items-center justify-center h-32 w-32 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30 mb-8">
-                      <FiUsers className="h-16 w-16 text-blue-400" />
+                    <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-white/5 mb-6">
+                      <FiUsers className="h-12 w-12 text-white/30" />
                     </div>
-                    <h3 className="text-2xl font-semibold text-white mb-3">
-                      No Team Members Yet
-                    </h3>
-                    <p className="text-gray-400 mb-8 max-w-md">
-                      Start building your team by inviting your first member. Collaborate and grow together.
+                    <h3 className="text-xl font-medium text-white mb-2">No Team Members Yet</h3>
+                    <p className="text-white/40 mb-6 text-sm">
+                      Start building your team by inviting your first member.
                     </p>
                     <Button
                       onClick={() => setIsInviteDialogOpen(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-6 py-3"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      <FiPlus className="h-4 w-4" />
+                      <FiPlus className="h-4 w-4 mr-2" />
                       Invite Your First Member
                     </Button>
                   </div>
@@ -589,10 +594,7 @@ export default function TeamsPage() {
         </SignedIn>
 
         {/* Edit Member Dialog */}
-        <Dialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-        >
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="bg-gray-900 border-gray-700 text-white">
             <DialogHeader>
               <DialogTitle>Edit Team Member</DialogTitle>
@@ -616,10 +618,7 @@ export default function TeamsPage() {
                     placeholder="Enter full name"
                     value={editingMember.name || ""}
                     onChange={(e) =>
-                      setEditingMember({
-                        ...editingMember,
-                        name: e.target.value,
-                      })
+                      setEditingMember({ ...editingMember, name: e.target.value })
                     }
                     className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                     required
@@ -630,10 +629,7 @@ export default function TeamsPage() {
                   <Select
                     value={editingMember.role}
                     onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
-                      setEditingMember({
-                        ...editingMember,
-                        role: value,
-                      })
+                      setEditingMember({ ...editingMember, role: value })
                     }
                   >
                     <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
@@ -660,7 +656,7 @@ export default function TeamsPage() {
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110"
                   >
                     Update Member
                   </Button>
