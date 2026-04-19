@@ -134,7 +134,7 @@ function MemberCard({
   member: CompanyMember;
   onEditRole: (m: CompanyMember) => void;
   onDelete: (id: string, name: string) => void;
-  userRole: string | null;
+  userRole: import("@/hooks/useUserRole").UserRole | null;
   roleLoading: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -181,19 +181,22 @@ function MemberCard({
           </div>
 
           <div className="relative flex-shrink-0" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen((o) => !o)}
-              className={`h-[28px] w-[28px] rounded-[8px] border flex flex-col items-center justify-center gap-[2.5px] transition-all duration-100 ${
-                menuOpen
-                  ? "bg-white/[0.09] border-white/[0.18]"
-                  : "border-white/[0.1] hover:bg-white/[0.07] hover:border-white/[0.18]"
-              }`}
-              aria-label="Member actions"
-            >
-              {[0, 1, 2].map((i) => (
-                <span key={i} className="block w-[3.5px] h-[3.5px] rounded-full bg-white/45" />
-              ))}
-            </button>
+            {/* Show 3 dots menu based on user permissions and member role */}
+            {!roleLoading && (
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                className={`h-[28px] w-[28px] rounded-[8px] border flex flex-col items-center justify-center gap-[2.5px] transition-all duration-100 ${
+                  menuOpen
+                    ? "bg-white/[0.09] border-white/[0.18]"
+                    : "border-white/[0.1] hover:bg-white/[0.07] hover:border-white/[0.18]"
+                }`}
+                aria-label="Member actions"
+              >
+                {[0, 1, 2].map((i) => (
+                  <span key={i} className="block w-[3.5px] h-[3.5px] rounded-full bg-white/45" />
+                ))}
+              </button>
+            )}
 
             {menuOpen && (
               <div className="absolute top-[34px] right-0 z-50 w-[172px] rounded-[13px] border border-white/10 bg-[#161c2a] overflow-hidden shadow-[0_14px_40px_rgba(0,0,0,0.65)] animate-in fade-in slide-in-from-top-1 duration-100">
@@ -201,52 +204,66 @@ function MemberCard({
                   Actions
                 </div>
                 
-                {/* Edit Role - Only OWNER can manage roles */}
-                {!roleLoading && canPerformAction(userRole as unknown as UserRole, 'manage_roles') ? (
-                  <button
-                    onClick={() => { onEditRole(member); setMenuOpen(false); }}
-                    className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors text-left"
-                  >
-                    <FiEdit className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
-                    Edit role
-                  </button>
-                ) : (
-                  <DisabledButtonWithTooltip
-                    permission="manage_roles"
-                    allowedRoles={getActionAllowedRoles('manage_roles')}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    <FiEdit className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
-                    Edit role
-                  </DisabledButtonWithTooltip>
-                )}
+                {/* Edit Role - OWNER can edit any role, ADMIN can edit ADMIN/MEMBER only */}
+                {(() => {
+                  const canEdit = !roleLoading && (
+                    (userRole?.role === 'OWNER') || 
+                    (userRole?.role === 'ADMIN' && member.role !== 'OWNER')
+                  );
+                  
+                  return canEdit ? (
+                    <button
+                      onClick={() => { onEditRole(member); setMenuOpen(false); }}
+                      className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors text-left"
+                    >
+                      <FiEdit className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                      Edit role
+                    </button>
+                  ) : (
+                    <DisabledButtonWithTooltip
+                      permission="manage_roles"
+                      allowedRoles={userRole?.role === 'OWNER' ? 'OWNER only' : 'Cannot edit Owner roles'}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      <FiEdit className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                      Edit role
+                    </DisabledButtonWithTooltip>
+                  );
+                })()}
                 
                 <div className="h-px bg-white/[0.06] my-[3px]" />
                 
-                {/* Delete Member - Only OWNER can delete members */}
-                {!roleLoading && canPerformAction(userRole as unknown as UserRole, 'delete_company') ? (
-                  <button
-                    onClick={() => {
-                      onDelete(member.id, member.name ?? member.invited_email ?? "member");
-                      setMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-red-400/80 hover:text-red-400 hover:bg-red-500/[0.1] transition-colors text-left"
-                  >
-                    <FiTrash2 className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
-                    Delete member
-                  </button>
-                ) : (
-                  <DisabledButtonWithTooltip
-                    permission="delete_company"
-                    allowedRoles={getActionAllowedRoles('delete_company')}
-                    className="w-full"
-                    variant="destructive"
-                  >
-                    <FiTrash2 className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
-                    Delete member
-                  </DisabledButtonWithTooltip>
-                )}
+                {/* Delete Member - OWNER can delete any, ADMIN can delete ADMIN/MEMBER only */}
+                {(() => {
+                  const canDelete = !roleLoading && (
+                    (userRole?.role === 'OWNER') || 
+                    (userRole?.role === 'ADMIN' && member.role !== 'OWNER')
+                  );
+                  
+                  return canDelete ? (
+                    <button
+                      onClick={() => {
+                        onDelete(member.id, member.name ?? member.invited_email ?? "member");
+                        setMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-red-400/80 hover:text-red-400 hover:bg-red-500/[0.1] transition-colors text-left"
+                    >
+                      <FiTrash2 className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                      Delete member
+                    </button>
+                  ) : (
+                    <DisabledButtonWithTooltip
+                      permission="delete_company"
+                      allowedRoles={userRole?.role === 'OWNER' ? 'OWNER only' : 'Cannot delete Owner members'}
+                      className="w-full"
+                      variant="destructive"
+                    >
+                      <FiTrash2 className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                      Delete member
+                    </DisabledButtonWithTooltip>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -387,6 +404,16 @@ export default function TeamsPage() {
       toast({ title: "Error", description: "Please enter an email address", variant: "destructive" });
       return;
     }
+    // Validate role permissions before sending invite
+    if (userRole?.role === 'ADMIN' && inviteForm.role === 'OWNER') {
+      toast({
+        title: "Permission Denied",
+        description: "Admin users can only invite Admin and Member roles. Only Owners can invite other Owners.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmittingInvite(true);
     try {
       const token = await getToken();
@@ -428,6 +455,27 @@ export default function TeamsPage() {
   const handleSaveRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMember) return;
+
+    // Validate role permissions before updating
+    if (userRole?.role === 'ADMIN' && editingMember.role === 'OWNER') {
+      toast({
+        title: "Permission Denied",
+        description: "Admin users can only assign Admin and Member roles. Only Owners can assign Owner roles.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Prevent ADMIN from changing OWNER's role
+    if (userRole?.role === 'ADMIN' && editingMember.role === 'OWNER') {
+      toast({
+        title: "Permission Denied",
+        description: "Admin users cannot modify Owner roles. Only Owners can modify Owner roles.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSavingRole(true);
     try {
       const token = await getToken();
@@ -461,6 +509,19 @@ export default function TeamsPage() {
 
   // ── Delete ──────────────────────────────────────────────────────────────────
   const promptDeleteMember = (id: string, name: string) => {
+    // Find the member to check their current role
+    const memberToDelete = members.find(m => m.id === id);
+    
+    // Prevent ADMIN from deleting OWNER members
+    if (userRole?.role === 'ADMIN' && memberToDelete?.role === 'OWNER') {
+      toast({
+        title: "Permission Denied",
+        description: "Admin users cannot delete Owner members. Only Owners can delete Owner members.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setDeleteTarget({ id, name });
   };
 
@@ -610,7 +671,10 @@ export default function TeamsPage() {
                                 <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
                                   <SelectItem value="MEMBER">Member</SelectItem>
                                   <SelectItem value="ADMIN">Admin</SelectItem>
-                                  <SelectItem value="OWNER">Owner</SelectItem>
+                                  {/* Only OWNER can invite other OWNERS */}
+                                  {!roleLoading && userRole?.role === 'OWNER' && (
+                                    <SelectItem value="OWNER">Owner</SelectItem>
+                                  )}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -682,7 +746,7 @@ export default function TeamsPage() {
                         member={member}
                         onEditRole={(m) => { setEditingMember(m); setIsEditRoleOpen(true); }}
                         onDelete={promptDeleteMember}
-                        userRole={userRole as unknown as string}
+                        userRole={userRole}
                         roleLoading={roleLoading}
                       />
                     ))}
@@ -752,7 +816,10 @@ export default function TeamsPage() {
                     <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
                       <SelectItem value="MEMBER">Member</SelectItem>
                       <SelectItem value="ADMIN">Admin</SelectItem>
-                      <SelectItem value="OWNER">Owner</SelectItem>
+                      {/* Only OWNER can assign OWNER role */}
+                      {!roleLoading && userRole?.role === 'OWNER' && (
+                        <SelectItem value="OWNER">Owner</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
