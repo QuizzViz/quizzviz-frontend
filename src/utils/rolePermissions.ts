@@ -47,7 +47,7 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     delete_quiz: true,
     view_analytics: true,
     delete_analytics_all: false,
-    delete_analytics_specific: false, // Can be made optional with additional logic
+    delete_analytics_specific: true, // Admin can delete specific records
     invite_members: true,
     manage_roles: false,
     delete_company: false,
@@ -86,15 +86,9 @@ export const canPerformAction = (
   permission: Permission,
   additionalContext?: {
     isQuizOwner?: boolean;
-    isAdminOptionalDelete?: boolean; // For admin optional delete specific record
   }
 ): boolean => {
   if (!userRole) return false;
-
-  // Special case for admin optional delete specific record
-  if (permission === 'delete_analytics_specific' && userRole.role === 'ADMIN') {
-    return additionalContext?.isAdminOptionalDelete || false;
-  }
 
   // Special case for member limited update quiz
   if (permission === 'update_quiz' && userRole.role === 'MEMBER') {
@@ -193,4 +187,53 @@ export const getRoleLevel = (role: Role): number => {
  */
 export const canOverrideRole = (userRole: Role, targetRole: Role): boolean => {
   return getRoleLevel(userRole) > getRoleLevel(targetRole);
+};
+
+/**
+ * Get user-friendly role display name
+ */
+export const getRoleDisplayName = (role: Role): string => {
+  const displayNames: Record<Role, string> = {
+    OWNER: 'Owner',
+    ADMIN: 'Admin',
+    MEMBER: 'Member',
+  };
+  
+  return displayNames[role] || role;
+};
+
+/**
+ * Get which roles can perform a specific action
+ */
+export const getRolesForAction = (permission: Permission): Role[] => {
+  const roles: Role[] = [];
+  
+  Object.entries(PERMISSION_MATRIX).forEach(([role, permissions]) => {
+    if (permissions[permission]) {
+      roles.push(role as Role);
+    }
+  });
+  
+  return roles;
+};
+
+/**
+ * Get user-friendly description of who can perform an action
+ */
+export const getActionAllowedRoles = (permission: Permission): string => {
+  const allowedRoles = getRolesForAction(permission);
+  
+  if (allowedRoles.length === 3) {
+    return 'All users';
+  }
+  
+  if (allowedRoles.length === 2) {
+    return `${getRoleDisplayName(allowedRoles[0])} and ${getRoleDisplayName(allowedRoles[1])}`;
+  }
+  
+  if (allowedRoles.length === 1) {
+    return `Only ${getRoleDisplayName(allowedRoles[0])}`;
+  }
+  
+  return 'No one';
 };

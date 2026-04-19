@@ -21,9 +21,15 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip as ShadTooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
-import { canPerformAction } from "@/utils/rolePermissions";
+import { canPerformAction, getActionAllowedRoles } from "@/utils/rolePermissions";
 
 interface CompanyMember {
   id: string;
@@ -39,6 +45,32 @@ interface CompanyMember {
   updated_at: string;
   name?: string | null;
 }
+
+// Helper component for disabled buttons with permission tooltip
+const DisabledButtonWithTooltip = ({ 
+  children, 
+  permission, 
+  allowedRoles 
+}: { 
+  children: React.ReactNode; 
+  permission: string; 
+  allowedRoles: string; 
+}) => (
+  <TooltipProvider>
+    <ShadTooltip>
+      <TooltipTrigger asChild>
+        <Button disabled className="opacity-50 cursor-not-allowed">
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p className="text-sm">
+          This action requires {allowedRoles} permissions.
+        </p>
+      </TooltipContent>
+    </ShadTooltip>
+  </TooltipProvider>
+);
 
 interface InviteFormData {
   email: string;
@@ -240,8 +272,13 @@ export default function TeamsPage() {
   const [members, setMembers] = useState<CompanyMember[]>([]);
   const [isFetchingMembers, setIsFetchingMembers] = useState(false);
   const [companyId, setCompanyId] = useState<string>("");
-  const { userRole } = useUserRole(companyId);
+  const { userRole, loading: roleLoading } = useUserRole(companyId);
   const { toast } = useToast();
+
+  // Debug logging
+  console.log('Teams page - User role:', userRole);
+  console.log('Teams page - Role loading:', roleLoading);
+  console.log('Teams page - Can invite members:', canPerformAction(userRole, 'invite_members'));
 
   // Invite dialog
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -474,7 +511,7 @@ export default function TeamsPage() {
                     </Button>
 
                     {/* Invite Member */}
-                    {canPerformAction(userRole, 'invite_members') && (
+                    {!roleLoading && canPerformAction(userRole, 'invite_members') ? (
                       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                         <DialogTrigger asChild>
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
@@ -566,9 +603,15 @@ export default function TeamsPage() {
                           </form>
                         </DialogContent>
                       </Dialog>
+                    ) : (
+                      <DisabledButtonWithTooltip
+                        permission="invite_members"
+                        allowedRoles={getActionAllowedRoles('invite_members')}
+                      >
+                        <FiPlus className="h-4 w-4" />
+                        Invite Member
+                      </DisabledButtonWithTooltip>
                     )}
-                    {/* ── END Invite Member ── */}
-
                     {/* Member count pill */}
                     {!isFetchingMembers && members.length > 0 && (
                       <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] border border-white/[0.08] rounded-full px-3 py-1.5">
