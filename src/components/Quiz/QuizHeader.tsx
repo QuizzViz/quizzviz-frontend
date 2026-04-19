@@ -44,6 +44,9 @@ export function QuizHeader({
   console.log('User role from useUserRole:', userRole);
   console.log('Role loading:', roleLoading);
   console.log('Can publish quiz:', canPerformAction(userRole, 'publish_quiz'));
+  console.log('Can update quiz:', canPerformAction(userRole, 'update_quiz', { isQuizOwner: quiz.user_id === user?.id }));
+  console.log('Quiz settings:', settings);
+  console.log('Secret key available:', !!settings?.secretKey);
   if (!quiz) return null;
 
   const handleShareClick = () => {
