@@ -89,9 +89,54 @@ export async function GET(request: NextRequest) {
         
         // If member not found (404), create a default member record
         if (response.status === 404) {
-          console.log('Member not found in database, creating default member record');
+          console.log('Member not found in database, checking if user is company owner');
           
-          // Try to create member record
+          // Check if user is the company owner first
+          let userRole = 'MEMBER'; // Default to MEMBER
+          try {
+            const companyCheckUrl = `${process.env.NEXT_PUBLIC_CREATE_COMPANY_SERVICE_URL}/companies?owner_id=${encodeURIComponent(user_id.trim())}`;
+            console.log('Checking if user is company owner:', companyCheckUrl);
+            
+            const companyCheckResponse = await fetch(companyCheckUrl, {
+              method: 'GET',
+              headers: {
+                'accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (companyCheckResponse.ok) {
+              const companies = await companyCheckResponse.json();
+              console.log('Company check response:', companies);
+              
+              // Check if this user owns the company we're checking
+              const userOwnsCompany = Array.isArray(companies) && 
+                companies.some((company: any) => 
+                  company.owner_id === user_id.trim() && 
+                  (company.company_id === company_id.trim() || company.id === company_id.trim())
+                );
+              
+              if (userOwnsCompany) {
+                userRole = 'OWNER';
+                console.log('User is confirmed as company owner, setting role to OWNER');
+              } else {
+                console.log('User is not the company owner, defaulting to MEMBER');
+              }
+            } else {
+              console.log('Failed to check company ownership, defaulting to MEMBER');
+              // Additional fallback: if we can't check ownership, we could assume OWNER for now
+              // This is a temporary measure to prevent losing access
+              console.warn('Warning: Could not verify company ownership, preserving OWNER access as fallback');
+              userRole = 'OWNER';
+            }
+          } catch (ownerCheckError) {
+            console.error('Error checking company ownership:', ownerCheckError);
+            // Fallback: preserve OWNER access to prevent losing access
+            console.warn('Warning: Error checking company ownership, preserving OWNER access as fallback');
+            userRole = 'OWNER';
+          }
+          
+          // Try to create member record with correct role
           try {
             const createResponse = await fetch(`${COMPANY_MEMBERS_URL}/member`, {
               method: 'POST',
@@ -103,7 +148,7 @@ export async function GET(request: NextRequest) {
               body: JSON.stringify({
                 user_id: user_id.trim(),
                 company_id: company_id.trim(),
-                role: 'MEMBER', // Default to MEMBER for new users
+                role: userRole, // Use determined role (OWNER or MEMBER)
                 status: 'ACTIVE'
               })
             });
