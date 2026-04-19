@@ -763,13 +763,15 @@ const roleConfig = {
   },
 };
 
+// ─── MemberCard ───────────────────────────────────────────────────────────────
+
 function MemberCard({
   member,
-  onEdit,
+  onEditRole,
   onDelete,
 }: {
   member: CompanyMember;
-  onEdit: (m: CompanyMember) => void;
+  onEditRole: (m: CompanyMember) => void;
   onDelete: (id: string, name: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -780,30 +782,28 @@ function MemberCard({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
         setMenuOpen(false);
-      }
     }
     if (menuOpen) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
 
   return (
-    <div className="relative rounded-[18px] border border-white/[0.07] bg-[#0f1421] overflow-hidden transition-all duration-200 hover:-translate-y-[3px] hover:border-white/[0.14] hover:shadow-2xl hover:shadow-black/50">
+    <div className="relative rounded-[18px] border border-white/[0.07] bg-[#0f1421] overflow-visible transition-all duration-200 hover:-translate-y-[3px] hover:border-white/[0.13] hover:shadow-[0_20px_48px_rgba(0,0,0,0.55)]">
 
-      {/* Banner with ambient glow */}
-      <div className={`relative h-[68px] ${config.bannerBg} overflow-hidden`}>
+      {/* Banner */}
+      <div className={`relative h-[64px] rounded-t-[18px] overflow-hidden ${config.bannerBg}`}>
         <div className={`absolute inset-0 bg-gradient-to-r ${config.bannerGlow}`} />
-        {/* Avatar bridging banner and body */}
         <div className="absolute bottom-[-22px] left-[18px]">
           <div className="relative">
             <div
-              className={`h-[56px] w-[56px] rounded-[16px] bg-gradient-to-br ${config.avatarGradient} flex items-center justify-center text-[16px] font-bold text-white border-[2.5px] border-[#0f1421]`}
+              className={`h-[52px] w-[52px] rounded-[14px] bg-gradient-to-br ${config.avatarGradient} flex items-center justify-center text-[15px] font-bold text-white border-[2.5px] border-[#0f1421] tracking-wide`}
             >
               {getInitials(member.name, member.invited_email)}
             </div>
             <span
-              className={`absolute -bottom-0.5 -right-0.5 h-[13px] w-[13px] rounded-full border-[2.5px] border-[#0f1421] ${
+              className={`absolute -bottom-0.5 -right-0.5 h-[12px] w-[12px] rounded-full border-[2.5px] border-[#0f1421] ${
                 isActive ? "bg-green-400" : "bg-amber-400"
               }`}
             />
@@ -811,16 +811,14 @@ function MemberCard({
         </div>
       </div>
 
-      {/* Card body */}
-      <div className="px-[18px] pt-[30px] pb-[18px]">
+      {/* Body */}
+      <div className="px-[18px] pt-[32px] pb-[18px]">
 
-        {/* Name + 3-dot menu */}
+        {/* Name + menu */}
         <div className="flex items-start justify-between mb-[3px]">
-          <div className="min-w-0 flex-1 pr-2">
-            <h3 className="text-[15px] font-bold text-[#f0f4ff] tracking-[-0.2px] leading-snug truncate">
-              {member.name ?? member.invited_email ?? "Team Member"}
-            </h3>
-          </div>
+          <h3 className="text-[15px] font-bold text-[#eef2ff] tracking-[-0.2px] leading-snug truncate flex-1 pr-2 min-w-0">
+            {member.name ?? member.invited_email ?? "Team Member"}
+          </h3>
 
           <div className="relative flex-shrink-0" ref={menuRef}>
             <button
@@ -828,8 +826,9 @@ function MemberCard({
               className={`h-[28px] w-[28px] rounded-[8px] border flex flex-col items-center justify-center gap-[2.5px] transition-all duration-100 ${
                 menuOpen
                   ? "bg-white/[0.09] border-white/[0.18]"
-                  : "border-white/[0.09] hover:bg-white/[0.07] hover:border-white/[0.16]"
+                  : "border-white/[0.1] hover:bg-white/[0.07] hover:border-white/[0.18]"
               }`}
+              aria-label="Member actions"
             >
               {[0, 1, 2].map((i) => (
                 <span key={i} className="block w-[3.5px] h-[3.5px] rounded-full bg-white/45" />
@@ -837,28 +836,16 @@ function MemberCard({
             </button>
 
             {menuOpen && (
-              <div className="absolute top-[34px] right-0 z-50 w-[158px] rounded-[13px] border border-white/10 bg-[#161c2a] overflow-hidden shadow-[0_12px_36px_rgba(0,0,0,0.6)] animate-in fade-in slide-in-from-top-1 duration-100">
-                <div className="px-[14px] py-[9px] text-[10px] font-bold tracking-[0.8px] text-white/25 uppercase border-b border-white/[0.06]">
+              <div className="absolute top-[34px] right-0 z-50 w-[172px] rounded-[13px] border border-white/10 bg-[#161c2a] overflow-hidden shadow-[0_14px_40px_rgba(0,0,0,0.65)] animate-in fade-in slide-in-from-top-1 duration-100">
+                <div className="px-[14px] py-[8px] text-[10px] font-bold tracking-[0.8px] text-white/22 uppercase border-b border-white/[0.06]">
                   Actions
                 </div>
                 <button
-                  onClick={() => { onEdit(member); setMenuOpen(false); }}
-                  className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-white/65 hover:text-white hover:bg-white/[0.05] transition-colors text-left"
+                  onClick={() => { onEditRole(member); setMenuOpen(false); }}
+                  className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors text-left"
                 >
-                  <FiEdit className="w-[15px] h-[15px] flex-shrink-0" />
-                  Edit member
-                </button>
-                <button
-                  onClick={() => {
-                    if (member.invited_email) {
-                      window.location.href = `mailto:${member.invited_email}`;
-                    }
-                    setMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-white/65 hover:text-white hover:bg-white/[0.05] transition-colors text-left"
-                >
-                  <FiMail className="w-[15px] h-[15px] flex-shrink-0" />
-                  Send email
+                  <FiEdit className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
+                  Edit role
                 </button>
                 <div className="h-px bg-white/[0.06] my-[3px]" />
                 <button
@@ -866,10 +853,10 @@ function MemberCard({
                     onDelete(member.id, member.name ?? member.invited_email ?? "member");
                     setMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors text-left"
+                  className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-red-400/80 hover:text-red-400 hover:bg-red-500/[0.1] transition-colors text-left"
                 >
                   <FiTrash className="w-[15px] h-[15px] flex-shrink-0" />
-                  Remove
+                  Remove member
                 </button>
               </div>
             )}
@@ -877,7 +864,7 @@ function MemberCard({
         </div>
 
         {/* Email */}
-        <p className="text-[11px] text-white/30 truncate mb-[12px]">
+        <p className="text-[11px] text-white/30 truncate mb-[13px]">
           {member.invited_email ?? "—"}
         </p>
 
@@ -889,14 +876,13 @@ function MemberCard({
           </span>
           <span className={`text-[11px] font-semibold px-[9px] py-[4px] rounded-[8px] border ${
             isActive
-              ? "bg-green-500/[0.08] text-green-300 border-green-500/[0.18]"
-              : "bg-amber-500/[0.08] text-amber-300 border-amber-500/[0.18]"
+              ? "bg-green-500/[0.08] text-green-300 border-green-500/[0.2]"
+              : "bg-amber-500/[0.08] text-amber-300 border-amber-500/[0.2]"
           }`}>
             {isActive ? "Active" : "Invited"}
           </span>
         </div>
 
-        {/* Divider */}
         <div className="h-px bg-white/[0.055] mb-[13px]" />
 
         {/* Meta */}
@@ -913,10 +899,10 @@ function MemberCard({
             </div>
           )}
           {!isActive && member.invite_expires_at && (
-            <div className="flex items-center gap-[6px] text-[11px] text-white/28">
+            <div className="flex items-center gap-[6px] text-[11px] text-amber-400/65">
               <FiCalendar className="w-[11px] h-[11px] opacity-45 flex-shrink-0" />
               <span>Expires</span>
-              <span className="text-amber-400/70">
+              <span>
                 {new Date(member.invite_expires_at).toLocaleDateString("en-US", {
                   month: "short", day: "numeric",
                 })}
@@ -929,6 +915,8 @@ function MemberCard({
   );
 }
 
+// ─── TeamsPage ────────────────────────────────────────────────────────────────
+
 export default function TeamsPage() {
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
@@ -936,17 +924,27 @@ export default function TeamsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [members, setMembers] = useState<CompanyMember[]>([]);
   const [isFetchingMembers, setIsFetchingMembers] = useState(false);
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
-  const [editingMember, setEditingMember] = useState<CompanyMember | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string>("");
   const { userRole } = useUserRole(companyId);
   const { toast } = useToast();
+
+  // Invite dialog
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState<InviteFormData>({
     email: "", name: "", role: "MEMBER",
   });
 
+  // Edit role dialog
+  const [editingMember, setEditingMember] = useState<CompanyMember | null>(null);
+  const [isEditRoleOpen, setIsEditRoleOpen] = useState(false);
+  const [isSavingRole, setIsSavingRole] = useState(false);
+
+  // Delete confirmation dialog
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [isDeletingMember, setIsDeletingMember] = useState(false);
+
+  // ── Company ID ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const metadataCompanyId = user?.unsafeMetadata?.companyId;
     const localStorageCompanyId =
@@ -956,6 +954,7 @@ export default function TeamsPage() {
     else setCompanyId("quizzviz");
   }, [user]);
 
+  // ── Fetch members ───────────────────────────────────────────────────────────
   const fetchMembers = async () => {
     if (!companyId) return;
     setIsFetchingMembers(true);
@@ -987,6 +986,7 @@ export default function TeamsPage() {
     else if (isLoaded) setIsLoading(false);
   }, [isLoaded, user, router]);
 
+  // ── Invite ──────────────────────────────────────────────────────────────────
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteForm.email.trim()) {
@@ -1030,25 +1030,29 @@ export default function TeamsPage() {
     }
   };
 
-  const handleUpdateMember = async (memberId: string, updates: Partial<CompanyMember>) => {
+  // ── Edit Role ───────────────────────────────────────────────────────────────
+  const handleSaveRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMember) return;
+    setIsSavingRole(true);
     try {
       const token = await getToken();
-      const response = await fetch(`/api/company-members/${memberId}`, {
+      const response = await fetch(`/api/company-members/${editingMember.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({ role: editingMember.role }),
       });
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || "Failed to update member");
       }
       toast({
-        title: "Member Updated!",
-        description: `Updated ${updates.name || "member"}'s information`,
+        title: "Role Updated!",
+        description: `Updated ${editingMember.name || "member"}'s role to ${editingMember.role.toLowerCase()}`,
         className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
       fetchMembers();
-      setIsEditDialogOpen(false);
+      setIsEditRoleOpen(false);
       setEditingMember(null);
     } catch (error) {
       toast({
@@ -1056,13 +1060,22 @@ export default function TeamsPage() {
         description: error instanceof Error ? error.message : "Failed to update member",
         variant: "destructive",
       });
+    } finally {
+      setIsSavingRole(false);
     }
   };
 
-  const handleDeleteMember = async (memberId: string, memberName: string) => {
+  // ── Delete ──────────────────────────────────────────────────────────────────
+  const promptDeleteMember = (id: string, name: string) => {
+    setDeleteTarget({ id, name });
+  };
+
+  const handleConfirmedDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeletingMember(true);
     try {
       const token = await getToken();
-      const response = await fetch(`/api/company-members/${memberId}`, {
+      const response = await fetch(`/api/company-members/${deleteTarget.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -1072,7 +1085,7 @@ export default function TeamsPage() {
       }
       toast({
         title: "Member Removed",
-        description: `Removed ${memberName} from the team`,
+        description: `Removed ${deleteTarget.name} from the team`,
         className: "border-red-600/60 bg-red-700 text-red-100 shadow-lg shadow-red-600/30",
       });
       fetchMembers();
@@ -1082,9 +1095,13 @@ export default function TeamsPage() {
         description: error instanceof Error ? error.message : "Failed to delete member",
         variant: "destructive",
       });
+    } finally {
+      setIsDeletingMember(false);
+      setDeleteTarget(null);
     }
   };
 
+  // ── Loading state ───────────────────────────────────────────────────────────
   if (isLoading || !isLoaded) {
     return (
       <div className="min-h-screen bg-black text-white">
@@ -1101,6 +1118,7 @@ export default function TeamsPage() {
     );
   }
 
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <DashboardAccess>
       <Head>
@@ -1128,7 +1146,7 @@ export default function TeamsPage() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {/* Refresh — green gradient */}
+                    {/* Refresh */}
                     <Button
                       onClick={fetchMembers}
                       disabled={isFetchingMembers}
@@ -1138,7 +1156,7 @@ export default function TeamsPage() {
                       Refresh
                     </Button>
 
-                    {/* Invite Member — solid blue */}
+                    {/* Invite Member */}
                     <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                       <DialogTrigger asChild>
                         <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
@@ -1146,51 +1164,85 @@ export default function TeamsPage() {
                           Invite Member
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="bg-gray-900 border-gray-700 text-white">
+                      <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
                         <DialogHeader>
-                          <DialogTitle>Invite Team Member</DialogTitle>
+                          <DialogTitle className="text-[17px] font-bold text-[#f0f4ff]">
+                            Invite Team Member
+                          </DialogTitle>
                         </DialogHeader>
-                        <form onSubmit={handleInviteSubmit} className="space-y-4">
+                        <form onSubmit={handleInviteSubmit} className="space-y-4 pt-1">
                           <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input id="name" type="text" placeholder="Enter full name"
+                            <Label htmlFor="name" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                              Name
+                            </Label>
+                            <Input
+                              id="name"
+                              type="text"
+                              placeholder="Enter full name"
                               value={inviteForm.name}
                               onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
-                              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400" required />
+                              className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] placeholder-white/25 rounded-[11px] h-[42px]"
+                              required
+                            />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input id="email" type="email" placeholder="Enter email address"
+                            <Label htmlFor="email" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                              Email Address
+                            </Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              placeholder="Enter email address"
                               value={inviteForm.email}
                               onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                              className="bg-gray-800 border-gray-700 text-white placeholder-gray-400" required />
+                              className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] placeholder-white/25 rounded-[11px] h-[42px]"
+                              required
+                            />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="role">Role</Label>
-                            <Select value={inviteForm.role}
+                            <Label htmlFor="role" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                              Role
+                            </Label>
+                            <Select
+                              value={inviteForm.role}
                               onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
-                                setInviteForm({ ...inviteForm, role: value })}>
-                              <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                                setInviteForm({ ...inviteForm, role: value })
+                              }
+                            >
+                              <SelectTrigger className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] rounded-[11px] h-[42px]">
                                 <SelectValue placeholder="Select role" />
                               </SelectTrigger>
-                              <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
                                 <SelectItem value="MEMBER">Member</SelectItem>
                                 <SelectItem value="ADMIN">Admin</SelectItem>
                                 <SelectItem value="OWNER">Owner</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="flex justify-end gap-2 pt-4">
-                            <Button type="button" variant="outline"
+                          <div className="flex gap-[10px] pt-2">
+                            <Button
+                              type="button"
                               onClick={() => setIsInviteDialogOpen(false)}
-                              className="border-gray-600 text-white hover:bg-gray-800">
+                              className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
+                            >
                               Cancel
                             </Button>
-                            <Button type="submit" disabled={isSubmittingInvite}
-                              className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110">
-                              {isSubmittingInvite
-                                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />Sending...</>
-                                : <><FiMail className="h-4 w-4 mr-2" />Send Invite</>}
+                            <Button
+                              type="submit"
+                              disabled={isSubmittingInvite}
+                              className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
+                            >
+                              {isSubmittingInvite ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                                  Sending...
+                                </>
+                              ) : (
+                                <>
+                                  <FiMail className="h-4 w-4 mr-2" />
+                                  Send Invite
+                                </>
+                              )}
                             </Button>
                           </div>
                         </form>
@@ -1218,8 +1270,8 @@ export default function TeamsPage() {
                       <MemberCard
                         key={member.id}
                         member={member}
-                        onEdit={(m) => { setEditingMember(m); setIsEditDialogOpen(true); }}
-                        onDelete={handleDeleteMember}
+                        onEditRole={(m) => { setEditingMember(m); setIsEditRoleOpen(true); }}
+                        onDelete={promptDeleteMember}
                       />
                     ))}
                   </div>
@@ -1247,58 +1299,118 @@ export default function TeamsPage() {
           </div>
         </SignedIn>
 
-        {/* Edit Member Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="bg-gray-900 border-gray-700 text-white">
+        {/* ── Edit Role Dialog ──────────────────────────────────────────────── */}
+        <Dialog open={isEditRoleOpen} onOpenChange={(open) => { if (!open) { setIsEditRoleOpen(false); setEditingMember(null); } }}>
+          <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
             <DialogHeader>
-              <DialogTitle>Edit Team Member</DialogTitle>
+              <DialogTitle className="text-[17px] font-bold text-[#f0f4ff]">Edit role</DialogTitle>
             </DialogHeader>
             {editingMember && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleUpdateMember(editingMember.id, {
-                    role: editingMember.role,
-                    name: editingMember.name,
-                  });
-                }}
-                className="space-y-4"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="edit-name">Name</Label>
-                  <Input id="edit-name" type="text" placeholder="Enter full name"
-                    value={editingMember.name || ""}
-                    onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })}
-                    className="bg-gray-800 border-gray-700 text-white placeholder-gray-400" required />
+              <form onSubmit={handleSaveRole} className="space-y-4 pt-1">
+                {/* Member preview */}
+                <div className="flex items-center gap-3 p-3 rounded-[12px] bg-white/[0.04] border border-white/[0.07]">
+                  <div
+                    className={`h-[36px] w-[36px] rounded-[10px] bg-gradient-to-br ${roleConfig[editingMember.role].avatarGradient} flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0`}
+                  >
+                    {getInitials(editingMember.name, editingMember.invited_email)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-white/85 truncate">
+                      {editingMember.name ?? editingMember.invited_email ?? "Team Member"}
+                    </p>
+                    <p className="text-[11px] text-white/35 truncate">
+                      {editingMember.invited_email ?? "—"}
+                    </p>
+                  </div>
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="edit-role">Role</Label>
-                  <Select value={editingMember.role}
+                  <Label htmlFor="edit-role" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                    Role
+                  </Label>
+                  <Select
+                    value={editingMember.role}
                     onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
-                      setEditingMember({ ...editingMember, role: value })}>
-                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      setEditingMember({ ...editingMember, role: value })
+                    }
+                  >
+                    <SelectTrigger className="bg-white/[0.05] border-white/[0.12] text-[#eef2ff] rounded-[11px] h-[42px]">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
                       <SelectItem value="MEMBER">Member</SelectItem>
                       <SelectItem value="ADMIN">Admin</SelectItem>
                       <SelectItem value="OWNER">Owner</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline"
-                    onClick={() => { setIsEditDialogOpen(false); setEditingMember(null); }}
-                    className="border-gray-600 text-white hover:bg-gray-800">
+
+                <div className="flex gap-[10px] pt-2">
+                  <Button
+                    type="button"
+                    onClick={() => { setIsEditRoleOpen(false); setEditingMember(null); }}
+                    className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit"
-                    className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110">
-                    Update Member
+                  <Button
+                    type="submit"
+                    disabled={isSavingRole}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
+                  >
+                    {isSavingRole ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save changes"
+                    )}
                   </Button>
                 </div>
               </form>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ── Delete Confirmation Dialog ────────────────────────────────────── */}
+        <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+          <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
+            <div className="flex flex-col items-center text-center pt-2 pb-1">
+              {/* Trash icon */}
+              <div className="w-[52px] h-[52px] rounded-[14px] bg-red-500/[0.12] border border-red-500/[0.22] flex items-center justify-center mb-[18px]">
+                <FiTrash className="w-[22px] h-[22px] text-red-400" />
+              </div>
+              <h3 className="text-[17px] font-bold text-[#f0f4ff] mb-[8px]">Remove member?</h3>
+              <p className="text-[13px] text-white/45 leading-[1.55] mb-[24px]">
+                This will remove{" "}
+                <span className="text-white/75 font-semibold">{deleteTarget?.name}</span>
+                {" "}from your team. They'll lose access immediately.
+              </p>
+              <div className="flex w-full gap-[10px]">
+                <Button
+                  onClick={() => setDeleteTarget(null)}
+                  disabled={isDeletingMember}
+                  className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmedDelete}
+                  disabled={isDeletingMember}
+                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
+                >
+                  {isDeletingMember ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                      Removing...
+                    </>
+                  ) : (
+                    "Remove"
+                  )}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
 
