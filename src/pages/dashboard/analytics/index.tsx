@@ -25,7 +25,7 @@ import {
 import { LoadingSpinner } from "@/components/ui/loading";
 import { toast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
-import { canPerformAction } from "@/utils/rolePermissions";
+import { canPerformAction, getActionAllowedRoles } from "@/utils/rolePermissions";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,12 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
+import {
+  Tooltip as ShadTooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Table,
   TableBody,
@@ -203,6 +209,32 @@ const getScoreBins = (results: QuizResult[]): ScoreBin[] => {
   return distribution;
 };
 
+// Helper component for disabled buttons with permission tooltip
+const DisabledButtonWithTooltip = ({ 
+  children, 
+  permission, 
+  allowedRoles 
+}: { 
+  children: React.ReactNode; 
+  permission: string; 
+  allowedRoles: string; 
+}) => (
+  <TooltipProvider>
+    <ShadTooltip>
+      <TooltipTrigger asChild>
+        <Button disabled className="opacity-50 cursor-not-allowed">
+          {children}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p className="text-sm">
+          This action requires {allowedRoles} permissions.
+        </p>
+      </TooltipContent>
+    </ShadTooltip>
+  </TooltipProvider>
+);
+
 export default function ResultsDashboard() {
   const { user } = useUser();
 
@@ -228,7 +260,7 @@ export default function ResultsDashboard() {
   // Use the same logic as profile page
   const { companyInfo, isLoading: isCompanyLoading, error: companyError } = useCompanyInfo();
   const finalCompanyId = companyInfo?.id || '';
-  const { userRole } = useUserRole(finalCompanyId);
+  const { userRole, loading: roleLoading } = useUserRole(finalCompanyId);
 
   // Fetch quiz results
   const { data: quizResults, isLoading, refetch: refetchResults } = useCachedFetch<QuizResult[] | { results: QuizResult[] } | { error: string }>(
@@ -524,12 +556,9 @@ export default function ResultsDashboard() {
                                     {quiz.role} Quiz
                                   </CardTitle>
                                 </div>
-                                <CardDescription className="mt-2 text-gray-400">
-                                  Click bars to filter candidates by score range
-                                </CardDescription>
                               </div>
 
-                              {canPerformAction(userRole, 'delete_analytics_all') && (
+                              {!roleLoading && canPerformAction(userRole, 'delete_analytics_all') ? (
                                 <Button
                                   variant="destructive"
                                   onClick={() =>
@@ -544,6 +573,14 @@ export default function ResultsDashboard() {
                                   <Trash2 className="h-4 w-4" />
                                   Delete Quiz Data
                                 </Button>
+                              ) : (
+                                <DisabledButtonWithTooltip
+                                  permission="delete_analytics_all"
+                                  allowedRoles={getActionAllowedRoles('delete_analytics_all')}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete Quiz Data
+                                </DisabledButtonWithTooltip>
                               )}
                             </CardHeader>
 
@@ -701,20 +738,30 @@ export default function ResultsDashboard() {
 
                                   <div className="flex flex-wrap gap-3">
                                     {hasSelectedUsers && (
-                                      <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() =>
-                                          setShowDeleteUsersModal({
-                                            show: true,
-                                            quizId: quiz.quiz_id,
-                                          })
-                                        }
-                                        className="gap-2"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                        Delete ({Object.values(selectedUsers).filter(Boolean).length})
-                                      </Button>
+                                      !roleLoading && canPerformAction(userRole, 'delete_analytics_specific') ? (
+                                        <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() =>
+                                            setShowDeleteUsersModal({
+                                              show: true,
+                                              quizId: quiz.quiz_id,
+                                            })
+                                          }
+                                          className="gap-2"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                          Delete ({Object.values(selectedUsers).filter(Boolean).length})
+                                        </Button>
+                                      ) : (
+                                        <DisabledButtonWithTooltip
+                                          permission="delete_analytics_specific"
+                                          allowedRoles={getActionAllowedRoles('delete_analytics_specific')}
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                          Delete ({Object.values(selectedUsers).filter(Boolean).length})
+                                        </DisabledButtonWithTooltip>
+                                      )
                                     )}
                                     <Button
                                       size="sm"

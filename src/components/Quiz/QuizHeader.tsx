@@ -39,8 +39,11 @@ export function QuizHeader({
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const {company} = useCompanies(user?.id);
-  const { userRole } = useUserRole(company?.company_id || '');
+  const { userRole, loading: roleLoading } = useUserRole(company?.company_id || '');
   console.log('Company object from useCompanies:', company);
+  console.log('User role from useUserRole:', userRole);
+  console.log('Role loading:', roleLoading);
+  console.log('Can publish quiz:', canPerformAction(userRole, 'publish_quiz'));
   if (!quiz) return null;
 
   const handleShareClick = () => {
@@ -127,7 +130,7 @@ export function QuizHeader({
               Add Question
             </Button>
           )}
-          {canPerformAction(userRole, 'publish_quiz') && (isPublished ? (
+          {!roleLoading && canPerformAction(userRole, 'publish_quiz') && (isPublished ? (
             <Button 
               className="bg-orange-600 hover:bg-orange-700 text-white pointer-events-auto"
               onClick={() => setIsUnpublishModalOpen(true)}
@@ -150,7 +153,7 @@ export function QuizHeader({
             <Share2 className="h-4 w-4 mr-2" />
             Share Quiz
           </Button>
-          {canPerformAction(userRole, 'delete_quiz', { isQuizOwner: quiz.user_id === user?.id }) && (
+          {!roleLoading && canPerformAction(userRole, 'delete_quiz', { isQuizOwner: quiz.user_id === user?.id }) && (
             <Button 
               variant="destructive" 
               className="pointer-events-auto hover:bg-red-700" 
