@@ -154,7 +154,7 @@ export function QuizHeader({
             >
               Publish Quiz
             </Button>
-          }
+          ))}
           
           {/* Share Quiz - Only show when quiz is published */}
           {isPublished && (
