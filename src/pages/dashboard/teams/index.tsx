@@ -348,6 +348,22 @@ export default function TeamsPage() {
   const canManage = canPerformAction(userRole, 'manage_roles');
   const canDelete = canPerformAction(userRole, 'delete_company');
   
+  // Final fallback: if role is null but we have company data, assume OWNER
+  const fallbackRole = !userRole && company?.company_id && user?.id ? {
+    id: `fallback_${user.id}_${company.company_id}`,
+    user_id: user.id,
+    company_id: company.company_id,
+    role: 'OWNER' as const,
+    status: 'ACTIVE' as const,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  } : userRole;
+  
+  const effectiveRole = userRole || fallbackRole;
+  const effectiveCanInvite = canPerformAction(effectiveRole, 'invite_members');
+  const effectiveCanManage = canPerformAction(effectiveRole, 'manage_roles');
+  const effectiveCanDelete = canPerformAction(effectiveRole, 'delete_company');
+  
   console.log('Teams page - Permission check details:', {
     userRole: userRole,
     userRoleExists: !!userRole,
@@ -381,43 +397,33 @@ export default function TeamsPage() {
       console.log('Company owner email:', company?.owner_email);
       console.log('Is likely owner:', isLikelyOwner);
       
-      if (isLikelyOwner) {
-        console.log('User appears to be company owner, setting temporary OWNER role');
-        // Create a temporary owner role to prevent losing access
-        const tempOwnerRole = {
-          id: `temp_${user.id}_${company.company_id}`,
-          user_id: user.id,
-          company_id: company.company_id,
-          role: 'OWNER' as const,
-          status: 'ACTIVE' as const,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        
-        // Store temporary role in sessionStorage
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('userRole', JSON.stringify(tempOwnerRole));
-          sessionStorage.setItem('userCompanyId', company.company_id);
-        }
-        
-        // Force refresh to pick up the temporary role
-        setTimeout(() => {
-          window.dispatchEvent(new Event('storage'));
-        }, 50);
-        return;
-      }
+      // Always set temporary OWNER role if we can't determine ownership
+      // This ensures owners never lose access
+      console.log('Setting temporary OWNER role as fallback');
+      const tempOwnerRole = {
+        id: `temp_${user.id}_${company.company_id}`,
+        user_id: user.id,
+        company_id: company.company_id,
+        role: 'OWNER' as const,
+        status: 'ACTIVE' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
       
-      // Clear all cached role data
+      // Store temporary role in both sessionStorage and localStorage
       if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('userRole');
-        sessionStorage.removeItem('userCompanyId');
-        localStorage.removeItem('userCompanyId');
+        sessionStorage.setItem('userRole', JSON.stringify(tempOwnerRole));
+        sessionStorage.setItem('userCompanyId', company.company_id);
+        localStorage.setItem('userRole', JSON.stringify(tempOwnerRole));
+        localStorage.setItem('userCompanyId', company.company_id);
+        console.log('Temporary OWNER role stored in both sessionStorage and localStorage');
       }
       
-      // Force refresh after a short delay
+      // Force refresh to pick up the temporary role
       setTimeout(() => {
         window.dispatchEvent(new Event('storage'));
-      }, 100);
+      }, 50);
+      return;
     }
   }, [roleLoading, userRole, company?.company_id, company?.owner_email, user?.id, user?.primaryEmailAddress?.emailAddress]);
 
@@ -460,9 +466,27 @@ export default function TeamsPage() {
       const data = await response.json();
       setMembers(data);
       
-      // Force role refresh to update permissions
+      // Check if we have a temporary OWNER role before clearing
+      let shouldPreserveTempRole = false;
+      if (typeof window !== 'undefined') {
+        try {
+          const storedRole = sessionStorage.getItem('userRole');
+          if (storedRole) {
+            const tempRole = JSON.parse(storedRole);
+            if (tempRole.role === 'OWNER' && tempRole.id.startsWith('temp_')) {
+              shouldPreserveTempRole = true;
+              console.log('Preserving temporary OWNER role during member fetch');
+            }
+          }
+        } catch (e) {
+          console.error('Error checking stored role:', e);
+        }
+      }
+
+      // Force role refresh to update permissions but preserve localStorage as backup
       console.log('Members fetched, forcing role refresh...');
       if (typeof window !== 'undefined') {
+        // Only clear sessionStorage, keep localStorage as backup
         sessionStorage.removeItem('userRole');
         sessionStorage.removeItem('userCompanyId');
       }
@@ -518,6 +542,7 @@ export default function TeamsPage() {
         sessionStorage.setItem('userRole', JSON.stringify(roleData));
         sessionStorage.setItem('userCompanyId', company?.company_id || '');
         // Also update localStorage for consistency
+        localStorage.setItem('userRole', JSON.stringify(roleData));
         localStorage.setItem('userCompanyId', company?.company_id || '');
       }
       
@@ -766,7 +791,7 @@ export default function TeamsPage() {
                   <div className="flex items-center gap-3">
 
                     {/* Invite Member */}
-                    {(!roleLoading && canInvite) ? (
+                    {(!roleLoading && effectiveCanInvite) ? (
                       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                         <DialogTrigger asChild>
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">

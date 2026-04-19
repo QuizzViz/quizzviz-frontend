@@ -56,7 +56,7 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
           newCompanyId: companyId 
         });
         
-        // Clear cached role when user/company changes
+        // Clear cached role when user/company changes (preserve localStorage as backup)
         if (typeof window !== 'undefined') {
           sessionStorage.removeItem('userRole');
           sessionStorage.removeItem('userCompanyId');
@@ -102,10 +102,12 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
         previousUserIdRef.current = user.id;
         previousCompanyIdRef.current = companyId;
         
-        // Store role in sessionStorage for easy access
+        // Store role in both sessionStorage and localStorage for better persistence
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('userRole', JSON.stringify(data));
           sessionStorage.setItem('userCompanyId', companyId);
+          localStorage.setItem('userRole', JSON.stringify(data));
+          localStorage.setItem('userCompanyId', companyId);
         }
 
         setUserRole(data);
@@ -122,6 +124,22 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
               console.log('Using temporary stored role as fallback');
               const tempRole = JSON.parse(storedRole);
               setUserRole(tempRole);
+              setError(null);
+              setLoading(false);
+              return;
+            }
+            
+            // Additional fallback: check localStorage as well
+            const localStorageRole = localStorage.getItem('userRole');
+            const localStorageCompanyId = localStorage.getItem('userCompanyId');
+            
+            if (localStorageRole && localStorageCompanyId === companyId) {
+              console.log('Using localStorage role as fallback');
+              const tempRole = JSON.parse(localStorageRole);
+              setUserRole(tempRole);
+              // Also update sessionStorage for consistency
+              sessionStorage.setItem('userRole', localStorageRole);
+              sessionStorage.setItem('userCompanyId', localStorageCompanyId);
               setError(null);
               setLoading(false);
               return;
@@ -146,6 +164,7 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
     const handleStorageChange = () => {
       console.log('Storage event detected, forcing role refresh...');
       if (typeof window !== 'undefined') {
+        // Only clear sessionStorage, keep localStorage as backup
         sessionStorage.removeItem('userRole');
         sessionStorage.removeItem('userCompanyId');
       }
@@ -191,5 +210,7 @@ export const clearStoredUserRole = () => {
   if (typeof window !== 'undefined') {
     sessionStorage.removeItem('userRole');
     sessionStorage.removeItem('userCompanyId');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userCompanyId');
   }
 };
