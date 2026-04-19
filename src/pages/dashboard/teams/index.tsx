@@ -648,7 +648,7 @@ export default function TeamsPage() {
                       setEditingMember({ ...editingMember, role: value })
                     }
                   >
-                    <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] focus:outline-none focus:ring-0">
+                    <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] focus:outline-none focus:ring-0 focus-visible:outline-none border-0 outline-none">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
