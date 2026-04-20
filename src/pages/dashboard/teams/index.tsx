@@ -30,7 +30,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { UserRole, useUserRole } from "@/hooks/useUserRole";
+import { UserRole, useUserRole, refreshUserRole } from "@/hooks/useUserRole";
 import { canPerformAction, getActionAllowedRoles } from "@/utils/rolePermissions";
 import { useCachedDashboardData } from "@/hooks/useCachedData";
 
@@ -655,56 +655,58 @@ export default function TeamsPage() {
     try {
       const token = await getToken();
       const response = await fetch(`/api/company-members/${editingMember.id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ role: editingMember.role }),
+        body: JSON.stringify({
+          role: editingMember.role,
+        }),
       });
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || "Failed to update member");
+        throw new Error(err.error || "Failed to update role");
       }
       toast({
-        title: "Role Updated!",
-        description: `Updated ${editingMember.name || "member"}'s role to ${editingMember.role.toLowerCase()}`,
+        title: "Role Updated",
+        description: `Role updated for ${editingMember.name}`,
         className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
+      
+      // Force refresh the role cache to ensure immediate updates across all components
+      if (user?.id && company?.company_id) {
+        const tokenForRefresh = await getToken();
+        if (tokenForRefresh) {
+          await refreshUserRole(user.id, company.company_id, async () => tokenForRefresh);
+        }
+      }
+      
       refreshMembersAndRole();
-      setIsEditRoleOpen(false);
-      setEditingMember(null);
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update member",
+        description: error instanceof Error ? error.message : "Failed to update role",
         variant: "destructive",
       });
     } finally {
       setIsSavingRole(false);
+      setIsEditRoleOpen(false);
     }
   };
 
-  // ── Delete ──────────────────────────────────────────────────────────────────
+  // ── Delete Member ───────────────────────────────────────────────────────────
   const promptDeleteMember = (id: string, name: string) => {
-    // Find the member to check their current role
-    const memberToDelete = members.find(m => m.id === id);
-    
-    // Prevent ADMIN from deleting OWNER members
-    if (userRole?.role === 'ADMIN' && memberToDelete?.role === 'OWNER') {
-      toast({
-        title: "Permission Denied",
-        description: "Admin users cannot delete Owner members. Only Owners can delete Owner members.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setDeleteTarget({ id, name });
   };
 
-  const handleConfirmedDelete = async () => {
+  const handleDeleteMember = async () => {
     if (!deleteTarget) return;
+
     setIsDeletingMember(true);
     try {
       const token = await getToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+      
       const response = await fetch(`/api/company-members/${deleteTarget.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -715,9 +717,15 @@ export default function TeamsPage() {
       }
       toast({
         title: "Member Removed",
-        description: `Removed ${deleteTarget.name} from the team`,
+        description: `Removed ${deleteTarget.name} from team`,
         className: "border-red-600/60 bg-red-700 text-red-100 shadow-lg shadow-red-600/30",
       });
+      
+      // Force refresh the role cache to ensure immediate updates across all components
+      if (user?.id && company?.company_id) {
+        await refreshUserRole(user.id, company.company_id, getToken);
+      }
+      
       refreshMembersAndRole();
     } catch (error) {
       toast({
@@ -1050,7 +1058,7 @@ export default function TeamsPage() {
                   Cancel
                 </Button>
                 <Button
-                  onClick={handleConfirmedDelete}
+                  onClick={handleDeleteMember}
                   disabled={isDeletingMember}
                   className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
                 >
