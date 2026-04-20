@@ -207,6 +207,22 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
             
             console.log('📦 Cached user role data');
           })
+          .catch(error => {
+            console.error('Failed to fetch user role - member may have been deleted:', error);
+            
+            // Clear cached role data
+            cacheRef.current.userRole = undefined;
+            setUserRole(null);
+            
+            // Clear sessionStorage and localStorage
+            if (typeof window !== 'undefined') {
+              sessionStorage.removeItem('userCompanyId');
+              localStorage.removeItem('userCompanyId');
+              sessionStorage.removeItem('userRole');
+              localStorage.removeItem('userRole');
+              console.log('Cleared userCompanyId and userRole from storage due to role fetch failure');
+            }
+          })
         );
       }
       
@@ -284,6 +300,21 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
               sessionStorage.setItem('userCompanyId', data.company_id);
               localStorage.setItem('userCompanyId', data.company_id);
               console.log('Stored userCompanyId from refresh role data:', data.company_id);
+            }
+          })
+          .catch(error => {
+            console.error('Failed to refresh user role - member may have been deleted:', error);
+            
+            // Clear cached role data
+            setUserRole(null);
+            
+            // Clear sessionStorage and localStorage
+            if (typeof window !== 'undefined') {
+              sessionStorage.removeItem('userCompanyId');
+              localStorage.removeItem('userCompanyId');
+              sessionStorage.removeItem('userRole');
+              localStorage.removeItem('userRole');
+              console.log('Cleared userCompanyId and userRole from storage due to role refresh failure');
             }
           })
       );
