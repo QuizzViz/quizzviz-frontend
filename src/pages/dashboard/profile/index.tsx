@@ -31,8 +31,8 @@ export default function ProfilePage() {
 
   // For invited members, fetch company data by company_id to get owner email
   // For company owners, fetch by user_id
-  const fetchUrl = (metadataCompanyId || localStorageCompanyId) 
-    ? `/api/company/${encodeURIComponent((metadataCompanyId || localStorageCompanyId) as string)}`
+  const fetchUrl = companyId 
+    ? `/api/company/${encodeURIComponent(companyId as string)}`
     : user?.id 
     ? `/api/company/check?owner_id=${user.id}`
     : '';
