@@ -21,14 +21,18 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   // Check if user is an invited member by checking sessionStorage FIRST
   // This must be determined BEFORE calling useCompanies to avoid race conditions
   const sessionStorageCompanyId = typeof window !== 'undefined' ? sessionStorage.getItem('userCompanyId') : null;
+  const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
   const isInvitedMember = !!sessionStorageCompanyId;
 
   console.log('DashboardAccess Debug BEFORE useCompanies:', {
     sessionStorageCompanyId,
+    localStorageCompanyId,
     isInvitedMember,
     userId: user?.id,
     isLoaded,
-    willPassUndefinedToUseCompanies: isInvitedMember
+    willPassUndefinedToUseCompanies: isInvitedMember,
+    sessionStorageKeys: typeof window !== 'undefined' ? Object.keys(sessionStorage) : [],
+    localStorageKeys: typeof window !== 'undefined' ? Object.keys(localStorage) : []
   });
 
   // CRITICAL: For invited members, pass undefined to force sessionStorage logic

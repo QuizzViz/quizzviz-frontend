@@ -784,7 +784,7 @@ export default function TeamsPage() {
                     
                     {/* Member count pill */}
                     {!isFetchingMembers && members.length > 0 && (
-                      <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] border border-white/[0.08] rounded-full px-3 py-1.5">
+                      <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] mt-4 border border-white/[0.08] rounded-full px-3 py-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-400 block mr-1" />
                         {members.length} member{members.length !== 1 ? "s" : ""}
                       </div>
