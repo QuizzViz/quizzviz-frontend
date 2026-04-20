@@ -72,6 +72,18 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
     ttl: 10 * 60 * 1000 // 10 minutes cache for role data
   });
 
+  // Store company_id in sessionStorage for member users when role is fetched
+  useEffect(() => {
+    if (userRole && userRole.company_id) {
+      if (typeof window !== 'undefined') {
+        // Store company_id in both sessionStorage and localStorage for member users
+        sessionStorage.setItem('userCompanyId', userRole.company_id);
+        localStorage.setItem('userCompanyId', userRole.company_id);
+        console.log('Stored userCompanyId from role data:', userRole.company_id);
+      }
+    }
+  }, [userRole]);
+
   // Notify role cache manager of role changes
   useEffect(() => {
     if (userRole) {
