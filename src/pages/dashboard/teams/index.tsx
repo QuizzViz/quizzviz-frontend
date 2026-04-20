@@ -32,6 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { UserRole, useUserRole } from "@/hooks/useUserRole";
 import { canPerformAction, getActionAllowedRoles } from "@/utils/rolePermissions";
+import { useCachedDashboardData } from "@/hooks/useCachedData";
 
 interface CompanyMember {
   id: string;
@@ -130,13 +131,13 @@ function MemberCard({
   onEditRole,
   onDelete,
   userRole,
-  roleLoading,
+  dataLoading,
 }: {
   member: CompanyMember;
   onEditRole: (m: CompanyMember) => void;
   onDelete: (id: string, name: string) => void;
   userRole: import("@/hooks/useUserRole").UserRole | null;
-  roleLoading: boolean;
+  dataLoading: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -183,7 +184,7 @@ function MemberCard({
 
           <div className="relative flex-shrink-0" ref={menuRef}>
             {/* Show 3 dots menu only for users with manage_roles permission (OWNER only) */}
-            {!roleLoading && canPerformAction(userRole, 'manage_roles') && (
+            {!dataLoading && canPerformAction(userRole, 'manage_roles') && (
               <button
                 onClick={() => setMenuOpen((o) => !o)}
                 className={`h-[28px] w-[28px] rounded-[8px] border flex flex-col items-center justify-center gap-[2.5px] transition-all duration-100 ${
@@ -207,7 +208,7 @@ function MemberCard({
                 
                 {/* Edit Role - using permission utility correctly */}
                 {(() => {
-                  const hasManagePermission = !roleLoading && canPerformAction(userRole, 'manage_roles');
+                  const hasManagePermission = !dataLoading && canPerformAction(userRole, 'manage_roles');
                   const canEditTargetRole = userRole?.role === 'OWNER' || 
                     (userRole?.role === 'ADMIN' && member.role !== 'OWNER');
                   const canEdit = hasManagePermission && canEditTargetRole;
@@ -237,7 +238,7 @@ function MemberCard({
                 
                 {/* Delete Member - using permission utility correctly */}
                 {(() => {
-                  const hasDeletePermission = !roleLoading && canPerformAction(userRole, 'delete_company');
+                  const hasDeletePermission = !dataLoading && canPerformAction(userRole, 'delete_company');
                   const canDeleteTargetRole = userRole?.role === 'OWNER' || 
                     (userRole?.role === 'ADMIN' && member.role !== 'OWNER');
                   const canDelete = hasDeletePermission && canDeleteTargetRole;
@@ -329,14 +330,12 @@ export default function TeamsPage() {
   const { getToken } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [members, setMembers] = useState<CompanyMember[]>([]);
   const [isFetchingMembers, setIsFetchingMembers] = useState(false);
-  const { company } = useCompanies(user?.id);
-
+  
   // For member users, get company ID from metadata or stored data
-  const getCompanyIdForMember = () => {
+  const getCompanyIdForMember = (): string | undefined => {
     // Try user metadata first (for invited members who have it stored)
-    const metadataCompanyId = user?.unsafeMetadata?.companyId;
+    const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
     if (metadataCompanyId) return metadataCompanyId;
 
     // Try sessionStorage
@@ -349,12 +348,24 @@ export default function TeamsPage() {
       if (localCompanyId) return localCompanyId;
     }
 
-    // Fallback to company object (for owners)
-    return company?.company_id || '';
+    return undefined;
   };
 
-  const companyIdForMember = getCompanyIdForMember();
-  const { userRole, loading: roleLoading } = useUserRole(companyIdForMember as string);
+  const companyIdForMember: string | undefined = getCompanyIdForMember();
+  
+  // Use the new caching system
+  const { 
+    members: cachedMembers, 
+    userRole, 
+    company, 
+    loading: dataLoading, 
+    refreshAll 
+  } = useCachedDashboardData(user?.id || '', companyIdForMember, async () => {
+    const token = await getToken();
+    return token || '';
+  });
+  
+  const [members, setMembers] = useState<CompanyMember[]>(cachedMembers || []);
   const { toast } = useToast();
 
   // Debug logging
@@ -369,7 +380,7 @@ export default function TeamsPage() {
   console.log('Teams page - Company ID type:', typeof company?.company_id);
   console.log('Teams page - Company ID length:', company?.company_id?.length);
   console.log('Teams page - User role:', userRole);
-  console.log('Teams page - Role loading:', roleLoading);
+  console.log('Teams page - Role loading:', dataLoading);
   console.log('Teams page - User role role value:', userRole?.role);
   console.log('Teams page - Company ID:', company?.company_id);
   // Detailed permission debugging
@@ -385,7 +396,7 @@ export default function TeamsPage() {
     canInvite: canInvite,
     canManage: canManage,
     canDelete: canDelete,
-    roleLoading: roleLoading
+    dataLoading: dataLoading
   });
   
   // More conservative fallback: only assume OWNER if user email matches company owner email
@@ -409,26 +420,26 @@ export default function TeamsPage() {
     userRole: userRole,
     userRoleExists: !!userRole,
     userRoleRole: userRole?.role,
-    roleLoading,
+    dataLoading,
     canInvite,
     canManage,
     canDelete,
-    shouldShowInviteButton: !roleLoading && canInvite
+    shouldShowInviteButton: !dataLoading && canInvite
   });
   
   // Additional debugging for role fetching
   useEffect(() => {
     console.log('useUserRole hook state changed:', {
       userRole,
-      roleLoading,
+      dataLoading,
       companyId: company?.company_id,
       userId: user?.id
     });
-  }, [userRole, roleLoading, company?.company_id, user?.id]);
+  }, [userRole, dataLoading, company?.company_id, user?.id]);
 
   // Force role refresh on component mount if role is null
   useEffect(() => {
-    if (!roleLoading && !userRole && company?.company_id && user?.id) {
+    if (!dataLoading && !userRole && company?.company_id && user?.id) {
       console.log('Role is null, checking for stored roles before creating fallback...');
       
       // First, check if we have any stored roles to restore
@@ -500,7 +511,7 @@ export default function TeamsPage() {
       }
       return;
     }
-  }, [roleLoading, userRole, company?.company_id, company?.owner_email, user?.id, user?.primaryEmailAddress?.emailAddress]);
+  }, [dataLoading, userRole, company?.company_id, company?.owner_email, user?.id, user?.primaryEmailAddress?.emailAddress]);
 
   // Invite dialog
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -586,51 +597,17 @@ export default function TeamsPage() {
     }
   };
 
-  // ── Refresh members and role ───────────────────────────────────────────────────
+  // ── Refresh members and role using cache ──────────────────────────────────
   const refreshMembersAndRole = async () => {
-    if (!company?.company_id) return;
+    console.log('🔄 Refreshing members and role using cache system...');
     setIsFetchingMembers(true);
     
     try {
-      const token = await getToken();
-      
-      // Fetch both members and role simultaneously
-      const [membersResponse, roleResponse] = await Promise.all([
-        fetch(
-          `/api/company-members?company_id=${company?.company_id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        ),
-        fetch(
-          `/api/company-members/role?user_id=${user?.id}&company_id=${company?.company_id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-      ]);
-
-      if (!membersResponse.ok) throw new Error("Failed to fetch members");
-      if (!roleResponse.ok) throw new Error("Failed to fetch role");
-
-      const membersData = await membersResponse.json();
-      const roleData = await roleResponse.json();
-      
-      setMembers(membersData);
-      
-      // Update role directly
-      console.log('Role fetched from refresh:', roleData);
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('userRole', JSON.stringify(roleData));
-        sessionStorage.setItem('userCompanyId', company?.company_id || '');
-        // Also update localStorage for consistency
-        localStorage.setItem('userRole', JSON.stringify(roleData));
-        localStorage.setItem('userCompanyId', company?.company_id || '');
-      }
-      
-      // Trigger role update
-      setTimeout(() => {
-        window.dispatchEvent(new StorageEvent('storage', { key: 'userRole' }));
-      }, 100);
+      await refreshAll();
+      setMembers(cachedMembers || []);
       
       toast({
-        title: "Refreshed",
+        title: "Refreshed", 
         description: "Team members and permissions updated",
         className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
@@ -869,7 +846,7 @@ export default function TeamsPage() {
                   <div className="flex items-center gap-3">
 
                     {/* Invite Member - using permission utility */}
-                    {(!roleLoading && canPerformAction(userRole, 'invite_members')) ? (
+                    {(!dataLoading && canPerformAction(userRole, 'invite_members')) ? (
                       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                         <DialogTrigger asChild>
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
@@ -929,7 +906,7 @@ export default function TeamsPage() {
                                   <SelectItem value="MEMBER">Member</SelectItem>
                                   <SelectItem value="ADMIN">Admin</SelectItem>
                                   {/* Only OWNER can invite other OWNERS */}
-                                  {!roleLoading && userRole?.role === 'OWNER' && (
+                                  {!dataLoading && userRole?.role === 'OWNER' && (
                                     <SelectItem value="OWNER">Owner</SelectItem>
                                   )}
                                 </SelectContent>
@@ -1004,7 +981,7 @@ export default function TeamsPage() {
                         onEditRole={(m) => { setEditingMember(m); setIsEditRoleOpen(true); }}
                         onDelete={promptDeleteMember}
                         userRole={userRole}
-                        roleLoading={roleLoading}
+                        dataLoading={dataLoading}
                       />
                     ))}
                   </div>
@@ -1074,7 +1051,7 @@ export default function TeamsPage() {
                       <SelectItem value="MEMBER">Member</SelectItem>
                       <SelectItem value="ADMIN">Admin</SelectItem>
                       {/* Only OWNER can assign OWNER role */}
-                      {!roleLoading && userRole?.role === 'OWNER' && (
+                      {!dataLoading && userRole?.role === 'OWNER' && (
                         <SelectItem value="OWNER">Owner</SelectItem>
                       )}
                     </SelectContent>
