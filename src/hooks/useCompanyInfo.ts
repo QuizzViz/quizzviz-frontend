@@ -25,7 +25,7 @@ export function useCompanyInfo() {
     : (() => {
         // For invited members, check sessionStorage first
         if (typeof window !== 'undefined') {
-          const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+          const sessionStorageCompanyId = sessionStorage.getItem('userCompanyId');
           if (sessionStorageCompanyId) {
             return `/api/company/${encodeURIComponent(sessionStorageCompanyId)}`;
           }

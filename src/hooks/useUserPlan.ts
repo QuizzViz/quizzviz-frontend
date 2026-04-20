@@ -23,7 +23,22 @@ const fetchUserPlan = async (userId: string | null | undefined, getToken: () => 
   const token = await getToken();
   if (!token) throw new Error('No auth token');
 
-  const response = await fetch(`/api/company/check?owner_id=${userId}`, {
+  // Check if user is a member with stored company_id
+  let fetchUrl = `/api/company/check?owner_id=${userId}`;
+  let companyId: string | null = null;
+
+  if (typeof window !== 'undefined') {
+    // Try to get company_id from storage for member users
+    companyId = localStorage.getItem('userCompanyId') || 
+                sessionStorage.getItem('userCompanyId') ||
+                (typeof window !== 'undefined' && (window as any).user?.unsafeMetadata?.companyId);
+    
+    if (companyId) {
+      fetchUrl = `/api/company/${companyId}`;
+    }
+  }
+
+  const response = await fetch(fetchUrl, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
@@ -36,9 +51,17 @@ const fetchUserPlan = async (userId: string | null | undefined, getToken: () => 
 
   const data = await response.json();
   
+  // Handle both response formats: array from check endpoint and object from direct company endpoint
+  let companyData;
+  if (data.companies && data.companies.length > 0) {
+    companyData = data.companies[0];
+  } else if (data.company_id || data.name) {
+    companyData = data;
+  }
+  
   // If user has a company, return its plan_name, otherwise default to Free
-  if (data.exists && data.companies && data.companies.length > 0) {
-    return { plan_name: data.companies[0].plan_name || 'Free' };
+  if (companyData) {
+    return { plan_name: companyData.plan_name || 'Free' };
   }
   
   return { plan_name: 'Free' };
