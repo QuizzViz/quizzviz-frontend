@@ -27,8 +27,10 @@ export const DashboardHeader: React.FC = () => {
     <header className="px-6 py-4 border-b border-black bg-black flex items-center justify-between">
       <span> </span>
       <UserAvatarDropdown 
-        userName={(companyInfo?.name as string) || 'Company'}
+        userName={user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || userEmail || 'User'}
         userEmail={userEmail}
+        companyName={companyInfo?.name}
+        ownerEmail={companyInfo?.owner_email}
       />
     </header>
   );

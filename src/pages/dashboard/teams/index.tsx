@@ -205,12 +205,12 @@ function MemberCard({
                   Actions
                 </div>
                 
-                {/* Edit Role - OWNER can edit any role, ADMIN can edit ADMIN/MEMBER only */}
+                {/* Edit Role - using permission utility correctly */}
                 {(() => {
-                  const canEdit = !roleLoading && (
-                    (userRole?.role === 'OWNER') || 
-                    (userRole?.role === 'ADMIN' && member.role !== 'OWNER')
-                  );
+                  const hasManagePermission = !roleLoading && canPerformAction(userRole, 'manage_roles');
+                  const canEditTargetRole = userRole?.role === 'OWNER' || 
+                    (userRole?.role === 'ADMIN' && member.role !== 'OWNER');
+                  const canEdit = hasManagePermission && canEditTargetRole;
                   
                   return canEdit ? (
                     <button
@@ -223,7 +223,7 @@ function MemberCard({
                   ) : (
                     <DisabledButtonWithTooltip
                       permission="manage_roles"
-                      allowedRoles={userRole?.role === 'OWNER' ? 'OWNER only' : 'Cannot edit Owner roles'}
+                      allowedRoles={getActionAllowedRoles('manage_roles')}
                       className="w-full"
                       variant="outline"
                     >
@@ -235,12 +235,12 @@ function MemberCard({
                 
                 <div className="h-px bg-white/[0.06] my-[3px]" />
                 
-                {/* Delete Member - OWNER can delete any, ADMIN can delete ADMIN/MEMBER only */}
+                {/* Delete Member - using permission utility correctly */}
                 {(() => {
-                  const canDelete = !roleLoading && (
-                    (userRole?.role === 'OWNER') || 
-                    (userRole?.role === 'ADMIN' && member.role !== 'OWNER')
-                  );
+                  const hasDeletePermission = !roleLoading && canPerformAction(userRole, 'delete_company');
+                  const canDeleteTargetRole = userRole?.role === 'OWNER' || 
+                    (userRole?.role === 'ADMIN' && member.role !== 'OWNER');
+                  const canDelete = hasDeletePermission && canDeleteTargetRole;
                   
                   return canDelete ? (
                     <button
@@ -256,7 +256,7 @@ function MemberCard({
                   ) : (
                     <DisabledButtonWithTooltip
                       permission="delete_company"
-                      allowedRoles={userRole?.role === 'OWNER' ? 'OWNER only' : 'Cannot delete Owner members'}
+                      allowedRoles={getActionAllowedRoles('delete_company')}
                       className="w-full"
                       variant="destructive"
                     >
@@ -826,8 +826,8 @@ export default function TeamsPage() {
                   {/* ── FIX: right-side controls wrapper ── */}
                   <div className="flex items-center gap-3">
 
-                    {/* Invite Member */}
-                    {(!roleLoading && effectiveCanInvite) ? (
+                    {/* Invite Member - using permission utility */}
+                    {(!roleLoading && canPerformAction(userRole, 'invite_members')) ? (
                       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                         <DialogTrigger asChild>
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
