@@ -29,9 +29,12 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Add debugging to track role changes
-  const previousCompanyIdRef = useRef<string | undefined>();
+  // Refs to track previous values for comparison
   const previousUserIdRef = useRef<string | undefined>();
+  const previousCompanyIdRef = useRef<string | undefined>();
+
+  // Debug: Log when hook is called and with what parameters
+  console.log('useUserRole hook called:', { userId: user?.id, companyId });
 
   useEffect(() => {
     const fetchUserRole = async () => {
