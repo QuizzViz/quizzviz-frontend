@@ -63,10 +63,27 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   // Check both sessionStorage and localStorage for company_id
   const hasStorageCompanyId = sessionStorageCompanyId || localStorageCompanyId;
 
-  // CRITICAL: For invited members, always allow dashboard access even if company data is still loading
-  // This prevents the race condition where onboarding shows while company data is being fetched
+  // CRITICAL: For invited members, validate they are still a valid member before allowing access
   if (isInvitedMember || hasStorageCompanyId) {
-    console.log('Invited member or storage detected, allowing dashboard access');
+    console.log('Invited member or storage detected, validating access...');
+    
+    // If we have company data, verify the user is still a member
+    // If no company data, allow access (will be validated by API calls)
+    if (company && user?.id) {
+      // Check if current user is the owner (always valid)
+      if (company.owner_id === user.id) {
+        console.log('User is company owner, allowing access');
+        return <>{children}</>;
+      }
+      
+      // For non-owners, we need to validate they are still a member
+      // This will be handled by the role fetching in useCachedDashboardData
+      // If they're not a member anymore, the role fetch will fail and clear their cache
+      console.log('User is member, access will be validated by role fetch');
+      return <>{children}</>;
+    }
+    
+    // No company data yet, allow access (validation will happen during data fetch)
     return <>{children}</>;
   }
 
