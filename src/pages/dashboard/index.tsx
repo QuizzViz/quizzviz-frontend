@@ -11,15 +11,45 @@ import { useEffect, useState } from "react";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
-import { useCompanies } from "@/hooks/useCompanies";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useCachedDashboardData } from "@/hooks/useCachedData";
+import { useAuth } from "@clerk/nextjs";
 
 export default function Dashboard() {
   const { isLoaded, user } = useUser();
+  const { getToken } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const { company } = useCompanies(user?.id);
-  const { userRole, loading: roleLoading } = useUserRole(company?.company_id);
+  
+  // For member users, get company ID from metadata or stored data
+  const getCompanyIdForMember = (): string | undefined => {
+    // Try user metadata first (for invited members who have it stored)
+    const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
+    if (metadataCompanyId) return metadataCompanyId;
+
+    // Try sessionStorage
+    if (typeof window !== 'undefined') {
+      const sessionCompanyId = sessionStorage.getItem('userCompanyId');
+      if (sessionCompanyId) return sessionCompanyId;
+
+      // Try localStorage
+      const localCompanyId = localStorage.getItem('userCompanyId');
+      if (localCompanyId) return localCompanyId;
+    }
+
+    return undefined;
+  };
+
+  const companyIdForMember: string | undefined = getCompanyIdForMember();
+  
+  // Use the new caching system
+  const { 
+    userRole, 
+    company, 
+    loading: roleLoading 
+  } = useCachedDashboardData(user?.id || '', companyIdForMember, async () => {
+    const token = await getToken();
+    return token || '';
+  });
   
   // Set default values for Business plan
   const maxQuestions = 100; // Business plan limit

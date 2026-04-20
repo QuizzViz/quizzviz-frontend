@@ -368,6 +368,13 @@ export default function TeamsPage() {
   const [members, setMembers] = useState<CompanyMember[]>(cachedMembers || []);
   const { toast } = useToast();
 
+  // Update members when cached data changes
+  useEffect(() => {
+    if (cachedMembers) {
+      setMembers(cachedMembers);
+    }
+  }, [cachedMembers]);
+
   // Debug logging
   console.log('Teams page - User ID:', user?.id);
   console.log('Teams page - Company from useCompanies:', company);
@@ -538,65 +545,6 @@ export default function TeamsPage() {
     }
   }, [isLoaded, user, router]);
 
-  // ── Fetch members ───────────────────────────────────────────────────────────
-  const fetchMembers = async () => {
-    if (!company?.company_id) return;
-    setIsFetchingMembers(true);
-    try {
-      const token = await getToken();
-      console.log('Fetching members for company:', company.company_id);
-      const response = await fetch(
-        `/api/company-members?company_id=${company.company_id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!response.ok) throw new Error("Failed to fetch members");
-      const data = await response.json();
-      console.log('Members fetched:', data);
-      setMembers(data);
-      
-      // Check if we have a temporary OWNER or ADMIN role before clearing
-      let shouldPreserveTempRole = false;
-      if (typeof window !== 'undefined') {
-        try {
-          const storedRole = sessionStorage.getItem('userRole');
-          if (storedRole) {
-            const tempRole = JSON.parse(storedRole);
-            // Preserve temporary OWNER roles and any ADMIN roles during refresh
-            if ((tempRole.role === 'OWNER' && tempRole.id.startsWith('temp_')) || tempRole.role === 'ADMIN') {
-              shouldPreserveTempRole = true;
-              console.log(`Preserving ${tempRole.role} role during member fetch`);
-            }
-          }
-        } catch (e) {
-          console.error('Error checking stored role:', e);
-        }
-      }
-
-      // Force role refresh to update permissions but preserve localStorage as backup
-      console.log('Members fetched, forcing role refresh...');
-      if (typeof window !== 'undefined') {
-        // Only clear sessionStorage, keep localStorage as backup
-        sessionStorage.removeItem('userRole');
-        sessionStorage.removeItem('userCompanyId');
-      }
-      
-      // Trigger a small delay to ensure role refetch
-      setTimeout(() => {
-        window.dispatchEvent(new Event('storage'));
-      }, 100);
-      
-    } catch (error) {
-      console.error("Error fetching members:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch team members",
-        variant: "destructive",
-      });
-    } finally {
-      setIsFetchingMembers(false);
-    }
-  };
-
   // ── Refresh members and role using cache ──────────────────────────────────
   const refreshMembersAndRole = async () => {
     console.log('🔄 Refreshing members and role using cache system...');
@@ -623,13 +571,6 @@ export default function TeamsPage() {
       setIsFetchingMembers(false);
     }
   };
-
-  useEffect(() => { if (company?.company_id) fetchMembers(); }, [company?.company_id]);
-
-  useEffect(() => {
-    if (isLoaded && !user) router.push("/signin");
-    else if (isLoaded) setIsLoading(false);
-  }, [isLoaded, user, router]);
 
   // ── Invite ──────────────────────────────────────────────────────────────────
   const handleInviteSubmit = async (e: React.FormEvent) => {
@@ -673,7 +614,7 @@ export default function TeamsPage() {
       });
       setInviteForm({ email: "", name: "", role: "MEMBER" });
       setIsInviteDialogOpen(false);
-      fetchMembers();
+      refreshMembersAndRole();
     } catch (error) {
       toast({
         title: "Error",
@@ -727,7 +668,7 @@ export default function TeamsPage() {
         description: `Updated ${editingMember.name || "member"}'s role to ${editingMember.role.toLowerCase()}`,
         className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
-      fetchMembers();
+      refreshMembersAndRole();
       setIsEditRoleOpen(false);
       setEditingMember(null);
     } catch (error) {
@@ -777,7 +718,7 @@ export default function TeamsPage() {
         description: `Removed ${deleteTarget.name} from the team`,
         className: "border-red-600/60 bg-red-700 text-red-100 shadow-lg shadow-red-600/30",
       });
-      fetchMembers();
+      refreshMembersAndRole();
     } catch (error) {
       toast({
         title: "Error",
