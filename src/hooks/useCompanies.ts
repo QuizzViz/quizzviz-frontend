@@ -22,7 +22,8 @@ export const storeCompanyId = (companyId: string) => {
 // Helper function to get company_id from sessionStorage
 export const getCompanyId = (): string | null => {
   if (typeof window !== 'undefined') {
-    return sessionStorage.getItem('company_id');
+    // Try userCompanyId first (for member users), then company_id (for owners)
+    return sessionStorage.getItem('userCompanyId') || sessionStorage.getItem('company_id');
   }
   return null;
 };
