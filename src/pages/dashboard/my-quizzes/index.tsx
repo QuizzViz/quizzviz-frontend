@@ -281,30 +281,6 @@ export default function MyQuizzesPage() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience} yrs</Badge>
-                                
-                                {/* Delete dropdown - Only show if user can delete quizzes */}
-                                {!roleLoading && canPerformAction(userRole, 'delete_quiz', { isQuizOwner: q.user_id === user?.id }) ? (
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-white/[0.1]">
-                                        <span className="sr-only">Open menu</span>
-                                        <MoreVertical className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="bg-[#161c2a] border border-white/10">
-                                      <DropdownMenuItem
-                                        className="text-red-400 hover:text-red-300 hover:bg-red-500/[0.1] focus:text-red-300 focus:bg-red-500/[0.1]"
-                                        onClick={() => {
-                                          setQuizToDelete(q.quiz_id);
-                                          setDeleteDialogOpen(true);
-                                        }}
-                                      >
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete Quiz
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                ) : null}
                               </div>
                             </div>
                             <CardDescription className="text-white/70">
