@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import LogoutButton from "@/components/auth/LogoutButton";
-import { Building, Mail, User, ChevronDown } from "lucide-react";
+import { User, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
@@ -112,28 +112,8 @@ export default function UserAvatarDropdown({
             </Avatar>
             <div className="space-y-1">
               <p className="text-sm font-medium">{userName}</p>
-              {userEmail && (
-                <p className="text-xs text-muted-foreground">{userEmail}</p>
-              )}
             </div>
           </div>
-          
-          {(companyName || ownerEmail) && (
-            <div className="mt-3 space-y-2 pt-3 border-t">
-              {companyName && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Building className="h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{companyName}</span>
-                </div>
-              )}
-              {ownerEmail && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{ownerEmail}</span>
-                </div>
-              )}
-            </div>
-          )}
         </div>
         
         <DropdownMenuSeparator />
