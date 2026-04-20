@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import LogoutButton from "@/components/auth/LogoutButton";
-import { Building, Mail, Settings, User, ChevronDown } from "lucide-react";
+import { Building, Mail, User, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
@@ -146,17 +146,6 @@ export default function UserAvatarDropdown({
         >
           <User className="mr-2 h-4 w-4 text-white/70" />
           <span>Profile</span>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
-          className={cn(
-            "text-sm text-white rounded-md hover:bg-white/10 focus:bg-white/10 cursor-pointer transition-colors",
-            isMobile ? "px-3 py-3" : "px-3 py-2" // More padding on mobile
-          )}
-          onClick={() => (window.location.href = "/dashboard/settings")}
-        >
-          <Settings className="mr-2 h-4 w-4 text-white/70" />
-          <span>Settings</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator className="bg-white/20 my-1" />

@@ -73,27 +73,9 @@ export const hasPermission = (
   role: Role | null | undefined,
   permission: Permission
 ): boolean => {
-  console.log('hasPermission called:', {
-    role: role,
-    permission: permission,
-    permissionMatrix: PERMISSION_MATRIX,
-    rolePermissions: role ? PERMISSION_MATRIX[role] : 'no role'
-  });
+  if (!role) return false;
   
-  if (!role) {
-    console.log('hasPermission: no role, returning false');
-    return false;
-  }
-  
-  const result = PERMISSION_MATRIX[role]?.[permission] || false;
-  console.log('hasPermission result:', {
-    role: role,
-    permission: permission,
-    matrixValue: PERMISSION_MATRIX[role]?.[permission],
-    finalResult: result
-  });
-  
-  return result;
+  return PERMISSION_MATRIX[role]?.[permission] || false;
 };
 
 /**
@@ -106,31 +88,14 @@ export const canPerformAction = (
     isQuizOwner?: boolean;
   }
 ): boolean => {
-  console.log('canPerformAction called:', {
-    userRole: userRole,
-    userRoleString: JSON.stringify(userRole),
-    permission: permission,
-    additionalContext: additionalContext
-  });
-  
-  if (!userRole) {
-    console.log('canPerformAction: no userRole, returning false');
-    return false;
-  }
+  if (!userRole) return false;
 
   // Special case for member limited update quiz
   if (permission === 'update_quiz' && userRole.role === 'MEMBER') {
     return additionalContext?.isQuizOwner || false;
   }
 
-  const result = hasPermission(userRole.role, permission);
-  console.log('canPerformAction: hasPermission result:', {
-    role: userRole.role,
-    permission: permission,
-    result: result
-  });
-  
-  return result;
+  return hasPermission(userRole.role, permission);
 };
 
 /**
