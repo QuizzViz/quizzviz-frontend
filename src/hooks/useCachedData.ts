@@ -191,6 +191,20 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
               timestamp: now
             };
             setUserRole(data);
+            
+            // Store company_id in sessionStorage for member users
+            if (data && data.company_id && typeof window !== 'undefined') {
+              console.log('About to store userCompanyId:', data.company_id);
+              console.log('Before storage - sessionStorage keys:', Object.keys(sessionStorage));
+              sessionStorage.setItem('userCompanyId', data.company_id);
+              localStorage.setItem('userCompanyId', data.company_id);
+              console.log('After storage - sessionStorage keys:', Object.keys(sessionStorage));
+              console.log('Stored userCompanyId from cached role data:', data.company_id);
+              console.log('Verification - sessionStorage.getItem:', sessionStorage.getItem('userCompanyId'));
+            } else {
+              console.log('Not storing userCompanyId - data:', data, 'has company_id:', !!data?.company_id);
+            }
+            
             console.log('📦 Cached user role data');
           })
         );
@@ -262,7 +276,16 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
           headers: { Authorization: `Bearer ${token}` }
         })
           .then(res => res.json())
-          .then(data => setUserRole(data))
+          .then(data => {
+            setUserRole(data);
+            
+            // Store company_id in sessionStorage for member users
+            if (data && data.company_id && typeof window !== 'undefined') {
+              sessionStorage.setItem('userCompanyId', data.company_id);
+              localStorage.setItem('userCompanyId', data.company_id);
+              console.log('Stored userCompanyId from refresh role data:', data.company_id);
+            }
+          })
       );
     }
     
