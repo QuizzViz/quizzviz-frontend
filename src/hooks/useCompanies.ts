@@ -4,6 +4,7 @@ export interface Company {
   company_id: string;
   name: string;
   owner_email: string;
+  owner_id?: string;
 }
 
 interface UseCompaniesReturn {
@@ -62,7 +63,8 @@ export function useCompanies(userId?: string): UseCompaniesReturn {
             setCompany({
               company_id: companyData.company_id || companyData.id,
               name: companyData.name,
-              owner_email: companyData.owner_email || ''
+              owner_email: companyData.owner_email || '',
+              owner_id: companyData.owner_id
             });
             companyFound = true;
             console.log('useCompanies: Company found via user ID');
@@ -88,7 +90,8 @@ export function useCompanies(userId?: string): UseCompaniesReturn {
             setCompany({
               company_id: data.company_id || data.id,
               name: data.name,
-              owner_email: data.owner_email || ''
+              owner_email: data.owner_email || '',
+              owner_id: data.owner_id
             });
             companyFound = true;
             console.log('useCompanies: Company found via sessionStorage company ID');
