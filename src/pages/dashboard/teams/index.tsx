@@ -655,7 +655,7 @@ export default function TeamsPage() {
     try {
       const token = await getToken();
       const response = await fetch(`/api/company-members/${editingMember.id}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           role: editingMember.role,
