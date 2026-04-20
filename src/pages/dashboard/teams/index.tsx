@@ -332,17 +332,46 @@ export default function TeamsPage() {
   const [members, setMembers] = useState<CompanyMember[]>([]);
   const [isFetchingMembers, setIsFetchingMembers] = useState(false);
   const { company } = useCompanies(user?.id);
-  const { userRole, loading: roleLoading } = useUserRole(company?.company_id || '');
+
+  // For member users, get company ID from metadata or stored data
+  const getCompanyIdForMember = () => {
+    // Try user metadata first (for invited members who have it stored)
+    const metadataCompanyId = user?.unsafeMetadata?.companyId;
+    if (metadataCompanyId) return metadataCompanyId;
+
+    // Try sessionStorage
+    if (typeof window !== 'undefined') {
+      const sessionCompanyId = sessionStorage.getItem('userCompanyId');
+      if (sessionCompanyId) return sessionCompanyId;
+
+      // Try localStorage
+      const localCompanyId = localStorage.getItem('userCompanyId');
+      if (localCompanyId) return localCompanyId;
+    }
+
+    // Fallback to company object (for owners)
+    return company?.company_id || '';
+  };
+
+  const companyIdForMember = getCompanyIdForMember();
+  const { userRole, loading: roleLoading } = useUserRole(companyIdForMember as string);
   const { toast } = useToast();
 
   // Debug logging
   console.log('Teams page - User ID:', user?.id);
   console.log('Teams page - Company from useCompanies:', company);
+  console.log('Teams page - User metadata:', user?.unsafeMetadata);
+  console.log('Teams page - User metadata companyId:', user?.unsafeMetadata?.companyId);
+  console.log('Teams page - SessionStorage companyId:', typeof window !== 'undefined' ? sessionStorage.getItem('userCompanyId') : 'N/A');
+  console.log('Teams page - LocalStorage companyId:', typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : 'N/A');
+  console.log('Teams page - Company ID being passed to useUserRole:', company?.company_id);
+  console.log('Teams page - Company ID from getCompanyIdForMember:', companyIdForMember);
+  console.log('Teams page - Company ID type:', typeof company?.company_id);
+  console.log('Teams page - Company ID length:', company?.company_id?.length);
   console.log('Teams page - User role:', userRole);
   console.log('Teams page - Role loading:', roleLoading);
   console.log('Teams page - User role role value:', userRole?.role);
   console.log('Teams page - Company ID:', company?.company_id);
-  
   // Detailed permission debugging
   const canInvite = canPerformAction(userRole, 'invite_members');
   const canManage = canPerformAction(userRole, 'manage_roles');
@@ -504,12 +533,14 @@ export default function TeamsPage() {
     setIsFetchingMembers(true);
     try {
       const token = await getToken();
+      console.log('Fetching members for company:', company.company_id);
       const response = await fetch(
         `/api/company-members?company_id=${company.company_id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!response.ok) throw new Error("Failed to fetch members");
       const data = await response.json();
+      console.log('Members fetched:', data);
       setMembers(data);
       
       // Check if we have a temporary OWNER or ADMIN role before clearing

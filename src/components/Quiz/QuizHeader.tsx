@@ -40,9 +40,12 @@ export function QuizHeader({
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const {company} = useCompanies(user?.id);
   const { userRole, loading: roleLoading } = useUserRole(company?.company_id || '');
-  console.log('Company object from useCompanies:', company);
-  console.log('User role from useUserRole:', userRole);
-  console.log('Role loading:', roleLoading);
+  console.log('QuizHeader - Company object from useCompanies:', company);
+  console.log('QuizHeader - User role from useUserRole:', userRole);
+  console.log('QuizHeader - Role loading:', roleLoading);
+  console.log('QuizHeader - Can publish quiz:', canPerformAction(userRole, 'publish_quiz'));
+  console.log('QuizHeader - Quiz user_id:', quiz?.user_id);
+  console.log('QuizHeader - Current user ID:', user?.id);
   
   // Check if quiz exists before accessing its properties
   if (!quiz) return null;
