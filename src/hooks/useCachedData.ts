@@ -156,12 +156,17 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
       const fetchPromises: Promise<any>[] = [];
       const token = getToken ? await getToken() : '';
       
-      if (shouldFetchCompany && userId) {
+      if (shouldFetchCompany && (userId || companyId)) {
+        // For member users, fetch by company_id; for owners, fetch by user_id
+        const companyUrl = companyId 
+          ? `/api/company/${companyId}`
+          : `/api/company/check?owner_id=${userId}`;
+        
         fetchPromises.push(
-          fetch(`/api/company/check?owner_id=${userId}`)
+          fetch(companyUrl)
             .then(res => res.json())
             .then(data => {
-              const companyData = data.companies?.[0];
+              const companyData = data.companies?.[0] || data;
               if (companyData) {
                 cacheRef.current.company = {
                   data: companyData,
@@ -235,12 +240,17 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
     const fetchPromises: Promise<any>[] = [];
     const token = await getToken();
     
-    if (userId) {
+    if (userId || companyId) {
+      // For member users, fetch by company_id; for owners, fetch by user_id
+      const companyUrl = companyId 
+        ? `/api/company/${companyId}`
+        : `/api/company/check?owner_id=${userId}`;
+      
       fetchPromises.push(
-        fetch(`/api/company/check?owner_id=${userId}`)
+        fetch(companyUrl)
           .then(res => res.json())
           .then(data => {
-            const companyData = data.companies?.[0];
+            const companyData = data.companies?.[0] || data;
             if (companyData) setCompany(companyData);
           })
       );
