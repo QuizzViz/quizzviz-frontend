@@ -10,6 +10,7 @@ import { useCompanies } from '@/hooks/useCompanies';
 interface Company {
   company_id: string;
   plan_name: string;
+  owner_id: string;
   // Add other company fields as needed
 }
 
