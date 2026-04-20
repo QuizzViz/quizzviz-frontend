@@ -61,7 +61,6 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   }
 
   // Check both sessionStorage and localStorage for company_id
-  const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
   const hasStorageCompanyId = sessionStorageCompanyId || localStorageCompanyId;
 
   // CRITICAL: For invited members, always allow dashboard access even if company data is still loading
