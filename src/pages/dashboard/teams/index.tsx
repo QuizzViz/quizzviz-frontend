@@ -182,8 +182,8 @@ function MemberCard({
           </div>
 
           <div className="relative flex-shrink-0" ref={menuRef}>
-            {/* Show 3 dots menu based on user permissions and member role */}
-            {!roleLoading && (
+            {/* Show 3 dots menu only for users with manage_roles permission (OWNER only) */}
+            {!roleLoading && canPerformAction(userRole, 'manage_roles') && (
               <button
                 onClick={() => setMenuOpen((o) => !o)}
                 className={`h-[28px] w-[28px] rounded-[8px] border flex flex-col items-center justify-center gap-[2.5px] transition-all duration-100 ${
