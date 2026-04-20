@@ -595,7 +595,7 @@ export default function TeamsPage() {
       
       // Trigger role update
       setTimeout(() => {
-        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new StorageEvent('storage', { key: 'userRole' }));
       }, 100);
       
       toast({
@@ -950,7 +950,7 @@ export default function TeamsPage() {
                       className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 flex items-center gap-2 px-4 py-2 rounded-xl"
                     >
                       <FiRefreshCw className={`h-4 w-4 ${isFetchingMembers ? "animate-spin" : ""}`} />
-                      Refresh
+                      {isFetchingMembers ? "Refreshing..." : "Refresh"}
                     </Button>
 
                   </div>
