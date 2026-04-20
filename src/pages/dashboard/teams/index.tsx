@@ -348,6 +348,17 @@ export default function TeamsPage() {
   const canManage = canPerformAction(userRole, 'manage_roles');
   const canDelete = canPerformAction(userRole, 'delete_company');
   
+  // Debug the permission utility directly
+  console.log('Teams page - Direct permission checks:', {
+    userRole: userRole,
+    userRoleString: JSON.stringify(userRole),
+    userRoleRole: userRole?.role,
+    canInvite: canInvite,
+    canManage: canManage,
+    canDelete: canDelete,
+    roleLoading: roleLoading
+  });
+  
   // More conservative fallback: only assume OWNER if user email matches company owner email
   const fallbackRole = !userRole && company?.company_id && user?.id && 
     company?.owner_email && user?.primaryEmailAddress?.emailAddress === company.owner_email ? {
