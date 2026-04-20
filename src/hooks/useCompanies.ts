@@ -78,6 +78,7 @@ export function useCompanies(userId?: string): UseCompaniesReturn {
           
           if (companyId) {
             const response = await fetch(`/api/company/${encodeURIComponent(companyId)}`);
+            console.log('useCompanies: Making API call to:', `/api/company/${encodeURIComponent(companyId)}`);
             
             if (response.ok) {
               const data = await response.json();
