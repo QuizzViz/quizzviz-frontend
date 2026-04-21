@@ -91,17 +91,12 @@ export function useSignUpController() {
         errors: err?.errors
       });
 
-      if (
-        errorCode === "form_identifier_exists" ||
-        errorMessage.toLowerCase().includes("already exists") ||
-        errorMessage.toLowerCase().includes("already been taken") ||
-        errorMessage.toLowerCase().includes("already registered") ||
-        errorMessage.toLowerCase().includes("identifier already exists")
-      ) {
-        router.push(`/signin?email=${encodeURIComponent(email)}&message=Account already exists. Please sign in.`);
-      } else {
-        setError(errorMessage);
+      if (errorCode === "identifier_exists") {
+        router.push(`/signin?email=${encodeURIComponent(email)}&message=${encodeURIComponent("Account already exists. Please sign in.")}`);
+        return;
       }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

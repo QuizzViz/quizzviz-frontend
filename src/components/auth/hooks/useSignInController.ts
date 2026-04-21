@@ -83,16 +83,19 @@ export function useSignInController() {
       });
       
       // Check if the error indicates the account doesn't exist
-      if (errorMessage.toLowerCase().includes("not found") || 
-          errorMessage.toLowerCase().includes("doesn't exist") || 
-          errorMessage.toLowerCase().includes("no account found") ||
-          errorMessage.toLowerCase().includes("identifier not found") ||
-          errorCode === "form_identifier_not_found") {
+      if (errorCode === "identifier_not_found") {
         // Redirect to sign up page with email pre-filled
-        router.push(`/signup?email=${encodeURIComponent(email)}&message=No account found. Please sign up first.`);
-      } else {
-        setError(errorMessage);
+        router.push(`/signup?email=${encodeURIComponent(email)}&message=${encodeURIComponent("No account found. Please sign up.")}`);
+        return;
       }
+      
+      // For wrong password, show error (don't redirect)
+      if (errorCode === "form_password_incorrect") {
+        setError("Incorrect password. Please try again.");
+        return;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
