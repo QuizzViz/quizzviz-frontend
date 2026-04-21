@@ -2,9 +2,10 @@ import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import { useUserPlanContext } from '@/contexts/UserPlanContext';
 import { toast } from '@/hooks/use-toast';
+import { PlanType } from '@/hooks/useUserPlan';
 
 type PlanAccessProps = {
-  requiredPlan?: 'Free' | 'Consumer' | 'Elite' | 'Business';
+  requiredPlan?: PlanType;
   redirectTo?: string;
   showError?: boolean;
 };
@@ -22,7 +23,7 @@ export function withPlanAccess<T extends object>(
     useEffect(() => {
       if (isLoading || error) return;
       
-      const planOrder = ['Free', 'Consumer', 'Elite', 'Business'] as const;
+      const planOrder: PlanType[] = ['Free', 'Growth', 'Scale', 'Enterprise'];
       const currentPlanIndex = plan ? planOrder.indexOf(plan) : -1;
       const requiredPlanIndex = planOrder.indexOf(requiredPlan);
 
@@ -52,7 +53,7 @@ export function withPlanAccess<T extends object>(
     }
 
     // Check if user has the required plan
-    const planOrder = ['Free', 'Consumer', 'Elite', 'Business'] as const;
+    const planOrder: PlanType[] = ['Free', 'Growth', 'Scale', 'Enterprise'];
     const currentPlanIndex = plan ? planOrder.indexOf(plan) : -1;
     const requiredPlanIndex = planOrder.indexOf(requiredPlan);
     const hasAccess = currentPlanIndex >= requiredPlanIndex;
