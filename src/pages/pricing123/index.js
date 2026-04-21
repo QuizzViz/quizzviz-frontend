@@ -7,27 +7,72 @@ import { Footer } from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight } from 'lucide-react';
 
-const plans = [{
-  id: 'basic',
-  name: 'Basic',
-  price: '199',
-  yearlyPrice: '1910',
-  tagline: 'Perfect for growing companies',
-   monthlyLink: "https://quizzviz1.lemonsqueezy.com/buy/1339e755-d028-4b6e-adbb-8b048f7c8018",
-  // Test Mode URL Below
-  // monthlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/18300c31-94d2-44b1-9963-5fa31617fc0c",
-  yearlyLink: "https://quizzviz1.lemonsqueezy.com/buy/efce1477-8c02-4490-b0b5-babd2730657c",
-  features: [
-    { text: '20 quizzes per month', icon: Zap },
-    { text: '100 questions per quiz', icon: Sparkles },
-    { text: 'Share with candidates', icon: Users },
-    { text: 'Advanced proctoring', icon: Shield },
-    { text: 'Detailed analytics', icon: BarChart3 },
-    { text: 'Data export (Excel, PDF)', icon: Download },
-    { text: 'Custom branding', icon: Building2 },
-    { text: 'Priority support', icon: Check }
-  ]
-}];
+const plans = [
+  {
+    id: 'growth',
+    name: 'Growth',
+    price: '99',
+    quarterlyPrice: '282',
+    yearlyPrice: '1010',
+    tagline: 'Perfect for growing teams',
+    monthlyLink: "https://quizzviz1.lemonsqueezy.com/buy/growth-monthly",
+    quarterlyLink: "https://quizzviz1.lemonsqueezy.com/buy/growth-quarterly",
+    yearlyLink: "https://quizzviz1.lemonsqueezy.com/buy/growth-yearly",
+    features: [
+      { text: '500 candidates per month', icon: Users },
+      { text: '30 quizzes per month', icon: Zap },
+      { text: 'Max 50 questions per quiz', icon: Sparkles },
+      { text: '3 team members', icon: Users },
+      { text: 'Advanced proctoring', icon: Shield },
+      { text: 'Detailed analytics', icon: BarChart3 },
+      { text: 'Data export (Excel, PDF)', icon: Download },
+      { text: 'Email support', icon: Check }
+    ]
+  },
+  {
+    id: 'scale',
+    name: 'Scale',
+    price: '249',
+    quarterlyPrice: '710',
+    yearlyPrice: '2537',
+    tagline: 'Most Popular',
+    popular: true,
+    monthlyLink: "https://quizzviz1.lemonsqueezy.com/buy/scale-monthly",
+    quarterlyLink: "https://quizzviz1.lemonsqueezy.com/buy/scale-quarterly",
+    yearlyLink: "https://quizzviz1.lemonsqueezy.com/buy/scale-yearly",
+    features: [
+      { text: '2000 candidates per month', icon: Users },
+      { text: '70 quizzes per month', icon: Zap },
+      { text: 'Max 70 questions per quiz', icon: Sparkles },
+      { text: '7 team members', icon: Users },
+      { text: 'Advanced proctoring', icon: Shield },
+      { text: 'Detailed analytics', icon: BarChart3 },
+      { text: 'Data export (Excel, PDF)', icon: Download },
+      { text: 'Priority support', icon: Check }
+    ]
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: '399',
+    quarterlyPrice: '1137',
+    yearlyPrice: '4069',
+    tagline: 'For large organizations',
+    monthlyLink: "https://quizzviz1.lemonsqueezy.com/buy/enterprise-monthly",
+    quarterlyLink: "https://quizzviz1.lemonsqueezy.com/buy/enterprise-quarterly",
+    yearlyLink: "https://quizzviz1.lemonsqueezy.com/buy/enterprise-yearly",
+    features: [
+      { text: '6000 candidates per month', icon: Users },
+      { text: 'Unlimited quizzes', icon: Zap },
+      { text: 'Max 150 questions per quiz', icon: Sparkles },
+      { text: 'Up to 20 members', icon: Users },
+      { text: 'Advanced proctoring', icon: Shield },
+      { text: 'Detailed analytics', icon: BarChart3 },
+      { text: 'Data export (Excel, PDF)', icon: Download },
+      { text: 'Dedicated support', icon: Check }
+    ]
+  }
+];
 
 const PricingPage = () => {
   const router = useRouter();
@@ -38,9 +83,17 @@ const PricingPage = () => {
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [isMounted, setIsMounted] = useState(false);
 
-  const monthlyPrice = parseFloat(plans[0].price);
-  const yearlyPrice = parseFloat(plans[0].yearlyPrice);
-  const yearlySavings = Math.round(((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100);
+  // Calculate savings for display
+  const getSavings = (plan) => {
+    const monthly = parseFloat(plan.price);
+    const quarterly = parseFloat(plan.quarterlyPrice);
+    const yearly = parseFloat(plan.yearlyPrice);
+    
+    const quarterlySavings = Math.round(((monthly * 3 - quarterly) / (monthly * 3)) * 100);
+    const yearlySavings = Math.round(((monthly * 12 - yearly) / (monthly * 12)) * 100);
+    
+    return { quarterlySavings, yearlySavings };
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -105,7 +158,7 @@ const PricingPage = () => {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
 
-      <main className="relative mt-6 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="relative mt-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header Section */}
         <div className="text-center mt-8 mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
@@ -118,7 +171,7 @@ const PricingPage = () => {
            <div className="mt-5 inline-flex items-center bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-full p-1 shadow-lg">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 ${
+              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 ${
                 billingCycle === 'monthly'
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20'
                   : 'text-gray-400 hover:text-white'
@@ -127,8 +180,21 @@ const PricingPage = () => {
               Monthly
             </button>
             <button
+              onClick={() => setBillingCycle('quarterly')}
+              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 relative ${
+                billingCycle === 'quarterly'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Quarterly
+              <span className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+                -5%
+              </span>
+            </button>
+            <button
               onClick={() => setBillingCycle('yearly')}
-              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all duration-300 relative ${
+              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 relative ${
                 billingCycle === 'yearly'
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20'
                   : 'text-gray-400 hover:text-white'
@@ -136,96 +202,171 @@ const PricingPage = () => {
             >
               Yearly
               <span className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
-                -{yearlySavings}%
+                -15%
               </span>
             </button>
           </div>
         </div>
 
-        {/* Pricing Card */}
-        <div className="max-w-sm mx-auto">
-          <div className="relative group">
-            {/* Glow effect */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            
-            <div className="relative bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl shadow-2xl overflow-hidden border border-gray-800">
-              <div className="p-5">
-                {/* Plan Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-0.5">{plans[0].name}</h3>
-                    <p className="text-gray-400 text-xs">{plans[0].tagline}</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 p-2.5 rounded-xl border border-emerald-500/30">
-                    <Building2 className="w-6 h-6 text-emerald-400" />
-                  </div>
-                </div>
+        {/* Pricing Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {plans.map((plan, index) => {
+            const getPrice = () => {
+              switch (billingCycle) {
+                case 'quarterly': return plan.quarterlyPrice;
+                case 'yearly': return plan.yearlyPrice;
+                default: return plan.price;
+              }
+            };
+            const getBillingPeriod = () => {
+              switch (billingCycle) {
+                case 'quarterly': return 'quarter';
+                case 'yearly': return 'year';
+                default: return 'month';
+              }
+            };
+            const getLink = () => {
+              switch (billingCycle) {
+                case 'quarterly': return plan.quarterlyLink;
+                case 'yearly': return plan.yearlyLink;
+                default: return plan.monthlyLink;
+              }
+            };
+            const getSavingsAmount = () => {
+              const monthly = parseFloat(plan.price);
+              const price = parseFloat(getPrice());
+              const months = billingCycle === 'quarterly' ? 3 : 12;
+              return (monthly * months - price).toFixed(0);
+            };
 
-                {/* Pricing */}
-                <div className="mb-4">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-400">
-                      ${billingCycle === 'yearly' ? plans[0].yearlyPrice : plans[0].price}
-                    </span>
-                    <span className="text-gray-500 text-base font-medium">
-                      /{billingCycle === 'yearly' ? 'year' : 'month'}
-                    </span>
-                  </div>
-                  {billingCycle === 'yearly' && (
-                    <div className="mt-2 inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
-                      <Sparkles className="w-3 h-3 text-emerald-400" />
-                      <p className="text-xs text-emerald-400 font-medium">
-                        Save ${(monthlyPrice * 12 - yearlyPrice).toFixed(0)}/year
-                      </p>
+            return (
+              <div key={plan.id} className={`relative group ${plan.popular ? 'md:scale-105' : ''}`}>
+                {/* Glow effect */}
+                <div className={`absolute -inset-0.5 bg-gradient-to-r ${plan.popular ? 'from-amber-500 to-orange-500' : 'from-emerald-500 to-teal-500'} rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500`}></div>
+                
+                {/* Popular Badge */}
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                    <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                      {plan.tagline}
                     </div>
-                  )}
-                </div>
-
-                {/* CTA Button */}
-                <button
-                  onClick={(e) => handleSubscribe(e, billingCycle === 'monthly' ? plans[0].monthlyLink : plans[0].yearlyLink)}
-                  disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold text-sm py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-emerald-500/30 active:scale-[0.98]"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="animate-spin mr-2 h-5 w-5" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      Get Started
-                      <ArrowRight className="inline-block ml-2" />
-                    </>
-                  )}
-                </button>
-
-                {/* Divider */}
-                <div className="border-t border-gray-800 mb-5"></div>
-
-                {/* Features */}
-                <div className="space-y-2.5">
-                  {plans[0].features.map((feature, index) => {
-                    const Icon = feature.icon;
-                    return (
-                      <div 
-                        key={index} 
-                        className="flex items-center gap-2.5 group/item hover:translate-x-0.5 transition-transform duration-200"
-                      >
-                        <div className="flex-shrink-0 w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover/item:bg-emerald-500/20 transition-colors">
-                          <Icon className="w-3.5 h-3.5 text-emerald-400" />
-                        </div>
-                        <span className="text-gray-300 text-xs font-medium">{feature.text}</span>
+                  </div>
+                )}
+                
+                <div className="relative bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl shadow-2xl overflow-hidden border border-gray-800">
+                  <div className="p-6">
+                    {/* Plan Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className={`text-xl font-bold text-white mb-0.5 ${plan.popular ? 'bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent' : ''}`}>
+                          {plan.name}
+                        </h3>
+                        <p className="text-gray-400 text-xs">{plan.tagline.replace('Most Popular', '')}</p>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className={`bg-gradient-to-br ${plan.popular ? 'from-amber-500/20 to-orange-500/20 border-amber-500/30' : 'from-emerald-500/20 to-teal-500/20 border-emerald-500/30'} p-2.5 rounded-xl border`}>
+                        <Building2 className={`w-6 h-6 ${plan.popular ? 'text-amber-400' : 'text-emerald-400'}`} />
+                      </div>
+                    </div>
 
-                {/* Trust Badge */}
-                <div className="mt-5 pt-4 border-t border-gray-800 flex items-center justify-center gap-1.5 text-gray-500 text-xs">
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>Secure checkout by Lemon Squeezy</span>
+                    {/* Pricing */}
+                    <div className="mb-4">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className={`text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r ${plan.popular ? 'from-amber-400 to-orange-400' : 'from-emerald-400 to-teal-400'}`}>
+                          ${getPrice()}
+                        </span>
+                        <span className="text-gray-500 text-base font-medium">
+                          /{getBillingPeriod()}
+                        </span>
+                      </div>
+                      {(billingCycle === 'quarterly' || billingCycle === 'yearly') && (
+                        <div className={`mt-2 inline-flex items-center gap-1.5 ${plan.popular ? 'bg-amber-500/10 border-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20'} rounded-full px-2.5 py-1`}>
+                          <Sparkles className={`w-3 h-3 ${plan.popular ? 'text-amber-400' : 'text-emerald-400'}`} />
+                          <p className={`text-xs ${plan.popular ? 'text-amber-400' : 'text-emerald-400'} font-medium`}>
+                            Save ${getSavingsAmount()}/{getBillingPeriod()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CTA Button */}
+                    <button
+                      onClick={(e) => handleSubscribe(e, getLink())}
+                      disabled={isLoading}
+                      className={`w-full font-bold text-sm py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] ${
+                        plan.popular 
+                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-amber-500/30'
+                          : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-emerald-500/30'
+                      }`}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="animate-spin mr-2 h-5 w-5" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          Get Started
+                          <ArrowRight className="inline-block ml-2" />
+                        </>
+                      )}
+                    </button>
+
+                    {/* Divider */}
+                    <div className="border-t border-gray-800 mb-5 mt-5"></div>
+
+                    {/* Features */}
+                    <div className="space-y-2.5">
+                      {plan.features.map((feature, featureIndex) => {
+                        const Icon = feature.icon;
+                        return (
+                          <div 
+                            key={featureIndex} 
+                            className="flex items-center gap-2.5 group/item hover:translate-x-0.5 transition-transform duration-200"
+                          >
+                            <div className={`flex-shrink-0 w-6 h-6 rounded-lg ${plan.popular ? 'bg-amber-500/10 border-amber-500/20 group-hover/item:bg-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20 group-hover/item:bg-emerald-500/20'} transition-colors flex items-center justify-center`}>
+                              <Icon className={`w-3.5 h-3.5 ${plan.popular ? 'text-amber-400' : 'text-emerald-400'}`} />
+                            </div>
+                            <span className="text-gray-300 text-xs font-medium">{feature.text}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Trust Badge */}
+                    <div className="mt-5 pt-4 border-t border-gray-800 flex items-center justify-center gap-1.5 text-gray-500 text-xs">
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>Secure checkout by Lemon Squeezy</span>
+                    </div>
+                  </div>
                 </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Free Plan Info */}
+        <div className="mt-8 text-center">
+          <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 max-w-2xl mx-auto">
+            <h4 className="text-lg font-semibold text-white mb-2">Free Plan - Always Free</h4>
+            <p className="text-gray-400 text-sm mb-4">
+              Perfect for getting started. No credit card required.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="text-center">
+                <div className="text-emerald-400 font-semibold">20</div>
+                <div className="text-gray-500 text-xs">Total Candidates</div>
+              </div>
+              <div className="text-center">
+                <div className="text-emerald-400 font-semibold">4</div>
+                <div className="text-gray-500 text-xs">Quizzes</div>
+              </div>
+              <div className="text-center">
+                <div className="text-emerald-400 font-semibold">20</div>
+                <div className="text-gray-500 text-xs">Max Questions</div>
+              </div>
+              <div className="text-center">
+                <div className="text-emerald-400 font-semibold">1</div>
+                <div className="text-gray-500 text-xs">Team Member</div>
               </div>
             </div>
           </div>
@@ -243,7 +384,5 @@ const PricingPage = () => {
     </>
   );
 };
-
-
 
 export default PricingPage;

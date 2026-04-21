@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuizUsage } from "@/hooks/useQuizUsage";
 import { useCompanyUsage } from "@/hooks/useCompanyUsage";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { getPlanLimits } from "@/config/plans";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { useUser } from "@clerk/nextjs";
 import { Loader2, Calendar, BarChart3, RefreshCw, Zap, Clock, Users, TrendingUp } from "lucide-react";
@@ -13,9 +15,7 @@ import { useState } from "react";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import Head from "next/head";
 
-// Constants
-const MONTHLY_QUIZ_LIMIT = 15;
-const CANDIDATE_LIMIT = 500;
+// Plan limits will be determined dynamically based on user plan
 
 // Format date helper
 const formatDate = (date: any) => {
@@ -52,6 +52,17 @@ const UsagePage = () => {
   // Use the same logic as profile page
   const { companyInfo } = useCompanyInfo();
   
+  // Get plan limits
+  const plan = (user?.publicMetadata?.plan as string) || 'Free';
+  const planConfig = getPlanLimits(plan as any);
+  
+  const currentUsage = {
+    quizzesThisMonth: usageData?.current_month?.quiz_count || 0,
+    totalCandidates: companyUsageData?.current_month?.unique_candidates || 0,
+    teamMembers: 0 // TODO: Get team member count from teams API
+  };
+  const planLimits = usePlanLimits(currentUsage);
+  
   const currentMonth = usageData?.current_month;
   const monthlyBreakdown = usageData?.monthly_breakdown || [];
   const totalQuizzes = usageData?.total_quizzes || 0;
@@ -70,9 +81,13 @@ const UsagePage = () => {
   };
   
   // Calculate usage percentage for progress bar
-  const currentUsage = currentMonth?.quiz_count || 0;
-  const usagePercentage = Math.min((currentUsage / MONTHLY_QUIZ_LIMIT) * 100, 100);
-  const remainingQuizzes = Math.max(MONTHLY_QUIZ_LIMIT - currentUsage, 0);
+  const currentMonthQuizUsage = usageData?.current_month?.quiz_count || 0;
+  const quizUsagePercentage = planLimits.quizLimit === -1 ? 0 : Math.min((currentMonthQuizUsage / planLimits.quizLimit) * 100, 100);
+  const remainingQuizzes = planLimits.quizLimit === -1 ? -1 : Math.max(planLimits.quizLimit - currentMonthQuizUsage, 0);
+  
+  const currentCandidateUsage = companyUsageData?.current_month?.unique_candidates || 0;
+  const candidateUsagePercentage = planLimits.candidateLimit === -1 ? 0 : Math.min((currentCandidateUsage / planLimits.candidateLimit) * 100, 100);
+  const remainingCandidates = planLimits.candidateLimit === -1 ? -1 : Math.max(planLimits.candidateLimit - currentCandidateUsage, 0);
 
   if (isLoading) {
     return (
@@ -129,7 +144,6 @@ const UsagePage = () => {
   }
 
   return (
-
     <DashboardAccess>
     <Head>
         <title>Usage | QuizzViz</title>
@@ -176,20 +190,66 @@ const UsagePage = () => {
           </div>
 
           {/* Interactive Usage Charts */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Candidates Usage Bar Chart */}
             <UsageBarChart 
-              current={companyUsageData?.current_month?.unique_candidates || 0}
-              limit={CANDIDATE_LIMIT}
+              current={currentCandidateUsage}
+              limit={planLimits.candidateLimit}
               title="Candidates This Month"
+              planType={plan}
             />
             
             {/* Quiz Usage Bar Chart */}
             <UsageBarChart 
-              current={currentMonth?.quiz_count || 0}
-              limit={MONTHLY_QUIZ_LIMIT}
+              current={currentMonthQuizUsage}
+              limit={planLimits.quizLimit}
               title="Quizzes This Month"
+              planType={plan}
             />
+            
+            {/* Team Members Bar Chart */}
+            <UsageBarChart 
+              current={planLimits.currentTeamMembers}
+              limit={planLimits.teamMemberLimit}
+              title="Team Members"
+              planType={plan}
+            />
+          </div>
+          
+          {/* Plan Information */}
+          <div className="bg-black/30 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-blue-400" />
+              Current Plan: {plan}
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">
+                  {planLimits.quizLimit === -1 ? '∞' : planLimits.quizLimit}
+                </div>
+                <p className="text-xs text-gray-400">Quizzes/Month</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">
+                  {planLimits.candidateLimit === -1 ? '∞' : planLimits.candidateLimit}
+                </div>
+                <p className="text-xs text-gray-400">
+                  {planConfig.candidatesPerMonth ? 'Candidates/Month' : 'Total Candidates'}
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">
+                  {planLimits.teamMemberLimit === -1 ? '∞' : planLimits.teamMemberLimit}
+                </div>
+                <p className="text-xs text-gray-400">Team Members</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white mb-1">
+                  {planConfig.maxQuestions}
+                </div>
+                <p className="text-xs text-gray-400">Max Questions/Quiz</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -213,10 +273,11 @@ const UsagePage = () => {
 };
 
 // Interactive Bar Chart Component
-const UsageBarChart = ({ current, limit, title }: { current: number; limit: number; title: string }) => {
-  const percentage = Math.min((current / limit) * 100, 100);
+const UsageBarChart = ({ current, limit, title, planType }: { current: number; limit: number; title: string; planType: string }) => {
+  const percentage = limit === -1 ? 0 : Math.min((current / limit) * 100, 100);
   const isNearLimit = percentage > 80 && percentage != 100;
-  const isAtLimit = percentage >= 100;
+  const isAtLimit = limit !== -1 && percentage >= 100;
+  const isUnlimited = limit === -1;
   
   return (
     <Card className="bg-black/30 backdrop-blur-lg border border-white/10 shadow-xl rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300">
@@ -234,36 +295,58 @@ const UsageBarChart = ({ current, limit, title }: { current: number; limit: numb
                 {current}
               </div>
               <p className="text-sm text-gray-400">
-                of {limit} used
+                {isUnlimited ? 'unlimited' : `of ${limit} used`}
               </p>
             </div>
             <div className="text-right">
-              <div className={`text-2xl font-bold ${isAtLimit ? 'text-red-400' : isNearLimit ? 'text-yellow-400' : 'text-green-400'}`}>
-                {limit - current}
+              <div className={`text-2xl font-bold ${
+                isUnlimited ? 'text-green-400' :
+                isAtLimit ? 'text-red-400' : 
+                isNearLimit ? 'text-yellow-400' : 
+                'text-green-400'
+              }`}>
+                {isUnlimited ? '∞' : limit - current}
               </div>
-              <p className="text-xs text-gray-400">remaining</p>
+              <p className="text-xs text-gray-400">
+                {isUnlimited ? 'unlimited' : 'remaining'}
+              </p>
             </div>
           </div>
           
           <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-400">Usage</span>
-              <span className="font-medium text-white">{Math.round(percentage)}%</span>
-            </div>
-            <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-500 ${
-                  isAtLimit ? 'bg-gradient-to-r from-red-500 to-pink-500' : 
-                  isNearLimit ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : 
-                  'bg-gradient-to-r from-green-400 to-blue-500'
-                }`} 
-                style={{ width: `${percentage}%` }}
-              />
-            </div>
-            {isNearLimit && (
+            {!isUnlimited && (
+              <>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Usage</span>
+                  <span className="font-medium text-white">{Math.round(percentage)}%</span>
+                </div>
+                <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      isAtLimit ? 'bg-gradient-to-r from-red-500 to-pink-500' : 
+                      isNearLimit ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : 
+                      'bg-gradient-to-r from-green-400 to-blue-500'
+                    }`} 
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+              </>
+            )}
+            {isUnlimited && (
+              <div className="text-center py-2">
+                <div className="text-green-400 text-sm font-medium">Unlimited on {planType} plan</div>
+              </div>
+            )}
+            {isNearLimit && !isUnlimited && (
               <div className="flex items-center gap-2 text-xs text-yellow-400 bg-yellow-400/10 px-3 py-2 rounded-lg mt-3">
                 <span>⚠️</span>
                 <span>You're approaching your limit</span>
+              </div>
+            )}
+            {isAtLimit && (
+              <div className="flex items-center gap-2 text-xs text-red-400 bg-red-400/10 px-3 py-2 rounded-lg mt-3">
+                <span>🚫</span>
+                <span>Limit reached - Upgrade your plan</span>
               </div>
             )}
           </div>

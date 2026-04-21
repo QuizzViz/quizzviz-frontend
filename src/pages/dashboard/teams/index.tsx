@@ -33,6 +33,7 @@ import { UserRole, useUserRole, refreshUserRole } from "@/hooks/useUserRole";
 import { canPerformAction, getActionAllowedRoles } from "@/utils/rolePermissions";
 import { useCachedDashboardData } from "@/hooks/useCachedData";
 import { generateCompanyId, validateCompanyData } from "@/utils/companyValidation";
+import { usePlanLimits, getLimitMessage, getUpgradeCTA } from "@/hooks/usePlanLimits";
 
 interface CompanyMember {
   id: string;
@@ -375,6 +376,15 @@ export default function TeamsPage() {
   const [members, setMembers] = useState<CompanyMember[]>(cachedMembers || []);
   const { toast } = useToast();
 
+  // Get plan limits for team members
+  const plan = (user?.publicMetadata?.plan as string) || 'Free';
+  const currentUsage = {
+    quizzesThisMonth: 0, // Not relevant for teams page
+    totalCandidates: 0, // Not relevant for teams page
+    teamMembers: members.length
+  };
+  const planLimits = usePlanLimits(currentUsage);
+
   // Update members when cached data changes
   useEffect(() => {
     if (cachedMembers) {
@@ -424,7 +434,7 @@ export default function TeamsPage() {
   }, [user?.id, companyIdForMember, getToken, router, signOut]);
 
   // Permission checks
-  const canInvite = canPerformAction(userRole, "invite_members");
+  const canInvite = canPerformAction(userRole, "invite_members") && !planLimits.isTeamMemberLimitReached;
   const canManage = canPerformAction(userRole, "manage_roles");
   const canDelete = canPerformAction(userRole, "delete_company");
 
@@ -585,6 +595,16 @@ export default function TeamsPage() {
     e.preventDefault();
     if (!inviteForm.email.trim()) {
       toast({ title: "Error", description: "Please enter an email address", variant: "destructive" });
+      return;
+    }
+
+    // Check team member limits
+    if (planLimits.isTeamMemberLimitReached) {
+      toast({
+        title: "Team Member Limit Reached",
+        description: getLimitMessage('teamMember', plan as any),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -813,15 +833,18 @@ export default function TeamsPage() {
 
                     {!isFetchingMembers && members.length > 0 && (
                       <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] mt-4 border border-white/[0.08] rounded-full px-3 py-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 block mr-1" />
-                        {members.length} member{members.length !== 1 ? "s" : ""}
+                        <span className={`w-1.5 h-1.5 rounded-full block mr-1 ${planLimits.isTeamMemberLimitReached ? 'bg-red-400' : 'bg-green-400'}`} />
+                        {members.length}/{planLimits.teamMemberLimit === -1 ? '∞' : planLimits.teamMemberLimit} members
+                        {planLimits.isTeamMemberLimitReached && (
+                          <span className="text-red-400 ml-1">Limit reached</span>
+                        )}
                       </div>
                     )}
                   </div>
 
                   <div className="flex items-center gap-3">
                     {/* Invite Member */}
-                    {!dataLoading && canPerformAction(userRole, "invite_members") ? (
+                    {!dataLoading && canInvite ? (
                       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                         <DialogTrigger asChild>
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
@@ -932,13 +955,28 @@ export default function TeamsPage() {
                         </DialogContent>
                       </Dialog>
                     ) : (
-                      <DisabledButtonWithTooltip
-                        permission="invite_members"
-                        allowedRoles={getActionAllowedRoles("invite_members")}
-                      >
-                        <FiPlus className="h-4 w-4" />
-                        Invite Member
-                      </DisabledButtonWithTooltip>
+                      <TooltipProvider>
+                        <ShadTooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              disabled
+                              className="opacity-50 cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl"
+                            >
+                              <FiPlus className="h-4 w-4" />
+                              Invite Member
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm max-w-xs">
+                              {!canPerformAction(userRole, "invite_members")
+                                ? `This action requires ${getActionAllowedRoles("invite_members")} permissions.`
+                                : planLimits.isTeamMemberLimitReached
+                                ? `${getLimitMessage('teamMember', plan as any)} Upgrade your plan to add more members.`
+                                : 'Cannot invite members'}
+                            </p>
+                          </TooltipContent>
+                        </ShadTooltip>
+                      </TooltipProvider>
                     )}
 
                     {/* Refresh */}
@@ -985,10 +1023,13 @@ export default function TeamsPage() {
                     </p>
                     <Button
                       onClick={() => setIsInviteDialogOpen(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-5 py-2.5 rounded-xl"
+                      disabled={planLimits.isTeamMemberLimitReached}
+                      className={`bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-5 py-2.5 rounded-xl ${
+                        planLimits.isTeamMemberLimitReached ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     >
                       <FiPlus className="h-4 w-4" />
-                      Invite your first member
+                      {planLimits.isTeamMemberLimitReached ? 'Team Member Limit Reached' : 'Invite your first member'}
                     </Button>
                   </div>
                 )}
