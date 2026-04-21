@@ -32,7 +32,7 @@ export async function POST(request) {
       );
     }
 
-    const { user_id, company_id, role, status, id, name } = requestData;
+    const { user_id, company_id, role, status, id, name, company_name } = requestData;
     
     // Ensure user_id is set from the authenticated user if not provided
     const finalUserId = (user_id || userId)?.trim();
@@ -95,9 +95,10 @@ export async function POST(request) {
       id: memberId,
       user_id: finalUserId,
       company_id: company_id.trim(),
+      company_name: company_name?.trim() || `Company_${company_id.trim()}`,
       role: role.trim().toUpperCase(),
       status: status.trim().toUpperCase(),
-      name: name?.trim() || null,
+      name: name?.trim() || `User_${finalUserId}`,
       joined_at: status.trim().toUpperCase() === 'ACTIVE' ? new Date().toISOString() : null
     };
 
