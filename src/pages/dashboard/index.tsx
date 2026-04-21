@@ -51,8 +51,8 @@ export default function Dashboard() {
     return token || '';
   });
   
-  // Set default values for Business plan
-  const maxQuestions = 100; // Business plan limit
+  // Set default values for Enterprise plan
+  const maxQuestions = 100; // Enterprise plan limit
   const quizLimit = 20; // Monthly quiz limit
 
   // Simulate loading data

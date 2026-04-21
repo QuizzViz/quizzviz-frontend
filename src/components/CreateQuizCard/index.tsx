@@ -31,14 +31,14 @@ interface CreateQuizCardProps {
   userRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
 }
 
-// Main container composing all sub-parts and business logic via a hook
+// Main container composing all sub-parts and Enterprise logic via a hook
 export default function CreateQuizCard({ 
   maxQuestions: propMaxQuestions, 
   isLimitReached = false,
   onUpgradeClick,
   userRole
 }: CreateQuizCardProps) {
-  const maxQuestions = propMaxQuestions || 100; // Default to Business plan limit
+  const maxQuestions = propMaxQuestions || 100; // Default to Enterprise plan limit
   const [codePercentage, setCodePercentage] = useState(50);
   const [role, setRole] = useState('Software Engineer');
   const [techStack, setTechStack] = useState<Array<{ id: string; name: string; weight: number }>>([]);
@@ -162,7 +162,7 @@ export default function CreateQuizCard({
   const { toast } = useToast();
   const isLoadingUsage = quizUsage?.isLoading || !isUserLoaded;
   
-  // Business plan settings
+  // Enterprise plan settings
   const planInfo = {
     message: '',
     upgradePlan: '',

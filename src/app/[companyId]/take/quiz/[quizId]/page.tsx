@@ -70,7 +70,7 @@ export default function QuizPage({ params }: PageProps) {
   const [formData, setFormData] = useState<FormData>({ name: '', email: '', quizKey: '' });
   const [quizData, setQuizData] = useState<QuizData | null>(null);
 
-  // Shuffle options for business plan quizzes
+  // Shuffle options for Enterprise plan quizzes
   const shuffleOptions = useCallback((question: Question): Question => {
     if (question.type === 'code_analysis') {
       const options = { ...question.options };

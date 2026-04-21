@@ -66,7 +66,7 @@ export default function MyQuizzesPage() {
   
   const { plan, isLoading: isPlanLoading } = useUserPlanContext();
   
-  const isBusinessPlan = plan === 'Business';
+  const isEnterprisePlan = plan === 'Enterprise';
 
   // Use the same approach as teams page - metadata first, then localStorage fallback
   const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
@@ -223,7 +223,7 @@ export default function MyQuizzesPage() {
     );
   }
 
-  // Business Plan UI
+  // Enterprise Plan UI
   return (
     <DashboardAccess>
       <Head>

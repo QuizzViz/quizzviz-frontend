@@ -57,8 +57,8 @@ const QuizAttemptPage = () => {
 
   const { plan } = useUserPlanContext();
 
-  // Show mobile restriction message for business plan users on mobile
-  if (isMobile && plan === 'Business') {
+  // Show mobile restriction message for Enterprise plan users on mobile
+  if (isMobile && plan === 'Enterprise') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4">
         <div className="max-w-md w-full bg-gray-800/80 backdrop-blur-md rounded-2xl p-8 text-center border border-white/10 shadow-2xl">
@@ -123,8 +123,8 @@ const QuizAttemptPage = () => {
     const mobileCheck = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setIsMobileDevice(mobileCheck());
     
-    // Show mobile restriction for business plan users
-    if (mobileCheck() && plan === 'Business') {
+    // Show mobile restriction for Enterprise plan users
+    if (mobileCheck() && plan === 'Enterprise') {
       return;
     }
 
@@ -1290,7 +1290,7 @@ if (typeof data.quiz === 'string') {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
-                    {plan === 'Consumer' || plan === 'Elite' ? (
+                    {plan === 'Growth' || plan === 'Scale' ? (
                       <Button 
                         onClick={() => setShowCorrectAnswers(true)}
                         className="h-12 px-8 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
@@ -1310,7 +1310,7 @@ if (typeof data.quiz === 'string') {
                         <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 hidden group-hover:block w-64 bg-black/95 border border-gray-700 text-gray-100 text-sm rounded-lg p-3 shadow-2xl shadow-black/50 text-center transition-all duration-200 ease-in-out">
                           <div className="flex items-center justify-center space-x-1">
                             <Zap className="w-4 h-4 text-blue-400" />
-                            <span>Upgrade to <Link href="/pricing" className="font-semibold text-blue-500 underline">Consumer Plan</Link> to see correct answers</span>
+                            <span>Upgrade to <Link href="/pricing" className="font-semibold text-blue-500 underline">Growth Plan</Link> to see correct answers</span>
                           </div>
                           <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-black/95 border-b border-r border-gray-700 rotate-45"></div>
                         </div>
