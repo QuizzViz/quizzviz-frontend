@@ -206,14 +206,6 @@ const UsagePage = () => {
               title="Quizzes This Month"
               planType={plan}
             />
-            
-            {/* Team Members Bar Chart */}
-            <UsageBarChart 
-              current={planLimits.currentTeamMembers}
-              limit={planLimits.teamMemberLimit}
-              title="Team Members"
-              planType={plan}
-            />
           </div>
           
           {/* Plan Information */}
@@ -222,7 +214,7 @@ const UsagePage = () => {
               <BarChart3 className="h-5 w-5 text-blue-400" />
               Current Plan: {plan}
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-white mb-1">
                   {planLimits.quizLimit === -1 ? '∞' : planLimits.quizLimit}
@@ -236,12 +228,6 @@ const UsagePage = () => {
                 <p className="text-xs text-gray-400">
                   {planConfig.candidatesPerMonth ? 'Candidates/Month' : 'Total Candidates'}
                 </p>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white mb-1">
-                  {planLimits.teamMemberLimit === -1 ? '∞' : planLimits.teamMemberLimit}
-                </div>
-                <p className="text-xs text-gray-400">Team Members</p>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-white mb-1">
