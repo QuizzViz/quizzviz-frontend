@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { Loader2, Zap, Lock, ArrowRight, Building2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useCompanies } from '@/hooks/useCompanies';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Company {
   company_id: string;
@@ -40,6 +41,10 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   // For company owners, pass user ID to fetch by owner_id
   const useCompaniesParam = isInvitedMember ? undefined : user?.id;
   const { company, loading: isLoadingCompany, error } = useCompanies(useCompaniesParam);
+
+  // For invited members, also fetch their role to validate they're still a member
+  const companyId = isInvitedMember ? (sessionStorageCompanyId || localStorageCompanyId) : company?.company_id;
+  const { userRole, loading: isLoadingRole, error: roleError } = useUserRole(companyId || undefined);
 
   useEffect(() => {
     // Set the current path on client-side only
