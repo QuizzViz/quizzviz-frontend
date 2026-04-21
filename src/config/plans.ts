@@ -34,7 +34,7 @@ export const PLAN_LIMITS: PlanLimitsMap = {
     candidatesPerMonth: true
   },
   'Scale': {
-    maxQuestions: 70,
+    maxQuestions: 100,
     maxQuizzes: 70,
     maxCandidates: 2000,
     maxTeamMembers: 7,
