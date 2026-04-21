@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UserRole, useUserRole, refreshUserRole } from "@/hooks/useUserRole";
 import { canPerformAction, getActionAllowedRoles } from "@/utils/rolePermissions";
 import { useCachedDashboardData } from "@/hooks/useCachedData";
+import { generateCompanyId, validateCompanyData } from '@/utils/companyValidation';
 
 interface CompanyMember {
   id: string;
@@ -592,12 +593,30 @@ export default function TeamsPage() {
     setIsSubmittingInvite(true);
     try {
       const token = await getToken();
+      // Validate company data before sending invite
+      const validation = validateCompanyData({
+        company_id: company?.company_id,
+        company_name: user?.unsafeMetadata?.companyName || company?.name || "Your Company",
+        name: inviteForm.name,
+        invited_email: inviteForm.email,
+        role: inviteForm.role
+      });
+      
+      if (!validation.isValid) {
+        toast({
+          title: "Validation Error",
+          description: validation.errors.join(', '),
+          variant: "destructive",
+        });
+        return;
+      }
+
       const response = await fetch("/api/company-members/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           company_id: company?.company_id,
-          company_name: user?.unsafeMetadata?.companyName || "QuizzViz",
+          company_name: user?.unsafeMetadata?.companyName || company?.name || "Your Company",
           name: inviteForm.name,
           invited_email: inviteForm.email,
           role: inviteForm.role,
