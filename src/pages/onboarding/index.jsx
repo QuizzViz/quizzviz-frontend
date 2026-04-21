@@ -171,7 +171,10 @@ export default function OnboardingPage() {
           company_id: sentCompanyId,
           role: 'OWNER',
           status: 'ACTIVE',
-          name: user?.fullName || user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Team Owner'
+          company_name: formData.companyName,
+          name: user?.fullName || (user?.firstName && user?.lastName
+    ? `${user.firstName} ${user.lastName}`
+    : 'Team Owner')
         });
 
         const memberResponse = await fetch('/api/company-members', {
@@ -186,7 +189,10 @@ export default function OnboardingPage() {
             company_id: sentCompanyId,
             role: 'OWNER',
             status: 'ACTIVE',
-            name: user?.fullName || user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Team Owner'
+            company_name: formData.companyName,
+            name: user?.fullName || (user?.firstName && user?.lastName
+    ? `${user.firstName} ${user.lastName}`
+    : 'Team Owner')
           }),
         });
 
