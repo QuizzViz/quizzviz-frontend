@@ -177,6 +177,14 @@ export default function OnboardingPage() {
       });
 
       // Create company member record for the owner
+      console.log('Creating company member record with data:', {
+        user_id: user?.id,
+        company_id: companyData.id || companyData.company_id,
+        role: 'OWNER',
+        status: 'ACTIVE',
+        name: user?.fullName || user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Team Owner'
+      });
+      
       const memberResponse = await fetch('/api/company-members', {
         method: 'POST',
         headers: {
@@ -191,12 +199,18 @@ export default function OnboardingPage() {
           name: user?.fullName || user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Team Owner'
         }),
       });
-
+      
+      console.log('Company member API response status:', memberResponse.status);
+      console.log('Company member API response OK:', memberResponse.ok);
+      
       if (!memberResponse.ok) {
-        const memberError = await memberResponse.json();
-        console.error('Failed to create company member record:', memberError);
-        // Don't fail the onboarding, just log the error
+        const errorData = await memberResponse.json().catch(() => ({}));
+        console.error('Company member creation failed:', errorData);
+        throw new Error(errorData.error || 'Failed to create company member record');
       }
+      
+      const memberResult = await memberResponse.json();
+      console.log('Company member created successfully:', memberResult);
 
       toast({
         title: "Success!",
