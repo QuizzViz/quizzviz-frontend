@@ -23,11 +23,26 @@ export default function SignUpPage() {
         setEmail(emailParam);
       }
       if (message && typeof message === 'string') {
-        // Set the message as error to display it to user
+        // Set the message as error to display it to the user
         setError(decodeURIComponent(message));
       }
     }
   }, [router.isReady, router.query, setEmail, setError]);
+
+  // Handle redirect for authenticated users
+  useEffect(() => {
+    if (user) {
+      // Check if user has company metadata, otherwise redirect to onboarding
+      const hasCompany = user?.unsafeMetadata?.companyId || 
+                       (typeof window !== 'undefined' && localStorage.getItem('userCompanyId'));
+      
+      if (hasCompany) {
+        router.push("/dashboard");
+      } else {
+        router.push("/onboarding");
+      }
+    }
+  }, [user, router]);
 
   
   

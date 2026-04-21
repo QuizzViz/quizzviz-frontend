@@ -32,7 +32,15 @@ export default function SignInPage() {
   useEffect(() => {
     if (user) {
       setIsRedirecting(true);
-      router.push("/dashboard");
+      // Check if user has company metadata, otherwise redirect to onboarding
+      const hasCompany = user?.unsafeMetadata?.companyId || 
+                       (typeof window !== 'undefined' && localStorage.getItem('userCompanyId'));
+      
+      if (hasCompany) {
+        router.push("/dashboard");
+      } else {
+        router.push("/onboarding");
+      }
     }
   }, [user, router]);
 
