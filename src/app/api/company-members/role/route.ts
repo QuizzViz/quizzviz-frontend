@@ -107,8 +107,8 @@ export async function GET(request: NextRequest) {
           }
           console.log('Member not found in database, checking if user is company owner');
           
-          // Check if user is the company owner first
-          let userRole = 'MEMBER'; // Default to MEMBER
+          // Check if user is the company owner before doing anything else
+          let isOwner = false;
           try {
             const companyCheckUrl = `${process.env.NEXT_PUBLIC_CREATE_COMPANY_SERVICE_URL}/companies?owner_id=${encodeURIComponent(user_id.trim())}`;
             console.log('Checking if user is company owner:', companyCheckUrl);
@@ -126,111 +126,144 @@ export async function GET(request: NextRequest) {
               console.log('Company check response:', companies);
               
               // Check if this user owns the company we're checking
-              const userOwnsCompany = Array.isArray(companies) && 
+              isOwner = Array.isArray(companies) && 
                 companies.some((company: any) => 
                   company.owner_id === user_id.trim() && 
                   (company.company_id === company_id.trim() || company.id === company_id.trim())
                 );
               
-              if (userOwnsCompany) {
-                userRole = 'OWNER';
-                console.log('User is confirmed as company owner, setting role to OWNER');
+              if (isOwner) {
+                console.log('User is confirmed as company owner, will create OWNER record');
               } else {
-                console.log('User is not the company owner, defaulting to MEMBER');
+                console.log('User is not the company owner and member record not found - user was likely deleted');
+                // For non-owners who don't have a member record, they were likely deleted
+                return NextResponse.json(
+                  { 
+                    error: 'Member has been deleted',
+                    deleted: true,
+                    message: 'You have been removed from this company'
+                  },
+                  { status: 410 }
+                );
               }
             } else {
-              console.log('Failed to check company ownership, defaulting to MEMBER');
-              // Additional fallback: if we can't check ownership, we could assume OWNER for now
-              // This is a temporary measure to prevent losing access
-              console.warn('Warning: Could not verify company ownership, preserving OWNER access as fallback');
-              userRole = 'OWNER';
+              console.log('Failed to check company ownership');
+              return NextResponse.json(
+                { 
+                  error: 'Unable to verify company access',
+                  message: 'Cannot verify your access to this company'
+                },
+                { status: 403 }
+              );
             }
           } catch (ownerCheckError) {
             console.error('Error checking company ownership:', ownerCheckError);
-            // Fallback: preserve OWNER access to prevent losing access
-            console.warn('Warning: Error checking company ownership, preserving OWNER access as fallback');
-            userRole = 'OWNER';
+            return NextResponse.json(
+              { 
+                error: 'Unable to verify company access',
+                message: 'Cannot verify your access to this company'
+              },
+              { status: 403 }
+            );
           }
           
-          // Try to create member record with correct role using existing API
-          try {
-            console.log('Creating member record using existing company members API');
-            
-            // Fetch real company and user data
-            let companyName = `Company_${company_id.trim()}`;
-            let userName = `User_${user_id.trim()}`;
-            
+          // Only create member record for confirmed owners
+          if (isOwner) {
             try {
-              // Get company details
-              const companyServiceUrl = process.env.NEXT_PUBLIC_CREATE_COMPANY_SERVICE_URL;
-              if (companyServiceUrl) {
-                const companyResponse = await fetch(`${companyServiceUrl}/companies/${company_id.trim()}`, {
+              console.log('Creating OWNER member record for company owner');
+              
+              // Fetch real company and user data
+              let companyName = `Company_${company_id.trim()}`;
+              let userName = `User_${user_id.trim()}`;
+              
+              try {
+                // Get company details
+                const companyServiceUrl = process.env.NEXT_PUBLIC_CREATE_COMPANY_SERVICE_URL;
+                if (companyServiceUrl) {
+                  const companyResponse = await fetch(`${companyServiceUrl}/companies/${company_id.trim()}`, {
+                    headers: {
+                      'accept': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    }
+                  });
+                  
+                  if (companyResponse.ok) {
+                    const companyData = await companyResponse.json();
+                    companyName = companyData.name || companyName;
+                    console.log('Fetched company name:', companyName);
+                  }
+                }
+                
+                // Get user details from Clerk
+                const userResponse = await fetch(`https://api.clerk.dev/v1/users/${user_id.trim()}`, {
                   headers: {
                     'accept': 'application/json',
                     'Authorization': `Bearer ${token}`
                   }
                 });
                 
-                if (companyResponse.ok) {
-                  const companyData = await companyResponse.json();
-                  companyName = companyData.name || companyName;
-                  console.log('Fetched company name:', companyName);
+                if (userResponse.ok) {
+                  const userData = await userResponse.json();
+                  userName = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.username || userName;
+                  console.log('Fetched user name:', userName);
                 }
+              } catch (dataFetchError) {
+                console.warn('Could not fetch company/user data, using defaults:', dataFetchError);
               }
               
-              // Get user details from Clerk
-              const userResponse = await fetch(`https://api.clerk.dev/v1/users/${user_id.trim()}`, {
+              const createResponse = await fetch(`${request.nextUrl.origin}/api/company-members`, {
+                method: 'POST',
                 headers: {
-                  'accept': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                }
-              });
-              
-              if (userResponse.ok) {
-                const userData = await userResponse.json();
-                userName = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.username || userName;
-                console.log('Fetched user name:', userName);
-              }
-            } catch (dataFetchError) {
-              console.warn('Could not fetch company/user data, using defaults:', dataFetchError);
-            }
-            
-            const createResponse = await fetch(`${request.nextUrl.origin}/api/company-members`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'accept': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                user_id: user_id.trim(),
-                company_id: company_id.trim(),
-                company_name: companyName,
-                name: userName,
-                role: userRole, // Use determined role (OWNER or MEMBER)
-                status: 'ACTIVE'
-              })
-            });
-            
-            if (createResponse.ok) {
-              console.log('Member record created successfully, fetching role again');
-              // Retry fetching the role after creating the member
-              const retryResponse = await fetch(`${COMPANY_MEMBERS_URL}/member/role?user_id=${encodeURIComponent(user_id.trim())}&company_id=${encodeURIComponent(company_id.trim())}`, {
-                method: 'GET',
-                headers: {
+                  'Content-Type': 'application/json',
                   'accept': 'application/json',
                   'Authorization': `Bearer ${token}`
                 },
+                body: JSON.stringify({
+                  user_id: user_id.trim(),
+                  company_id: company_id.trim(),
+                  company_name: companyName,
+                  name: userName,
+                  role: 'OWNER', // Only create OWNER records for confirmed owners
+                  status: 'ACTIVE'
+                })
               });
               
-              if (retryResponse.ok) {
-                const retryData = await retryResponse.json();
-                console.log('Member role fetched after creation:', retryData);
-                return NextResponse.json(retryData);
+              if (createResponse.ok) {
+                console.log('OWNER member record created successfully, fetching role again');
+                // Retry fetching the role after creating the member
+                const retryResponse = await fetch(`${COMPANY_MEMBERS_URL}/member/role?user_id=${encodeURIComponent(user_id.trim())}&company_id=${encodeURIComponent(company_id.trim())}`, {
+                  method: 'GET',
+                  headers: {
+                    'accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                });
+                
+                if (retryResponse.ok) {
+                  const retryData = await retryResponse.json();
+                  console.log('Member role fetched after creation:', retryData);
+                  return NextResponse.json(retryData);
+                }
+              } else {
+                console.error('Failed to create OWNER member record');
+                return NextResponse.json(
+                  { 
+                    error: 'Failed to create company owner record',
+                    message: 'Unable to establish owner access'
+                  },
+                  { status: 500 }
+                );
               }
+            } catch (createError) {
+              console.error('Failed to create OWNER member record:', createError);
+              return NextResponse.json(
+                { 
+                  error: 'Failed to create company owner record',
+                  message: 'Unable to establish owner access'
+                },
+                { status: 500 }
+              );
             }
-          } catch (createError) {
-            console.error('Failed to create member record:', createError);
           }
         }
         

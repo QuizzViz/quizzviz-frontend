@@ -734,6 +734,10 @@ export default function TeamsPage() {
         const err = await response.json();
         throw new Error(err.error || "Failed to delete member");
       }
+      
+      // Immediately remove the member from the UI
+      setMembers(prev => prev.filter(member => member.id !== deleteTarget.id));
+      
       toast({
         title: "Member Removed",
         description: `Removed ${deleteTarget.name} from team`,
