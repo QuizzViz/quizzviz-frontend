@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useUser, SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
-import { useCompanies } from "@/hooks/useCompanies";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import {
@@ -33,7 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UserRole, useUserRole, refreshUserRole } from "@/hooks/useUserRole";
 import { canPerformAction, getActionAllowedRoles } from "@/utils/rolePermissions";
 import { useCachedDashboardData } from "@/hooks/useCachedData";
-import { generateCompanyId, validateCompanyData } from '@/utils/companyValidation';
+import { generateCompanyId, validateCompanyData } from "@/utils/companyValidation";
 
 interface CompanyMember {
   id: string;
@@ -51,24 +50,24 @@ interface CompanyMember {
 }
 
 // Helper component for disabled buttons with permission tooltip
-const DisabledButtonWithTooltip = ({ 
-  children, 
-  permission, 
+const DisabledButtonWithTooltip = ({
+  children,
+  permission,
   allowedRoles,
   className = "",
-  variant = "outline"
-}: { 
-  children: React.ReactNode; 
-  permission: string; 
-  allowedRoles: string; 
+  variant = "outline",
+}: {
+  children: React.ReactNode;
+  permission: string;
+  allowedRoles: string;
   className?: string;
   variant?: "outline" | "destructive" | "default" | "secondary" | "ghost" | "link";
 }) => (
   <TooltipProvider>
     <ShadTooltip>
       <TooltipTrigger asChild>
-        <Button 
-          disabled 
+        <Button
+          disabled
           className={`opacity-50 cursor-not-allowed ${className}`}
           variant={variant}
         >
@@ -137,7 +136,7 @@ function MemberCard({
   member: CompanyMember;
   onEditRole: (m: CompanyMember) => void;
   onDelete: (id: string, name: string) => void;
-  userRole: import("@/hooks/useUserRole").UserRole | null;
+  userRole: UserRole | null;
   dataLoading: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -157,10 +156,8 @@ function MemberCard({
 
   return (
     <div className="relative rounded-[18px] border border-white/[0.07] bg-[#0f1421] overflow-visible transition-all duration-200 hover:-translate-y-[3px] hover:border-white/[0.13] hover:shadow-[0_20px_48px_rgba(0,0,0,0.55)]">
-
       {/* Body */}
       <div className="px-[18px] pt-[18px] pb-[18px]">
-
         {/* Avatar + Name + menu */}
         <div className="flex items-center justify-between mb-[12px]">
           <div className="flex items-center gap-[12px] min-w-0 flex-1 pr-2">
@@ -185,7 +182,7 @@ function MemberCard({
 
           <div className="relative flex-shrink-0" ref={menuRef}>
             {/* Show 3 dots menu only for users with manage_roles permission (OWNER only) */}
-            {!dataLoading && canPerformAction(userRole, 'manage_roles') && (
+            {!dataLoading && canPerformAction(userRole, "manage_roles") && (
               <button
                 onClick={() => setMenuOpen((o) => !o)}
                 className={`h-[28px] w-[28px] rounded-[8px] border flex flex-col items-center justify-center gap-[2.5px] transition-all duration-100 ${
@@ -206,17 +203,21 @@ function MemberCard({
                 <div className="px-[14px] py-[8px] text-[10px] font-bold tracking-[0.8px] text-white/22 uppercase border-b border-white/[0.06]">
                   Actions
                 </div>
-                
-                {/* Edit Role - using permission utility correctly */}
+
+                {/* Edit Role */}
                 {(() => {
-                  const hasManagePermission = !dataLoading && canPerformAction(userRole, 'manage_roles');
-                  const canEditTargetRole = userRole?.role === 'OWNER' || 
-                    (userRole?.role === 'ADMIN' && member.role !== 'OWNER');
+                  const hasManagePermission = !dataLoading && canPerformAction(userRole, "manage_roles");
+                  const canEditTargetRole =
+                    userRole?.role === "OWNER" ||
+                    (userRole?.role === "ADMIN" && member.role !== "OWNER");
                   const canEdit = hasManagePermission && canEditTargetRole;
-                  
+
                   return canEdit ? (
                     <button
-                      onClick={() => { onEditRole(member); setMenuOpen(false); }}
+                      onClick={() => {
+                        onEditRole(member);
+                        setMenuOpen(false);
+                      }}
                       className="w-full flex items-center gap-[10px] px-[14px] py-[9px] text-[13px] text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors text-left"
                     >
                       <FiEdit className="w-[15px] h-[15px] flex-shrink-0 opacity-65" />
@@ -225,7 +226,7 @@ function MemberCard({
                   ) : (
                     <DisabledButtonWithTooltip
                       permission="manage_roles"
-                      allowedRoles={getActionAllowedRoles('manage_roles')}
+                      allowedRoles={getActionAllowedRoles("manage_roles")}
                       className="w-full"
                       variant="outline"
                     >
@@ -234,16 +235,17 @@ function MemberCard({
                     </DisabledButtonWithTooltip>
                   );
                 })()}
-                
+
                 <div className="h-px bg-white/[0.06] my-[3px]" />
-                
-                {/* Delete Member - using permission utility correctly */}
+
+                {/* Delete Member */}
                 {(() => {
-                  const hasDeletePermission = !dataLoading && canPerformAction(userRole, 'delete_company');
-                  const canDeleteTargetRole = userRole?.role === 'OWNER' || 
-                    (userRole?.role === 'ADMIN' && member.role !== 'OWNER');
+                  const hasDeletePermission = !dataLoading && canPerformAction(userRole, "delete_company");
+                  const canDeleteTargetRole =
+                    userRole?.role === "OWNER" ||
+                    (userRole?.role === "ADMIN" && member.role !== "OWNER");
                   const canDelete = hasDeletePermission && canDeleteTargetRole;
-                  
+
                   return canDelete ? (
                     <button
                       onClick={() => {
@@ -258,7 +260,7 @@ function MemberCard({
                   ) : (
                     <DisabledButtonWithTooltip
                       permission="delete_company"
-                      allowedRoles={getActionAllowedRoles('delete_company')}
+                      allowedRoles={getActionAllowedRoles("delete_company")}
                       className="w-full"
                       variant="destructive"
                     >
@@ -279,15 +281,19 @@ function MemberCard({
 
         {/* Badges */}
         <div className="flex items-center gap-[6px] flex-wrap mb-[14px]">
-          <span className={`inline-flex items-center gap-[5px] text-[11px] font-semibold px-[9px] py-[4px] rounded-[8px] border ${config.badgeClass}`}>
+          <span
+            className={`inline-flex items-center gap-[5px] text-[11px] font-semibold px-[9px] py-[4px] rounded-[8px] border ${config.badgeClass}`}
+          >
             <RoleIcon className="w-[10px] h-[10px]" />
             {config.label}
           </span>
-          <span className={`text-[11px] font-semibold px-[9px] py-[4px] rounded-[8px] border ${
-            isActive
-              ? "bg-green-500/[0.08] text-green-300 border-green-500/[0.2]"
-              : "bg-amber-500/[0.08] text-amber-300 border-amber-500/[0.2]"
-          }`}>
+          <span
+            className={`text-[11px] font-semibold px-[9px] py-[4px] rounded-[8px] border ${
+              isActive
+                ? "bg-green-500/[0.08] text-green-300 border-green-500/[0.2]"
+                : "bg-amber-500/[0.08] text-amber-300 border-amber-500/[0.2]"
+            }`}
+          >
             {isActive ? "Active" : "Invited"}
           </span>
         </div>
@@ -302,7 +308,9 @@ function MemberCard({
               <span>Joined</span>
               <span className="text-white/50">
                 {new Date(member.joined_at).toLocaleDateString("en-US", {
-                  month: "short", day: "numeric", year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
                 })}
               </span>
             </div>
@@ -313,7 +321,8 @@ function MemberCard({
               <span>Expires</span>
               <span>
                 {new Date(member.invite_expires_at).toLocaleDateString("en-US", {
-                  month: "short", day: "numeric",
+                  month: "short",
+                  day: "numeric",
                 })}
               </span>
             </div>
@@ -328,44 +337,41 @@ function MemberCard({
 
 export default function TeamsPage() {
   const { user, isLoaded } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, signOut } = useAuth(); // FIX: destructure signOut here at top level, not inside useEffect
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMembers, setIsFetchingMembers] = useState(false);
-  
+
   // For member users, get company ID from metadata or stored data
-  const getCompanyIdForMember = (): string | undefined => {
-    // Try user metadata first (for invited members who have it stored)
+  const getCompanyIdForMember = useCallback((): string | undefined => {
     const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
     if (metadataCompanyId) return metadataCompanyId;
 
-    // Try sessionStorage
-    if (typeof window !== 'undefined') {
-      const sessionCompanyId = sessionStorage.getItem('userCompanyId');
+    if (typeof window !== "undefined") {
+      const sessionCompanyId = sessionStorage.getItem("userCompanyId");
       if (sessionCompanyId) return sessionCompanyId;
 
-      // Try localStorage
-      const localCompanyId = localStorage.getItem('userCompanyId');
+      const localCompanyId = localStorage.getItem("userCompanyId");
       if (localCompanyId) return localCompanyId;
     }
 
     return undefined;
-  };
+  }, [user?.unsafeMetadata?.companyId]);
 
   const companyIdForMember: string | undefined = getCompanyIdForMember();
-  
+
   // Use the new caching system
-  const { 
-    members: cachedMembers, 
-    userRole, 
-    company, 
-    loading: dataLoading, 
-    refreshAll 
-  } = useCachedDashboardData(user?.id || '', companyIdForMember, async () => {
+  const {
+    members: cachedMembers,
+    userRole,
+    company,
+    loading: dataLoading,
+    refreshAll,
+  } = useCachedDashboardData(user?.id || "", companyIdForMember, async () => {
     const token = await getToken();
-    return token || '';
-  });
-  
+    return token || "";
+  }); // FIX: properly closed the useCachedDashboardData call
+
   const [members, setMembers] = useState<CompanyMember[]>(cachedMembers || []);
   const { toast } = useToast();
 
@@ -376,156 +382,160 @@ export default function TeamsPage() {
     }
   }, [cachedMembers]);
 
-  // Debug logging
-  console.log('Teams page - User ID:', user?.id);
-  console.log('Teams page - Company from useCompanies:', company);
-  console.log('Teams page - User metadata:', user?.unsafeMetadata);
-  console.log('Teams page - User metadata companyId:', user?.unsafeMetadata?.companyId);
-  console.log('Teams page - SessionStorage companyId:', typeof window !== 'undefined' ? sessionStorage.getItem('userCompanyId') : 'N/A');
-  console.log('Teams page - LocalStorage companyId:', typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : 'N/A');
-  console.log('Teams page - Company ID being passed to useUserRole:', company?.company_id);
-  console.log('Teams page - Company ID from getCompanyIdForMember:', companyIdForMember);
-  console.log('Teams page - Company ID type:', typeof company?.company_id);
-  console.log('Teams page - Company ID length:', company?.company_id?.length);
-  console.log('Teams page - User role:', userRole);
-  console.log('Teams page - Role loading:', dataLoading);
-  console.log('Teams page - User role role value:', userRole?.role);
-  console.log('Teams page - Company ID:', company?.company_id);
-  // Detailed permission debugging
-  const canInvite = canPerformAction(userRole, 'invite_members');
-  const canManage = canPerformAction(userRole, 'manage_roles');
-  const canDelete = canPerformAction(userRole, 'delete_company');
-  
-  // Debug the permission utility directly
-  console.log('Teams page - Direct permission checks:', {
-    userRole: userRole,
-    userRoleString: JSON.stringify(userRole),
-    userRoleRole: userRole?.role,
-    canInvite: canInvite,
-    canManage: canManage,
-    canDelete: canDelete,
-    dataLoading: dataLoading
-  });
-  
-  // More conservative fallback: only assume OWNER if user email matches company owner email
-  const fallbackRole = !userRole && company?.company_id && user?.id && 
-    company?.owner_email && user?.primaryEmailAddress?.emailAddress === company.owner_email ? {
-    id: `fallback_${user.id}_${company.company_id}`,
-    user_id: user.id,
-    company_id: company.company_id,
-    role: 'OWNER' as const,
-    status: 'ACTIVE' as const,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  } : userRole;
-  
-  const effectiveRole = userRole || fallbackRole;
-  const effectiveCanInvite = canPerformAction(effectiveRole, 'invite_members');
-  const effectiveCanManage = canPerformAction(effectiveRole, 'manage_roles');
-  const effectiveCanDelete = canPerformAction(effectiveRole, 'delete_company');
-  
-  console.log('Teams page - Permission check details:', {
-    userRole: userRole,
-    userRoleExists: !!userRole,
-    userRoleRole: userRole?.role,
-    dataLoading,
-    canInvite,
-    canManage,
-    canDelete,
-    shouldShowInviteButton: !dataLoading && canInvite
-  });
-  
-  // Additional debugging for role fetching
+  // Check if current user has been deleted and force logout
   useEffect(() => {
-    console.log('useUserRole hook state changed:', {
-      userRole,
-      dataLoading,
-      companyId: company?.company_id,
-      userId: user?.id
-    });
+    const checkForDeletedUser = async () => {
+      if (user?.id && companyIdForMember) {
+        try {
+          const token = await getToken();
+          if (token) {
+            const response = await fetch(
+              `/api/company-members/role?user_id=${user.id}&company_id=${companyIdForMember}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (response.status === 410) {
+              console.log("User has been deleted from company, forcing logout");
+              if (typeof window !== "undefined") {
+                sessionStorage.removeItem("userCompanyId");
+                localStorage.removeItem("userCompanyId");
+                sessionStorage.removeItem("userRole");
+                localStorage.removeItem("userRole");
+              }
+
+              // FIX: use signOut from hook at top level instead of calling useAuth() inside effect
+              await signOut();
+              router.push("/?message=deleted");
+            }
+          }
+        } catch (error) {
+          console.error("Error checking user deletion status:", error);
+        }
+      }
+    };
+
+    checkForDeletedUser();
+    const interval = setInterval(checkForDeletedUser, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id, companyIdForMember, getToken, router, signOut]);
+
+  // Permission checks
+  const canInvite = canPerformAction(userRole, "invite_members");
+  const canManage = canPerformAction(userRole, "manage_roles");
+  const canDelete = canPerformAction(userRole, "delete_company");
+
+  // More conservative fallback: only assume OWNER if user email matches company owner email
+  const fallbackRole =
+    !userRole &&
+    company?.company_id &&
+    user?.id &&
+    company?.owner_email &&
+    user?.primaryEmailAddress?.emailAddress === company.owner_email
+      ? {
+          id: `fallback_${user.id}_${company.company_id}`,
+          user_id: user.id,
+          company_id: company.company_id,
+          role: "OWNER" as const,
+          status: "ACTIVE" as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }
+      : userRole;
+
+  const effectiveRole = userRole || fallbackRole;
+  const effectiveCanInvite = canPerformAction(effectiveRole, "invite_members");
+  const effectiveCanManage = canPerformAction(effectiveRole, "manage_roles");
+  const effectiveCanDelete = canPerformAction(effectiveRole, "delete_company");
+
+  // Debug logging (only in development)
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("useUserRole hook state changed:", {
+        userRole,
+        dataLoading,
+        companyId: company?.company_id,
+        userId: user?.id,
+      });
+    }
   }, [userRole, dataLoading, company?.company_id, user?.id]);
 
   // Force role refresh on component mount if role is null
   useEffect(() => {
     if (!dataLoading && !userRole && company?.company_id && user?.id) {
-      console.log('Role is null, checking for stored roles before creating fallback...');
-      
-      // First, check if we have any stored roles to restore
       let shouldCreateFallback = true;
-      if (typeof window !== 'undefined') {
+
+      if (typeof window !== "undefined") {
         try {
-          const sessionStorageRole = sessionStorage.getItem('userRole');
-          const localStorageRole = localStorage.getItem('userRole');
+          const sessionStorageRole = sessionStorage.getItem("userRole");
+          const localStorageRole = localStorage.getItem("userRole");
           const storedRole = sessionStorageRole || localStorageRole;
-          
+
           if (storedRole) {
             const tempRole = JSON.parse(storedRole);
-            console.log('Found stored role:', tempRole.role);
-            // Restore the stored role
-            sessionStorage.setItem('userRole', JSON.stringify(tempRole));
-            sessionStorage.setItem('userCompanyId', company.company_id);
-            localStorage.setItem('userRole', JSON.stringify(tempRole));
-            localStorage.setItem('userCompanyId', company.company_id);
+            sessionStorage.setItem("userRole", JSON.stringify(tempRole));
+            sessionStorage.setItem("userCompanyId", company.company_id);
+            localStorage.setItem("userRole", JSON.stringify(tempRole));
+            localStorage.setItem("userCompanyId", company.company_id);
             shouldCreateFallback = false;
-            
-            // Force refresh to pick up the stored role
+
             setTimeout(() => {
-              window.dispatchEvent(new Event('storage'));
+              window.dispatchEvent(new Event("storage"));
             }, 50);
           }
         } catch (e) {
-          console.error('Error checking stored roles:', e);
+          console.error("Error checking stored roles:", e);
         }
       }
-      
-      // Only create fallback if no stored roles found
+
       if (shouldCreateFallback) {
-        console.log('No stored roles found, checking if user is company owner...');
-        
-        // Check if user is likely the company owner
-        const isLikelyOwner = company?.owner_email && user?.primaryEmailAddress?.emailAddress === company.owner_email;
-        console.log('User email:', user?.primaryEmailAddress?.emailAddress);
-        console.log('Company owner email:', company?.owner_email);
-        console.log('Is likely owner:', isLikelyOwner);
-        
+        const isLikelyOwner =
+          company?.owner_email &&
+          user?.primaryEmailAddress?.emailAddress === company.owner_email;
+
         if (isLikelyOwner) {
-          console.log('User is likely owner, setting temporary OWNER role as fallback');
           const tempOwnerRole = {
             id: `temp_${user.id}_${company.company_id}`,
             user_id: user.id,
             company_id: company.company_id,
-            role: 'OWNER' as const,
-            status: 'ACTIVE' as const,
+            role: "OWNER" as const,
+            status: "ACTIVE" as const,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
-          
-          // Store temporary role in both sessionStorage and localStorage
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('userRole', JSON.stringify(tempOwnerRole));
-            sessionStorage.setItem('userCompanyId', company.company_id);
-            localStorage.setItem('userRole', JSON.stringify(tempOwnerRole));
-            localStorage.setItem('userCompanyId', company.company_id);
-            console.log('Temporary OWNER role stored in both sessionStorage and localStorage');
+
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("userRole", JSON.stringify(tempOwnerRole));
+            sessionStorage.setItem("userCompanyId", company.company_id);
+            localStorage.setItem("userRole", JSON.stringify(tempOwnerRole));
+            localStorage.setItem("userCompanyId", company.company_id);
           }
-          
-          // Force refresh to pick up the temporary role
+
           setTimeout(() => {
-            window.dispatchEvent(new Event('storage'));
+            window.dispatchEvent(new Event("storage"));
           }, 50);
-        } else {
-          console.log('User is not owner, no fallback role will be set');
         }
       }
-      return;
     }
-  }, [dataLoading, userRole, company?.company_id, company?.owner_email, user?.id, user?.primaryEmailAddress?.emailAddress]);
+  }, [
+    dataLoading,
+    userRole,
+    company?.company_id,
+    company?.owner_email,
+    user?.id,
+    user?.primaryEmailAddress?.emailAddress,
+  ]);
 
   // Invite dialog
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState<InviteFormData>({
-    email: "", name: "", role: "MEMBER",
+    email: "",
+    name: "",
+    role: "MEMBER",
   });
 
   // Edit role dialog
@@ -537,7 +547,7 @@ export default function TeamsPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [isDeletingMember, setIsDeletingMember] = useState(false);
 
-  // ── Company ID ──────────────────────────────────────────────────────────────// Simple loading state management
+  // Simple loading state management
   useEffect(() => {
     if (isLoaded && !user) {
       router.push("/signin");
@@ -548,19 +558,16 @@ export default function TeamsPage() {
 
   // ── Refresh members and role using cache ──────────────────────────────────
   const refreshMembersAndRole = async () => {
-    console.log('🔄 Refreshing members and role using cache system...');
     setIsFetchingMembers(true);
-    
     try {
       await refreshAll();
       setMembers(cachedMembers || []);
-      
       toast({
-        title: "Refreshed", 
+        title: "Refreshed",
         description: "Team members and permissions updated",
-        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+        className:
+          "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
-      
     } catch (error) {
       console.error("Error refreshing:", error);
       toast({
@@ -580,11 +587,12 @@ export default function TeamsPage() {
       toast({ title: "Error", description: "Please enter an email address", variant: "destructive" });
       return;
     }
-    // Validate role permissions before sending invite
-    if (userRole?.role === 'ADMIN' && inviteForm.role === 'OWNER') {
+
+    if (userRole?.role === "ADMIN" && inviteForm.role === "OWNER") {
       toast({
         title: "Permission Denied",
-        description: "Admin users can only invite Admin and Member roles. Only Owners can invite other Owners.",
+        description:
+          "Admin users can only invite Admin and Member roles. Only Owners can invite other Owners.",
         variant: "destructive",
       });
       return;
@@ -593,19 +601,19 @@ export default function TeamsPage() {
     setIsSubmittingInvite(true);
     try {
       const token = await getToken();
-      // Validate company data before sending invite
       const validation = validateCompanyData({
         company_id: company?.company_id,
-        company_name: user?.unsafeMetadata?.companyName || company?.name || "Your Company",
+        company_name:
+          (user?.unsafeMetadata?.companyName as string) || company?.name || "Your Company",
         name: inviteForm.name,
         invited_email: inviteForm.email,
-        role: inviteForm.role
+        role: inviteForm.role,
       });
-      
+
       if (!validation.isValid) {
         toast({
           title: "Validation Error",
-          description: validation.errors.join(', '),
+          description: validation.errors.join(", "),
           variant: "destructive",
         });
         return;
@@ -616,20 +624,24 @@ export default function TeamsPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           company_id: company?.company_id,
-          company_name: user?.unsafeMetadata?.companyName || company?.name || "Your Company",
+          company_name:
+            (user?.unsafeMetadata?.companyName as string) || company?.name || "Your Company",
           name: inviteForm.name,
           invited_email: inviteForm.email,
           role: inviteForm.role,
         }),
       });
+
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || "Failed to send invitation");
       }
+
       toast({
         title: "Invite Sent!",
         description: `Invitation sent to ${inviteForm.email}`,
-        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+        className:
+          "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
       setInviteForm({ email: "", name: "", role: "MEMBER" });
       setIsInviteDialogOpen(false);
@@ -650,21 +662,11 @@ export default function TeamsPage() {
     e.preventDefault();
     if (!editingMember) return;
 
-    // Validate role permissions before updating
-    if (userRole?.role === 'ADMIN' && editingMember.role === 'OWNER') {
+    if (userRole?.role === "ADMIN" && editingMember.role === "OWNER") {
       toast({
         title: "Permission Denied",
-        description: "Admin users can only assign Admin and Member roles. Only Owners can assign Owner roles.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Prevent ADMIN from changing OWNER's role
-    if (userRole?.role === 'ADMIN' && editingMember.role === 'OWNER') {
-      toast({
-        title: "Permission Denied",
-        description: "Admin users cannot modify Owner roles. Only Owners can modify Owner roles.",
+        description:
+          "Admin users cannot modify Owner roles. Only Owners can modify Owner roles.",
         variant: "destructive",
       });
       return;
@@ -676,28 +678,28 @@ export default function TeamsPage() {
       const response = await fetch(`/api/company-members/${editingMember.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          role: editingMember.role,
-        }),
+        body: JSON.stringify({ role: editingMember.role }),
       });
+
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || "Failed to update role");
       }
+
       toast({
         title: "Role Updated",
         description: `Role updated for ${editingMember.name}`,
-        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+        className:
+          "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
-      
-      // Force refresh the role cache to ensure immediate updates across all components
+
       if (user?.id && company?.company_id) {
         const tokenForRefresh = await getToken();
         if (tokenForRefresh) {
           await refreshUserRole(user.id, company.company_id, async () => tokenForRefresh);
         }
       }
-      
+
       refreshMembersAndRole();
     } catch (error) {
       toast({
@@ -722,33 +724,31 @@ export default function TeamsPage() {
     setIsDeletingMember(true);
     try {
       const token = await getToken();
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
-      
+      if (!token) throw new Error("No authentication token available");
+
       const response = await fetch(`/api/company-members/${deleteTarget.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || "Failed to delete member");
       }
-      
-      // Immediately remove the member from the UI
-      setMembers(prev => prev.filter(member => member.id !== deleteTarget.id));
-      
+
+      setMembers((prev) => prev.filter((member) => member.id !== deleteTarget.id));
+
       toast({
         title: "Member Removed",
         description: `Removed ${deleteTarget.name} from team`,
-        className: "border-red-600/60 bg-red-700 text-red-100 shadow-lg shadow-red-600/30",
+        className:
+          "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
-      
-      // Force refresh the role cache to ensure immediate updates across all components
+
       if (user?.id && company?.company_id) {
         await refreshUserRole(user.id, company.company_id, getToken);
       }
-      
+
       refreshMembersAndRole();
     } catch (error) {
       toast({
@@ -768,10 +768,14 @@ export default function TeamsPage() {
       <div className="min-h-screen bg-black text-white">
         <SignedIn>
           <div className="flex min-h-screen">
-            <div className="bg-white border-r border-white"><DashboardSideBar /></div>
+            <div className="bg-white border-r border-white">
+              <DashboardSideBar />
+            </div>
             <div className="flex-1 flex flex-col">
               <DashboardHeader />
-              <main className="flex-1 p-6"><LoadingSpinner text="Loading teams..." /></main>
+              <main className="flex-1 p-6">
+                <LoadingSpinner text="Loading teams..." />
+              </main>
             </div>
           </div>
         </SignedIn>
@@ -791,7 +795,9 @@ export default function TeamsPage() {
       <div className="min-h-screen bg-black text-white">
         <SignedIn>
           <div className="flex min-h-screen">
-            <div className="bg-white border-r border-white"><DashboardSideBar /></div>
+            <div className="bg-white border-r border-white">
+              <DashboardSideBar />
+            </div>
 
             <div className="flex-1 flex flex-col">
               <DashboardHeader />
@@ -804,8 +810,7 @@ export default function TeamsPage() {
                     <p className="text-white/40 text-sm mt-1">
                       Manage your team members and their roles.
                     </p>
-                    
-                    {/* Member count pill */}
+
                     {!isFetchingMembers && members.length > 0 && (
                       <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] mt-4 border border-white/[0.08] rounded-full px-3 py-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-400 block mr-1" />
@@ -814,11 +819,9 @@ export default function TeamsPage() {
                     )}
                   </div>
 
-                  {/* ── FIX: right-side controls wrapper ── */}
                   <div className="flex items-center gap-3">
-
-                    {/* Invite Member - using permission utility */}
-                    {(!dataLoading && canPerformAction(userRole, 'invite_members')) ? (
+                    {/* Invite Member */}
+                    {!dataLoading && canPerformAction(userRole, "invite_members") ? (
                       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                         <DialogTrigger asChild>
                           <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
@@ -834,7 +837,10 @@ export default function TeamsPage() {
                           </DialogHeader>
                           <form onSubmit={handleInviteSubmit} className="space-y-4 pt-1">
                             <div className="space-y-2">
-                              <Label htmlFor="name" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                              <Label
+                                htmlFor="name"
+                                className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
+                              >
                                 Name
                               </Label>
                               <Input
@@ -842,13 +848,18 @@ export default function TeamsPage() {
                                 type="text"
                                 placeholder="Enter full name"
                                 value={inviteForm.name}
-                                onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
+                                onChange={(e) =>
+                                  setInviteForm({ ...inviteForm, name: e.target.value })
+                                }
                                 className="bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
                                 required
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="email" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                              <Label
+                                htmlFor="email"
+                                className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
+                              >
                                 Email
                               </Label>
                               <Input
@@ -856,13 +867,18 @@ export default function TeamsPage() {
                                 type="email"
                                 placeholder="Enter email address"
                                 value={inviteForm.email}
-                                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                                onChange={(e) =>
+                                  setInviteForm({ ...inviteForm, email: e.target.value })
+                                }
                                 className="bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
                                 required
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="role" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                              <Label
+                                htmlFor="role"
+                                className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
+                              >
                                 Role
                               </Label>
                               <Select
@@ -871,14 +887,13 @@ export default function TeamsPage() {
                                   setInviteForm({ ...inviteForm, role: value })
                                 }
                               >
-                                <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] border focus:border-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none border-0 outline-none">
+                                <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] border-none focus:ring-0 focus-visible:outline-none outline-none">
                                   <SelectValue placeholder="Select role" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
                                   <SelectItem value="MEMBER">Member</SelectItem>
                                   <SelectItem value="ADMIN">Admin</SelectItem>
-                                  {/* Only OWNER can invite other OWNERS */}
-                                  {!dataLoading && userRole?.role === 'OWNER' && (
+                                  {!dataLoading && userRole?.role === "OWNER" && (
                                     <SelectItem value="OWNER">Owner</SelectItem>
                                   )}
                                 </SelectContent>
@@ -887,7 +902,10 @@ export default function TeamsPage() {
                             <div className="flex gap-[10px] pt-2">
                               <Button
                                 type="button"
-                                onClick={() => { setIsInviteDialogOpen(false); setInviteForm({ email: "", name: "", role: "MEMBER" }); }}
+                                onClick={() => {
+                                  setIsInviteDialogOpen(false);
+                                  setInviteForm({ email: "", name: "", role: "MEMBER" });
+                                }}
                                 className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
                               >
                                 Cancel
@@ -916,7 +934,7 @@ export default function TeamsPage() {
                     ) : (
                       <DisabledButtonWithTooltip
                         permission="invite_members"
-                        allowedRoles={getActionAllowedRoles('invite_members')}
+                        allowedRoles={getActionAllowedRoles("invite_members")}
                       >
                         <FiPlus className="h-4 w-4" />
                         Invite Member
@@ -932,12 +950,8 @@ export default function TeamsPage() {
                       <FiRefreshCw className={`h-4 w-4 ${isFetchingMembers ? "animate-spin" : ""}`} />
                       {isFetchingMembers ? "Refreshing..." : "Refresh"}
                     </Button>
-
                   </div>
-                  {/* ── END right-side controls wrapper ── */}
-
                 </div>
-                {/* ── END Page header ── */}
 
                 {/* Members grid */}
                 {isFetchingMembers ? (
@@ -950,7 +964,10 @@ export default function TeamsPage() {
                       <MemberCard
                         key={member.id}
                         member={member}
-                        onEditRole={(m) => { setEditingMember(m); setIsEditRoleOpen(true); }}
+                        onEditRole={(m) => {
+                          setEditingMember(m);
+                          setIsEditRoleOpen(true);
+                        }}
                         onDelete={promptDeleteMember}
                         userRole={userRole}
                         dataLoading={dataLoading}
@@ -975,14 +992,21 @@ export default function TeamsPage() {
                     </Button>
                   </div>
                 )}
-
               </main>
             </div>
           </div>
         </SignedIn>
 
         {/* ── Edit Role Dialog ──────────────────────────────────────────────── */}
-        <Dialog open={isEditRoleOpen} onOpenChange={(open) => { if (!open) { setIsEditRoleOpen(false); setEditingMember(null); } }}>
+        <Dialog
+          open={isEditRoleOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setIsEditRoleOpen(false);
+              setEditingMember(null);
+            }
+          }}
+        >
           <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
             <DialogHeader>
               <DialogTitle className="text-[17px] font-bold text-[#f0f4ff]">Edit role</DialogTitle>
@@ -992,7 +1016,9 @@ export default function TeamsPage() {
                 {/* Member preview */}
                 <div className="flex items-center gap-3 p-3 rounded-[12px] bg-white/[0.04] border border-white/[0.07]">
                   <div
-                    className={`h-[36px] w-[36px] rounded-[10px] bg-gradient-to-br ${roleConfig[editingMember.role].avatarGradient} flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0`}
+                    className={`h-[36px] w-[36px] rounded-[10px] bg-gradient-to-br ${
+                      roleConfig[editingMember.role].avatarGradient
+                    } flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0`}
                   >
                     {getInitials(editingMember.name, editingMember.invited_email)}
                   </div>
@@ -1007,7 +1033,10 @@ export default function TeamsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="edit-role" className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase">
+                  <Label
+                    htmlFor="edit-role"
+                    className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
+                  >
                     Role
                   </Label>
                   <Select
@@ -1016,14 +1045,13 @@ export default function TeamsPage() {
                       setEditingMember({ ...editingMember, role: value })
                     }
                   >
-                    <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] border focus:border-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none border-0 outline-none">
+                    <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] border-none focus:ring-0 focus-visible:outline-none outline-none">
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
                       <SelectItem value="MEMBER">Member</SelectItem>
                       <SelectItem value="ADMIN">Admin</SelectItem>
-                      {/* Only OWNER can assign OWNER role */}
-                      {!dataLoading && userRole?.role === 'OWNER' && (
+                      {!dataLoading && userRole?.role === "OWNER" && (
                         <SelectItem value="OWNER">Owner</SelectItem>
                       )}
                     </SelectContent>
@@ -1033,7 +1061,10 @@ export default function TeamsPage() {
                 <div className="flex gap-[10px] pt-2">
                   <Button
                     type="button"
-                    onClick={() => { setIsEditRoleOpen(false); setEditingMember(null); }}
+                    onClick={() => {
+                      setIsEditRoleOpen(false);
+                      setEditingMember(null);
+                    }}
                     className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
                   >
                     Cancel
@@ -1059,18 +1090,22 @@ export default function TeamsPage() {
         </Dialog>
 
         {/* ── Delete Confirmation Dialog ────────────────────────────────────── */}
-        <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <Dialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+        >
           <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
             <div className="flex flex-col items-center text-center pt-2 pb-1">
-              {/* Trash icon */}
               <div className="w-[52px] h-[52px] rounded-[14px] bg-red-500/[0.12] border border-red-500/[0.22] flex items-center justify-center mb-[18px]">
                 <FiTrash className="w-[22px] h-[22px] text-red-400" />
               </div>
               <h3 className="text-[17px] font-bold text-[#f0f4ff] mb-[8px]">Remove member?</h3>
               <p className="text-[13px] text-white/45 leading-[1.55] mb-[24px]">
                 This will remove{" "}
-                <span className="text-white/75 font-semibold">{deleteTarget?.name}</span>
-                {" "}from your team. They'll lose access immediately.
+                <span className="text-white/75 font-semibold">{deleteTarget?.name}</span> from your
+                team. They&apos;ll lose access immediately.
               </p>
               <div className="flex w-full gap-[10px]">
                 <Button
