@@ -73,4 +73,4 @@ export function withPlanAccess<T extends object>(
 }
 
 // Usage example:
-// export default withPlanAccess(MyComponent, { requiredPlan: 'Business' });
+// export default withPlanAccess(MyComponent, { requiredPlan: 'Enterprise' });

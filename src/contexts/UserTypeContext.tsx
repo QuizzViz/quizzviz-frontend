@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-export type UserType = 'individual' | 'business';
+export type UserType = 'individual' | 'Enterprise';
 
 type UserTypeContextType = {
   userType: UserType;
