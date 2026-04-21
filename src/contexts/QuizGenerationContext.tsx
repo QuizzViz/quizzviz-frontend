@@ -109,7 +109,7 @@ const currentPlan = getPlanLimits(userPlan?.plan_name || 'Free');
       if (data?.quiz_id || data?.id) {
         const quizId = data.quiz_id || data.id;
         await queryClient.invalidateQueries({ queryKey: ['quizzes'] });
-        if (userPlan?.plan_name === 'Business') {
+        if (userPlan?.plan_name === 'Enterprise') {
         let goToQuiz = () => router.push(`/quiz/${quizId}`);
         toast({
           title: "Quiz generated successfully!",
