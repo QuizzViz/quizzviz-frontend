@@ -76,7 +76,7 @@ export function getLimitMessage(limitType: 'quiz' | 'candidate' | 'teamMember', 
   switch (limitType) {
     case 'quiz':
       if (planLimits.maxQuizzes === -1) return '';
-      return `You've reached your monthly limit of ${planLimits.maxQuizzes} quizzes.`;
+      return `Quiz Limit Reached\n\nYou've reached your monthly limit of ${planLimits.maxQuizzes} quizzes. <a href="/pricing" className="underline">Click to upgrade your plan.</a>`;
     case 'candidate':
       if (planLimits.maxCandidates === -1) return '';
       return planLimits.candidatesPerMonth 
