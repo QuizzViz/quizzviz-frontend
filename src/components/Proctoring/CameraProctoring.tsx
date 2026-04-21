@@ -828,7 +828,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
   // ─── Violation timer ──────────────────────────────────────────────────────
   const startViolationTimer = useCallback((message: string) => {
-    // Prevent quiz termination during proctoring - face changes are expected
     if (violationIntervalRef.current) return;
     setCurrentViolation(message);
     setViolationCountdown(VIOLATION_TIMEOUT);
@@ -837,9 +836,11 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
         if (prev === null) return null;
         const next = prev - 1;
         if (next <= 0) {
-          // Don't terminate quiz for face changes during proctoring
-          // Just keep the countdown at 1 to prevent termination
-          return 1;
+          if (!hasEndedRef.current) {
+            hasEndedRef.current = true;
+            onEndRef.current('Cheating detected – prolonged violation');
+          }
+          return 0;
         }
         return next;
       });
