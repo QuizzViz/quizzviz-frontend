@@ -136,9 +136,11 @@ export async function GET(request: NextRequest) {
             userRole = 'OWNER';
           }
           
-          // Try to create member record with correct role
+          // Try to create member record with correct role using existing API
           try {
-            const createResponse = await fetch(`${COMPANY_MEMBERS_URL}/member`, {
+            console.log('Creating member record using existing company members API');
+            
+            const createResponse = await fetch(`${request.nextUrl.origin}/api/company-members`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
