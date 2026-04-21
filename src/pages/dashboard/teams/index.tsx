@@ -364,8 +364,6 @@ export default function TeamsPage() {
   } = useCachedDashboardData(user?.id || '', companyIdForMember, async () => {
     const token = await getToken();
     return token || '';
-  });
-  
   const [members, setMembers] = useState<CompanyMember[]>(cachedMembers || []);
   const { toast } = useToast();
 
@@ -375,6 +373,51 @@ export default function TeamsPage() {
       setMembers(cachedMembers);
     }
   }, [cachedMembers]);
+
+  // Check if current user has been deleted and force logout
+  useEffect(() => {
+    const checkForDeletedUser = async () => {
+      if (user?.id && companyIdForMember) {
+        try {
+          const token = await getToken();
+          if (token) {
+            // Check if user is still a valid member
+            const response = await fetch(`/api/company-members/role?user_id=${user.id}&company_id=${companyIdForMember}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (response.status === 410) {
+              console.log('User has been deleted from company, forcing logout');
+              // Clear all stored data
+              if (typeof window !== 'undefined') {
+                sessionStorage.removeItem('userCompanyId');
+                localStorage.removeItem('userCompanyId');
+                sessionStorage.removeItem('userRole');
+                localStorage.removeItem('userRole');
+              }
+              
+              // Sign out and redirect
+              const { signOut } = useAuth();
+              if (signOut) {
+                await signOut();
+                router.push('/?message=deleted');
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error checking user deletion status:', error);
+        }
+      }
+    };
+
+    // Check immediately and then every 30 seconds
+    checkForDeletedUser();
+    const interval = setInterval(checkForDeletedUser, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user?.id, companyIdForMember, getToken, router, useAuth]);
 
   // Debug logging
   console.log('Teams page - User ID:', user?.id);
