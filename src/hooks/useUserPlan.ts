@@ -1,16 +1,16 @@
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
 
-export type PlanType = 'Free' | 'Consumer' | 'Elite' | 'Business';
+export type PlanType = 'Free' | 'Growth' | 'Scale' | 'Enterprise';
 
 export interface UserPlanResponse {
-  plan_name: 'Free' | 'Consumer' | 'Elite' | 'Business';
+  plan_name: 'Free' | 'Growth' | 'Scale' | 'Enterprise';
 }
 
 export interface CompanyResponse {
   id: string;
   name: string;
-  plan_name: 'Free' | 'Consumer' | 'Elite' | 'Business';
+  plan_name: 'Free' | 'Growth' | 'Scale' | 'Enterprise';
   company_size: string;
   owner_id: string;
   owner_email: string;
@@ -92,7 +92,7 @@ export const useUserPlan = () => {
 export const hasFeatureAccess = (
   userPlan: PlanType, 
   requiredPlan: PlanType,
-  planOrder: PlanType[] = ['Free', 'Consumer', 'Elite', 'Business']
+  planOrder: PlanType[] = ['Free', 'Growth', 'Scale', 'Enterprise']
 ): boolean => {
   if (!userPlan) return false;
   if (userPlan === requiredPlan) return true;

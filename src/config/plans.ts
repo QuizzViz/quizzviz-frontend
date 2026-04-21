@@ -3,8 +3,11 @@ import { PlanType, useUserPlan } from '@/hooks/useUserPlan';
 export type PlanLimits = {
   maxQuestions: number;
   maxQuizzes: number;
-  availableDifficulties: string[];
+  maxCandidates: number;
+  maxTeamMembers: number;
+  availableExperience: string[];
   hasAnalytics: boolean;
+  candidatesPerMonth?: boolean; // For paid plans
 };
 
 type PlanLimitsMap = {
@@ -13,28 +16,40 @@ type PlanLimitsMap = {
 
 export const PLAN_LIMITS: PlanLimitsMap = {
   'Free': {
-    maxQuestions: 10,
-    maxQuizzes: 2,
-    availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level'],
+    maxQuestions: 20,
+    maxQuizzes: 4,
+    maxCandidates: 20,
+    maxTeamMembers: 1,
+    availableExperience: ['0-1 years', '1-3 years'],
     hasAnalytics: false,
+    candidatesPerMonth: false
   },
-  'Consumer': {
-    maxQuestions: 30,
-    maxQuizzes: 10,
-    availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level','PhD Level'],
-    hasAnalytics: false
-  },
-  'Elite': {
-    maxQuestions: 100,
+  'Growth': {
+    maxQuestions: 50,
     maxQuizzes: 30,
-    availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level','PhD Level'],
-    hasAnalytics: true
+    maxCandidates: 500,
+    maxTeamMembers: 3,
+    availableExperience: ['0-1 years', '1-3 years', '3-5 years'],
+    hasAnalytics: true,
+    candidatesPerMonth: true
   },
-  'Business': {
-    maxQuestions: 200,
-    maxQuizzes: 30,
-    availableDifficulties: ['High School Level', 'Bachelors Level','Masters Level','PhD Level'],
-    hasAnalytics: true
+  'Scale': {
+    maxQuestions: 70,
+    maxQuizzes: 70,
+    maxCandidates: 2000,
+    maxTeamMembers: 7,
+    availableExperience: ['0-1 years', '1-3 years', '3-5 years', '5+ years'],
+    hasAnalytics: true,
+    candidatesPerMonth: true
+  },
+  'Enterprise': {
+    maxQuestions: 150,
+    maxQuizzes: -1, // Unlimited
+    maxCandidates: 6000,
+    maxTeamMembers: 20,
+    availableExperience: ['0-1 years', '1-3 years', '3-5 years', '5+ years'],
+    hasAnalytics: true,
+    candidatesPerMonth: true
   }
 } as const;
 

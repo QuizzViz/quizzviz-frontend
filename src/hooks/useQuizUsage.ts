@@ -131,7 +131,7 @@ interface PlanDetails {
   custom?: boolean;
 }
 
-type PlanType = 'Free' | 'Consumer' | 'Elite' | 'Business';
+type PlanType = 'Free' | 'Growth' | 'Scale' | 'Enterprise';
 
 export function getUpgradeMessage(
   currentPlan: string, 
@@ -139,10 +139,10 @@ export function getUpgradeMessage(
   maxQuizzes: number
 ): { message: string; upgradePlan: string; showUpgrade: boolean } {
   const plans: Record<PlanType, PlanDetails> = {
-    Free: { next: 'Consumer', max: 4 }, // Updated from 2 to 4 for free users
-    Consumer: { next: 'Elite', max: 10 },
-    Elite: { next: 'Business', max: 30 },
-    Business: { next: 'Enterprise', max: 30, custom: true },
+    Free: { next: 'Growth', max: 4 },
+    Growth: { next: 'Scale', max: 30 },
+    Scale: { next: 'Enterprise', max: 70 },
+    Enterprise: { next: 'Enterprise', max: -1, custom: true }, // Unlimited
   };
 
   const plan = currentPlan as PlanType;
