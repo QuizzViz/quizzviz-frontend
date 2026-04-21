@@ -838,7 +838,8 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
         const next = prev - 1;
         if (next <= 0) {
           // Don't terminate quiz for face changes during proctoring
-          return next;
+          // Just keep the countdown at 1 to prevent termination
+          return 1;
         }
         return next;
       });
