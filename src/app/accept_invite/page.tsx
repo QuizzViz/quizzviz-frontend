@@ -73,7 +73,7 @@ export default function AcceptInvitePage() {
           // Extract company info from the API response
           console.log('Full invitation response:', result);
           const companyId = result.company_id;
-          const companyName = result.member?.company_name || 'QuizzViz';
+          const companyName = result.member?.company_name || result.company_name || 'Your Company';
           
           console.log('Extracted company info:', { companyId, companyName });
           
