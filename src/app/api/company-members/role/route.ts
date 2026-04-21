@@ -140,6 +140,45 @@ export async function GET(request: NextRequest) {
           try {
             console.log('Creating member record using existing company members API');
             
+            // Fetch real company and user data
+            let companyName = `Company_${company_id.trim()}`;
+            let userName = `User_${user_id.trim()}`;
+            
+            try {
+              // Get company details
+              const companyServiceUrl = process.env.NEXT_PUBLIC_CREATE_COMPANY_SERVICE_URL;
+              if (companyServiceUrl) {
+                const companyResponse = await fetch(`${companyServiceUrl}/companies/${company_id.trim()}`, {
+                  headers: {
+                    'accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  }
+                });
+                
+                if (companyResponse.ok) {
+                  const companyData = await companyResponse.json();
+                  companyName = companyData.name || companyName;
+                  console.log('Fetched company name:', companyName);
+                }
+              }
+              
+              // Get user details from Clerk
+              const userResponse = await fetch(`https://api.clerk.dev/v1/users/${user_id.trim()}`, {
+                headers: {
+                  'accept': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              if (userResponse.ok) {
+                const userData = await userResponse.json();
+                userName = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.username || userName;
+                console.log('Fetched user name:', userName);
+              }
+            } catch (dataFetchError) {
+              console.warn('Could not fetch company/user data, using defaults:', dataFetchError);
+            }
+            
             const createResponse = await fetch(`${request.nextUrl.origin}/api/company-members`, {
               method: 'POST',
               headers: {
@@ -150,6 +189,8 @@ export async function GET(request: NextRequest) {
               body: JSON.stringify({
                 user_id: user_id.trim(),
                 company_id: company_id.trim(),
+                company_name: companyName,
+                name: userName,
                 role: userRole, // Use determined role (OWNER or MEMBER)
                 status: 'ACTIVE'
               })
