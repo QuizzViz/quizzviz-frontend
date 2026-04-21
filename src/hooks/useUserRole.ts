@@ -1,6 +1,7 @@
 import { useUser, useAuth } from '@clerk/nextjs';
 import { useCachedData } from './useCachedData';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export interface UserRole {
   id: string;
@@ -27,7 +28,8 @@ interface UseUserRoleReturn {
 
 export function useUserRole(companyId?: string): UseUserRoleReturn {
   const { user } = useUser();
-  const { getToken } = useAuth();
+  const { getToken, signOut } = useAuth();
+  const router = useRouter();
 
   // Create cache key based on user and company
   const cacheKey = `userRole_${user?.id || 'anonymous'}_${companyId || 'no-company'}`;
@@ -59,6 +61,29 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        
+        // Check if member has been deleted
+        if (response.status === 410 || errorData.deleted) {
+          console.log('Member has been deleted, logging out...');
+          
+          // Clear all stored data
+          clearStoredUserRole();
+          clearCache();
+          
+          // Sign out the user and redirect to home
+          if (signOut) {
+            await signOut();
+          }
+          
+          // Redirect to home page with a message
+          if (typeof window !== 'undefined') {
+            router.push('/?message=deleted');
+          }
+          
+          // Throw a specific error to prevent further processing
+          throw new Error('MEMBER_DELETED');
+        }
+        
         throw new Error(errorData.error || 'Failed to fetch user role');
       }
 
@@ -91,10 +116,13 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
     }
   }, [userRole]);
 
+  // Handle MEMBER_DELETED error specially - don't show it as an error to the user
+  const displayError = error === 'MEMBER_DELETED' ? null : error;
+
   return { 
     userRole, 
     loading, 
-    error, 
+    error: displayError, 
     refresh, 
     clearCache 
   };

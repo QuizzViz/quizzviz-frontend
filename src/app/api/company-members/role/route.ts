@@ -87,8 +87,24 @@ export async function GET(request: NextRequest) {
           data: JSON.stringify(responseData, null, 2)
         });
         
-        // If member not found (404), create a default member record
+        // If member not found (404), check if user was deleted vs missing member record
         if (response.status === 404) {
+          // Check if this is a deleted member by looking at the response message
+          const isDeletedMember = responseData.message?.toLowerCase().includes('deleted') || 
+                                 responseData.error?.toLowerCase().includes('deleted') ||
+                                 responseData.status === 'DELETED';
+          
+          if (isDeletedMember) {
+            console.log('Member has been deleted from the company');
+            return NextResponse.json(
+              { 
+                error: 'Member has been deleted',
+                deleted: true,
+                message: 'You have been removed from this company'
+              },
+              { status: 410 } // 410 Gone indicates the resource is no longer available
+            );
+          }
           console.log('Member not found in database, checking if user is company owner');
           
           // Check if user is the company owner first
