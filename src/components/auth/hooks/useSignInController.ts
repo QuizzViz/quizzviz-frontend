@@ -45,7 +45,9 @@ export function useSignInController() {
         if (msg.toLowerCase().includes("not found") || 
             msg.toLowerCase().includes("doesn't exist") || 
             msg.toLowerCase().includes("no account found") ||
-            msg.toLowerCase().includes("identifier not found")) {
+            msg.toLowerCase().includes("identifier not found") ||
+            msg.toLowerCase().includes("invalid external account") ||
+            msg.toLowerCase().includes("external account not found")) {
           // Redirect to sign up page for OAuth
           router.push(`/signup?message=No account found. Please sign up with Google.`);
         } else {
@@ -74,12 +76,15 @@ export function useSignInController() {
       const errorMessage = err?.errors?.[0]?.message || "Invalid email or password.";
       const errorCode = err?.errors?.[0]?.code;
       
-      // Debug logging to see actual error structure
-      console.log("SignIn Error:", {
+      // Enhanced debugging to see actual error structure
+      console.log("SignIn Error - Full Analysis:", {
         message: errorMessage,
         code: errorCode,
         fullError: err,
-        errors: err?.errors
+        errors: err?.errors,
+        longMessage: err?.errors?.[0]?.longMessage,
+        messageLower: errorMessage.toLowerCase(),
+        email: email
       });
       
       // Check if the error indicates that account doesn't exist - multiple scenarios
@@ -91,10 +96,29 @@ export function useSignInController() {
         errorMessage.toLowerCase().includes("identifier not found") ||
         errorMessage.toLowerCase().includes("user not found") ||
         errorMessage.toLowerCase().includes("account does not exist") ||
-        errorMessage.toLowerCase().includes("email not found");
+        errorMessage.toLowerCase().includes("email not found") ||
+        errorMessage.toLowerCase().includes("invalid credentials") ||
+        errorMessage.toLowerCase().includes("invalid email or password");
+      
+      console.log("Account Not Found Check:", {
+        isAccountNotFound,
+        errorCode,
+        messageChecks: {
+          "not found": errorMessage.toLowerCase().includes("not found"),
+          "doesn't exist": errorMessage.toLowerCase().includes("doesn't exist"),
+          "no account found": errorMessage.toLowerCase().includes("no account found"),
+          "identifier not found": errorMessage.toLowerCase().includes("identifier not found"),
+          "user not found": errorMessage.toLowerCase().includes("user not found"),
+          "account does not exist": errorMessage.toLowerCase().includes("account does not exist"),
+          "email not found": errorMessage.toLowerCase().includes("email not found"),
+          "invalid credentials": errorMessage.toLowerCase().includes("invalid credentials"),
+          "invalid email or password": errorMessage.toLowerCase().includes("invalid email or password")
+        }
+      });
       
       if (isAccountNotFound) {
         // Redirect to sign up page with email pre-filled
+        console.log("Redirecting to signup page...");
         router.push(`/signup?email=${encodeURIComponent(email)}&message=${encodeURIComponent("No account found. Please sign up.")}`);
         return;
       }
