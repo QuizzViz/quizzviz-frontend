@@ -14,6 +14,7 @@ import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { useState } from "react";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import Head from "next/head";
+import { useUserPlan } from '@/hooks/useUserPlan';
 
 // Plan limits will be determined dynamically based on user plan
 
@@ -53,7 +54,8 @@ const UsagePage = () => {
   const { companyInfo } = useCompanyInfo();
   
   // Get plan limits
-  const plan = (user?.publicMetadata?.plan as string) || 'Free';
+  const { data: userPlanData } = useUserPlan();
+  const plan = userPlanData?.plan_name || 'Free';
   const planConfig = getPlanLimits(plan as any, companyInfo?.custom_limits);
   
   const currentUsage = {

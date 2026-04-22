@@ -19,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useQuizUsage } from "@/hooks/useQuizUsage";
 import { usePlanLimits, getLimitMessage, getUpgradeCTA } from "@/hooks/usePlanLimits";
 import { useUser } from "@clerk/nextjs";
+import { useUserPlan } from '@/hooks/useUserPlan';
 import { TOPICS } from "@/constants/topics";
 import { RoleSelect } from "./parts/RoleSelect";
 import { TechStackInput } from "./parts/TechStackInput";
@@ -150,7 +151,8 @@ export default function CreateQuizCard({
   
   // Get quiz usage data and plan limits
   const quizUsage = useQuizUsage();
-  const plan = (user?.publicMetadata?.plan as string) || 'Free';
+  const { data: userPlanData } = useUserPlan();
+  const plan = userPlanData?.plan_name || 'Free';
   const currentUsage = {
     quizzesThisMonth: quizUsage?.data?.current_month?.quiz_count || 0,
     totalCandidates: 0, // TODO: Implement candidate tracking
