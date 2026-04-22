@@ -32,13 +32,30 @@ export function useSignInController() {
           redirectUrlComplete: "/dashboard",
         });
       } catch (err: any) {
-        const msg = (err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "").toString();
+        // Handle different error structures for OAuth
+        let msg = "";
+        let errorCode = "";
+        
+        // Check for nested error structure (OAuth verification errors)
+        if (err?.response?.data?.sign_in?.first_factor_verification?.error) {
+          const oauthError = err.response.data.sign_in.first_factor_verification.error;
+          msg = oauthError.long_message || oauthError.message || "";
+          errorCode = oauthError.code || "";
+        } else {
+          // Fallback to standard error structure
+          msg = (err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "").toString();
+          errorCode = err?.errors?.[0]?.code || "";
+        }
         
         // Debug logging for OAuth errors
-        console.log("OAuth SignIn Error:", {
+        console.log("OAuth SignIn Error - Full Analysis:", {
           message: msg,
+          code: errorCode,
           fullError: err,
-          errors: err?.errors
+          response: err?.response,
+          signInData: err?.response?.data?.sign_in,
+          firstFactorError: err?.response?.data?.sign_in?.first_factor_verification?.error,
+          messageLower: msg.toLowerCase()
         });
         
         // Check if OAuth error indicates account doesn't exist
@@ -47,8 +64,10 @@ export function useSignInController() {
             msg.toLowerCase().includes("no account found") ||
             msg.toLowerCase().includes("identifier not found") ||
             msg.toLowerCase().includes("invalid external account") ||
-            msg.toLowerCase().includes("external account not found")) {
+            msg.toLowerCase().includes("external account not found") ||
+            errorCode === "external_account_not_found") {
           // Redirect to sign up page for OAuth
+          console.log("OAuth Account Not Found - Redirecting to signup...");
           router.push(`/signup?message=No account found. Please sign up with Google.`);
         } else {
           setError(msg || "Failed to continue with provider. Check provider configuration in Clerk.");
