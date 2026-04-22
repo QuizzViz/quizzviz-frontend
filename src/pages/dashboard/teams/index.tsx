@@ -51,7 +51,6 @@ interface CompanyMember {
   name?: string | null;
 }
 
-// Helper component for disabled buttons with permission tooltip
 const DisabledButtonWithTooltip = ({
   children,
   permission,
@@ -126,8 +125,6 @@ const roleConfig = {
   },
 };
 
-// ─── MemberCard ───────────────────────────────────────────────────────────────
-
 function MemberCard({
   member,
   onEditRole,
@@ -158,12 +155,9 @@ function MemberCard({
 
   return (
     <div className="relative rounded-[18px] border border-white/[0.07] bg-[#0f1421] overflow-visible transition-all duration-200 hover:-translate-y-[3px] hover:border-white/[0.13] hover:shadow-[0_20px_48px_rgba(0,0,0,0.55)]">
-      {/* Body */}
       <div className="px-[18px] pt-[18px] pb-[18px]">
-        {/* Avatar + Name + menu */}
         <div className="flex items-center justify-between mb-[12px]">
           <div className="flex items-center gap-[12px] min-w-0 flex-1 pr-2">
-            {/* Avatar */}
             <div className="relative flex-shrink-0">
               <div
                 className={`h-[42px] w-[42px] rounded-[12px] bg-gradient-to-br ${config.avatarGradient} flex items-center justify-center text-[13px] font-bold text-white tracking-wide`}
@@ -176,14 +170,12 @@ function MemberCard({
                 }`}
               />
             </div>
-            {/* Name */}
             <h3 className="text-[15px] font-bold text-[#eef2ff] tracking-[-0.2px] leading-snug truncate min-w-0">
               {member.name ?? member.invited_email ?? "Team Member"}
             </h3>
           </div>
 
           <div className="relative flex-shrink-0" ref={menuRef}>
-            {/* Show 3 dots menu only for users with manage_roles permission (OWNER only) */}
             {!dataLoading && canPerformAction(userRole, "manage_roles") && (
               <button
                 onClick={() => setMenuOpen((o) => !o)}
@@ -206,7 +198,6 @@ function MemberCard({
                   Actions
                 </div>
 
-                {/* Edit Role */}
                 {(() => {
                   const hasManagePermission = !dataLoading && canPerformAction(userRole, "manage_roles");
                   const canEditTargetRole =
@@ -240,7 +231,6 @@ function MemberCard({
 
                 <div className="h-px bg-white/[0.06] my-[3px]" />
 
-                {/* Delete Member */}
                 {(() => {
                   const hasDeletePermission = !dataLoading && canPerformAction(userRole, "delete_company");
                   const canDeleteTargetRole =
@@ -276,12 +266,10 @@ function MemberCard({
           </div>
         </div>
 
-        {/* Email */}
         <p className="text-[11px] text-white/30 truncate mb-[13px] pl-[54px]">
           {member.invited_email ?? "—"}
         </p>
 
-        {/* Badges */}
         <div className="flex items-center gap-[6px] flex-wrap mb-[14px]">
           <span
             className={`inline-flex items-center gap-[5px] text-[11px] font-semibold px-[9px] py-[4px] rounded-[8px] border ${config.badgeClass}`}
@@ -302,7 +290,6 @@ function MemberCard({
 
         <div className="h-px bg-white/[0.055] mb-[13px]" />
 
-        {/* Meta */}
         <div className="space-y-[5px]">
           {member.joined_at && (
             <div className="flex items-center gap-[6px] text-[11px] text-white/28">
@@ -335,16 +322,13 @@ function MemberCard({
   );
 }
 
-// ─── TeamsPage ────────────────────────────────────────────────────────────────
-
 export default function TeamsPage() {
   const { user, isLoaded } = useUser();
-  const { getToken, signOut } = useAuth(); // FIX: destructure signOut here at top level, not inside useEffect
+  const { getToken, signOut } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMembers, setIsFetchingMembers] = useState(false);
 
-  // For member users, get company ID from metadata or stored data
   const getCompanyIdForMember = useCallback((): string | undefined => {
     const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
     if (metadataCompanyId) return metadataCompanyId;
@@ -362,7 +346,6 @@ export default function TeamsPage() {
 
   const companyIdForMember: string | undefined = getCompanyIdForMember();
 
-  // Use the new caching system
   const {
     members: cachedMembers,
     userRole,
@@ -372,29 +355,26 @@ export default function TeamsPage() {
   } = useCachedDashboardData(user?.id || "", companyIdForMember, async () => {
     const token = await getToken();
     return token || "";
-  }); // FIX: properly closed the useCachedDashboardData call
+  });
 
   const [members, setMembers] = useState<CompanyMember[]>(cachedMembers || []);
   const { toast } = useToast();
 
-  // Get plan limits for team members
   const { data: userPlanData } = useUserPlan();
   const plan = userPlanData?.plan_name || 'Free';
   const currentUsage = {
-    quizzesThisMonth: 0, // Not relevant for teams page
-    totalCandidates: 0, // Not relevant for teams page
-    teamMembers: members.length
+    quizzesThisMonth: 0,
+    totalCandidates: 0,
+    teamMembers: members.length,
   };
   const planLimits = usePlanLimits(currentUsage);
 
-  // Update members when cached data changes
   useEffect(() => {
     if (cachedMembers) {
       setMembers(cachedMembers);
     }
   }, [cachedMembers]);
 
-  // Check if current user has been deleted and force logout
   useEffect(() => {
     const checkForDeletedUser = async () => {
       if (user?.id && companyIdForMember) {
@@ -403,23 +383,16 @@ export default function TeamsPage() {
           if (token) {
             const response = await fetch(
               `/api/company-members/role?user_id=${user.id}&company_id=${companyIdForMember}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
+              { headers: { Authorization: `Bearer ${token}` } }
             );
 
             if (response.status === 410) {
-              console.log("User has been deleted from company, forcing logout");
               if (typeof window !== "undefined") {
                 sessionStorage.removeItem("userCompanyId");
                 localStorage.removeItem("userCompanyId");
                 sessionStorage.removeItem("userRole");
                 localStorage.removeItem("userRole");
               }
-
-              // FIX: use signOut from hook at top level instead of calling useAuth() inside effect
               await signOut();
               router.push("/?message=deleted");
             }
@@ -435,12 +408,8 @@ export default function TeamsPage() {
     return () => clearInterval(interval);
   }, [user?.id, companyIdForMember, getToken, router, signOut]);
 
-  // Permission checks
   const canInvite = canPerformAction(userRole, "invite_members") && !planLimits.isTeamMemberLimitReached;
-  const canManage = canPerformAction(userRole, "manage_roles");
-  const canDelete = canPerformAction(userRole, "delete_company");
 
-  // More conservative fallback: only assume OWNER if user email matches company owner email
   const fallbackRole =
     !userRole &&
     company?.company_id &&
@@ -459,11 +428,7 @@ export default function TeamsPage() {
       : userRole;
 
   const effectiveRole = userRole || fallbackRole;
-  const effectiveCanInvite = canPerformAction(effectiveRole, "invite_members");
-  const effectiveCanManage = canPerformAction(effectiveRole, "manage_roles");
-  const effectiveCanDelete = canPerformAction(effectiveRole, "delete_company");
 
-  // Debug logging (only in development)
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
       console.log("useUserRole hook state changed:", {
@@ -475,7 +440,6 @@ export default function TeamsPage() {
     }
   }, [userRole, dataLoading, company?.company_id, user?.id]);
 
-  // Force role refresh on component mount if role is null
   useEffect(() => {
     if (!dataLoading && !userRole && company?.company_id && user?.id) {
       let shouldCreateFallback = true;
@@ -493,10 +457,7 @@ export default function TeamsPage() {
             localStorage.setItem("userRole", JSON.stringify(tempRole));
             localStorage.setItem("userCompanyId", company.company_id);
             shouldCreateFallback = false;
-
-            setTimeout(() => {
-              window.dispatchEvent(new Event("storage"));
-            }, 50);
+            setTimeout(() => window.dispatchEvent(new Event("storage")), 50);
           }
         } catch (e) {
           console.error("Error checking stored roles:", e);
@@ -524,11 +485,8 @@ export default function TeamsPage() {
             sessionStorage.setItem("userCompanyId", company.company_id);
             localStorage.setItem("userRole", JSON.stringify(tempOwnerRole));
             localStorage.setItem("userCompanyId", company.company_id);
+            setTimeout(() => window.dispatchEvent(new Event("storage")), 50);
           }
-
-          setTimeout(() => {
-            window.dispatchEvent(new Event("storage"));
-          }, 50);
         }
       }
     }
@@ -541,7 +499,6 @@ export default function TeamsPage() {
     user?.primaryEmailAddress?.emailAddress,
   ]);
 
-  // Invite dialog
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isSubmittingInvite, setIsSubmittingInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState<InviteFormData>({
@@ -550,47 +507,22 @@ export default function TeamsPage() {
     role: "MEMBER",
   });
 
-  // Edit role dialog
   const [editingMember, setEditingMember] = useState<CompanyMember | null>(null);
   const [isEditRoleOpen, setIsEditRoleOpen] = useState(false);
   const [isSavingRole, setIsSavingRole] = useState(false);
 
-// Delete confirmation dialog
-const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-const [isDeletingMember, setIsDeletingMember] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [isDeletingMember, setIsDeletingMember] = useState(false);
 
-// Simple loading state management
-useEffect(() => {
-  if (isLoaded && !user) {
-    router.push("/signup");
-  } else if (isLoaded) {
-    setIsLoading(false);
-  }
-}, [isLoaded, user, router]);
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push("/signup");
+    } else if (isLoaded) {
+      setIsLoading(false);
+    }
+  }, [isLoaded, user, router]);
 
-// ── Refresh members and role using cache ──────────────────────────────────
-const refreshMembersAndRole = async () => {
-  setIsFetchingMembers(true);
-  try {
-    await refreshAll();
-    setMembers(cachedMembers || []);
-    toast({
-      title: "Refreshed",
-      description: "Team members and permissions updated",
-      className:
-        "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
-    });
-  } catch (error) {
-    console.error("Error refreshing:", error);
-    toast({
-      title: "Error",
-      description: "Failed to refresh team members",
-      variant: "destructive",
-    });
-  } finally {
-    setIsFetchingMembers(false);
-  }
-};
+  const refreshMembersAndRole = async () => {
     setIsFetchingMembers(true);
     try {
       await refreshAll();
@@ -598,8 +530,7 @@ const refreshMembersAndRole = async () => {
       toast({
         title: "Refreshed",
         description: "Team members and permissions updated",
-        className:
-          "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
     } catch (error) {
       console.error("Error refreshing:", error);
@@ -613,7 +544,6 @@ const refreshMembersAndRole = async () => {
     }
   };
 
-  // ── Invite ──────────────────────────────────────────────────────────────────
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteForm.email.trim()) {
@@ -621,7 +551,6 @@ const refreshMembersAndRole = async () => {
       return;
     }
 
-    // Check team member limits
     if (planLimits.isTeamMemberLimitReached) {
       toast({
         title: "Team Member Limit Reached",
@@ -634,8 +563,7 @@ const refreshMembersAndRole = async () => {
     if (userRole?.role === "ADMIN" && inviteForm.role === "OWNER") {
       toast({
         title: "Permission Denied",
-        description:
-          "Admin users can only invite Admin and Member roles. Only Owners can invite other Owners.",
+        description: "Admin users can only invite Admin and Member roles. Only Owners can invite other Owners.",
         variant: "destructive",
       });
       return;
@@ -646,8 +574,7 @@ const refreshMembersAndRole = async () => {
       const token = await getToken();
       const validation = validateCompanyData({
         company_id: company?.company_id,
-        company_name:
-          (user?.unsafeMetadata?.companyName as string) || company?.name || "Your Company",
+        company_name: (user?.unsafeMetadata?.companyName as string) || company?.name || "Your Company",
         name: inviteForm.name,
         invited_email: inviteForm.email,
         role: inviteForm.role,
@@ -667,8 +594,7 @@ const refreshMembersAndRole = async () => {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           company_id: company?.company_id,
-          company_name:
-            (user?.unsafeMetadata?.companyName as string) || company?.name || "Your Company",
+          company_name: (user?.unsafeMetadata?.companyName as string) || company?.name || "Your Company",
           name: inviteForm.name,
           invited_email: inviteForm.email,
           role: inviteForm.role,
@@ -683,8 +609,7 @@ const refreshMembersAndRole = async () => {
       toast({
         title: "Invite Sent!",
         description: `Invitation sent to ${inviteForm.email}`,
-        className:
-          "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
       setInviteForm({ email: "", name: "", role: "MEMBER" });
       setIsInviteDialogOpen(false);
@@ -700,7 +625,6 @@ const refreshMembersAndRole = async () => {
     }
   };
 
-  // ── Edit Role ───────────────────────────────────────────────────────────────
   const handleSaveRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMember) return;
@@ -708,8 +632,7 @@ const refreshMembersAndRole = async () => {
     if (userRole?.role === "ADMIN" && editingMember.role === "OWNER") {
       toast({
         title: "Permission Denied",
-        description:
-          "Admin users cannot modify Owner roles. Only Owners can modify Owner roles.",
+        description: "Admin users cannot modify Owner roles. Only Owners can modify Owner roles.",
         variant: "destructive",
       });
       return;
@@ -732,8 +655,7 @@ const refreshMembersAndRole = async () => {
       toast({
         title: "Role Updated",
         description: `Role updated for ${editingMember.name}`,
-        className:
-          "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
 
       if (user?.id && company?.company_id) {
@@ -756,7 +678,6 @@ const refreshMembersAndRole = async () => {
     }
   };
 
-  // ── Delete Member ───────────────────────────────────────────────────────────
   const promptDeleteMember = (id: string, name: string) => {
     setDeleteTarget({ id, name });
   };
@@ -784,8 +705,7 @@ const refreshMembersAndRole = async () => {
       toast({
         title: "Member Removed",
         description: `Removed ${deleteTarget.name} from team`,
-        className:
-          "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
 
       if (user?.id && company?.company_id) {
@@ -826,387 +746,386 @@ const refreshMembersAndRole = async () => {
     );
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Main Render ─────────────────────────────────────────────────────────────
   return (
-    <DashboardAccess>
-      <Head>
-        <title>Teams | QuizzViz</title>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="description" content="Manage your teams and collaborate with others." />
-      </Head>
+    <>
+      <DashboardAccess>
+        <Head>
+          <title>Teams | QuizzViz</title>
+          <link rel="icon" href="/favicon.ico" />
+          <meta name="description" content="Manage your teams and collaborate with others." />
+        </Head>
 
-      <div className="min-h-screen bg-black text-white">
-        <SignedIn>
-          <div className="flex min-h-screen">
-            <div className="bg-white border-r border-white">
-              <DashboardSideBar />
-            </div>
+        <div className="min-h-screen bg-black text-white">
+          <SignedIn>
+            <div className="flex min-h-screen">
+              <div className="bg-white border-r border-white">
+                <DashboardSideBar />
+              </div>
 
-            <div className="flex-1 flex flex-col">
-              <DashboardHeader />
-              <main className="flex-1 p-6 space-y-6">
+              <div className="flex-1 flex flex-col">
+                <DashboardHeader />
+                <main className="flex-1 p-6 space-y-6">
 
-                {/* Page header */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Teams</h1>
-                    <p className="text-white/40 text-sm mt-1">
-                      Manage your team members and their roles.
-                    </p>
+                  {/* Page header */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-bold tracking-tight">Teams</h1>
+                      <p className="text-white/40 text-sm mt-1">
+                        Manage your team members and their roles.
+                      </p>
 
-                    {!isFetchingMembers && members.length > 0 && (
-                      <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] mt-4 border border-white/[0.08] rounded-full px-3 py-1.5">
-                        <span className={`w-1.5 h-1.5 rounded-full block mr-1 ${planLimits.isTeamMemberLimitReached ? 'bg-red-400' : 'bg-green-400'}`} />
-                        {members.length}/{planLimits.teamMemberLimit === -1 ? '∞' : planLimits.teamMemberLimit} members
-                        {planLimits.isTeamMemberLimitReached && (
-                          <span className="text-red-400 ml-1">Limit reached</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                      {!isFetchingMembers && members.length > 0 && (
+                        <div className="inline-flex items-center gap-2 text-xs text-white/40 bg-white/[0.05] mt-4 border border-white/[0.08] rounded-full px-3 py-1.5">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full block mr-1 ${
+                              planLimits.isTeamMemberLimitReached ? "bg-red-400" : "bg-green-400"
+                            }`}
+                          />
+                          {members.length}/{planLimits.teamMemberLimit === -1 ? "∞" : planLimits.teamMemberLimit} members
+                          {planLimits.isTeamMemberLimitReached && (
+                            <span className="text-red-400 ml-1">Limit reached</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="flex items-center gap-3">
-                    {/* Invite Member */}
-                    {!dataLoading && canInvite ? (
-                      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
-                            <FiPlus className="h-4 w-4" />
-                            Invite Member
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
-                          <DialogHeader>
-                            <DialogTitle className="text-[17px] font-bold text-[#f0f4ff]">
-                              Invite Team Member
-                            </DialogTitle>
-                          </DialogHeader>
-                          <form onSubmit={handleInviteSubmit} className="space-y-4 pt-1">
-                            <div className="space-y-2">
-                              <Label
-                                htmlFor="name"
-                                className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
-                              >
-                                Name
-                              </Label>
-                              <Input
-                                id="name"
-                                type="text"
-                                placeholder="Enter full name"
-                                value={inviteForm.name}
-                                onChange={(e) =>
-                                  setInviteForm({ ...inviteForm, name: e.target.value })
-                                }
-                                className="bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
-                                required
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label
-                                htmlFor="email"
-                                className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
-                              >
-                                Email
-                              </Label>
-                              <Input
-                                id="email"
-                                type="email"
-                                placeholder="Enter email address"
-                                value={inviteForm.email}
-                                onChange={(e) =>
-                                  setInviteForm({ ...inviteForm, email: e.target.value })
-                                }
-                                className="bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
-                                required
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label
-                                htmlFor="role"
-                                className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
-                              >
-                                Role
-                              </Label>
-                              <Select
-                                value={inviteForm.role}
-                                onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
-                                  setInviteForm({ ...inviteForm, role: value })
-                                }
-                              >
-                                <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] border-none focus:ring-0 focus-visible:outline-none outline-none">
-                                  <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
-                                  <SelectItem value="MEMBER">Member</SelectItem>
-                                  <SelectItem value="ADMIN">Admin</SelectItem>
-                                  {!dataLoading && userRole?.role === "OWNER" && (
-                                    <SelectItem value="OWNER">Owner</SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="flex gap-[10px] pt-2">
-                              <Button
-                                type="button"
-                                onClick={() => {
-                                  setIsInviteDialogOpen(false);
-                                  setInviteForm({ email: "", name: "", role: "MEMBER" });
-                                }}
-                                className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                type="submit"
-                                disabled={isSubmittingInvite}
-                                className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
-                              >
-                                {isSubmittingInvite ? (
-                                  <>
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                                    Sending...
-                                  </>
-                                ) : (
-                                  <>
-                                    <FiMail className="h-4 w-4 mr-2" />
-                                    Send Invite
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-                    ) : (
-                      <TooltipProvider>
-                        <ShadTooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              disabled
-                              className="opacity-50 cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl"
-                            >
+                    <div className="flex items-center gap-3">
+                      {!dataLoading && canInvite ? (
+                        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
                               <FiPlus className="h-4 w-4" />
                               Invite Member
                             </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-sm max-w-xs">
-                              {!canPerformAction(userRole, "invite_members")
-                                ? `This action requires ${getActionAllowedRoles("invite_members")} permissions.`
-                                : planLimits.isTeamMemberLimitReached
-                                ? `${getLimitMessage('teamMember', plan as any)} Upgrade your plan to add more members.`
-                                : 'Cannot invite members'}
-                            </p>
-                          </TooltipContent>
-                        </ShadTooltip>
-                      </TooltipProvider>
-                    )}
-
-                    {/* Refresh */}
-                    <Button
-                      onClick={refreshMembersAndRole}
-                      disabled={isFetchingMembers}
-                      className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 flex items-center gap-2 px-4 py-2 rounded-xl"
-                    >
-                      <FiRefreshCw className={`h-4 w-4 ${isFetchingMembers ? "animate-spin" : ""}`} />
-                      {isFetchingMembers ? "Refreshing..." : "Refresh"}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Members grid */}
-                {isFetchingMembers ? (
-                  <div className="flex items-center justify-center py-20">
-                    <LoadingSpinner text="Fetching team members..." />
-                  </div>
-                ) : members.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[14px]">
-                    {members.map((member) => (
-                      <MemberCard
-                        key={member.id}
-                        member={member}
-                        onEditRole={(m) => {
-                          setEditingMember(m);
-                          setIsEditRoleOpen(true);
-                        }}
-                        onDelete={promptDeleteMember}
-                        userRole={userRole}
-                        dataLoading={dataLoading}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-24 text-center">
-                    <div className="h-20 w-20 rounded-full bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-5">
-                      <FiUsers className="h-9 w-9 text-white/25" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">No team members yet</h3>
-                    <p className="text-white/35 text-sm mb-6">
-                      Start building your team by inviting your first member.
-                    </p>
-                    <Button
-                      onClick={() => setIsInviteDialogOpen(true)}
-                      disabled={planLimits.isTeamMemberLimitReached}
-                      className={`bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-5 py-2.5 rounded-xl ${
-                        planLimits.isTeamMemberLimitReached ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <FiPlus className="h-4 w-4" />
-                      {planLimits.isTeamMemberLimitReached ? 'Team Member Limit Reached' : 'Invite your first member'}
-                    </Button>
-                  </div>
-                )}
-              </main>
-            </div>
-          </div>
-        </SignedIn>
-
-        {/* ── Edit Role Dialog ──────────────────────────────────────────────── */}
-        <Dialog
-          open={isEditRoleOpen}
-          onOpenChange={(open) => {
-            if (!open) {
-              setIsEditRoleOpen(false);
-              setEditingMember(null);
-            }
-          }}
-        >
-          <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="text-[17px] font-bold text-[#f0f4ff]">Edit role</DialogTitle>
-            </DialogHeader>
-            {editingMember && (
-              <form onSubmit={handleSaveRole} className="space-y-4 pt-1">
-                {/* Member preview */}
-                <div className="flex items-center gap-3 p-3 rounded-[12px] bg-white/[0.04] border border-white/[0.07]">
-                  <div
-                    className={`h-[36px] w-[36px] rounded-[10px] bg-gradient-to-br ${
-                      roleConfig[editingMember.role].avatarGradient
-                    } flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0`}
-                  >
-                    {getInitials(editingMember.name, editingMember.invited_email)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-white/85 truncate">
-                      {editingMember.name ?? editingMember.invited_email ?? "Team Member"}
-                    </p>
-                    <p className="text-[11px] text-white/35 truncate">
-                      {editingMember.invited_email ?? "—"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="edit-role"
-                    className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
-                  >
-                    Role
-                  </Label>
-                  <Select
-                    value={editingMember.role}
-                    onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
-                      setEditingMember({ ...editingMember, role: value })
-                    }
-                  >
-                    <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] border-none focus:ring-0 focus-visible:outline-none outline-none">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
-                      <SelectItem value="MEMBER">Member</SelectItem>
-                      <SelectItem value="ADMIN">Admin</SelectItem>
-                      {!dataLoading && userRole?.role === "OWNER" && (
-                        <SelectItem value="OWNER">Owner</SelectItem>
+                          </DialogTrigger>
+                          <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
+                            <DialogHeader>
+                              <DialogTitle className="text-[17px] font-bold text-[#f0f4ff]">
+                                Invite Team Member
+                              </DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleInviteSubmit} className="space-y-4 pt-1">
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor="name"
+                                  className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
+                                >
+                                  Name
+                                </Label>
+                                <Input
+                                  id="name"
+                                  type="text"
+                                  placeholder="Enter full name"
+                                  value={inviteForm.name}
+                                  onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
+                                  className="bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
+                                  required
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor="email"
+                                  className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
+                                >
+                                  Email
+                                </Label>
+                                <Input
+                                  id="email"
+                                  type="email"
+                                  placeholder="Enter email address"
+                                  value={inviteForm.email}
+                                  onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                                  className="bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
+                                  required
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor="role"
+                                  className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
+                                >
+                                  Role
+                                </Label>
+                                <Select
+                                  value={inviteForm.role}
+                                  onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
+                                    setInviteForm({ ...inviteForm, role: value })
+                                  }
+                                >
+                                  <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] border-none focus:ring-0 focus-visible:outline-none outline-none">
+                                    <SelectValue placeholder="Select role" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
+                                    <SelectItem value="MEMBER">Member</SelectItem>
+                                    <SelectItem value="ADMIN">Admin</SelectItem>
+                                    {!dataLoading && userRole?.role === "OWNER" && (
+                                      <SelectItem value="OWNER">Owner</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex gap-[10px] pt-2">
+                                <Button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsInviteDialogOpen(false);
+                                    setInviteForm({ email: "", name: "", role: "MEMBER" });
+                                  }}
+                                  className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  type="submit"
+                                  disabled={isSubmittingInvite}
+                                  className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
+                                >
+                                  {isSubmittingInvite ? (
+                                    <>
+                                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                                      Sending...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FiMail className="h-4 w-4 mr-2" />
+                                      Send Invite
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                      ) : (
+                        <TooltipProvider>
+                          <ShadTooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                disabled
+                                className="opacity-50 cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl"
+                              >
+                                <FiPlus className="h-4 w-4" />
+                                Invite Member
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-sm max-w-xs">
+                                {!canPerformAction(userRole, "invite_members")
+                                  ? `This action requires ${getActionAllowedRoles("invite_members")} permissions.`
+                                  : planLimits.isTeamMemberLimitReached
+                                  ? `${getLimitMessage("teamMember", plan as any)} Upgrade your plan to add more members.`
+                                  : "Cannot invite members"}
+                              </p>
+                            </TooltipContent>
+                          </ShadTooltip>
+                        </TooltipProvider>
                       )}
-                    </SelectContent>
-                  </Select>
-                </div>
 
-                <div className="flex gap-[10px] pt-2">
+                      <Button
+                        onClick={refreshMembersAndRole}
+                        disabled={isFetchingMembers}
+                        className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 flex items-center gap-2 px-4 py-2 rounded-xl"
+                      >
+                        <FiRefreshCw className={`h-4 w-4 ${isFetchingMembers ? "animate-spin" : ""}`} />
+                        {isFetchingMembers ? "Refreshing..." : "Refresh"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Members grid */}
+                  {isFetchingMembers ? (
+                    <div className="flex items-center justify-center py-20">
+                      <LoadingSpinner text="Fetching team members..." />
+                    </div>
+                  ) : members.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[14px]">
+                      {members.map((member) => (
+                        <MemberCard
+                          key={member.id}
+                          member={member}
+                          onEditRole={(m) => {
+                            setEditingMember(m);
+                            setIsEditRoleOpen(true);
+                          }}
+                          onDelete={promptDeleteMember}
+                          userRole={userRole}
+                          dataLoading={dataLoading}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                      <div className="h-20 w-20 rounded-full bg-white/[0.04] border border-white/[0.07] flex items-center justify-center mb-5">
+                        <FiUsers className="h-9 w-9 text-white/25" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">No team members yet</h3>
+                      <p className="text-white/35 text-sm mb-6">
+                        Start building your team by inviting your first member.
+                      </p>
+                      <Button
+                        onClick={() => setIsInviteDialogOpen(true)}
+                        disabled={planLimits.isTeamMemberLimitReached}
+                        className={`bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-5 py-2.5 rounded-xl ${
+                          planLimits.isTeamMemberLimitReached ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        <FiPlus className="h-4 w-4" />
+                        {planLimits.isTeamMemberLimitReached ? "Team Member Limit Reached" : "Invite your first member"}
+                      </Button>
+                    </div>
+                  )}
+                </main>
+              </div>
+            </div>
+          </SignedIn>
+
+          {/* ── Edit Role Dialog ──────────────────────────────────────────────── */}
+          <Dialog
+            open={isEditRoleOpen}
+            onOpenChange={(open) => {
+              if (!open) {
+                setIsEditRoleOpen(false);
+                setEditingMember(null);
+              }
+            }}
+          >
+            <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="text-[17px] font-bold text-[#f0f4ff]">Edit role</DialogTitle>
+              </DialogHeader>
+              {editingMember && (
+                <form onSubmit={handleSaveRole} className="space-y-4 pt-1">
+                  <div className="flex items-center gap-3 p-3 rounded-[12px] bg-white/[0.04] border border-white/[0.07]">
+                    <div
+                      className={`h-[36px] w-[36px] rounded-[10px] bg-gradient-to-br ${
+                        roleConfig[editingMember.role].avatarGradient
+                      } flex items-center justify-center text-[12px] font-bold text-white flex-shrink-0`}
+                    >
+                      {getInitials(editingMember.name, editingMember.invited_email)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-white/85 truncate">
+                        {editingMember.name ?? editingMember.invited_email ?? "Team Member"}
+                      </p>
+                      <p className="text-[11px] text-white/35 truncate">
+                        {editingMember.invited_email ?? "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="edit-role"
+                      className="text-[12px] font-bold tracking-[0.5px] text-white/40 uppercase"
+                    >
+                      Role
+                    </Label>
+                    <Select
+                      value={editingMember.role}
+                      onValueChange={(value: "OWNER" | "ADMIN" | "MEMBER") =>
+                        setEditingMember({ ...editingMember, role: value })
+                      }
+                    >
+                      <SelectTrigger className="bg-white/[0.05] text-[#eef2ff] rounded-[11px] h-[42px] border-none focus:ring-0 focus-visible:outline-none outline-none">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1e2535] border-white/10 text-white rounded-[13px]">
+                        <SelectItem value="MEMBER">Member</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                        {!dataLoading && userRole?.role === "OWNER" && (
+                          <SelectItem value="OWNER">Owner</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex gap-[10px] pt-2">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setIsEditRoleOpen(false);
+                        setEditingMember(null);
+                      }}
+                      className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isSavingRole}
+                      className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
+                    >
+                      {isSavingRole ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save changes"
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* ── Delete Confirmation Dialog ────────────────────────────────────── */}
+          <Dialog
+            open={!!deleteTarget}
+            onOpenChange={(open) => {
+              if (!open) setDeleteTarget(null);
+            }}
+          >
+            <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
+              <div className="flex flex-col items-center text-center pt-2 pb-1">
+                <div className="w-[52px] h-[52px] rounded-[14px] bg-red-500/[0.12] border border-red-500/[0.22] flex items-center justify-center mb-[18px]">
+                  <FiTrash className="w-[22px] h-[22px] text-red-400" />
+                </div>
+                <h3 className="text-[17px] font-bold text-[#f0f4ff] mb-[8px]">Remove member?</h3>
+                <p className="text-[13px] text-white/45 leading-[1.55] mb-[24px]">
+                  This will remove{" "}
+                  <span className="text-white/75 font-semibold">{deleteTarget?.name}</span> from your
+                  team. They&apos;ll lose access immediately.
+                </p>
+                <div className="flex w-full gap-[10px]">
                   <Button
-                    type="button"
-                    onClick={() => {
-                      setIsEditRoleOpen(false);
-                      setEditingMember(null);
-                    }}
+                    onClick={() => setDeleteTarget(null)}
+                    disabled={isDeletingMember}
                     className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
                   >
                     Cancel
                   </Button>
                   <Button
-                    type="submit"
-                    disabled={isSavingRole}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
+                    onClick={handleDeleteMember}
+                    disabled={isDeletingMember}
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
                   >
-                    {isSavingRole ? (
+                    {isDeletingMember ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                        Saving...
+                        Removing...
                       </>
                     ) : (
-                      "Save changes"
+                      "Remove"
                     )}
                   </Button>
                 </div>
-              </form>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* ── Delete Confirmation Dialog ────────────────────────────────────── */}
-        <Dialog
-          open={!!deleteTarget}
-          onOpenChange={(open) => {
-            if (!open) setDeleteTarget(null);
-          }}
-        >
-          <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
-            <div className="flex flex-col items-center text-center pt-2 pb-1">
-              <div className="w-[52px] h-[52px] rounded-[14px] bg-red-500/[0.12] border border-red-500/[0.22] flex items-center justify-center mb-[18px]">
-                <FiTrash className="w-[22px] h-[22px] text-red-400" />
               </div>
-              <h3 className="text-[17px] font-bold text-[#f0f4ff] mb-[8px]">Remove member?</h3>
-              <p className="text-[13px] text-white/45 leading-[1.55] mb-[24px]">
-                This will remove{" "}
-                <span className="text-white/75 font-semibold">{deleteTarget?.name}</span> from your
-                team. They&apos;ll lose access immediately.
-              </p>
-              <div className="flex w-full gap-[10px]">
-                <Button
-                  onClick={() => setDeleteTarget(null)}
-                  disabled={isDeletingMember}
-                  className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleDeleteMember}
-                  disabled={isDeletingMember}
-                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
-                >
-                  {isDeletingMember ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                      Removing...
-                    </>
-                  ) : (
-                    "Remove"
-                  )}
-                </Button>
+            </DialogContent>
+          </Dialog>
+
+          <SignedOut>
+            <div className="flex items-center justify-center h-screen">
+              <div className="text-center">
+                <h1 className="text-xl font-semibold mb-4 text-white">Redirecting to sign in...</h1>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto" />
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-
-        <SignedOut>
-          <div className="flex items-center justify-center h-screen">
-            <div className="text-center">
-              <h1 className="text-xl font-semibold mb-4 text-white">Redirecting to sign in...</h1>
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto" />
-            </div>
-          </div>
-        </SignedOut>
-      </div>
-    </DashboardAccess>
+          </SignedOut>
+        </div>
+      </DashboardAccess>
+    </>
   );
 }
