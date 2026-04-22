@@ -91,7 +91,20 @@ export function useSignUpController() {
         errors: err?.errors
       });
 
-      if (errorCode === "identifier_exists") {
+      // Check if the error indicates that account already exists - multiple scenarios
+      const isAccountExists = 
+        errorCode === "identifier_exists" ||
+        errorMessage.toLowerCase().includes("already exists") ||
+        errorMessage.toLowerCase().includes("already taken") ||
+        errorMessage.toLowerCase().includes("email already exists") ||
+        errorMessage.toLowerCase().includes("account already exists") ||
+        errorMessage.toLowerCase().includes("user already exists") ||
+        errorMessage.toLowerCase().includes("duplicate") ||
+        errorMessage.toLowerCase().includes("email already registered") ||
+        errorMessage.toLowerCase().includes("identifier already taken");
+
+      if (isAccountExists) {
+        // Redirect to sign in page with email pre-filled
         router.push(`/signin?email=${encodeURIComponent(email)}&message=${encodeURIComponent("Account already exists. Please sign in.")}`);
         return;
       }
