@@ -15,9 +15,9 @@ const plans = [
     quarterlyPrice: '282',
     yearlyPrice: '1010',
     tagline: 'Perfect for growing teams',
-    monthlyLink: "https://quizzviz1.lemonsqueezy.com/buy/growth-monthly",
-    quarterlyLink: "https://quizzviz1.lemonsqueezy.com/buy/growth-quarterly",
-    yearlyLink: "https://quizzviz1.lemonsqueezy.com/buy/growth-yearly",
+    monthlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/2cbc34b9-8d5d-4c22-8914-2cf33f8165e6",
+    quarterlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/f9215dd2-ff70-4299-a967-d765f37cc708",
+    yearlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/acaeddc9-da1d-4539-8cc5-d130eca8363c",
     features: [
       { text: '500 candidates per month', icon: Users },
       { text: '30 quizzes per month', icon: Zap },
@@ -36,9 +36,9 @@ const plans = [
     yearlyPrice: '2537',
     tagline: 'Most Popular',
     popular: true,
-    monthlyLink: "https://quizzviz1.lemonsqueezy.com/buy/scale-monthly",
-    quarterlyLink: "https://quizzviz1.lemonsqueezy.com/buy/scale-quarterly",
-    yearlyLink: "https://quizzviz1.lemonsqueezy.com/buy/scale-yearly",
+    monthlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/87871d63-d0db-419d-a089-a75a0bda83a4",
+    quarterlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/e039b54f-295d-4891-8087-53f983db1dfb",
+    yearlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/18432203-777a-4a83-aca9-d2302e7ed6a0",
     features: [
       { text: '2000 candidates per month', icon: Users },
       { text: '70 quizzes per month', icon: Zap },
@@ -56,9 +56,9 @@ const plans = [
     quarterlyPrice: '1137',
     yearlyPrice: '4069',
     tagline: 'For large organizations',
-    monthlyLink: "https://quizzviz1.lemonsqueezy.com/buy/enterprise-monthly",
-    quarterlyLink: "https://quizzviz1.lemonsqueezy.com/buy/enterprise-quarterly",
-    yearlyLink: "https://quizzviz1.lemonsqueezy.com/buy/enterprise-yearly",
+    monthlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/8d067c96-a869-4829-98ba-b1bb03a6a96f",
+    quarterlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/6658ae54-0233-4145-9dd7-894c18746c77",
+    yearlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/fa9e1eb9-fb3e-47a1-af4e-a50b0c70bfad",
     features: [
       { text: '6000 candidates per month', icon: Users },
       { text: 'Unlimited quizzes', icon: Zap },
@@ -119,14 +119,14 @@ const PricingPage = () => {
         return;
       }
       
-      // FREE ACCESS - Redirect to dashboard instead of subscription
+      // Company exists - navigate to checkout for subscription
       toast({
         title: 'Success!',
-        description: 'Company already exists. Redirecting to dashboard...',
+        description: 'Company verified. Redirecting to checkout...',
       });
         
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        window.location.href = planLink;
       }, 1000);
       return;
     } catch (error) {
