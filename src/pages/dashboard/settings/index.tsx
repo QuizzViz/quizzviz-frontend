@@ -16,7 +16,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (isLoaded && !user) router.push("/signin");
+    if (isLoaded && !user) router.push("/signup");
     else if (isLoaded) setIsLoading(false);
   }, [isLoaded, user, router]);
 

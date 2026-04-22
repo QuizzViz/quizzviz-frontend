@@ -121,7 +121,7 @@ export default function ProfilePage() {
   // Redirect if not signed in
   useEffect(() => {
     if (isLoaded && !user) {
-      router.push("/signin");
+      router.push("/signup");
     }
   }, [isLoaded, user, router]);
 

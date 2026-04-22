@@ -50,7 +50,7 @@ const PricingPage = () => {
     e.preventDefault();
     
     if (!isSignedIn) {
-      router.push('/signin?redirect=/pricing');
+      router.push('/signup?redirect=/pricing');
       return;
     }
 

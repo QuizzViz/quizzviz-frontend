@@ -228,7 +228,7 @@ const HeroSection: FC = () => {
 
     try {
       if (!isSignedIn) {
-        await router.push(`/signin?redirect_url=${encodeURIComponent('/dashboard')}`);
+        await router.push(`/signup?redirect_url=${encodeURIComponent('/dashboard')}`);
       } else {
         await router.push('/dashboard');
       }
