@@ -30,6 +30,19 @@ export default function SignInPage() {
   }, [router.isReady, router.query, setEmail, setError]);
 
   useEffect(() => {
+    // Check for OAuth failure redirect
+    if (!user && isLoaded && router.isReady) {
+      const authIntent = sessionStorage.getItem('authIntent');
+      const errorMessage = router.query.message;
+      
+      if (authIntent === 'signin' && errorMessage) {
+        console.log("OAuth failure detected on signin page, redirecting to signup...");
+        sessionStorage.removeItem('authIntent');
+        router.push(`/signup?message=${encodeURIComponent(typeof errorMessage === 'string' ? errorMessage : '')}`);
+        return;
+      }
+    }
+    
     if (user) {
       setIsRedirecting(true);
       // Check if user has company metadata, otherwise redirect to onboarding
@@ -42,7 +55,7 @@ export default function SignInPage() {
         router.push("/onboarding");
       }
     }
-  }, [user, router]);
+  }, [user, router, isLoaded, router.isReady]);
 
   if (isRedirecting || (isLoaded && user)) {
     return (

@@ -29,7 +29,7 @@ export function useSignInController() {
         await signIn.authenticateWithRedirect({
           strategy: provider,
           redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/dashboard",
+          redirectUrlComplete: "/sso-callback",
         });
       } catch (err: any) {
         // Handle different error structures for OAuth
