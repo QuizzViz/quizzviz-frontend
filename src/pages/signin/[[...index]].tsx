@@ -30,44 +30,29 @@ export default function SignInPage() {
   }, [router.isReady, router.query, setEmail, setError]);
 
   useEffect(() => {
-    // Check for OAuth failure redirect
-    if (!user && isLoaded && router.isReady) {
-      const authIntent = sessionStorage.getItem('authIntent');
-      const errorMessage = router.query.message;
-      const clerkError = router.query.clerk_error;
-      const oauthStartTime = sessionStorage.getItem('oauthStartTime');
+    if (user) {
+      // Check if there's an auth intent from OAuth flow
+      const authIntent = typeof window !== 'undefined' ? sessionStorage.getItem('authIntent') : null;
       
-      // Check for OAuth timeout (if it's been more than 30 seconds)
-      if (authIntent === 'signin' && oauthStartTime) {
-        const elapsed = Date.now() - parseInt(oauthStartTime);
-        if (elapsed > 30000) { // 30 seconds timeout
-          console.log("OAuth timeout detected, redirecting to signup...");
-          sessionStorage.removeItem('authIntent');
-          sessionStorage.removeItem('oauthStartTime');
-          router.push('/signup?message=No account found. Please sign up with Google.');
-          return;
+      if (authIntent === 'signin') {
+        // User was trying to sign in but was already authenticated - redirect to dashboard
+        const hasCompany = user?.unsafeMetadata?.companyId || 
+                         (typeof window !== 'undefined' && localStorage.getItem('userCompanyId'));
+        
+        if (hasCompany) {
+          router.push("/dashboard");
+        } else {
+          router.push("/onboarding");
         }
-      }
-      
-      // Check for Clerk OAuth error in URL
-      if (clerkError === 'external_account_not_found' || 
-          (typeof clerkError === 'string' && clerkError.includes('not found'))) {
-        console.log("Clerk OAuth error detected, redirecting to signup...");
-        sessionStorage.removeItem('authIntent');
-        sessionStorage.removeItem('oauthStartTime');
-        router.push('/signup?message=No account found. Please sign up with Google.');
         return;
       }
       
-      if (authIntent === 'signin' && errorMessage) {
-        console.log("OAuth failure detected on signin page, redirecting to signup...");
-        sessionStorage.removeItem('authIntent');
-        sessionStorage.removeItem('oauthStartTime');
-        router.push(`/signup?message=${encodeURIComponent(typeof errorMessage === 'string' ? errorMessage : '')}`);
-        return;
-      }
+      // For regular signin page access, show the "already signed in" UI
+      // This handles cases where user manually navigates to signin while logged in
     }
-    
+  }, [user, router]);
+
+  useEffect(() => {
     if (user) {
       setIsRedirecting(true);
       // Check if user has company metadata, otherwise redirect to onboarding
@@ -80,7 +65,7 @@ export default function SignInPage() {
         router.push("/onboarding");
       }
     }
-  }, [user, router, isLoaded, router.isReady]);
+  }, [user, router]);
 
   if (isRedirecting || (isLoaded && user)) {
     return (

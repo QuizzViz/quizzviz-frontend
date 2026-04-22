@@ -32,15 +32,24 @@ export default function SignUpPage() {
   // Handle redirect for authenticated users
   useEffect(() => {
     if (user) {
-      // Check if user has company metadata, otherwise redirect to onboarding
-      const hasCompany = user?.unsafeMetadata?.companyId || 
-                       (typeof window !== 'undefined' && localStorage.getItem('userCompanyId'));
+      // Check if there's an auth intent from OAuth flow
+      const authIntent = typeof window !== 'undefined' ? sessionStorage.getItem('authIntent') : null;
       
-      if (hasCompany) {
-        router.push("/dashboard");
-      } else {
-        router.push("/onboarding");
+      if (authIntent === 'signup') {
+        // User was trying to sign up but was already authenticated - redirect to dashboard
+        const hasCompany = user?.unsafeMetadata?.companyId || 
+                         (typeof window !== 'undefined' && localStorage.getItem('userCompanyId'));
+        
+        if (hasCompany) {
+          router.push("/dashboard");
+        } else {
+          router.push("/onboarding");
+        }
+        return;
       }
+      
+      // For regular signup page access, show the "already signed in" UI
+      // This handles cases where user manually navigates to signup while logged in
     }
   }, [user, router]);
 

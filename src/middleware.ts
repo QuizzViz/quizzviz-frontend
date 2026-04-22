@@ -78,8 +78,18 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(new URL('/signup', request.url));
     }
 
-    // If user is signed in and trying to access signin/signup, redirect to dashboard
+    // If user is signed in and trying to access signin/signup, check for OAuth intent first
     if (userId && (pathname === '/signin' || pathname === '/signup')) {
+      const { searchParams } = request.nextUrl;
+      const message = searchParams.get('message');
+      const email = searchParams.get('email');
+      
+      // Allow access if there's a message or email parameter (OAuth redirect)
+      if (message || email) {
+        return NextResponse.next();
+      }
+      
+      // Otherwise redirect to dashboard
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
