@@ -34,6 +34,7 @@ import { canPerformAction, getActionAllowedRoles } from "@/utils/rolePermissions
 import { useCachedDashboardData } from "@/hooks/useCachedData";
 import { generateCompanyId, validateCompanyData } from "@/utils/companyValidation";
 import { usePlanLimits, getLimitMessage, getUpgradeCTA } from "@/hooks/usePlanLimits";
+import { useUserPlan } from '@/hooks/useUserPlan';
 
 interface CompanyMember {
   id: string;
@@ -377,7 +378,8 @@ export default function TeamsPage() {
   const { toast } = useToast();
 
   // Get plan limits for team members
-  const plan = (user?.publicMetadata?.plan as string) || 'Free';
+  const { data: userPlanData } = useUserPlan();
+  const plan = userPlanData?.plan_name || 'Free';
   const currentUsage = {
     quizzesThisMonth: 0, // Not relevant for teams page
     totalCandidates: 0, // Not relevant for teams page

@@ -3,6 +3,7 @@ import { useUser } from "@clerk/nextjs";
 import { useCachedFetch } from './useCachedFetch';
 import { useState, useEffect } from 'react';
 import { useCompanyInfo } from './useCompanyInfo';
+import { useUserPlan } from './useUserPlan';
 
 type ApiError = Error & {
   status?: number;
@@ -43,7 +44,8 @@ export function useQuizUsage() {
   const { toast } = useToast();
   const [errorShown, setErrorShown] = useState(false);
   
-  const plan = (user?.publicMetadata?.plan as string) || 'Free';
+  const { data: userPlanData } = useUserPlan();
+  const plan = userPlanData?.plan_name || 'Free';
   
   // Use the same logic as profile page
   const { companyInfo, isLoading: isCompanyLoading, error: companyError } = useCompanyInfo();

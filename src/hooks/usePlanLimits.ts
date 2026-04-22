@@ -1,7 +1,7 @@
 import { useUser } from '@clerk/nextjs';
 import { useCompanyInfo } from './useCompanyInfo';
 import { getPlanLimits } from '@/config/plans';
-import { PlanType } from './useUserPlan';
+import { PlanType, useUserPlan } from './useUserPlan';
 
 export interface CurrentUsage {
   quizzesThisMonth: number;
@@ -35,8 +35,9 @@ export function usePlanLimits(currentUsage?: CurrentUsage, customLimits?: {
 }): LimitStatus {
   const { user } = useUser();
   const { companyInfo } = useCompanyInfo();
+  const { data: userPlanData } = useUserPlan();
   
-  const plan = (user?.publicMetadata?.plan as PlanType) || 'Free';
+  const plan = userPlanData?.plan_name || 'Free';
   const planLimits = getPlanLimits(plan, customLimits);
   
   // Default usage if not provided
