@@ -54,14 +54,14 @@ const UsagePage = () => {
   
   // Get plan limits
   const plan = (user?.publicMetadata?.plan as string) || 'Free';
-  const planConfig = getPlanLimits(plan as any);
+  const planConfig = getPlanLimits(plan as any, companyInfo?.custom_limits);
   
   const currentUsage = {
     quizzesThisMonth: usageData?.current_month?.quiz_count || 0,
     totalCandidates: companyUsageData?.current_month?.unique_candidates || 0,
     teamMembers: 0 // TODO: Get team member count from teams API
   };
-  const planLimits = usePlanLimits(currentUsage);
+  const planLimits = usePlanLimits(currentUsage, companyInfo?.custom_limits);
   
   const currentMonth = usageData?.current_month;
   const monthlyBreakdown = usageData?.monthly_breakdown || [];

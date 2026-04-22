@@ -7,6 +7,12 @@ export interface CompanyInfo {
   name: string;
   owner_email?: string;
   created_at?: string;
+  custom_limits?: {
+    maxQuizzes?: number;
+    maxCandidates?: number;
+    maxQuestions?: number;
+    maxTeamMembers?: number;
+  };
 }
 
 export function useCompanyInfo() {
@@ -42,12 +48,24 @@ export function useCompanyInfo() {
       name: string;
       owner_email?: string;
       created_at?: string;
+      custom_limits?: {
+        maxQuizzes?: number;
+        maxCandidates?: number;
+        maxQuestions?: number;
+        maxTeamMembers?: number;
+      };
     }>;
     // Single company object response
     company_id?: string;
     name?: string;
     owner_email?: string;
     created_at?: string;
+    custom_limits?: {
+      maxQuizzes?: number;
+      maxCandidates?: number;
+      maxQuestions?: number;
+      maxTeamMembers?: number;
+    };
   }>(
     ['companyInfo', user?.id || '', (metadataCompanyId || localStorageCompanyId || '') as string],
     fetchUrl,
@@ -61,13 +79,16 @@ export function useCompanyInfo() {
       const companyId = (metadataCompanyId || localStorageCompanyId || '') as string;
       const companyName = (user?.unsafeMetadata?.companyName || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company') as string;
       
-      // Try to get owner email from fetched data
+      // Try to get owner email and custom limits from fetched data
       let ownerEmail = '';
+      let customLimits;
       if (companyData) {
         if (Array.isArray(companyData.companies) && companyData.companies.length > 0) {
           ownerEmail = companyData.companies[0]?.owner_email || '';
-        } else if (companyData.owner_email) {
-          ownerEmail = companyData.owner_email;
+          customLimits = companyData.companies[0]?.custom_limits;
+        } else {
+          ownerEmail = companyData.owner_email || '';
+          customLimits = companyData.custom_limits;
         }
       }
       
@@ -75,7 +96,8 @@ export function useCompanyInfo() {
         id: companyId,
         name: companyName,
         owner_email: ownerEmail,
-        created_at: companyData?.created_at
+        created_at: companyData?.created_at,
+        custom_limits: customLimits
       };
     }
     
@@ -86,7 +108,8 @@ export function useCompanyInfo() {
         id: (company.company_id || company.id || '') as string,
         name: company.name as string,
         owner_email: company.owner_email || '',
-        created_at: company.created_at
+        created_at: company.created_at,
+        custom_limits: company.custom_limits
       };
     }
     

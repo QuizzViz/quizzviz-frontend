@@ -53,10 +53,28 @@ export const PLAN_LIMITS: PlanLimitsMap = {
   }
 } as const;
 
-// This is now a function that takes a plan type and returns the limits
-export const getPlanLimits = (plan: PlanType | null): PlanLimits => {
+// This is now a function that takes a plan type and optional custom limits, returns the limits
+export const getPlanLimits = (plan: PlanType | null, customLimits?: {
+  maxQuizzes?: number;
+  maxCandidates?: number;
+  maxQuestions?: number;
+  maxTeamMembers?: number;
+}): PlanLimits => {
   if (!plan) return PLAN_LIMITS['Free'];
-  return PLAN_LIMITS[plan];
+  
+  const baseLimits = PLAN_LIMITS[plan];
+  
+  // If no custom limits, return base limits
+  if (!customLimits) return baseLimits;
+  
+  // Merge custom limits with base limits
+  return {
+    ...baseLimits,
+    maxQuizzes: customLimits.maxQuizzes !== undefined ? customLimits.maxQuizzes : baseLimits.maxQuizzes,
+    maxCandidates: customLimits.maxCandidates !== undefined ? customLimits.maxCandidates : baseLimits.maxCandidates,
+    maxQuestions: customLimits.maxQuestions !== undefined ? customLimits.maxQuestions : baseLimits.maxQuestions,
+    maxTeamMembers: customLimits.maxTeamMembers !== undefined ? customLimits.maxTeamMembers : baseLimits.maxTeamMembers,
+  };
 };
 export type { PlanType };
 
