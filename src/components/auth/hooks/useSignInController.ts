@@ -37,8 +37,13 @@ export function useSignInController() {
         let errorCode = "";
         
         // Check for nested error structure (OAuth verification errors)
-        if (err?.response?.data?.sign_in?.first_factor_verification?.error) {
-          const oauthError = err.response.data.sign_in.first_factor_verification.error;
+        if (err?.response?.sign_in?.first_factor_verification?.error) {
+          const oauthError = err.response.sign_in.first_factor_verification.error;
+          msg = oauthError.long_message || oauthError.message || "";
+          errorCode = oauthError.code || "";
+        } else if (err?.response?.sign_in?.first_factor_verification?.error) {
+          // Alternative path for error structure
+          const oauthError = err.response.sign_in.first_factor_verification.error;
           msg = oauthError.long_message || oauthError.message || "";
           errorCode = oauthError.code || "";
         } else {

@@ -8,25 +8,29 @@ export default function SSOCallback() {
   const [callbackComplete, setCallbackComplete] = useState(false);
 
   useEffect(() => {
-    // Wait until Clerk is loaded AND the redirect callback has finished
+    // Wait until Clerk is loaded AND redirect callback has finished
     if (!isLoaded || !callbackComplete) return;
+
+    // HANDLE FAILED OAUTH HERE - Before main logic
+    if (!isSignedIn) {
+      const authIntent = sessionStorage.getItem("authIntent");
+
+      if (authIntent === "signin") {
+        router.push("/signup?message=No account found. Please sign up with Google.");
+      } else if (authIntent === "signup") {
+        router.push("/signin?message=Account already exists. Please sign in with Google.");
+      } else {
+        router.push("/signin");
+      }
+
+      return;
+    }
 
     if (isSignedIn && user) {
       const authIntent = sessionStorage.getItem('authIntent');
-      const signupAttemptTime = sessionStorage.getItem('signupAttemptTime');
-      const createdAt = user.createdAt;
-      const now = new Date();
-      const userAge = createdAt ? now.getTime() - new Date(createdAt).getTime() : Infinity;
-      const isRecentSignupAttempt = signupAttemptTime
-        ? now.getTime() - parseInt(signupAttemptTime) < 30000
-        : false;
 
-      console.log('SSO Callback Details:', {
+      console.log('SSO Callback Success:', {
         authIntent,
-        userAge,
-        userAgeInMinutes: userAge / (1000 * 60),
-        isRecentSignupAttempt,
-        isNewUser: userAge < 300000,
         userEmail: user.primaryEmailAddress?.emailAddress,
       });
 
@@ -35,21 +39,12 @@ export default function SSOCallback() {
       sessionStorage.removeItem('signupAttemptTime');
 
       if (authIntent === 'signup') {
-        if (isRecentSignupAttempt && userAge >= 300000) {
-          // Existing user tried to sign up → redirect to signin
-          router.push("/signin?message=Account already exists. Please sign in.");
-        } else if (userAge < 300000) {
-          // Genuinely new user → onboarding
-          router.push("/onboarding");
-        } else {
-          // Fallback
-          router.push("/dashboard");
-        }
+        router.push("/onboarding");
       } else if (authIntent === 'signin') {
         router.push("/dashboard");
       } else {
-        // No intent set — default routing based on user age
-        router.push(userAge < 300000 ? "/onboarding" : "/dashboard");
+        // No intent set — default to onboarding
+        router.push("/onboarding");
       }
     }
   }, [isSignedIn, user, isLoaded, callbackComplete, router]);
