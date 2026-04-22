@@ -1,5 +1,5 @@
 import { useAuth, useUser } from '@clerk/nextjs';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export type PlanType = 'Free' | 'Growth' | 'Scale' | 'Enterprise';
 
@@ -70,6 +70,7 @@ const fetchUserPlan = async (userId: string | null | undefined, getToken: () => 
 export const useUserPlan = () => {
   const { user } = useUser();
   const { getToken } = useAuth();
+  const queryClient = useQueryClient();
   
   const fetchPlan = async () => {
     if (!user?.id) throw new Error('No user ID');
@@ -77,14 +78,24 @@ export const useUserPlan = () => {
     return fetchUserPlan(user.id, () => Promise.resolve(token));
   };
 
-  return useQuery<UserPlanResponse, Error>({
+  const query = useQuery<UserPlanResponse, Error>({
     queryKey: ['userPlan', user?.id],
     queryFn: fetchPlan,
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 60, // 1 hour
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes
     retry: 1,
   });
+
+  // Function to invalidate user plan cache
+  const invalidateUserPlan = () => {
+    queryClient.invalidateQueries({ queryKey: ['userPlan', user?.id] });
+  };
+
+  return {
+    ...query,
+    invalidateUserPlan,
+  };
 };
 
 
