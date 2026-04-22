@@ -27,12 +27,17 @@ export interface LimitStatus {
   isTeamMemberLimitReached: boolean;
 }
 
-export function usePlanLimits(currentUsage?: CurrentUsage): LimitStatus {
+export function usePlanLimits(currentUsage?: CurrentUsage, customLimits?: {
+  maxQuizzes?: number;
+  maxCandidates?: number;
+  maxQuestions?: number;
+  maxTeamMembers?: number;
+}): LimitStatus {
   const { user } = useUser();
   const { companyInfo } = useCompanyInfo();
   
   const plan = (user?.publicMetadata?.plan as PlanType) || 'Free';
-  const planLimits = getPlanLimits(plan);
+  const planLimits = getPlanLimits(plan, customLimits);
   
   // Default usage if not provided
   const usage: CurrentUsage = currentUsage || {
@@ -76,7 +81,7 @@ export function getLimitMessage(limitType: 'quiz' | 'candidate' | 'teamMember', 
   switch (limitType) {
     case 'quiz':
       if (planLimits.maxQuizzes === -1) return '';
-      return `Quiz Limit Reached\n\nYou've reached your monthly limit of ${planLimits.maxQuizzes} quizzes. <a href="/pricing" className="underline">Click to upgrade your plan.</a>`;
+      return `Quiz Limit Reached\n\nYou've reached your monthly limit of ${planLimits.maxQuizzes} quizzes.`;
     case 'candidate':
       if (planLimits.maxCandidates === -1) return '';
       return planLimits.candidatesPerMonth 
