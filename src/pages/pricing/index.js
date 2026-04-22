@@ -123,6 +123,7 @@ const PricingPage = () => {
       toast({
         title: 'Success!',
         description: 'Company verified. Redirecting to checkout...',
+        className: 'bg-green-500 border-green-500 text-white',
       });
         
       setTimeout(() => {
@@ -341,30 +342,7 @@ const PricingPage = () => {
           })}
         </div>
 
-        {/* Free Plan Info */}
-        <div className="mt-8 text-center">
-          <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 max-w-2xl mx-auto">
-            <h4 className="text-lg font-semibold text-white mb-2">Free Plan - Always Free</h4>
-            <p className="text-gray-400 text-sm mb-4">
-              Perfect for getting started. No credit card required.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <div className="text-center">
-                <div className="text-emerald-400 font-semibold">20</div>
-                <div className="text-gray-500 text-xs">Total Candidates</div>
-              </div>
-              <div className="text-center">
-                <div className="text-emerald-400 font-semibold">4</div>
-                <div className="text-gray-500 text-xs">Quizzes</div>
-              </div>
-              <div className="text-center">
-                <div className="text-emerald-400 font-semibold">20</div>
-                <div className="text-gray-500 text-xs">Max Questions</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        
         {/* Contact Info */}
         <div className="mt-6 text-center">
           <p className="text-gray-400 text-sm">
