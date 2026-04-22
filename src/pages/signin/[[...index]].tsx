@@ -34,6 +34,16 @@ export default function SignInPage() {
     if (!user && isLoaded && router.isReady) {
       const authIntent = sessionStorage.getItem('authIntent');
       const errorMessage = router.query.message;
+      const clerkError = router.query.clerk_error;
+      
+      // Check for Clerk OAuth error in URL
+      if (clerkError === 'external_account_not_found' || 
+          (typeof clerkError === 'string' && clerkError.includes('not found'))) {
+        console.log("Clerk OAuth error detected, redirecting to signup...");
+        sessionStorage.removeItem('authIntent');
+        router.push('/signup?message=No account found. Please sign up with Google.');
+        return;
+      }
       
       if (authIntent === 'signin' && errorMessage) {
         console.log("OAuth failure detected on signin page, redirecting to signup...");
