@@ -18,7 +18,7 @@ export function usePlanCheck() {
       }
 
       if (!isSignedIn) {
-        router.push('/signin');
+        router.push('/signup');
         return;
       }
 

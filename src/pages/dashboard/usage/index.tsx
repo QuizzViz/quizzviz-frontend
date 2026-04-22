@@ -54,7 +54,7 @@ const UsagePage = () => {
   const { companyInfo } = useCompanyInfo();
   
   // Get plan limits
-  const { data: userPlanData } = useUserPlan();
+  const { data: userPlanData, refetch: refetchPlan } = useUserPlan();
   const plan = userPlanData?.plan_name || 'Free';
   const planConfig = getPlanLimits(plan as any, companyInfo?.custom_limits);
   
@@ -75,7 +75,7 @@ const UsagePage = () => {
   const handleRefresh = async () => {
     try {
       setIsRefreshing(true);
-      await Promise.all([refetchQuizUsage(), refetchCompanyUsage()]);
+      await Promise.all([refetchQuizUsage(), refetchCompanyUsage(), refetchPlan()]);
       setLastUpdated(new Date());
     } finally {
       setIsRefreshing(false);

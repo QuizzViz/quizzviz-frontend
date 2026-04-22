@@ -108,7 +108,7 @@ export default function MyQuizzesPage() {
   useEffect(() => {
     if (isLoaded) {
       if (!user) {
-        router.push("/signin");
+        router.push("/signup");
         return;
       }
 

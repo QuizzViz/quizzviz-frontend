@@ -555,21 +555,42 @@ export default function TeamsPage() {
   const [isEditRoleOpen, setIsEditRoleOpen] = useState(false);
   const [isSavingRole, setIsSavingRole] = useState(false);
 
-  // Delete confirmation dialog
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [isDeletingMember, setIsDeletingMember] = useState(false);
+// Delete confirmation dialog
+const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+const [isDeletingMember, setIsDeletingMember] = useState(false);
 
-  // Simple loading state management
-  useEffect(() => {
-    if (isLoaded && !user) {
-      router.push("/signin");
-    } else if (isLoaded) {
-      setIsLoading(false);
-    }
-  }, [isLoaded, user, router]);
+// Simple loading state management
+useEffect(() => {
+  if (isLoaded && !user) {
+    router.push("/signup");
+  } else if (isLoaded) {
+    setIsLoading(false);
+  }
+}, [isLoaded, user, router]);
 
-  // ── Refresh members and role using cache ──────────────────────────────────
-  const refreshMembersAndRole = async () => {
+// ── Refresh members and role using cache ──────────────────────────────────
+const refreshMembersAndRole = async () => {
+  setIsFetchingMembers(true);
+  try {
+    await refreshAll();
+    setMembers(cachedMembers || []);
+    toast({
+      title: "Refreshed",
+      description: "Team members and permissions updated",
+      className:
+        "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+    });
+  } catch (error) {
+    console.error("Error refreshing:", error);
+    toast({
+      title: "Error",
+      description: "Failed to refresh team members",
+      variant: "destructive",
+    });
+  } finally {
+    setIsFetchingMembers(false);
+  }
+};
     setIsFetchingMembers(true);
     try {
       await refreshAll();

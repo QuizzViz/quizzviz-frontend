@@ -73,9 +73,9 @@ export default clerkMiddleware(async (auth, request) => {
     const onboardingComplete = publicMetadata.onboardingComplete === true;
     const hasCompany = !!publicMetadata.companyId;
 
-    // If user is not signed in and trying to access protected route, redirect to signin
+    // If user is not signed in and trying to access protected route, redirect to signup
     if (!userId && !isPublicRoute(request)) {
-      return NextResponse.redirect(new URL('/signin', request.url));
+      return NextResponse.redirect(new URL('/signup', request.url));
     }
 
     // If user is signed in and trying to access signin/signup, redirect to dashboard
