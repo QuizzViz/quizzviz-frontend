@@ -24,8 +24,9 @@ export function useSignInController() {
       }
       try {
         setOauthLoading(provider);
-        // Store the intent in sessionStorage so we can check it in the callback
+        // Store the intent and timestamp so we can check it in the callback
         sessionStorage.setItem('authIntent', 'signin');
+        sessionStorage.setItem('oauthStartTime', Date.now().toString());
         await signIn.authenticateWithRedirect({
           strategy: provider,
           redirectUrl: "/sso-callback",
