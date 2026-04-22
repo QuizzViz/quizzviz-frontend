@@ -11,8 +11,6 @@ const isPublicRoute = createRouteMatcher([
   '/mission',
   '/privacy-policy',
   '/terms',
-  '/signin',
-  '/signup',
   '/api(.*)',
   '/([^/]+)/take/quiz/([^/]+)',
   '/pricing',           // Public route
@@ -73,13 +71,14 @@ export default clerkMiddleware(async (auth, request) => {
     const onboardingComplete = publicMetadata.onboardingComplete === true;
     const hasCompany = !!publicMetadata.companyId;
 
-    // If user is not signed in and trying to access protected route, redirect to signup
-    if (!userId && !isPublicRoute(request)) {
-      return NextResponse.redirect(new URL('/signup', request.url));
-    }
-
-    // If user is signed in and trying to access signin/signup, check for OAuth intent first
-    if (userId && (pathname === '/signin' || pathname === '/signup')) {
+    // Handle signin/signup pages specifically
+    if (pathname === '/signin' || pathname === '/signup') {
+      if (!userId) {
+        // Unauthenticated users can access signin/signup
+        return NextResponse.next();
+      }
+      
+      // Authenticated users: check for OAuth intent
       const { searchParams } = request.nextUrl;
       const message = searchParams.get('message');
       const email = searchParams.get('email');
@@ -91,6 +90,11 @@ export default clerkMiddleware(async (auth, request) => {
       
       // Otherwise redirect to dashboard
       return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
+    // If user is not signed in and trying to access protected route, redirect to signup
+    if (!userId && !isPublicRoute(request)) {
+      return NextResponse.redirect(new URL('/signup', request.url));
     }
 
     // Handle onboarding flow
