@@ -35,12 +35,26 @@ export default function SignInPage() {
       const authIntent = sessionStorage.getItem('authIntent');
       const errorMessage = router.query.message;
       const clerkError = router.query.clerk_error;
+      const oauthStartTime = sessionStorage.getItem('oauthStartTime');
+      
+      // Check for OAuth timeout (if it's been more than 30 seconds)
+      if (authIntent === 'signin' && oauthStartTime) {
+        const elapsed = Date.now() - parseInt(oauthStartTime);
+        if (elapsed > 30000) { // 30 seconds timeout
+          console.log("OAuth timeout detected, redirecting to signup...");
+          sessionStorage.removeItem('authIntent');
+          sessionStorage.removeItem('oauthStartTime');
+          router.push('/signup?message=No account found. Please sign up with Google.');
+          return;
+        }
+      }
       
       // Check for Clerk OAuth error in URL
       if (clerkError === 'external_account_not_found' || 
           (typeof clerkError === 'string' && clerkError.includes('not found'))) {
         console.log("Clerk OAuth error detected, redirecting to signup...");
         sessionStorage.removeItem('authIntent');
+        sessionStorage.removeItem('oauthStartTime');
         router.push('/signup?message=No account found. Please sign up with Google.');
         return;
       }
@@ -48,6 +62,7 @@ export default function SignInPage() {
       if (authIntent === 'signin' && errorMessage) {
         console.log("OAuth failure detected on signin page, redirecting to signup...");
         sessionStorage.removeItem('authIntent');
+        sessionStorage.removeItem('oauthStartTime');
         router.push(`/signup?message=${encodeURIComponent(typeof errorMessage === 'string' ? errorMessage : '')}`);
         return;
       }
