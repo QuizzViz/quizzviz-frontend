@@ -20,6 +20,7 @@ const plans = [
     quarterlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/f9215dd2-ff70-4299-a967-d765f37cc708",
     yearlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/acaeddc9-da1d-4539-8cc5-d130eca8363c",
     features: [
+      { text: 'Up to 3 team members', icon: Users },
       { text: '500 candidates per month', icon: Users },
       { text: '30 quizzes per month', icon: Zap },
       { text: 'Max 50 questions per quiz', icon: Sparkles },
@@ -41,6 +42,7 @@ const plans = [
     quarterlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/e039b54f-295d-4891-8087-53f983db1dfb",
     yearlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/18432203-777a-4a83-aca9-d2302e7ed6a0",
     features: [
+      { text: 'Up to 7 team members', icon: Users },
       { text: '2000 candidates per month', icon: Users },
       { text: '70 quizzes per month', icon: Zap },
       { text: 'Max 100 questions per quiz', icon: Sparkles },
@@ -61,6 +63,7 @@ const plans = [
     quarterlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/6658ae54-0233-4145-9dd7-894c18746c77",
     yearlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/fa9e1eb9-fb3e-47a1-af4e-a50b0c70bfad",
     features: [
+      { text: 'Up to 20 team members', icon: Users },
       { text: '6000 candidates per month', icon: Users },
       { text: 'Unlimited quizzes', icon: Zap },
       { text: 'Max 150 questions per quiz', icon: Sparkles },
