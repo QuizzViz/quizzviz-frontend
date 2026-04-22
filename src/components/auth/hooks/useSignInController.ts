@@ -82,8 +82,18 @@ export function useSignInController() {
         errors: err?.errors
       });
       
-      // Check if the error indicates the account doesn't exist
-      if (errorCode === "identifier_not_found") {
+      // Check if the error indicates that account doesn't exist - multiple scenarios
+      const isAccountNotFound = 
+        errorCode === "identifier_not_found" ||
+        errorMessage.toLowerCase().includes("not found") ||
+        errorMessage.toLowerCase().includes("doesn't exist") ||
+        errorMessage.toLowerCase().includes("no account found") ||
+        errorMessage.toLowerCase().includes("identifier not found") ||
+        errorMessage.toLowerCase().includes("user not found") ||
+        errorMessage.toLowerCase().includes("account does not exist") ||
+        errorMessage.toLowerCase().includes("email not found");
+      
+      if (isAccountNotFound) {
         // Redirect to sign up page with email pre-filled
         router.push(`/signup?email=${encodeURIComponent(email)}&message=${encodeURIComponent("No account found. Please sign up.")}`);
         return;
