@@ -298,12 +298,6 @@ export default function CreateQuizCard({
   };
 
   const handleGenerateClick = (codePct: number) => {
-    // Check role-based permissions
-    if (userRole && userRole !== 'OWNER' && userRole !== 'ADMIN') {
-      setError("Only owners and admins can generate quizzes");
-      return;
-    }
-    
     // Check plan limits
     if (planLimits.isQuizLimitReached) {
       if (onUpgradeClick) {
