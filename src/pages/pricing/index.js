@@ -6,6 +6,7 @@ import Head from 'next/head';
 import { Footer } from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowRight } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 const plans = [
   {
@@ -76,6 +77,7 @@ const PricingPage = () => {
   const { user, isSignedIn } = useUser();
   const { getToken } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [isMounted, setIsMounted] = useState(false);
@@ -120,6 +122,10 @@ const PricingPage = () => {
       }
       
       // Company exists - navigate to checkout for subscription
+      // Invalidate user plan cache to ensure fresh data after subscription
+      queryClient.invalidateQueries({ queryKey: ['userPlan', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['companyInfo', user?.id] });
+      
       toast({
         title: 'Success!',
         description: 'Company verified. Redirecting to checkout...',
