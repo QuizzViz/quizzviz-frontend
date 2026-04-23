@@ -18,8 +18,6 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { useUser } from '@clerk/nextjs';
 import CameraProctoring from '@/components/Proctoring/CameraProctoring';
-import { useCompanyUsage } from '@/hooks/useCompanyUsage';
-import { usePlanLimits } from '@/hooks/usePlanLimits';
 
 interface Question {
   id: string | number;
@@ -71,23 +69,6 @@ export default function QuizPage({ params }: PageProps) {
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
   const [formData, setFormData] = useState<FormData>({ name: '', email: '', quizKey: '' });
   const [quizData, setQuizData] = useState<QuizData | null>(null);
-
-  // Get company usage data for candidate limit checking
-  const { data: usageData, isLoading: usageLoading } = useCompanyUsage();
-  
-  // Check plan limits
-  const currentUsage = {
-    quizzesThisMonth: 0,
-    totalCandidates: usageData?.current_month?.unique_candidates || 0,
-    teamMembers: 0
-  };
-  
-  const { 
-    isCandidateLimitReached, 
-    candidateLimit, 
-    currentCandidates,
-    candidatesRemaining 
-  } = usePlanLimits(currentUsage);
 
   // Shuffle options for Enterprise plan quizzes
   const shuffleOptions = useCallback((question: Question): Question => {
@@ -157,16 +138,6 @@ export default function QuizPage({ params }: PageProps) {
   });
   const exitConfirmationRef = useRef(false);
   const hasSubmittedRef = useRef(false);
-
- const shuffleArray = <T,>(array: T[]): T[] => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-  };
-
 
   // Fetch initial quiz data from publish service
   useEffect(() => {
@@ -613,6 +584,14 @@ export default function QuizPage({ params }: PageProps) {
     }
   }, [step, quizStarted, requestFullscreen, showWarningMessage, handleFullscreenChange, submitQuiz]);
 
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  };
 
   const calculateResults = () => {
     if (!quizData) return { correct: 0, total: 0, percentage: 0 };
@@ -626,37 +605,7 @@ export default function QuizPage({ params }: PageProps) {
     return { correct, total, percentage };
   };
 
-  const checkUserAttemptsAfterLoad = async (maxAttempts: number): Promise<boolean> => {
-    if (!formData?.name || !formData?.email) return false;
-    try {
-      const response = await fetch(
-        `/api/quiz_result/check-attempt/email/${encodeURIComponent(formData.email)}/quiz/${quizId}?company_id=${encodeURIComponent(companyId)}`
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to check attempts');
-      }
-      const data = await response.json();
-      const currentAttempt = data.attempts || 0;
-      const hasReachedMax = currentAttempt >= maxAttempts;
-      setAttemptsInfo({ current: currentAttempt, max: maxAttempts });
-      if (hasReachedMax) {
-        toast({
-          variant: "destructive",
-          title: "Maximum attempts reached!",
-          description: `You've used ${currentAttempt} of ${maxAttempts} attempts.`,
-          duration: 5000,
-          className: 'font-medium',
-        });
-      }
-      return !hasReachedMax;
-    } catch (error) {
-      console.error('Error checking attempts:', error);
-      return false;
-    }
-  };
-
-  const verifyQuizKey = useCallback(async (): Promise<boolean> => {
+  const verifyQuizKey = async (): Promise<boolean> => {
     if (!formData.quizKey.trim()) { setVerificationError('Please enter a quiz key'); return false; }
     try {
       setVerifying(true);
@@ -697,12 +646,42 @@ export default function QuizPage({ params }: PageProps) {
     } finally {
       setVerifying(false);
     }
-  }, [formData, quizId, companyId, quizData?.max_attempts, checkUserAttemptsAfterLoad]);
+  };
 
-  const handleSubmitInfo = useCallback(async (e: React.FormEvent) => {
-  e.preventDefault();
-  await verifyQuizKey();
-}, [verifyQuizKey]);
+  const checkUserAttemptsAfterLoad = async (maxAttempts: number): Promise<boolean> => {
+    if (!formData?.name || !formData?.email) return false;
+    try {
+      const response = await fetch(
+        `/api/quiz_result/check-attempt/email/${encodeURIComponent(formData.email)}/quiz/${quizId}?company_id=${encodeURIComponent(companyId)}`
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to check attempts');
+      }
+      const data = await response.json();
+      const currentAttempt = data.attempts || 0;
+      const hasReachedMax = currentAttempt >= maxAttempts;
+      setAttemptsInfo({ current: currentAttempt, max: maxAttempts });
+      if (hasReachedMax) {
+        toast({
+          variant: "destructive",
+          title: "Maximum attempts reached!",
+          description: `You've used ${currentAttempt} of ${maxAttempts} attempts.`,
+          duration: 5000,
+          className: 'font-medium',
+        });
+      }
+      return !hasReachedMax;
+    } catch (error) {
+      console.error('Error checking attempts:', error);
+      return false;
+    }
+  };
+
+  const handleSubmitInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await verifyQuizKey();
+  };
 
   const startQuiz = () => { setStep('quiz-info'); };
 
@@ -858,156 +837,167 @@ export default function QuizPage({ params }: PageProps) {
         {step === 'info' && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
-              {usageLoading ? (
-                <div className="text-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
-                  <p className="text-gray-400">Checking availability...</p>
-                </div>
-              ) : isCandidateLimitReached ? (
-                <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
-                  <CardContent className="p-8">
-                    <div className="text-center">
-                      <AlertCircle className="h-16 w-16 text-orange-500 mx-auto mb-6" />
-                      <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-4">
-                        Candidate Limit Reached
-                      </h1>
-                      <p className="text-gray-300 mb-6 text-lg">
-                        The number of candidates for this quiz has reached the plan limit.
-                      </p>
-                      <div className="bg-gray-800/50 rounded-xl p-6 mb-8 border border-gray-700">
-                        <div className="space-y-3 text-left">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-400">Current Candidates:</span>
-                            <span className="text-white font-bold">{currentCandidates}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-400">Plan Limit:</span>
-                            <span className="text-white font-bold">{candidateLimit}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-400">Remaining:</span>
-                            <span className="text-orange-400 font-bold">{candidatesRemaining}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        <p className="text-gray-400 text-sm">
-                          Upgrade your plan to enable more quiz attempts and unlock additional features.
-                        </p>
-                        <Button asChild className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3">
-                          <Link href="/pricing">
-                            Upgrade Plan
-                          </Link>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          asChild 
-                          className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
-                          onClick={() => handleExitResponse(true)}
-                        >
-                          <Link href="/">
-                            <Home className="w-4 h-4 mr-2" />
-                            Back to Home
-                          </Link>
-                        </Button>
-                      </div>
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent mb-2">
+                  Welcome to {formatCompanyIdToName(companyId)} Quiz
+                </h1>
+                <p className="text-gray-400">Enter your details to begin the assessment</p>
+              </div>
+
+              <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
+                <CardContent className="p-8">
+                  <form onSubmit={handleSubmitInfo} className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-gray-300 font-medium flex items-center gap-2">
+                        <User className="w-4 h-4 text-blue-400" /> Full Name
+                      </Label>
+                      <Input
+                        id="name" name="name" value={formData.name} onChange={handleInputChange}
+                        placeholder="Enter your Full Name" required
+                        className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                      />
                     </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                // Regular info form when no limit reached
-                <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
-                  <CardContent className="p-8">
-                    <form onSubmit={handleSubmitInfo} className="space-y-6">
-                      <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-4">
-                          <Key className="w-8 h-8 text-white" />
-                        </div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Quiz Access</h1>
-                        <p className="text-gray-400">Enter your details and quiz key to begin</p>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="name" className="text-white font-medium">Full Name</Label>
-                          <Input
-                            id="name"
-                            name="name"
-                            type="text"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            placeholder="Enter your full name"
-                            className="mt-2 bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                            required
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="email" className="text-white font-medium">Email Address</Label>
-                          <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            placeholder="Enter your email address"
-                            className="mt-2 bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                            required
-                          />
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="quizKey" className="text-white font-medium">Quiz Key</Label>
-                          <Input
-                            id="quizKey"
-                            name="quizKey"
-                            type="text"
-                            value={formData.quizKey}
-                            onChange={handleInputChange}
-                            placeholder="Enter the quiz key provided to you"
-                            className="mt-2 bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                            required
-                          />
-                        </div>
-                      </div>
-                      
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-gray-300 font-medium flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-purple-400" /> Email
+                      </Label>
+                      <Input
+                        id="email" type='email' name="email" value={formData.email} onChange={handleInputChange}
+                        placeholder="Enter your email" required
+                        className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="quizKey" className="text-gray-300 font-medium flex items-center gap-2">
+                        <Key className="w-4 h-4 text-green-400" /> Quiz Key
+                      </Label>
+                      <Input
+                        id="quizKey" name="quizKey" value={formData.quizKey} onChange={handleInputChange}
+                        placeholder="Enter the quiz access key" required
+                        className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
+                      />
                       {verificationError && (
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-                          <div className="flex items-center gap-3">
-                            <XCircle className="w-5 h-5 text-red-500" />
-                            <p className="text-red-400 text-sm">{verificationError}</p>
-                          </div>
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
+                          <p className="text-sm text-red-400 flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4" /> {verificationError}
+                          </p>
                         </div>
                       )}
-                      
-                      <Button
-                        type="submit"
-                        disabled={verifying || !formData.name || !formData.email || !formData.quizKey}
-                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all duration-200"
-                      >
-                        {verifying ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Verifying...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="mr-2 h-5 w-5" />
-                            Start Quiz
-                          </>
-                        )}
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-              )}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={verifying || showingMaxAttemptsNotification}
+                      className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-blue-500/20"
+                    >
+                      {showingMaxAttemptsNotification ? (
+                        <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Processing...</>
+                      ) : verifying ? (
+                        <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Verifying...</>
+                      ) : (
+                        <>Continue to Quiz <ArrowRight className="ml-2 h-5 w-5" /></>
+                      )}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {step === 'instructions' && quizData && (
+          <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
+            <div className="w-full max-w-2xl">
+              <div className="text-center mb-10">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-4">
+                  <BookOpen className="w-8 h-8 text-white" />
+                </div>
+                <h1 className="text-3xl font-bold text-white mb-2">{quizData?.role} Quiz</h1>
+                <p className="text-gray-400">
+                  {quizData?.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)} yrs` : 'Quiz'}
+                </p>
+              </div>
+
+              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl mb-8">
+                <CardContent className="p-6">
+                  <ul className="space-y-5">
+                    {quizInstructions.map((instruction, index) => (
+                      <li key={index} className="flex items-start gap-4">
+                        <div className="flex-shrink-0 mt-0.5">{instruction.icon}</div>
+                        <div>
+                          <h3 className="font-medium text-white">{instruction.title}</h3>
+                          <p className="text-gray-300 text-sm">{instruction.text}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/20 rounded-xl p-5 mb-8">
+                <div className="flex items-start gap-3.5">
+                  <div className="bg-blue-500/10 p-2 rounded-lg">
+                    <AlertCircle className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-medium mb-2">Important Guidelines</h3>
+                    <ul className="space-y-2 text-sm text-gray-300">
+                      <li className="flex items-start gap-2">
+                        <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <span>Do not switch tabs, windows, or use other devices</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <span>Keep the browser in full-screen mode</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                        <span>Keep your face visible in the camera at all times</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span>Ensure a stable internet connection</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center">
+                {attemptsInfo && attemptsInfo.current >= attemptsInfo.max ? (
+                  <div className="p-4 bg-red-900/30 border border-red-800 rounded-xl">
+                    <div className="flex items-center justify-center gap-2 text-red-300">
+                      <AlertCircle className="w-5 h-5" />
+                      <span>Maximum attempts reached ({attemptsInfo.current}/{attemptsInfo.max})</span>
+                    </div>
+                    <p className="text-sm text-red-200 mt-1">You've used all available attempts for this quiz.</p>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={beginQuiz}
+                    className="h-14 w-full max-w-md bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl text-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                    disabled={attemptsInfo.current >= attemptsInfo.max || isButtonLoading || showingMaxAttemptsNotification}
+                  >
+                    {showingMaxAttemptsNotification ? (
+                      <><Loader2 className="w-5 h-5 animate-spin mr-2" />Verifying attempts...</>
+                    ) : isButtonLoading ? (
+                      <><Loader2 className="w-5 h-5 animate-spin mr-2" />{attemptsInfo.current > 0 ? 'Continuing...' : 'Starting...'}</>
+                    ) : (
+                      <>{attemptsInfo.current > 0 ? 'Continue to Quiz' : 'Start Quiz'} <ArrowRight className="ml-2 h-5 w-5" /></>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
 
         {step === 'quiz' && quizData && (
-          <div>
-            {/* Camera proctoring - detection begins only when proctoringStarted = true ── */}
+          <div className="min-h-[calc(100vh-80px)]">
+            {/* ── CameraProctoring: mounted when quiz step is active,
+                 detection begins only when proctoringStarted = true ── */}
             <CameraProctoring
               onViolation={handleProctoringViolation}
               onEnd={handleProctoringEnd}
@@ -1116,7 +1106,7 @@ export default function QuizPage({ params }: PageProps) {
           </div>
         )}
 
-        {(step as 'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results') === 'results' && quizData && (
+        {step === 'results' && quizData && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
             <div className="w-full max-w-2xl">
               <div className="text-center mb-8">
