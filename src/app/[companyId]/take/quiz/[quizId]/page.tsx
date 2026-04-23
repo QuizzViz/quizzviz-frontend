@@ -178,23 +178,32 @@ export default function QuizPage({ params }: PageProps) {
   const [showCameraModal, setShowCameraModal] = useState(false);
   const proceedAfterCameraRef = useRef<(() => void) | null>(null);
 
-  // Shuffle options for Enterprise plan quizzes
+  // Shuffle options for all quiz questions
   const shuffleOptions = useCallback((question: Question): Question => {
-    if (question.type === 'code_analysis') {
+    if (question.options && typeof question.options === 'object') {
       const options = { ...question.options };
       const entries = Object.entries(options);
-      const questionKey = entries.find(([_, value]) => value === question.question)?.[0];
       let shuffledEntries = [...entries];
 
-      if (questionKey) {
-        const questionEntry = shuffledEntries.find(([key]) => key === questionKey);
-        shuffledEntries = shuffledEntries.filter(([key]) => key !== questionKey);
-        for (let i = shuffledEntries.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffledEntries[i], shuffledEntries[j]] = [shuffledEntries[j], shuffledEntries[i]];
+      // Special handling for code_analysis type to keep question text separate
+      if (question.type === 'code_analysis') {
+        const questionKey = entries.find(([_, value]) => value === question.question)?.[0];
+        if (questionKey) {
+          const questionEntry = shuffledEntries.find(([key]) => key === questionKey);
+          shuffledEntries = shuffledEntries.filter(([key]) => key !== questionKey);
+          for (let i = shuffledEntries.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledEntries[i], shuffledEntries[j]] = [shuffledEntries[j], shuffledEntries[i]];
+          }
+          if (questionEntry) shuffledEntries = [questionEntry, ...shuffledEntries];
+        } else {
+          for (let i = shuffledEntries.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledEntries[i], shuffledEntries[j]] = [shuffledEntries[j], shuffledEntries[i]];
+          }
         }
-        if (questionEntry) shuffledEntries = [questionEntry, ...shuffledEntries];
       } else {
+        // For all other question types, just shuffle all options
         for (let i = shuffledEntries.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [shuffledEntries[i], shuffledEntries[j]] = [shuffledEntries[j], shuffledEntries[i]];
