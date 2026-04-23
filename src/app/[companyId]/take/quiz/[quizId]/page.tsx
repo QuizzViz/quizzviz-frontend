@@ -64,6 +64,109 @@ type FormData = {
   quizKey: string;
 };
 
+function CameraPermissionModal({ onGranted, onDismiss }: { 
+  onGranted: () => void; 
+  onDismiss: () => void; 
+}) {
+  const [retrying, setRetrying] = useState(false);
+  const [status, setStatus] = useState<'prompt' | 'retrying' | 'error'>('prompt');
+
+  const handleTryAgain = async () => {
+    setRetrying(true);
+    setStatus('retrying');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(t => t.stop());
+      setStatus('prompt');
+      onGranted(); // ✅ Camera now available, proceed
+    } catch (err) {
+      setStatus('error');
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+        
+        {/* Icon */}
+        <div className="flex justify-center mb-6">
+          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3l18 18" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-2xl font-bold text-white text-center mb-2">
+          Camera Access Required
+        </h3>
+        <p className="text-gray-400 text-center text-sm mb-6">
+          This quiz requires your camera to be active for proctoring. You cannot start without enabling camera access.
+        </p>
+
+        {/* Steps */}
+        <div className="bg-gray-800/50 rounded-xl p-4 mb-6 space-y-3">
+          <p className="text-xs text-gray-400 uppercase font-semibold tracking-wider mb-3">How to enable your camera</p>
+          <div className="flex items-start gap-3">
+            <div className="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-blue-400 text-xs font-bold">1</span>
+            </div>
+            <p className="text-gray-300 text-sm">Click the camera/lock icon in your browser's address bar</p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-blue-400 text-xs font-bold">2</span>
+            </div>
+            <p className="text-gray-300 text-sm">Set Camera permission to <span className="text-white font-medium">"Allow"</span></p>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-blue-400 text-xs font-bold">3</span>
+            </div>
+            <p className="text-gray-300 text-sm">Click <span className="text-white font-medium">"Try Again"</span> below to verify and start</p>
+          </div>
+        </div>
+
+        {/* Error state */}
+        {status === 'error' && (
+          <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg mb-4">
+            <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+            <p className="text-red-400 text-sm">Camera still blocked. Please check your browser settings and try again.</p>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="flex flex-col gap-3">
+          <Button
+            onClick={handleTryAgain}
+            disabled={retrying}
+            className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl"
+          >
+            {retrying ? (
+              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Checking Camera...</>
+            ) : (
+              <><CheckCircle2 className="mr-2 h-5 w-5" /> Try Again</>
+            )}
+          </Button>
+          <Button
+            onClick={onDismiss}
+            variant="outline"
+            disabled={retrying}
+            className="w-full h-12 border-gray-700 text-gray-300 hover:bg-gray-800 rounded-xl"
+          >
+            Cancel
+          </Button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 export default function QuizPage({ params }: PageProps) {
   const { companyId, quizId } = use(params);
   const router = useRouter();
@@ -71,6 +174,8 @@ export default function QuizPage({ params }: PageProps) {
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
   const [formData, setFormData] = useState<FormData>({ name: '', email: '', quizKey: '' });
   const [quizData, setQuizData] = useState<QuizData | null>(null);
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const proceedAfterCameraRef = useRef<(() => void) | null>(null);
 
   // Shuffle options for Enterprise plan quizzes
   const shuffleOptions = useCallback((question: Question): Question => {
@@ -709,63 +814,75 @@ const {
 
   const startQuiz = () => { setStep('quiz-info'); };
 
-  const beginQuiz = useCallback(async () => {
-    if (isButtonLoading) return;
-    setIsButtonLoading(true);
+const startQuizFlow = useCallback(async () => {
+  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobileDevice) {
+    toast({
+      variant: 'destructive',
+      title: 'Quiz Terminated',
+      description: 'Mobile devices are not allowed for proctored quizzes.',
+      duration: 5000,
+      className: 'font-medium',
+    });
+    setSelectedAnswers(currentAnswers => {
+      submitQuiz(currentAnswers);
+      return currentAnswers;
+    });
+    return;
+  }
+
+  setQuizStarted(true);
+  setStep('quiz');
+  setProctoringStarted(true);
+
+  if (document.documentElement.requestFullscreen) {
     try {
-      if (attemptsInfo.current >= attemptsInfo.max) {
-        setIsButtonLoading(false);
-        toast({
-          variant: 'destructive',
-          title: 'Maximum attempts reached!',
-          description: `You've used ${attemptsInfo.current} of ${attemptsInfo.max} attempts.`,
-          duration: 5000,
-          className: 'font-medium',
-        });
-        return;
-      }
-      const hasAttemptsLeft = await checkUserAttempts(true);
-      if (!hasAttemptsLeft) { setIsButtonLoading(false); return; }
-
-      setQuizStarted(true);
-      setStep('quiz');
-
-      // Mobile device detection - immediately end quiz if mobile is detected
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      if (isMobileDevice) {
-        toast({
-          variant: 'destructive',
-          title: 'Quiz Terminated',
-          description: 'Mobile devices are not allowed for proctored quizzes.',
-          duration: 5000,
-          className: 'font-medium',
-        });
-        
-        // Submit quiz immediately due to mobile detection
-        setSelectedAnswers(currentAnswers => {
-          submitQuiz(currentAnswers);
-          return currentAnswers;
-        });
-        setIsButtonLoading(false);
-        return;
-      }
-
-      // Start proctoring ONLY now (after quiz begins) 
-      setProctoringStarted(true);
-
-      if (document.documentElement.requestFullscreen) {
-        try {
-          await document.documentElement.requestFullscreen();
-          setIsFullscreen(true);
-        } catch (err) { console.error('Fullscreen error:', err); }
-      }
-    } catch (error) {
-      console.error('Error starting quiz:', error);
-    } finally {
-      setIsButtonLoading(false);
+      await document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } catch (err) {
+      console.error('Fullscreen error:', err);
     }
-  }, [checkUserAttempts, attemptsInfo, isButtonLoading]);
+  }
+}, [submitQuiz]);
 
+const beginQuiz = useCallback(async () => {
+  if (isButtonLoading) return;
+  setIsButtonLoading(true);
+
+  try {
+    if (attemptsInfo.current >= attemptsInfo.max) {
+      toast({
+        variant: 'destructive',
+        title: 'Maximum attempts reached!',
+        description: `You've used ${attemptsInfo.current} of ${attemptsInfo.max} attempts.`,
+        duration: 5000,
+        className: 'font-medium',
+      });
+      return;
+    }
+
+    const hasAttemptsLeft = await checkUserAttempts(true);
+    if (!hasAttemptsLeft) return;
+
+    // ── CAMERA CHECK ─────────────────────────────────────────
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+      // Camera OK — proceed directly
+      await startQuizFlow();
+    } catch (camError) {
+      // Camera blocked — show modal, store callback for after grant
+      setShowCameraModal(true);
+      proceedAfterCameraRef.current = () => startQuizFlow();
+    }
+    // ─────────────────────────────────────────────────────────
+
+  } catch (error) {
+    console.error('Error starting quiz:', error);
+  } finally {
+    setIsButtonLoading(false);
+  }
+}, [checkUserAttempts, attemptsInfo, isButtonLoading, startQuizFlow]);
   const handleNextQuestion = () => {
     if (currentQuestionIndex < (quizData?.quiz.length || 0) - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -842,6 +959,22 @@ const {
           </div>
         </div>
       )}
+      {/* Camera Permission Modal */}
+{showCameraModal && (
+  <CameraPermissionModal
+    onGranted={() => {
+      setShowCameraModal(false);
+      if (proceedAfterCameraRef.current) {
+        proceedAfterCameraRef.current();
+        proceedAfterCameraRef.current = null;
+      }
+    }}
+    onDismiss={() => {
+      setShowCameraModal(false);
+      proceedAfterCameraRef.current = null;
+    }}
+  />
+)}
 
       <header className="relative z-20 p-6 border-b border-gray-800/50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
