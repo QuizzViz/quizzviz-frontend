@@ -395,7 +395,6 @@ export default function ResultsDashboard() {
       const res = await fetch(`/api/quiz_result/delete?quiz_id=${quizId}`, {
         method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
       });
@@ -435,7 +434,6 @@ export default function ResultsDashboard() {
       }
       
       const headers = {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       };
       
