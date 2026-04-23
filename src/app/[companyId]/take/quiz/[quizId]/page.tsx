@@ -861,18 +861,16 @@ const {
       </header>
 
       <main id="quiz-content" className="relative z-10" tabIndex={-1}>
-      {step === 'info' && (
+    {step === 'info' && (
   <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
     <div className="w-full max-w-lg">
 
-      {/* ── Loading state ── */}
       {usageLoading ? (
         <div className="text-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
           <p className="text-gray-400">Checking availability...</p>
         </div>
 
-      /* ── Mobile blocked ── */
       ) : isMobile ? (
         <div className="text-center">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-2">
@@ -892,7 +890,6 @@ const {
           </Card>
         </div>
 
-      /* ── Candidate limit reached ── */
       ) : isCandidateLimitReached ? (
         <div className="text-center">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-2">
@@ -917,7 +914,6 @@ const {
           </Card>
         </div>
 
-      /* ── Normal form ── */
       ) : (
         <>
           <div className="text-center mb-8">
@@ -930,11 +926,51 @@ const {
           <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
             <CardContent className="p-8">
               <form onSubmit={handleSubmitInfo} className="space-y-6">
-                {/* ... your existing form fields unchanged ... */}
+
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-gray-300 font-medium flex items-center gap-2">
+                    <User className="w-4 h-4 text-blue-400" /> Full Name
+                  </Label>
+                  <Input
+                    id="name" name="name" value={formData.name} onChange={handleInputChange}
+                    placeholder="Enter your Full Name" required
+                    className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-300 font-medium flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-purple-400" /> Email
+                  </Label>
+                  <Input
+                    id="email" type="email" name="email" value={formData.email} onChange={handleInputChange}
+                    placeholder="Enter your email" required
+                    className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="quizKey" className="text-gray-300 font-medium flex items-center gap-2">
+                    <Key className="w-4 h-4 text-green-400" /> Quiz Key
+                  </Label>
+                  <Input
+                    id="quizKey" name="quizKey" value={formData.quizKey} onChange={handleInputChange}
+                    placeholder="Enter the quiz access key" required
+                    className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
+                  />
+                  {verificationError && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
+                      <p className="text-sm text-red-400 flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4" /> {verificationError}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <Button
                   type="submit"
                   disabled={verifying || showingMaxAttemptsNotification}
-                  className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl disabled:opacity-70"
+                  className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg"
                 >
                   {verifying ? (
                     <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Verifying...</>
@@ -942,6 +978,7 @@ const {
                     <>Continue to Quiz <ArrowRight className="ml-2 h-5 w-5" /></>
                   )}
                 </Button>
+
               </form>
             </CardContent>
           </Card>
