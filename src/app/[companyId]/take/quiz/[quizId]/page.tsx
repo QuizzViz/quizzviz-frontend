@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
+import { LoadingSpinner } from "@/components/ui/loading";
 
 import { toast } from "@/hooks/use-toast";
 import { formatTime } from '@/lib/utils';
@@ -999,11 +1000,7 @@ const beginQuiz = useCallback(async () => {
     <div className="w-full max-w-lg">
 
       {usageLoading ? (
-        <div className="text-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-400">Checking availability...</p>
-        </div>
-
+        <LoadingSpinner text="Checking availability..." />
       ) : isMobile ? (
         <div className="text-center">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-2">
