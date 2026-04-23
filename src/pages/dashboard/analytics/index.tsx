@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
-import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { SignedIn, SignedOut, useUser, useAuth } from "@clerk/nextjs";
 import { useCachedFetch } from "@/hooks/useCachedFetch";
 import Head from "next/head";
 import * as XLSX from "xlsx";
@@ -237,6 +237,7 @@ const DisabledButtonWithTooltip = ({
 
 export default function ResultsDashboard() {
   const { user } = useUser();
+  const { getToken } = useAuth();
 
   const [selectedScores, setSelectedScores] = useState<Record<string, number | null>>({});
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -384,28 +385,19 @@ export default function ResultsDashboard() {
     try {
       setIsDeleting(true);
       
-      // Get auth token from cookies
-      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
-        const [key, ...values] = cookie.trim().split('=');
-        if (key && values.length > 0) {
-          acc[key] = values.join('=');
-        }
-        return acc;
-      }, {} as Record<string, string>);
+      // Get auth token using Clerk's getToken method
+      const token = await getToken();
       
-      const authToken = cookies.__session;
-      
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
+      if (!token) {
+        throw new Error("No authentication token available");
       }
       
       const res = await fetch(`/api/quiz_result/delete?quiz_id=${quizId}`, {
         method: "DELETE",
-        headers,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
       });
       if (!res.ok) {
         const err = await res.json();
@@ -435,24 +427,17 @@ export default function ResultsDashboard() {
     try {
       setIsDeleting(true);
       
-      // Get auth token from cookies
-      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
-        const [key, ...values] = cookie.trim().split('=');
-        if (key && values.length > 0) {
-          acc[key] = values.join('=');
-        }
-        return acc;
-      }, {} as Record<string, string>);
+      // Get auth token using Clerk's getToken method
+      const token = await getToken();
       
-      const authToken = cookies.__session;
-      
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
+      if (!token) {
+        throw new Error("No authentication token available");
       }
+      
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      };
       
       const promises = toDelete.map(({ email }) =>
         fetch(
