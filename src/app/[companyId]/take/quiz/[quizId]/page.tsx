@@ -272,8 +272,12 @@ const {
         if (response.ok) {
           const data = await response.json();
           if (data && data.quiz) {
-            const shuffledQuiz = { ...data, quiz: shuffleArray([...data.quiz]) };
-            setQuizData(shuffledQuiz);
+            const shuffledQuestions = shuffleArray([...data.quiz]);
+            const shuffledQuizWithShuffledOptions = {
+              ...data,
+              quiz: shuffledQuestions.map(question => shuffleOptions(question))
+            };
+            setQuizData(shuffledQuizWithShuffledOptions);
             setTimeLeft(data.quiz_time * 60);
             const maxAttempts = data.max_attempts || 1;
             setAttemptsInfo({ current: 0, max: maxAttempts });
@@ -746,8 +750,12 @@ const {
       if (data.quiz_key !== formData.quizKey) throw new Error('Invalid quiz key. Please check and try again.');
       if (!data.quiz || !Array.isArray(data.quiz)) throw new Error('Invalid quiz data received');
 
-      const shuffledQuiz = { ...data, quiz: shuffleArray([...data.quiz]) };
-      setQuizData(shuffledQuiz);
+      const shuffledQuestions = shuffleArray([...data.quiz]);
+      const shuffledQuizWithShuffledOptions = {
+        ...data,
+        quiz: shuffledQuestions.map(question => shuffleOptions(question))
+      };
+      setQuizData(shuffledQuizWithShuffledOptions);
       setTimeLeft(data.quiz_time * 60);
 
       const maxAttempts = data.max_attempts || 1;
