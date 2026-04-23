@@ -18,7 +18,7 @@ export const PLAN_LIMITS: PlanLimitsMap = {
   'Free': {
     maxQuestions: 20,
     maxQuizzes: 4,
-    maxCandidates: 20,
+    maxCandidates: 14,
     maxTeamMembers: 2,
     availableExperience: ['0-1 years', '1-3 years'],
     hasAnalytics: false,
