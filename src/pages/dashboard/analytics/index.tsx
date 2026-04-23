@@ -383,8 +383,29 @@ export default function ResultsDashboard() {
   const handleDeleteQuiz = async (quizId: string) => {
     try {
       setIsDeleting(true);
+      
+      // Get auth token from cookies
+      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, ...values] = cookie.trim().split('=');
+        if (key && values.length > 0) {
+          acc[key] = values.join('=');
+        }
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const authToken = cookies.__session;
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      
       const res = await fetch(`/api/quiz_result/delete?quiz_id=${quizId}`, {
         method: "DELETE",
+        headers,
       });
       if (!res.ok) {
         const err = await res.json();
@@ -413,10 +434,30 @@ export default function ResultsDashboard() {
 
     try {
       setIsDeleting(true);
+      
+      // Get auth token from cookies
+      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, ...values] = cookie.trim().split('=');
+        if (key && values.length > 0) {
+          acc[key] = values.join('=');
+        }
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const authToken = cookies.__session;
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      
       const promises = toDelete.map(({ email }) =>
         fetch(
           `/api/quiz_result/delete?quiz_id=${showDeleteUsersModal.quizId}&email=${encodeURIComponent(email)}`,
-          { method: "DELETE" }
+          { method: "DELETE", headers }
         )
       );
 

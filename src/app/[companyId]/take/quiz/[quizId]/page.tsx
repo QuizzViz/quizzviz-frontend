@@ -180,13 +180,19 @@ export default function QuizPage({ params }: PageProps) {
 
   // Shuffle options for all quiz questions
   const shuffleOptions = useCallback((question: Question): Question => {
+    console.log('Shuffling options for question:', question.type, question.question);
+    console.log('Original options:', question.options);
+    
     if (question.options && typeof question.options === 'object') {
       const options = { ...question.options };
       const entries = Object.entries(options);
       let shuffledEntries = [...entries];
 
+      console.log('Options entries before shuffle:', entries);
+
       // Special handling for code_analysis type to keep question text separate
       if (question.type === 'code_analysis') {
+        console.log('Processing code_analysis question');
         const questionKey = entries.find(([_, value]) => value === question.question)?.[0];
         if (questionKey) {
           const questionEntry = shuffledEntries.find(([key]) => key === questionKey);
@@ -204,13 +210,19 @@ export default function QuizPage({ params }: PageProps) {
         }
       } else {
         // For all other question types, just shuffle all options
+        console.log('Processing non-code_analysis question (theory, etc.)');
         for (let i = shuffledEntries.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [shuffledEntries[i], shuffledEntries[j]] = [shuffledEntries[j], shuffledEntries[i]];
         }
       }
-      return { ...question, options: Object.fromEntries(shuffledEntries) };
+      
+      const shuffledOptions = Object.fromEntries(shuffledEntries);
+      console.log('Shuffled options:', shuffledOptions);
+      return { ...question, options: shuffledOptions };
     }
+    
+    console.log('No options to shuffle or invalid options format');
     return question;
   }, []);
 

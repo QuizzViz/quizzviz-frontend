@@ -67,8 +67,8 @@ export function useCachedFetch<TData = unknown, TError = Error>(
 
       return response.json();
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes (cache time)
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes (cache time)
     enabled,
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
     refetchOnMount: true, // Always refetch on mount
