@@ -31,12 +31,17 @@ interface CompanyData {
   name: string;
   plan_name?: PlanType;
   owner_email?: string;
+  // Custom limits that can override plan defaults
+  max_quizzes?: number;
+  max_candidates?: number;
+  max_team_members?: number;
   [key: string]: any;
 }
 
 /**
  * Gets plan limits for a company without requiring user authentication.
  * This fetches company information directly by companyId for external candidate quiz attempts.
+ * Uses the company's actual plan and custom limits from the database instead of hardcoded values.
  */
 export function usePlanLimitsByCompanyId(companyId: string, currentUsage?: CurrentUsage): LimitStatus {
   // Fetch company data from existing API endpoint
@@ -50,7 +55,16 @@ export function usePlanLimitsByCompanyId(companyId: string, currentUsage?: Curre
 
   // Use fetched plan or default to Free
   const plan: PlanType = companyData?.plan_name || 'Free';
-  const planLimits = getPlanLimits(plan);
+  
+  // Check if company has custom limits that override plan defaults
+  const customLimits = {
+    maxQuizzes: companyData?.max_quizzes,
+    maxCandidates: companyData?.max_candidates,
+    maxTeamMembers: companyData?.max_team_members
+  };
+  
+  // Get plan limits, applying any custom limits from the company data
+  const planLimits = getPlanLimits(plan, customLimits);
   
   // Default usage if not provided
   const usage: CurrentUsage = currentUsage || {
