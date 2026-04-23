@@ -1,4 +1,5 @@
 'use client';
+
 import { use } from 'react';
 import { notFound, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -66,14 +67,15 @@ type FormData = {
 export default function QuizPage({ params }: PageProps) {
   const { companyId, quizId } = use(params);
   const router = useRouter();
+
   const [step, setStep] = useState<'info' | 'instructions' | 'quiz-info' | 'quiz' | 'results'>('info');
   const [formData, setFormData] = useState<FormData>({ name: '', email: '', quizKey: '' });
   const [quizData, setQuizData] = useState<QuizData | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Get company usage data for candidate limit checking (no auth required)
+  // Get company usage data for candidate limit checking
   const { data: usageData, isLoading: usageLoading } = useCompanyUsageByCompanyId(companyId);
   
-  // Check plan limits based on companyId
   const currentUsage = {
     quizzesThisMonth: 0,
     totalCandidates: usageData?.current_month?.unique_candidates || 0,
@@ -125,6 +127,17 @@ export default function QuizPage({ params }: PageProps) {
     return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
+  useEffect(() => {
+    if (isMobile) {
+      toast({
+        variant: 'destructive',
+        title: 'Mobile Device Detected',
+        description: 'Quizzes can only be taken on laptop or desktop computers. Please switch to a laptop or desktop device to attempt this quiz.',
+        duration: 10000,
+      });
+    }
+  }, [isMobile]);
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
   const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false);
@@ -136,15 +149,12 @@ export default function QuizPage({ params }: PageProps) {
   const [showWarning, setShowWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // ── NEW: separate flag so CameraProctoring only begins detection after quiz starts
   const [proctoringStarted, setProctoringStarted] = useState(false);
 
   const [attemptsInfo, setAttemptsInfo] = useState<{ current: number; max: number }>({ current: 0, max: 1 });
   const [showingMaxAttemptsNotification, setShowingMaxAttemptsNotification] = useState(false);
 
-  const warningTimeoutRef = useRef<NodeJS.Timeout>();
+  const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const activityMonitorRef = useRef({
     lastActivity: Date.now(),
     warnings: 0,
@@ -156,7 +166,36 @@ export default function QuizPage({ params }: PageProps) {
   const exitConfirmationRef = useRef(false);
   const hasSubmittedRef = useRef(false);
 
-  // Fetch initial quiz data from publish service
+  const handleProctoringViolation = useCallback((message: string) => {
+    console.log('Proctoring violation:', message);
+    setWarnings(prev => prev + 1);
+    setShowWarning(true);
+    window.focus();
+    
+    if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
+    warningTimeoutRef.current = setTimeout(() => setShowWarning(false), 5000);
+  }, []);
+
+  const handleProctoringEnd = useCallback((reason: string) => {
+    console.log('Proctoring ended:', reason);
+    if (isSubmitting) return;
+
+    toast({
+      variant: 'destructive',
+      title: 'Quiz Terminated',
+      description: `Quiz ended due to: ${reason}`,
+    });
+    
+    setStep('info');
+    setQuizStarted(false);
+    setProctoringStarted(false);
+  }, [isSubmitting]);
+
+  const handleAnswerSelect = useCallback((answer: string) => {
+    setSelectedAnswers(prev => ({ ...prev, [currentQuestionIndex]: answer }));
+  }, [currentQuestionIndex]);
+
+  // Fetch initial quiz data
   useEffect(() => {
     const fetchInitialQuizData = async () => {
       try {
@@ -190,23 +229,21 @@ export default function QuizPage({ params }: PageProps) {
 
   const checkUserAttempts = useCallback(async (showToast = true): Promise<boolean> => {
     if (showingMaxAttemptsNotification) return false;
-    if (!formData?.name || !formData?.email) {
-      setIsButtonLoading(false);
-      return false;
-    }
+    if (!formData?.name || !formData?.email) return false;
+
     try {
       const response = await fetch(
         `/api/quiz_result/check-attempt/email/${encodeURIComponent(formData.email)}/quiz/${quizId}?company_id=${encodeURIComponent(companyId)}`
       );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to check attempts');
-      }
+      if (!response.ok) throw new Error('Failed to check attempts');
+
       const data = await response.json();
       const maxAttempts = quizData?.max_attempts || 1;
       const currentAttempt = data.attempts || 0;
       const hasReachedMax = currentAttempt >= maxAttempts;
+
       setAttemptsInfo({ current: currentAttempt, max: maxAttempts });
+
       if (hasReachedMax && showToast) {
         setShowingMaxAttemptsNotification(true);
         toast({
@@ -214,7 +251,6 @@ export default function QuizPage({ params }: PageProps) {
           title: 'Maximum attempts reached!',
           description: `You've used ${currentAttempt} of ${maxAttempts} attempts.`,
           duration: 5000,
-          className: 'font-medium'
         });
         setTimeout(() => setShowingMaxAttemptsNotification(false), 5000);
       }
@@ -226,15 +262,12 @@ export default function QuizPage({ params }: PageProps) {
   }, [showingMaxAttemptsNotification, formData, quizId, quizData?.max_attempts, companyId]);
 
   const submitQuiz = useCallback(async (answers: Record<number, string>): Promise<boolean> => {
-    if (hasSubmittedRef.current) {
-      console.log('Quiz already submitted, skipping duplicate submission...');
-      return true;
-    }
+    if (hasSubmittedRef.current) return true;
     hasSubmittedRef.current = true;
     setIsSubmitting(true);
 
     if (!quizData || !formData) {
-      console.error('Quiz data or form data is missing');
+      setIsSubmitting(false);
       return false;
     }
 
@@ -243,7 +276,6 @@ export default function QuizPage({ params }: PageProps) {
       quizData.quiz.forEach((_, index) => {
         allAnswers[index] = answers[index] ?? '';
       });
-      setSelectedAnswers(allAnswers);
 
       let correct = 0;
       const total = quizData.quiz.length;
@@ -282,56 +314,46 @@ export default function QuizPage({ params }: PageProps) {
 
       const response = await fetch('/api/quiz_result', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'accept': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submissionData)
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || errorData.message || 'Failed to submit quiz results');
-      }
+      if (!response.ok) throw new Error('Failed to submit quiz results');
 
-      setAttemptsInfo(prev => ({ current: prev ? prev.current + 1 : 1, max: prev?.max || 1 }));
+      setAttemptsInfo(prev => ({ current: (prev?.current || 0) + 1, max: prev?.max || 1 }));
+      setStep('results');
       return true;
     } catch (error) {
       console.error('Error submitting quiz:', error);
       return false;
     } finally {
       setIsSubmitting(false);
-      setStep('results');
     }
   }, [quizData, formData, attemptsInfo, timeLeft, companyId]);
 
-  // Timer effect
+  // Timer
   useEffect(() => {
     if (step === 'quiz' && quizStarted && timeLeft > 0) {
-      const timer = setTimeout(() => {
-        setTimeLeft(prev => prev - 1);
-      }, 1000);
+      const timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
       return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && step === 'quiz') {
+    } else if (timeLeft === 0 && step === 'quiz' && quizStarted) {
       submitQuiz(selectedAnswers);
     }
   }, [timeLeft, step, quizStarted, submitQuiz, selectedAnswers]);
 
-  // Fullscreen handling
+  // Fullscreen
   const requestFullscreen = async () => {
     try {
       const element = document.documentElement;
-      if (element.requestFullscreen) {
-        await element.requestFullscreen();
-      } else if ((element as any).webkitRequestFullscreen) {
-        await (element as any).webkitRequestFullscreen();
-      } else if ((element as any).msRequestFullscreen) {
-        await (element as any).msRequestFullscreen();
-      }
+      if (element.requestFullscreen) await element.requestFullscreen();
+      else if ((element as any).webkitRequestFullscreen) await (element as any).webkitRequestFullscreen();
+      else if ((element as any).msRequestFullscreen) await (element as any).msRequestFullscreen();
       setIsFullscreen(true);
     } catch (error) {
       console.error('Error requesting fullscreen:', error);
     }
   };
 
-  // Exit fullscreen handling
   const handleFullscreenChange = useCallback(() => {
     const isFullscreenActive = !!(
       document.fullscreenElement ||
@@ -363,7 +385,6 @@ export default function QuizPage({ params }: PageProps) {
     };
   }, [handleFullscreenChange]);
 
-  // Exit confirmation state
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
 
@@ -384,7 +405,7 @@ export default function QuizPage({ params }: PageProps) {
     }
   };
 
-  // Visibility change handling
+  // Visibility change
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && step === 'quiz' && quizStarted && !hasSubmittedRef.current) {
@@ -418,21 +439,17 @@ export default function QuizPage({ params }: PageProps) {
       const timeSinceLastMouseMove = now - activityMonitorRef.current.lastMouseMove;
       const timeSinceLastKeyPress = now - activityMonitorRef.current.lastKeyPress;
 
-      // Check for inactivity (no activity for 30 seconds)
       if (timeSinceLastActivity > 30000) {
         if (warnings < 3) {
           setWarnings(prev => prev + 1);
           setShowWarning(true);
-          if (warningTimeoutRef.current) {
-            clearTimeout(warningTimeoutRef.current);
-          }
+          if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
           warningTimeoutRef.current = setTimeout(() => setShowWarning(false), 5000);
         } else {
           submitQuiz(selectedAnswers);
         }
       }
 
-      // Check for no mouse movement (possible tab switching)
       if (timeSinceLastMouseMove > 10000 && timeSinceLastKeyPress > 10000) {
         submitQuiz(selectedAnswers);
       }
@@ -447,9 +464,7 @@ export default function QuizPage({ params }: PageProps) {
       clearInterval(interval);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('keypress', handleKeyPress);
-      if (warningTimeoutRef.current) {
-        clearTimeout(warningTimeoutRef.current);
-      }
+      if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
     };
   }, [step, quizStarted, warnings, submitQuiz, selectedAnswers]);
 
@@ -457,20 +472,11 @@ export default function QuizPage({ params }: PageProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (step === 'quiz' && quizStarted) {
-        // Alt+Tab, Ctrl+Tab, Cmd+Tab detection
-        if (e.altKey || e.ctrlKey || e.metaKey) {
-          if (e.key === 'Tab') {
-            e.preventDefault();
-            submitQuiz(selectedAnswers);
-          }
-        }
-        // F11, Escape keys
-        if (e.key === 'F11' || e.key === 'Escape') {
+        if ((e.altKey || e.ctrlKey || e.metaKey) && e.key === 'Tab') {
           e.preventDefault();
           submitQuiz(selectedAnswers);
         }
-        // Dev tools shortcuts
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+        if (e.key === 'F11' || e.key === 'Escape' || e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
           e.preventDefault();
           submitQuiz(selectedAnswers);
         }
@@ -483,21 +489,16 @@ export default function QuizPage({ params }: PageProps) {
 
   // Context menu prevention
   useEffect(() => {
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      return false;
-    };
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
 
     if (step === 'quiz' && quizStarted) {
       document.addEventListener('contextmenu', handleContextMenu);
     }
 
-    return () => {
-      document.removeEventListener('contextmenu', handleContextMenu);
-    };
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
   }, [step, quizStarted]);
 
-  // Shuffle array utility
+  // Shuffle utility
   const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -514,19 +515,16 @@ export default function QuizPage({ params }: PageProps) {
         variant: 'destructive',
         title: 'Missing Information',
         description: 'Please fill in all fields to continue.',
-        duration: 3000,
       });
       return;
     }
 
-    // Check candidate limit before verifying quiz key
     if (isCandidateLimitReached) {
       toast({
         variant: 'destructive',
         title: 'Candidate Limit Reached',
         description: `The number of candidates for this quiz has reached the plan limit (${currentCandidates}/${candidateLimit}). Please contact your administrator.`,
         duration: 5000,
-        className: 'font-medium'
       });
       return;
     }
@@ -535,7 +533,6 @@ export default function QuizPage({ params }: PageProps) {
     setVerificationError('');
 
     try {
-      // Use the correct endpoint with quizUrl parameter
       const currentPath = window.location.href;
       const apiUrl = `/api/verify-quiz?quizUrl=${encodeURIComponent(currentPath)}&key=${encodeURIComponent(formData.quizKey)}`;
       
@@ -547,36 +544,23 @@ export default function QuizPage({ params }: PageProps) {
       }
 
       const data = await response.json();
-      if (!data || !data.quiz_key) {
-        throw new Error('Invalid quiz key. Please check and try again.');
+      if (!data || !data.quiz_key || data.quiz_key !== formData.quizKey || !data.quiz || !Array.isArray(data.quiz)) {
+        throw new Error('Invalid quiz key or data');
       }
 
-      if (data.quiz_key !== formData.quizKey) {
-        throw new Error('Invalid quiz key. Please check and try again.');
-      }
-
-      if (!data.quiz || !Array.isArray(data.quiz)) {
-        throw new Error('Invalid quiz data received');
-      }
-
-      // Set quiz data and proceed
       setQuizData(data);
       setTimeLeft(data.quiz_time * 60);
-
       const maxAttempts = data.max_attempts || 1;
       setAttemptsInfo({ current: 0, max: maxAttempts });
 
       const canProceed = await checkUserAttemptsAfterLoad(maxAttempts);
-      if (!canProceed) return false;
+      if (!canProceed) return;
 
       setStep('instructions');
-      return true;
     } catch (error) {
-      console.error('Verification error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to verify quiz key';
       setVerificationError(errorMessage);
       toast({ variant: 'destructive', title: 'Error', description: errorMessage });
-      return false;
     } finally {
       setVerifying(false);
     }
@@ -588,21 +572,20 @@ export default function QuizPage({ params }: PageProps) {
       const response = await fetch(
         `/api/quiz_result/check-attempt/email/${encodeURIComponent(formData.email)}/quiz/${quizId}?company_id=${encodeURIComponent(companyId)}`
       );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to check attempts');
-      }
+      if (!response.ok) throw new Error('Failed to check attempts');
+
       const data = await response.json();
       const currentAttempt = data.attempts || 0;
       const hasReachedMax = currentAttempt >= maxAttempts;
+
       setAttemptsInfo({ current: currentAttempt, max: maxAttempts });
+
       if (hasReachedMax) {
         toast({
           variant: "destructive",
           title: "Maximum attempts reached!",
           description: `You've used ${currentAttempt} of ${maxAttempts} attempts.`,
           duration: 5000,
-          className: 'font-medium',
         });
       }
       return !hasReachedMax;
@@ -614,76 +597,70 @@ export default function QuizPage({ params }: PageProps) {
 
   const handleSubmitInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Check candidate limit before proceeding
     if (isCandidateLimitReached) {
       toast({
         variant: 'destructive',
         title: 'Candidate Limit Reached',
         description: `The number of candidates for this quiz has reached the plan limit (${currentCandidates}/${candidateLimit}). Please contact your administrator.`,
         duration: 5000,
-        className: 'font-medium'
       });
       return;
     }
-    
     await verifyQuizKey();
   };
-
-  const startQuiz = () => { setStep('quiz-info'); };
 
   const beginQuiz = useCallback(async () => {
     if (isButtonLoading) return;
     setIsButtonLoading(true);
+
     try {
       if (attemptsInfo.current >= attemptsInfo.max) {
-        setIsButtonLoading(false);
         toast({
           variant: 'destructive',
           title: 'Maximum attempts reached!',
           description: `You've used ${attemptsInfo.current} of ${attemptsInfo.max} attempts.`,
-          duration: 5000,
-          className: 'font-medium',
         });
+        setIsButtonLoading(false);
         return;
       }
+
       const hasAttemptsLeft = await checkUserAttempts(true);
-      if (!hasAttemptsLeft) { setIsButtonLoading(false); return; }
+      if (!hasAttemptsLeft) {
+        setIsButtonLoading(false);
+        return;
+      }
 
       setQuizStarted(true);
       setStep('quiz');
 
-      // Mobile device detection - immediately end quiz if mobile is detected
+      // Mobile check
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       if (isMobileDevice) {
         toast({
           variant: 'destructive',
           title: 'Quiz Terminated',
           description: 'Mobile devices are not allowed for proctored quizzes.',
-          duration: 5000,
-          className: 'font-medium',
         });
-        
-        // Submit quiz with current answers if any
         submitQuiz(selectedAnswers);
         return;
       }
 
-      // Start proctoring after quiz begins
       setProctoringStarted(true);
+      await requestFullscreen();
     } catch (error) {
       console.error('Error starting quiz:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to start quiz. Please try again.',
-        duration: 5000,
-      });
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to start quiz.' });
+    } finally {
       setIsButtonLoading(false);
     }
   }, [isButtonLoading, attemptsInfo, checkUserAttempts, submitQuiz, selectedAnswers]);
 
-  // Calculate score
+  const handleNextQuestion = useCallback(() => {
+    if (currentQuestionIndex < (quizData?.quiz.length || 0) - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    }
+  }, [currentQuestionIndex, quizData]);
+
   const calculateScore = useCallback(() => {
     if (!quizData) return { correct: 0, total: 0, percentage: 0 };
     let correct = 0;
@@ -695,35 +672,29 @@ export default function QuizPage({ params }: PageProps) {
     return { correct, total, percentage };
   }, [quizData, selectedAnswers]);
 
-  // Request fullscreen when quiz starts
+  // Enter fullscreen when quiz starts
   useEffect(() => {
     if (step === 'quiz' && quizStarted) {
-      const enterFullscreen = async () => {
-        try {
-          await requestFullscreen();
-        } catch (error) {
-          console.error('Error entering fullscreen:', error);
-        }
-      };
-      enterFullscreen();
+      requestFullscreen();
     }
-  }, [step, quizStarted, requestFullscreen]);
+  }, [step, quizStarted]);
 
   const quizInstructions = [
     { icon: <Shield className="w-5 h-5 text-red-500" />, title: 'Honor Code', text: 'This is an individual assessment. Cheating will result in disqualification.' },
     { icon: <BookOpen className="w-5 h-5 text-blue-500" />, title: 'Quiz Details', text: `${quizData?.num_questions || 'Multiple'} questions • ${quizData?.quiz_time || 30} minutes` },
-    { icon: <User className="w-5 h-5 text-orange-500" />, title: 'Identity Verification', text: 'Only the person whose information was provided can attempt this quiz. Face verification will be performed.' },
-    { icon: <User className="w-5 h-5 text-orange-500" />, title: 'Solo Attempt Required', text: 'You must attempt this quiz alone in a private room. No other person should be present.' },
-    { icon: <AlertTriangle className="w-5 h-5 text-red-600" />, title: 'Multiple People Detection', text: 'If two or more people are detected during the quiz, it will be terminated immediately.' },
-    { icon: <Lock className="w-5 h-5 text-red-500" />, title: 'No Devices Allowed', text: 'Mobile phones, tablets, or any other electronic devices are strictly prohibited during the quiz.' },
-    { icon: <Eye className="w-5 h-5 text-purple-400" />, title: 'No External Help', text: 'No books, notes, websites, or any other sources of assistance are permitted.' },
-    { icon: <Maximize2 className="w-5 h-5 text-amber-500" />, title: 'Full-Screen Mode', text: 'The quiz will start in full-screen. You must stay in full-screen mode.' },
-    { icon: <AlertTriangle className="w-5 h-5 text-red-500" />, title: 'Important', text: 'Switching tabs or leaving full-screen will end your quiz immediately.' },
-    { icon: <Eye className="w-5 h-5 text-purple-400" />, title: 'Camera Proctoring', text: 'Your webcam will be active during the quiz. Keep your face visible and centred.' },
+    { icon: <User className="w-5 h-5 text-orange-500" />, title: 'Identity Verification', text: 'Only the person whose information was provided can attempt this quiz.' },
+    { icon: <User className="w-5 h-5 text-orange-500" />, title: 'Solo Attempt Required', text: 'You must attempt this quiz alone in a private room.' },
+    { icon: <AlertTriangle className="w-5 h-5 text-red-600" />, title: 'Multiple People Detection', text: 'If two or more people are detected, the quiz will be terminated.' },
+    { icon: <Lock className="w-5 h-5 text-red-500" />, title: 'No Devices Allowed', text: 'Mobile phones or any other devices are strictly prohibited.' },
+    { icon: <Eye className="w-5 h-5 text-purple-400" />, title: 'No External Help', text: 'No books, notes, or websites allowed.' },
+    { icon: <Maximize2 className="w-5 h-5 text-amber-500" />, title: 'Full-Screen Mode', text: 'The quiz will start in full-screen. Stay in full-screen.' },
+    { icon: <AlertTriangle className="w-5 h-5 text-red-500" />, title: 'Important', text: 'Switching tabs or leaving full-screen will end the quiz.' },
+    { icon: <Eye className="w-5 h-5 text-purple-400" />, title: 'Camera Proctoring', text: 'Your webcam will be active. Keep your face visible and centred.' },
   ];
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Exit Confirmation Modal */}
       {showExitConfirm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
@@ -754,22 +725,21 @@ export default function QuizPage({ params }: PageProps) {
 
       <header className="relative z-20 p-6 border-b border-gray-800/50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-white flex items-center">
+          <Link href="/" className="text-2xl font-bold text-white flex items-center gap-3">
             <Image src="/QuizzViz-logo.png" alt="QuizzViz Logo" width={50} height={50} />
             QuizzViz
           </Link>
           {step === 'quiz' && quizData && (
-            <div className="flex items-center gap-4">
-              <div className="bg-gray-800 rounded-2xl px-6 py-3 flex items-center gap-3 border border-gray-700">
-                <Clock className="h-6 w-6 text-white" />
-                <span className="font-mono text-white text-xl font-bold">{formatTime(timeLeft)}</span>
-              </div>
+            <div className="bg-gray-800 rounded-2xl px-6 py-3 flex items-center gap-3 border border-gray-700">
+              <Clock className="h-6 w-6 text-white" />
+              <span className="font-mono text-white text-xl font-bold">{formatTime(timeLeft)}</span>
             </div>
           )}
         </div>
       </header>
 
-      <main id="quiz-content" className="relative z-10" tabIndex={-1}>
+      <main className="relative z-10">
+        {/* Info Step */}
         {step === 'info' && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
@@ -780,36 +750,23 @@ export default function QuizPage({ params }: PageProps) {
                 </div>
               ) : isCandidateLimitReached ? (
                 <div className="text-center">
-                  <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-2">
-                      Candidate limit is reached
-                    </h1>
-                    <p className="text-gray-400">Upgrade to a plan to get more candidates</p>
-                  </div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-2">
+                    Candidate limit reached
+                  </h1>
+                  <p className="text-gray-400 mb-8">Upgrade your plan to allow more candidates.</p>
                   <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
                     <CardContent className="p-8">
-                      <div className="text-center">
-                        <AlertCircle className="h-16 w-16 text-orange-500 mx-auto mb-6" />
-                        <p className="text-gray-300 mb-6 text-lg">
-                          The number of candidates for this quiz has reached the plan limit.
-                        </p>
-                        <div className="space-y-4">
-                          <Button asChild className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3">
-                            <Link href="/pricing">
-                              Upgrade Plan
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            asChild
-                            className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
-                          >
-                            <Link href="/">
-                              <Home className="w-4 h-4 mr-2" />
-                              Back to Home
-                            </Link>
-                          </Button>
-                        </div>
+                      <AlertCircle className="h-16 w-16 text-orange-500 mx-auto mb-6" />
+                      <p className="text-gray-300 mb-6 text-lg">
+                        The number of candidates for this quiz has reached the plan limit.
+                      </p>
+                      <div className="space-y-4">
+                        <Button asChild className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600">
+                          <Link href="/pricing">Upgrade Plan</Link>
+                        </Button>
+                        <Button variant="outline" asChild className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
+                          <Link href="/"><Home className="w-4 h-4 mr-2" /> Back to Home</Link>
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -827,7 +784,7 @@ export default function QuizPage({ params }: PageProps) {
                     <CardContent className="p-8">
                       <form onSubmit={handleSubmitInfo} className="space-y-6">
                         <div className="space-y-2">
-                          <Label htmlFor="name" className="text-gray-300 font-medium flex items-center gap-2">
+                          <Label htmlFor="name" className="text-gray-300 flex items-center gap-2">
                             <User className="w-4 h-4 text-blue-400" /> Full Name
                           </Label>
                           <Input
@@ -837,12 +794,12 @@ export default function QuizPage({ params }: PageProps) {
                             onChange={handleInputChange}
                             placeholder="Enter your Full Name"
                             required
-                            className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                            className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-blue-500"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="email" className="text-gray-300 font-medium flex items-center gap-2">
+                          <Label htmlFor="email" className="text-gray-300 flex items-center gap-2">
                             <Mail className="w-4 h-4 text-purple-400" /> Email
                           </Label>
                           <Input
@@ -853,12 +810,12 @@ export default function QuizPage({ params }: PageProps) {
                             onChange={handleInputChange}
                             placeholder="Enter your email"
                             required
-                            className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200"
+                            className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-purple-500"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="quizKey" className="text-gray-300 font-medium flex items-center gap-2">
+                          <Label htmlFor="quizKey" className="text-gray-300 flex items-center gap-2">
                             <Key className="w-4 h-4 text-green-400" /> Quiz Key
                           </Label>
                           <Input
@@ -868,10 +825,10 @@ export default function QuizPage({ params }: PageProps) {
                             onChange={handleInputChange}
                             placeholder="Enter the quiz access key"
                             required
-                            className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all duration-200"
+                            className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-green-500"
                           />
                           {verificationError && (
-                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
                               <p className="text-sm text-red-400 flex items-center gap-2">
                                 <AlertCircle className="h-4 w-4" /> {verificationError}
                               </p>
@@ -882,23 +839,12 @@ export default function QuizPage({ params }: PageProps) {
                         <Button
                           type="submit"
                           disabled={verifying || showingMaxAttemptsNotification}
-                          className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-blue-500/20"
+                          className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl disabled:opacity-70"
                         >
-                          {showingMaxAttemptsNotification ? (
-                            <>
-                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                              Processing...
-                            </>
-                          ) : verifying ? (
-                            <>
-                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                              Verifying...
-                            </>
+                          {verifying ? (
+                            <> <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Verifying... </>
                           ) : (
-                            <>
-                              Continue to Quiz
-                              <ArrowRight className="ml-2 h-5 w-5" />
-                            </>
+                            <> Continue to Quiz <ArrowRight className="ml-2 h-5 w-5" /> </>
                           )}
                         </Button>
                       </form>
@@ -910,273 +856,268 @@ export default function QuizPage({ params }: PageProps) {
           </div>
         )}
 
-        {step === 'instructions' && (
-          <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
-            <div className="w-full max-w-4xl">
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent mb-2">
-                  Quiz Instructions
-                </h1>
-                <p className="text-gray-400">Please read and follow all instructions carefully</p>
-              </div>
-
-              <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
-                <CardContent className="p-8">
-                  <div className="grid gap-4 mb-8">
-                    {quizInstructions.map((instruction, index) => (
-                      <div key={index} className="flex items-start gap-3 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                        <div className="flex-shrink-0 mt-1">
-                          {instruction.icon}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-white mb-1">{instruction.title}</h3>
-                          <p className="text-gray-300 text-sm">{instruction.text}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-center gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setStep('info')}
-                      className="px-8 py-3 border-gray-600 text-gray-300 hover:bg-gray-800"
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      onClick={startQuiz}
-                      className="px-8 py-3 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold"
-                    >
-                      Start Quiz
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {step === 'quiz-info' && (
+        {/* Instructions Step */}
+        {step === 'instructions' && quizData && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
             <div className="w-full max-w-2xl">
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent mb-2">
-                  Ready to Start
-                </h1>
-                <p className="text-gray-400">Your quiz will begin in full-screen mode</p>
+              <div className="text-center mb-10">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-4">
+                  <BookOpen className="w-8 h-8 text-white" />
+                </div>
+                <h1 className="text-3xl font-bold text-white mb-2">{quizData.role} Quiz</h1>
+                <p className="text-gray-400">
+                  {quizData.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)} yrs` : 'Quiz'}
+                </p>
               </div>
 
-              <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
-                <CardContent className="p-8 text-center">
-                  <div className="mb-8">
-                    <div className="text-6xl mb-4">🎯</div>
-                    <h2 className="text-2xl font-bold text-white mb-2">{quizData?.topic}</h2>
-                    <p className="text-gray-300 mb-4">
-                      {quizData?.num_questions} questions • {quizData?.quiz_time} minutes
-                    </p>
-                    <div className="flex justify-center gap-4 text-sm text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4" />
-                        {formData.name}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        {formData.email}
-                      </div>
+              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl mb-8">
+                <CardContent className="p-6">
+                  <ul className="space-y-5">
+                    {quizInstructions.map((instruction, index) => (
+                      <li key={index} className="flex items-start gap-4">
+                        <div className="flex-shrink-0 mt-0.5">{instruction.icon}</div>
+                        <div>
+                          <h3 className="font-medium text-white">{instruction.title}</h3>
+                          <p className="text-gray-300 text-sm">{instruction.text}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <div className="text-center">
+                {attemptsInfo.current >= attemptsInfo.max ? (
+                  <div className="p-4 bg-red-900/30 border border-red-800 rounded-xl">
+                    <div className="flex items-center justify-center gap-2 text-red-300">
+                      <AlertCircle className="w-5 h-5" />
+                      Maximum attempts reached ({attemptsInfo.current}/{attemptsInfo.max})
                     </div>
                   </div>
+                ) : (
+                  <Button
+                    onClick={beginQuiz}
+                    disabled={isButtonLoading || attemptsInfo.current >= attemptsInfo.max}
+                    className="h-14 w-full max-w-md bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl text-lg"
+                  >
+                    {isButtonLoading ? (
+                      <> <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Starting... </>
+                    ) : (
+                      <> Start Quiz <ArrowRight className="ml-2 h-5 w-5" /> </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
-                  <div className="space-y-4">
-                    <Button
-                      onClick={beginQuiz}
-                      disabled={isButtonLoading}
-                      className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold"
-                    >
-                      {isButtonLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Starting Quiz...
-                        </>
-                      ) : (
-                        <>
-                          Begin Quiz
-                          <ArrowRight className="ml-2 h-5 w-5" />
-                        </>
-                      )}
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      onClick={() => setStep('instructions')}
-                      className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
-                    >
-                      Back to Instructions
-                    </Button>
+        {/* Quiz Info Step */}
+        {step === 'quiz-info' && quizData && (
+          <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
+            <div className="w-full max-w-2xl">
+              <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
+                <CardContent className="p-8 text-center">
+                  <div className="text-6xl mb-4">🎯</div>
+                  <h2 className="text-2xl font-bold text-white mb-2">{quizData.topic}</h2>
+                  <p className="text-gray-300 mb-6">
+                    {quizData.num_questions} questions • {quizData.quiz_time} minutes
+                  </p>
+
+                  <div className="flex justify-center gap-6 text-sm text-gray-400 mb-8">
+                    <div className="flex items-center gap-2"><User className="w-4 h-4" /> {formData.name}</div>
+                    <div className="flex items-center gap-2"><Mail className="w-4 h-4" /> {formData.email}</div>
                   </div>
+
+                  <Button onClick={beginQuiz} disabled={isButtonLoading} className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600">
+                    {isButtonLoading ? 'Starting Quiz...' : 'Begin Quiz'}
+                  </Button>
                 </CardContent>
               </Card>
             </div>
           </div>
         )}
 
+        {/* Quiz Step */}
         {step === 'quiz' && quizData && (
-          <div className="min-h-[calc(100vh-80px)] p-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-white">
-                    Question {currentQuestionIndex + 1} of {quizData.quiz.length}
-                  </h2>
-                  <div className="text-sm text-gray-400">
-                    {Object.keys(selectedAnswers).length} answered
-                  </div>
+          <div className="min-h-[calc(100vh-80px)]">
+            <CameraProctoring
+              onViolation={handleProctoringViolation}
+              onEnd={handleProctoringEnd}
+              isActive={true}
+              isStarted={proctoringStarted}
+            />
+
+            <div className="bg-gray-900/50 backdrop-blur-xl border-b border-gray-800 sticky top-20 z-10">
+              <div className="max-w-4xl mx-auto px-4 py-4">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="text-lg font-semibold">Question {currentQuestionIndex + 1} of {quizData.quiz.length}</div>
+                  <div className="text-sm text-gray-400">{Object.keys(selectedAnswers).length} answered</div>
                 </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
                     style={{ width: `${((currentQuestionIndex + 1) / quizData.quiz.length) * 100}%` }}
                   />
                 </div>
               </div>
+            </div>
 
-              <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
+            <div className="max-w-4xl mx-auto p-6">
+              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl">
                 <CardContent className="p-8">
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">
-                      {quizData.quiz[currentQuestionIndex].question}
-                    </h3>
-                    
-                    {quizData.quiz[currentQuestionIndex].code_snippet && (
-                      <div className="mb-4 rounded-lg overflow-hidden">
-                        <SyntaxHighlighter
-                          language="javascript"
-                          style={atomDark}
-                          customStyle={{
-                            margin: 0,
-                            padding: '1rem',
-                            fontSize: '0.875rem',
-                            backgroundColor: 'rgba(0, 0, 0, 0.5)'
-                          }}
-                        >
-                          {quizData.quiz[currentQuestionIndex].code_snippet}
-                        </SyntaxHighlighter>
-                      </div>
-                    )}
-                  </div>
+                  <h2 className="text-2xl font-semibold text-white mb-8 leading-relaxed">
+                    {quizData.quiz[currentQuestionIndex]?.question}
+                  </h2>
 
-                  <div className="space-y-3 mb-6">
-                    {Object.entries(quizData.quiz[currentQuestionIndex].options).map(([key, value]) => (
-                      <div
-                        key={key}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                          selectedAnswers[currentQuestionIndex] === key
-                            ? 'bg-blue-500/20 border-blue-500'
-                            : 'bg-gray-800/50 border-gray-700 hover:bg-gray-800'
-                        }`}
-                        onClick={() => setSelectedAnswers(prev => ({ ...prev, [currentQuestionIndex]: key }))}
+                  {quizData.quiz[currentQuestionIndex]?.code_snippet && (
+                    <div className="mb-8 rounded-xl overflow-hidden border border-gray-700">
+                      <div className="bg-gray-800 px-4 py-2 border-b border-gray-700 text-sm text-gray-300">Code Preview</div>
+                      <SyntaxHighlighter
+                        language="python"
+                        style={atomDark}
+                        customStyle={{ margin: 0, backgroundColor: '#1F2937', padding: '1.5rem', fontSize: '0.95rem' }}
+                        wrapLines
+                        showLineNumbers
                       >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-4 h-4 rounded-full border-2 ${
-                            selectedAnswers[currentQuestionIndex] === key
-                              ? 'bg-blue-500 border-blue-500'
-                              : 'border-gray-500'
-                          }`} />
-                          <span className="text-white">{value}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        {quizData.quiz[currentQuestionIndex].code_snippet}
+                      </SyntaxHighlighter>
+                    </div>
+                  )}
 
-                  <div className="flex justify-between">
-                    <Button
-                      variant="outline"
-                      onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                      disabled={currentQuestionIndex === 0}
-                      className="border-gray-600 text-gray-300 hover:bg-gray-800"
-                    >
-                      Previous
-                    </Button>
-                    
-                    {currentQuestionIndex === quizData.quiz.length - 1 ? (
-                      <Button
-                        onClick={() => submitQuiz(selectedAnswers)}
-                        disabled={isSubmitting || Object.keys(selectedAnswers).length !== quizData.quiz.length}
-                        className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          'Submit Quiz'
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => setCurrentQuestionIndex(prev => Math.min(quizData.quiz.length - 1, prev + 1))}
-                        className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white"
-                      >
-                        Next
-                      </Button>
-                    )}
+                  <div className="space-y-4">
+                    <h3 className="font-medium mb-4">Choose your answer:</h3>
+                    {Object.entries(quizData.quiz[currentQuestionIndex].options)
+                      .filter(([key]) => key !== 'question')
+                      .map(([key, value]) => {
+                        const isSelected = selectedAnswers[currentQuestionIndex] === key;
+                        return (
+                          <div
+                            key={key}
+                            onClick={() => handleAnswerSelect(key)}
+                            className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'border-blue-500 bg-blue-500/10' 
+                                : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-500'}`}>
+                                {isSelected && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                              </div>
+                              <span className="text-lg text-gray-100">{value}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </CardContent>
+
+                <div className="p-8 pt-0 flex justify-start">
+                  {currentQuestionIndex < quizData.quiz.length - 1 ? (
+                    <Button
+                      onClick={handleNextQuestion}
+                      disabled={!selectedAnswers[currentQuestionIndex]}
+                      className="h-14 px-8 bg-gradient-to-r from-green-500 to-blue-500 disabled:opacity-50"
+                    >
+                      Next Question <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => submitQuiz(selectedAnswers)}
+                      disabled={!selectedAnswers[currentQuestionIndex] || isSubmitting}
+                      className="h-14 px-8 bg-gradient-to-r from-green-600 to-blue-600 disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <> <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Submitting... </>
+                      ) : (
+                        <> <CheckCircle className="mr-2 h-5 w-5" /> Submit Quiz </>
+                      )}
+                    </Button>
+                  )}
+                </div>
               </Card>
             </div>
           </div>
         )}
 
-        {step === 'results' && (
+        {/* Results Step */}
+        {step === 'results' && quizData && (
           <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4">
             <div className="w-full max-w-2xl">
               <div className="text-center mb-8">
-                <div className="text-6xl mb-4">🎉</div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent mb-2">
-                  Quiz Completed!
+                <div className="inline-flex w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl items-center justify-center mb-4">
+                  <Trophy className="w-8 h-8 text-white" />
+                </div>
+                <h1 className="text-3xl font-bold mb-2">
+                  {calculateScore().percentage >= 70 ? 'Congratulations!' : 'Quiz Complete'}
                 </h1>
-                <p className="text-gray-400">Here are your results</p>
               </div>
 
-              <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
+              <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl">
                 <CardContent className="p-8">
-                  <div className="text-center mb-8">
-                    <div className="text-5xl font-bold text-white mb-2">
-                      {calculateScore().percentage}%
+                  <div className="text-center mb-10">
+                    <div className="relative inline-flex items-center justify-center w-48 h-48">
+                      <svg className="w-48 h-48 -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="40" stroke="#374151" strokeWidth="8" fill="none" />
+                        <circle
+                          cx="50" cy="50" r="40"
+                          stroke="url(#scoreGradient)"
+                          strokeWidth="8"
+                          fill="none"
+                          strokeDasharray={`${calculateScore().percentage * 2.51} 251`}
+                          strokeLinecap="round"
+                        />
+                        <defs>
+                          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#3B82F6" />
+                            <stop offset="100%" stopColor="#8B5CF6" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <div className="text-6xl font-bold text-white">{calculateScore().percentage}%</div>
+                        <div className="text-gray-400 text-sm">Score</div>
+                      </div>
                     </div>
-                    <p className="text-gray-300">
-                      You got {calculateScore().correct} out of {calculateScore().total} questions correct
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 mb-8">
+                    <div className="text-center p-5 bg-gray-800/50 rounded-xl">
+                      <div className="text-3xl font-bold text-green-400">{calculateScore().correct}</div>
+                      <div className="text-xs text-gray-400 mt-1">CORRECT</div>
+                    </div>
+                    <div className="text-center p-5 bg-gray-800/50 rounded-xl">
+                      <div className="text-3xl font-bold text-red-400">{quizData.quiz.length - calculateScore().correct}</div>
+                      <div className="text-xs text-gray-400 mt-1">INCORRECT</div>
+                    </div>
+                    <div className="text-center p-5 bg-gray-800/50 rounded-xl">
+                      <div className="text-3xl font-bold text-blue-400">{quizData.quiz.length}</div>
+                      <div className="text-xs text-gray-400 mt-1">TOTAL</div>
+                    </div>
+                  </div>
+
+                  <div className={`p-6 rounded-xl mb-8 text-center border ${
+                    calculateScore().percentage >= 70 ? 'border-green-500/30 bg-green-500/10' :
+                    calculateScore().percentage >= 50 ? 'border-yellow-500/30 bg-yellow-500/10' :
+                    'border-red-500/30 bg-red-500/10'
+                  }`}>
+                    <h3 className="font-semibold text-lg mb-2">
+                      {calculateScore().percentage >= 70 ? 'Excellent Work!' : 
+                       calculateScore().percentage >= 50 ? 'Good Effort!' : 'Keep Practicing'}
+                    </h3>
+                    <p className="text-gray-300 text-sm">
+                      {calculateScore().percentage >= 70 
+                        ? 'Strong understanding demonstrated.' 
+                        : calculateScore().percentage >= 50 
+                        ? 'Solid foundation. Review missed topics.' 
+                        : 'Review the material and try again.'}
                     </p>
                   </div>
 
-                  <div className="space-y-4 mb-8">
-                    <div className="flex justify-between items-center p-4 bg-gray-800/50 rounded-lg">
-                      <span className="text-gray-300">Score</span>
-                      <span className="text-white font-semibold">{calculateScore().percentage}%</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 bg-gray-800/50 rounded-lg">
-                      <span className="text-gray-300">Correct Answers</span>
-                      <span className="text-white font-semibold">{calculateScore().correct}/{calculateScore().total}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-4 bg-gray-800/50 rounded-lg">
-                      <span className="text-gray-300">Time Taken</span>
-                      <span className="text-white font-semibold">
-                        {Math.ceil(((quizData?.quiz_time ?? 0) * 60 - timeLeft) / 60)} minutes
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <Button
-                      asChild
-                      className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold"
-                    >
-                      <Link href="/">
-                        Back to Home
-                      </Link>
-                    </Button>
-                  </div>
+                  <Button asChild className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    <Link href="/"><Home className="mr-2 h-5 w-5" /> Return to Home</Link>
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -1184,40 +1125,16 @@ export default function QuizPage({ params }: PageProps) {
         )}
       </main>
 
-      {/* Camera Proctoring Component */}
-      {step === 'quiz' && proctoringStarted && (
-        <CameraProctoring
-          isActive={proctoringStarted}
-          onViolation={(type) => {
-            console.log('Proctoring violation:', type);
-            // Handle proctoring violations (e.g., multiple faces detected, no face detected)
-            if (type === 'multiple_faces' || type === 'no_face') {
-              submitQuiz(selectedAnswers);
-            }
-          }}
-          onEnd={(reason) => {
-            console.log('Proctoring ended:', reason);
-            // Proctoring ends when quiz is completed or terminated
-            // No additional action needed as quiz submission is handled separately
-          }}
-        />
-      )}
-
       {/* Warning Modal */}
       {showWarning && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-md w-full">
             <div className="flex items-center gap-3 mb-4">
               <AlertTriangle className="w-6 h-6 text-yellow-500" />
-              <h3 className="text-xl font-bold text-white">Activity Warning</h3>
+              <h3 className="text-xl font-bold">Activity Warning</h3>
             </div>
-            <p className="text-gray-300 mb-6">
-              We detect some unusual activity. Please remain focused on the quiz. Multiple warnings will result in quiz termination.
-            </p>
-            <Button
-              onClick={() => setShowWarning(false)}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
-            >
+            <p className="text-gray-300 mb-6">Unusual activity detected. Please stay focused on the quiz.</p>
+            <Button onClick={() => setShowWarning(false)} className="w-full bg-yellow-500 hover:bg-yellow-600 text-black">
               I Understand
             </Button>
           </div>
@@ -1971,10 +1888,6 @@ export default function QuizPage({ params }: PageProps) {
 //       setIsButtonLoading(false);
 //     }
 //   }, [checkUserAttempts, attemptsInfo, isButtonLoading]);
-
-//   const handleAnswerSelect = useCallback((answer: string) => {
-//     setSelectedAnswers(prev => ({ ...prev, [currentQuestionIndex]: answer }));
-//   }, [currentQuestionIndex]);
 
 //   const handleNextQuestion = () => {
 //     if (currentQuestionIndex < (quizData?.quiz.length || 0) - 1) {
