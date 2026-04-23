@@ -392,7 +392,7 @@ export default function ResultsDashboard() {
         throw new Error("No authentication token available");
       }
       
-      const res = await fetch(`/api/quiz_result/delete?quiz_id=${quizId}`, {
+      const res = await fetch(`/api/quiz_result/delete?quiz_id=${quizId}&company_id=${finalCompanyId}`, {
         method: "DELETE",
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -439,7 +439,7 @@ export default function ResultsDashboard() {
       
       const promises = toDelete.map(({ email }) =>
         fetch(
-          `/api/quiz_result/delete?quiz_id=${showDeleteUsersModal.quizId}&email=${encodeURIComponent(email)}`,
+          `/api/quiz_result/delete?quiz_id=${showDeleteUsersModal.quizId}&email=${encodeURIComponent(email)}&company_id=${finalCompanyId}`,
           { method: "DELETE", headers }
         )
       );
