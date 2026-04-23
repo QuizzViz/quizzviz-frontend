@@ -519,33 +519,58 @@ export default function QuizPage({ params }: PageProps) {
       return;
     }
 
+    // Check candidate limit before verifying quiz key
+    if (isCandidateLimitReached) {
+      toast({
+        variant: 'destructive',
+        title: 'Candidate Limit Reached',
+        description: `The number of candidates for this quiz has reached the plan limit (${currentCandidates}/${candidateLimit}). Please contact your administrator.`,
+        duration: 5000,
+        className: 'font-medium'
+      });
+      return;
+    }
+
     setVerifying(true);
     setVerificationError('');
 
     try {
-      const response = await fetch(
-        `/api/quiz/verify/${quizId}?key=${encodeURIComponent(formData.quizKey)}&company_id=${encodeURIComponent(companyId)}`
-      );
+      // Use the correct endpoint with quizUrl parameter
+      const currentPath = window.location.href;
+      const apiUrl = `/api/verify-quiz?quizUrl=${encodeURIComponent(currentPath)}&key=${encodeURIComponent(formData.quizKey)}`;
+      
+      const response = await fetch(apiUrl);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'Failed to verify quiz key');
+        throw new Error(errorData.error || 'Failed to verify quiz key');
       }
 
       const data = await response.json();
-      if (data.valid) {
-        const maxAttempts = data.max_attempts || 1;
-        setAttemptsInfo({ current: 0, max: maxAttempts });
-
-        const canProceed = await checkUserAttemptsAfterLoad(maxAttempts);
-        if (!canProceed) return false;
-
-        setStep('instructions');
-        return true;
-      } else {
-        setVerificationError('Invalid quiz key. Please check and try again.');
-        return false;
+      if (!data || !data.quiz_key) {
+        throw new Error('Invalid quiz key. Please check and try again.');
       }
+
+      if (data.quiz_key !== formData.quizKey) {
+        throw new Error('Invalid quiz key. Please check and try again.');
+      }
+
+      if (!data.quiz || !Array.isArray(data.quiz)) {
+        throw new Error('Invalid quiz data received');
+      }
+
+      // Set quiz data and proceed
+      setQuizData(data);
+      setTimeLeft(data.quiz_time * 60);
+
+      const maxAttempts = data.max_attempts || 1;
+      setAttemptsInfo({ current: 0, max: maxAttempts });
+
+      const canProceed = await checkUserAttemptsAfterLoad(maxAttempts);
+      if (!canProceed) return false;
+
+      setStep('instructions');
+      return true;
     } catch (error) {
       console.error('Verification error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to verify quiz key';
