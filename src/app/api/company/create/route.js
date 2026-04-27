@@ -45,16 +45,17 @@ export async function POST(request) {
     }
     
     // Validate required fields
-    if (!name?.trim() || !company_size?.trim() || !owner_email?.trim()) {
-      console.error('Missing required fields:', { name, company_size, owner_email });
+    if (!name?.trim() || !company_size?.trim() || !owner_email?.trim() || !company_id?.trim()) {
+      console.error('Missing required fields:', { name, company_size, owner_email, company_id });
       return NextResponse.json(
         { 
           error: 'Missing required fields',
-          required: ['name', 'company_size', 'owner_email'],
+          required: ['name', 'company_size', 'owner_email', 'company_id'],
           received: { 
             name: Boolean(name?.trim()),
             company_size: Boolean(company_size?.trim()),
-            owner_email: Boolean(owner_email?.trim())
+            owner_email: Boolean(owner_email?.trim()),
+            company_id: Boolean(company_id?.trim())
           }
         },
         { status: 400 }
@@ -62,21 +63,18 @@ export async function POST(request) {
     }
 
     // Prepare the request body for the backend
+    // Always use the company_id provided by frontend to ensure consistency
+
     const requestBody = {
       name: name.trim(),
       plan_name: (plan_name || 'Free').trim(),
       company_size: company_size.trim(),
       owner_id: finalOwnerId,
       owner_email: owner_email.trim(),
-      company_id: (company_id || name.toLowerCase().replace(/\s+/g, '-')).trim()
+      company_id: company_id.trim()
     };
 
-    console.log('Making request to:', `${CREATE_COMPANY_URL}/company`);
-    console.log('Request body:', JSON.stringify(requestBody, null, 2));
-    console.log('Request headers:', {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token.substring(0, 20)}...`
-    });
+    
     
     let response;
     try {
