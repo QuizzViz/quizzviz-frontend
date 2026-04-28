@@ -40,9 +40,9 @@ export const sanitizeCompanyId = (companyId: string): string => {
   return companyId
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9_-]/g, '-') // Replace invalid chars with hyphen
-    .replace(/-+/g, '-') // Multiple hyphens to single
-    .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+    .replace(/[^a-z0-9_-]/g, '_') // Replace invalid chars with underscore
+    .replace(/_+/g, '_') // Multiple underscores to single
+    .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
 };
 
 export const generateCompanyId = (companyName: string): string => {
