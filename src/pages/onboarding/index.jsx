@@ -96,12 +96,17 @@ export default function OnboardingPage() {
       return;
     }
 
+    // Prevent multiple submissions
+    if (isSubmitting) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const token = await getToken();
 
-      // Double-check company doesn't already exist
+      // Final check company doesn't already exist
       const checkRes = await fetch(`/api/company/check?owner_id=${user?.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -117,111 +122,89 @@ export default function OnboardingPage() {
         return;
       }
 
-      try {
-        // Generate and validate company ID
-        const sentCompanyId = generateCompanyId(formData.companyName);
+      // Generate and validate company ID
+      const sentCompanyId = generateCompanyId(formData.companyName);
+      
+      // Generate unique member ID
+      const memberId = `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Create company
-        const res = await fetch('/api/company/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            name: formData.companyName,
-            plan_name: 'Free',
-            company_size: formData.companySize,
-            owner_id: user?.id,
-            owner_email: user?.primaryEmailAddress?.emailAddress,
-            company_id: sentCompanyId
-          }),
-        });
+      // Prepare user name
+      const userName = user?.fullName || (user?.firstName && user?.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : 'Team Owner');
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Failed to create company');
-        }
-
-        const companyData = await res.json();
-
-        // Validate company data before proceeding
-        const validation = validateCompanyData({ ...companyData, company_id: sentCompanyId });
-        if (!validation.isValid) {
-          throw new Error(`Company validation failed: ${validation.errors.join(', ')}`);
-        }
-
-        // Update user metadata with company info
-        await user.update({
-          unsafeMetadata: {
-            ...user.unsafeMetadata,
-            companyId: sentCompanyId,
-            companyName: companyData.name,
-            planName: companyData.plan_name || 'Free'
-          }
-        });
-
-        // Generate unique member ID
-        const memberId = `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-        // Create company member record for owner
-        console.log('Creating company member record with data:', {
-          id: memberId,
-          user_id: user?.id,
+      // Create company and member in a single request to prevent race conditions
+      const res = await fetch('/api/company/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: formData.companyName,
+          plan_name: 'Free',
+          company_size: formData.companySize,
+          owner_id: user?.id,
+          owner_email: user?.primaryEmailAddress?.emailAddress,
           company_id: sentCompanyId,
-          role: 'OWNER',
-          status: 'ACTIVE',
-          company_name: formData.companyName,
-          name: user?.fullName || (user?.firstName && user?.lastName
-    ? `${user.firstName} ${user.lastName}`
-    : 'Team Owner')
-        });
-
-        const memberResponse = await fetch('/api/company-members', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
+          // Include member creation data to make it atomic
+          create_member: true,
+          member_data: {
             id: memberId,
             user_id: user?.id,
             company_id: sentCompanyId,
             role: 'OWNER',
             status: 'ACTIVE',
             company_name: formData.companyName,
-            name: user?.fullName || (user?.firstName && user?.lastName
-    ? `${user.firstName} ${user.lastName}`
-    : 'Team Owner')
-          }),
-        });
+            name: userName
+          }
+        }),
+      });
 
-        if (!memberResponse.ok) {
-          const errorData = await memberResponse.json().catch(() => ({}));
-          console.error('Company member creation failed:', errorData);
-          throw new Error(errorData.error || 'Failed to create company member record');
+      if (!res.ok) {
+        const err = await res.json();
+        
+        // Handle duplicate company error specifically
+        if (err.error?.includes('already exists') || err.status === 409) {
+          toast({
+            title: 'Company Already Exists',
+            description: 'Redirecting to dashboard...',
+            className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+          });
+          setTimeout(() => { window.location.href = '/dashboard'; }, 1000);
+          return;
         }
-
-        const memberResult = await memberResponse.json();
-        console.log('Company member created successfully:', memberResult);
-
-        toast({
-          title: "Success!",
-          description: "Company created successfully. Redirecting to dashboard...",
-          className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
-        });
-
-        setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
-      } catch (error) {
-        console.error('Creation error:', error);
-        toast({
-          title: "Error",
-          description: error.message || "Something went wrong. Please try again.",
-          variant: "destructive",
-        });
+        
+        throw new Error(err.error || 'Failed to create company');
       }
+
+      const companyData = await res.json();
+
+      // Validate company data before proceeding
+      const validation = validateCompanyData({ ...companyData, company_id: sentCompanyId });
+      if (!validation.isValid) {
+        throw new Error(`Company validation failed: ${validation.errors.join(', ')}`);
+      }
+
+      // Update user metadata with company info
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          companyId: sentCompanyId,
+          companyName: companyData.name,
+          planName: companyData.plan_name || 'Free'
+        }
+      });
+
+      toast({
+        title: "Success!",
+        description: "Company created successfully. Redirecting to dashboard...",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+      });
+
+      setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Creation error:', error);
       toast({
         title: "Error",
         description: error.message || "Something went wrong. Please try again.",

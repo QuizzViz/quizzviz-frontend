@@ -32,7 +32,7 @@ export async function POST(request) {
       );
     }
 
-    const { name, plan_name, company_size, owner_email, owner_id, company_id } = requestData;
+    const { name, plan_name, company_size, owner_email, owner_id, company_id, create_member, member_data } = requestData;
     
     // Ensure owner_id is set from the authenticated user
     const finalOwnerId = (owner_id || userId)?.trim();
@@ -60,6 +60,32 @@ export async function POST(request) {
         },
         { status: 400 }
       );
+    }
+
+    // Check if company already exists to prevent duplicates
+    try {
+      const checkResponse = await fetch(`${CREATE_COMPANY_URL}/companies/${company_id.trim()}`, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (checkResponse.ok) {
+        console.log('Company already exists:', company_id.trim());
+        return NextResponse.json(
+          { 
+            error: 'Company already exists',
+            company_id: company_id.trim(),
+            status: 409
+          },
+          { status: 409 }
+        );
+      }
+    } catch (checkError) {
+      console.log('Error checking existing company (continuing):', checkError);
+      // Continue with creation if check fails
     }
 
     // Prepare the request body for the backend
@@ -138,6 +164,42 @@ export async function POST(request) {
       }
 
       console.log('Company created successfully:', responseData);
+
+      // If member creation is requested, create the member record
+      if (create_member && member_data) {
+        try {
+          console.log('Creating company member record:', member_data);
+          
+          const memberResponse = await fetch(`${process.env.NEXT_PUBLIC_COMPANY_MEMBERS_SERVICE_URL}/member`, {
+            method: 'POST',
+            headers: {
+              'accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(member_data),
+          });
+
+          if (!memberResponse.ok) {
+            const memberError = await memberResponse.json().catch(() => ({}));
+            console.error('Company member creation failed:', memberError);
+            
+            // Don't fail the whole operation, but log the error
+            console.warn('Company created successfully but member creation failed:', memberError);
+          } else {
+            const memberResult = await memberResponse.json();
+            console.log('Company member created successfully:', memberResult);
+            
+            // Include member data in response
+            responseData.member = memberResult;
+          }
+        } catch (memberError) {
+          console.error('Error creating company member:', memberError);
+          // Don't fail the whole operation
+          console.warn('Company created successfully but member creation failed:', memberError);
+        }
+      }
+
       return NextResponse.json(responseData);
       
     } catch (error) {
