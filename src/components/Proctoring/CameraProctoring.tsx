@@ -15,33 +15,14 @@ const VIOLATION_TIMEOUT = 20;
 // ─── Face identity config ─────────────────────────────────────────────────────
 const IDENTITY_CALIBRATION_FRAMES = 30;
 
-// ── Thresholds (balanced: catches person-swap, tolerates lighting) ────────────
-//
-// Strategy:
-//   • Sudden-drop guard   → catches an abrupt face-swap in 1–2 frames
-//   • Hard-fail streak    → catches a sustained low similarity (different person
-//                           who happens to score near the boundary)
-//   • Soft-fail streak    → shows a warning before terminating for borderline cases
-//
-// Key insight: EMA with alpha=0.35 dampens a sudden raw drop of ~0.30 to only
-// ~0.10 in the smoothed signal.  So the sudden-drop guard MUST use the RAW
-// similarity delta, not the smoothed one.  EMA is only used for the streak
-// checks (where we want noise immunity over multiple frames).
+const APPEARANCE_HARD_FAIL        = 0.70;
+const APPEARANCE_HARD_FAIL_FRAMES = 5;
 
-const APPEARANCE_HARD_FAIL        = 0.70;  // raw similarity — clearly different face
-const APPEARANCE_HARD_FAIL_FRAMES = 5;     // 5 consecutive frames → ~1 s at 5 fps
+const APPEARANCE_SOFT_FAIL        = 0.78;
+const APPEARANCE_MISMATCH_FRAMES  = 8;
 
-const APPEARANCE_SOFT_FAIL        = 0.78;  // raw similarity — borderline mismatch
-const APPEARANCE_MISMATCH_FRAMES  = 8;     // 8 frames sustained warning → terminate
-
-// Sudden-drop guard uses RAW delta (not smoothed) so a face-swap isn't hidden
-// by EMA dampening.  Lighting changes are gradual (Δ < 0.05/frame); face-swaps are abrupt (Δ > 0.15).
 const SUDDEN_DROP_THRESHOLD = 0.12;
-
-// EMA is used only to smooth the value fed to streak counters (not drop guard)
 const SIMILARITY_EMA_ALPHA  = 0.40;
-
-// Baseline adaptation — ONLY when very confident; stops new-face learning
 const BASELINE_ADAPT_RATE   = 0.005;
 
 // Phone detection
@@ -75,9 +56,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
   const appearanceMismatchRef    = useRef(0);
   const hardFailStreakRef        = useRef(0);
 
-  // EMA of raw similarity — used ONLY for streak threshold checks
   const smoothedSimilarityRef = useRef(1.0);
-  // Previous RAW similarity — used for the sudden-drop guard
   const prevRawSimilarityRef  = useRef(1.0);
 
   // Offscreen canvas for face crop
@@ -96,6 +75,9 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
   const [status,             setStatus]             = useState<'idle'|'loading'|'active'|'error'>('idle');
   const [violationCountdown, setViolationCountdown] = useState<number | null>(null);
   const [currentViolation,   setCurrentViolation]   = useState('');
+  // ✅ FIX: ref that always holds the live currentViolation value,
+  // readable inside any closure/interval without stale-capture issues.
+  const currentViolationRef = useRef('');
   const [faceCount,          setFaceCount]          = useState(0);
   const [phoneDetected,      setPhoneDetected]      = useState(false);
   const [calibrated,         setCalibrated]         = useState(false);
@@ -129,9 +111,20 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
   // ─── Violation timer ──────────────────────────────────────────────────────
   const startViolationTimer = useCallback((message: string) => {
-    if (violationIntervalRef.current) return;
+    // ✅ FIX: if the SAME violation is already ticking, do nothing.
+    // If a DIFFERENT violation comes in (e.g. phone overrides gaze),
+    // clear the old timer first so the new one can start.
+    if (violationIntervalRef.current) {
+      if (currentViolationRef.current === message) return; // same — leave it running
+      clearInterval(violationIntervalRef.current);         // different — replace it
+      violationIntervalRef.current = null;
+    }
+
+    // ✅ FIX: keep ref in sync whenever we set state
+    currentViolationRef.current = message;
     setCurrentViolation(message);
     setViolationCountdown(VIOLATION_TIMEOUT);
+
     violationIntervalRef.current = setInterval(() => {
       setViolationCountdown(prev => {
         if (prev === null) return null;
@@ -150,10 +143,11 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
   const stopViolationTimer = useCallback(() => {
     if (violationIntervalRef.current) {
-      console.log('[Proctoring] Stopping violation timer for:', currentViolation);
       clearInterval(violationIntervalRef.current);
       violationIntervalRef.current = null;
     }
+    // ✅ FIX: keep ref in sync whenever we clear state
+    currentViolationRef.current = '';
     setViolationCountdown(null);
     setCurrentViolation('');
   }, []);
@@ -166,13 +160,9 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     return Math.abs(c.y - f.y) > 0.04 && Math.abs(r.x - l.x) > 0.03;
   };
 
-  // ─── Histogram extraction (3-channel: brightness + 2 colour opponents) ────
-  //
-  // Colour-opponent channels (R-G)/(R+G+B) and B/(R+G+B) are invariant to
-  // uniform brightness scaling, so they stay stable across lighting changes
-  // while clearly differing between people with different skin/hair tones.
+  // ─── Histogram extraction ─────────────────────────────────────────────────
   const CROP_SIZE = 32;
-  const HIST_BINS = 32;  // per channel → 96-element descriptor total
+  const HIST_BINS = 32;
 
   const extractFaceHistogram = (
     landmarks: any[],
@@ -208,7 +198,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const imageData   = ctx.getImageData(0, 0, CROP_SIZE, CROP_SIZE).data;
     const totalPixels = CROP_SIZE * CROP_SIZE;
 
-    // Channel 1: mean-normalised luminance (compensates global brightness shift)
     const grays = new Array(totalPixels);
     let meanGray = 0;
     for (let i = 0, p = 0; i < imageData.length; i += 4, p++) {
@@ -224,15 +213,13 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       histGray[Math.min(HIST_BINS - 1, Math.floor((shifted / 255) * HIST_BINS))]++;
     }
 
-    // Channel 2: (R-G)/(R+G+B+1) — lighting-invariant red-green opponent
     const histRG = new Array(HIST_BINS).fill(0);
     for (let i = 0; i < imageData.length; i += 4) {
       const r = imageData[i], g = imageData[i + 1], b = imageData[i + 2];
-      const rg = (r - g) / (r + g + b + 1) + 0.5;  // [-1,1] → [0,1]
+      const rg = (r - g) / (r + g + b + 1) + 0.5;
       histRG[Math.min(HIST_BINS - 1, Math.floor(rg * HIST_BINS))]++;
     }
 
-    // Channel 3: B/(R+G+B+1) — lighting-invariant blue-yellow opponent
     const histBY = new Array(HIST_BINS).fill(0);
     for (let i = 0; i < imageData.length; i += 4) {
       const r = imageData[i], g = imageData[i + 1], b = imageData[i + 2];
@@ -244,7 +231,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     return [...norm(histGray), ...norm(histRG), ...norm(histBY)];
   };
 
-  // Bhattacharyya coefficient (0 = nothing in common, 1 = identical)
   const bhattacharyya = (h1: number[], h2: number[]): number => {
     let sum = 0;
     for (let i = 0; i < h1.length; i++) sum += Math.sqrt(h1[i] * h2[i]);
@@ -343,8 +329,8 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const canvas      = faceCanvasRef.current;
     if (!videoEl || !canvas) return;
 
-    // Clear "Face not detected" violation if we have a valid face
-    if (violationIntervalRef.current && currentViolation === 'Face not detected') {
+    // ✅ FIX: use currentViolationRef.current (not stale state)
+    if (violationIntervalRef.current && currentViolationRef.current === 'Face not detected') {
       stopViolationTimer();
     }
 
@@ -361,12 +347,12 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       setCalibrationPct(pct);
 
       if (calibrationHistogramsRef.current.length >= IDENTITY_CALIBRATION_FRAMES) {
-        faceHistogramRef.current      = averageHistograms(calibrationHistogramsRef.current);
+        faceHistogramRef.current         = averageHistograms(calibrationHistogramsRef.current);
         calibrationHistogramsRef.current = [];
         appearanceMismatchRef.current    = 0;
-        hardFailStreakRef.current         = 0;
-        smoothedSimilarityRef.current     = 1.0;
-        prevRawSimilarityRef.current      = 1.0;
+        hardFailStreakRef.current        = 0;
+        smoothedSimilarityRef.current    = 1.0;
+        prevRawSimilarityRef.current     = 1.0;
         setCalibrated(true);
         console.log('[Proctoring] Face baseline locked ✓');
       }
@@ -379,11 +365,8 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     const rawSimilarity = bhattacharyya(currentHist, faceHistogramRef.current);
 
-    // ── Guard 1: SUDDEN DROP on RAW similarity ────────────────────────────────
-    // Must use raw (not EMA-smoothed) delta so EMA dampening doesn't hide a swap.
-    // Lighting changes are gradual (Δ < 0.05/frame); face-swaps are abrupt (Δ > 0.15).
     const rawDrop = prevRawSimilarityRef.current - rawSimilarity;
-    prevRawSimilarityRef.current = rawSimilarity;  // update BEFORE any early return
+    prevRawSimilarityRef.current = rawSimilarity;
 
     if (rawDrop > SUDDEN_DROP_THRESHOLD) {
       console.warn('[Proctoring] Sudden raw drop:', rawDrop.toFixed(4), 'raw:', rawSimilarity.toFixed(4));
@@ -391,17 +374,11 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       return;
     }
 
-    // EMA for streak checks only (noise immunity over multiple frames)
     smoothedSimilarityRef.current =
       smoothedSimilarityRef.current * (1 - SIMILARITY_EMA_ALPHA) +
       rawSimilarity                 * SIMILARITY_EMA_ALPHA;
     const smoothed = smoothedSimilarityRef.current;
 
-    // Uncomment to tune thresholds:
-    // console.log('[Proctoring] raw:', rawSimilarity.toFixed(3), 'smoothed:', smoothed.toFixed(3));
-
-    // ── Guard 2: HARD FAIL streak ─────────────────────────────────────────────
-    // Requires sustained low similarity — a brief glare or shadow won't fire this.
     if (smoothed < APPEARANCE_HARD_FAIL) {
       hardFailStreakRef.current += 1;
       console.warn(
@@ -411,10 +388,9 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       if (hardFailStreakRef.current >= APPEARANCE_HARD_FAIL_FRAMES) {
         terminate('Person changed – exam terminated. A different person was detected on camera.');
       }
-      return;  // keep counting; don't reset streak by falling through
+      return;
     }
 
-    // ── Guard 3: SOFT FAIL streak ─────────────────────────────────────────────
     if (smoothed < APPEARANCE_SOFT_FAIL) {
       hardFailStreakRef.current = 0;
       appearanceMismatchRef.current += 1;
@@ -435,8 +411,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     hardFailStreakRef.current     = 0;
     appearanceMismatchRef.current = 0;
 
-    // Adapt baseline only when very confident — prevents gradual new-face learning.
-    // Only adapt when clearly same person (smoothed > 0.90) to absorb slow lighting drift.
     if (smoothed > 0.90) {
       const baseline = faceHistogramRef.current!;
       faceHistogramRef.current = baseline.map(
@@ -446,21 +420,18 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     // ── GAZE CHECK ────────────────────────────────────────────────────────────
     const direction = estimateHeadDirection(primaryFace);
-    
+
     if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
-      // Only start gaze violation if no other violations are active
-      if (!violationIntervalRef.current) {
-        onViolationRef.current(`Looking ${direction}`);
-        startViolationTimer(`Looking ${direction}`);
-      }
-      // If current violation is gaze-related, update it
-      else if (currentViolation.startsWith('Looking')) {
+      // ✅ FIX: use ref so we correctly detect when gaze direction changes
+      // (e.g. left → right) and replace the timer, vs. phone/identity still active.
+      const cv = currentViolationRef.current;
+      if (!violationIntervalRef.current || cv.startsWith('Looking')) {
         onViolationRef.current(`Looking ${direction}`);
         startViolationTimer(`Looking ${direction}`);
       }
     } else {
-      // Only stop timer if this was a gaze violation
-      if (violationIntervalRef.current && currentViolation.startsWith('Looking')) {
+      // ✅ FIX: use ref — the state value is stale inside this closure
+      if (violationIntervalRef.current && currentViolationRef.current.startsWith('Looking')) {
         stopViolationTimer();
       }
     }
@@ -492,21 +463,27 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
             (p: any) => (p.class === 'cell phone' || p.class === 'remote') &&
                          p.score > PHONE_DETECTION_CONFIDENCE
           );
+
           if (phoneFound && !hasEndedRef.current) {
             setPhoneDetected(true);
-            // Phone detection has highest priority - override any existing violations
             onViolationRef.current('Mobile phone detected');
+            // ✅ FIX: startViolationTimer now handles override internally,
+            // so this will replace any lower-priority violation (gaze, face).
             startViolationTimer('Mobile phone detected');
           } else if (!phoneFound) {
             setPhoneDetected(false);
-            // Stop timer if this was a phone violation - check both current state and violation type
-            if (violationIntervalRef.current && 
-                (currentViolation === 'Mobile phone detected' || currentViolation.startsWith('Mobile phone'))) {
-              console.log('[Proctoring] Phone removed, stopping violation timer');
+            // ✅ FIX: read from ref — NOT from the stale `currentViolation` state
+            // captured at closure-creation time (which was always "").
+            if (
+              violationIntervalRef.current &&
+              currentViolationRef.current === 'Mobile phone detected'
+            ) {
               stopViolationTimer();
             }
           }
-        } catch (_) {}
+        } catch (err) {
+          console.log('[Proctoring] Phone detection error:', err);
+        }
       }, PHONE_DETECTION_INTERVAL_MS);
     } catch (err) {
       console.warn('COCO-SSD phone detection unavailable:', err);
@@ -668,7 +645,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
         )}
       </div>
 
-      
       {/* Violation countdown */}
       {isViolating && (
         <div style={{
