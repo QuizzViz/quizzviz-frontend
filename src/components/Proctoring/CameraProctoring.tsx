@@ -10,7 +10,7 @@ interface CameraProctoringProps {
 
 type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 
-const VIOLATION_TIMEOUT = 10;
+const VIOLATION_TIMEOUT = 20;
 
 // ─── Face identity config ─────────────────────────────────────────────────────
 const IDENTITY_CALIBRATION_FRAMES = 30;
@@ -329,8 +329,10 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     // ── Multiple faces ────────────────────────────────────────────────────────
     if (realFaces.length > 1) {
       multiFaceFrameCountRef.current += 1;
-      if (multiFaceFrameCountRef.current >= MULTI_FACE_CONFIRM_FRAMES)
-        terminate('Multiple faces detected');
+      if (multiFaceFrameCountRef.current >= MULTI_FACE_CONFIRM_FRAMES) {
+        onViolationRef.current('Multiple faces detected');
+        startViolationTimer('Multiple faces detected');
+      }
       return;
     }
 
@@ -473,12 +475,14 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
                          p.score > PHONE_DETECTION_CONFIDENCE
           );
           if (phoneFound && !hasEndedRef.current) {
-            hasEndedRef.current = true;
             setPhoneDetected(true);
-            cleanup();
-            onEndRef.current('Mobile phone detected in frame');
+            onViolationRef.current('Mobile phone detected');
+            startViolationTimer('Mobile phone detected');
           } else if (!phoneFound) {
             setPhoneDetected(false);
+            if (violationIntervalRef.current && currentViolation === 'Mobile phone detected') {
+              stopViolationTimer();
+            }
           }
         } catch (_) {}
       }, PHONE_DETECTION_INTERVAL_MS);
@@ -705,7 +709,7 @@ export default CameraProctoring;
 
 // type HeadDirection = 'center' | 'left' | 'right' | 'down' | 'up' | 'unknown';
 
-// const VIOLATION_TIMEOUT = 10;
+// const VIOLATION_TIMEOUT = 20;
 
 // // ─── Face identity config ─────────────────────────────────────────────────────
 // //
