@@ -342,6 +342,11 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
     const canvas      = faceCanvasRef.current;
     if (!videoEl || !canvas) return;
 
+    // Clear "Face not detected" violation if we have a valid face
+    if (violationIntervalRef.current && currentViolation === 'Face not detected') {
+      stopViolationTimer();
+    }
+
     // ── CALIBRATION ───────────────────────────────────────────────────────────
     if (faceHistogramRef.current === null) {
       const hist = extractFaceHistogram(primaryFace, videoEl, canvas);
@@ -440,12 +445,21 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     // ── GAZE CHECK ────────────────────────────────────────────────────────────
     const direction = estimateHeadDirection(primaryFace);
-    // Only check gaze if no other violations are active
-    if (!violationIntervalRef.current) {
-      if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
+    
+    if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
+      // Only start gaze violation if no other violations are active
+      if (!violationIntervalRef.current) {
         onViolationRef.current(`Looking ${direction}`);
         startViolationTimer(`Looking ${direction}`);
-      } else {
+      }
+      // If current violation is gaze-related, update it
+      else if (currentViolation.startsWith('Looking')) {
+        onViolationRef.current(`Looking ${direction}`);
+        startViolationTimer(`Looking ${direction}`);
+      }
+    } else {
+      // Only stop timer if this was a gaze violation
+      if (violationIntervalRef.current && currentViolation.startsWith('Looking')) {
         stopViolationTimer();
       }
     }
@@ -651,18 +665,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
         )}
       </div>
 
-      {/* Phone banner */}
-      {phoneDetected && (
-        <div style={{
-          width: '200px', background: 'rgba(0,0,0,0.9)',
-          border: '1px solid rgba(239,68,68,0.8)', borderRadius: '10px', padding: '8px 10px',
-        }}>
-          <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: 700 }}>
-            📱 Phone detected – ending quiz…
-          </span>
-        </div>
-      )}
-
+      
       {/* Violation countdown */}
       {isViolating && (
         <div style={{
