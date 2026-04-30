@@ -440,11 +440,14 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
     // ── GAZE CHECK ────────────────────────────────────────────────────────────
     const direction = estimateHeadDirection(primaryFace);
-    if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
-      onViolationRef.current(`Looking ${direction}`);
-      startViolationTimer(`Looking ${direction}`);
-    } else {
-      stopViolationTimer();
+    // Only check gaze if no other violations are active
+    if (!violationIntervalRef.current) {
+      if (direction === 'left' || direction === 'right' || direction === 'down' || direction === 'up') {
+        onViolationRef.current(`Looking ${direction}`);
+        startViolationTimer(`Looking ${direction}`);
+      } else {
+        stopViolationTimer();
+      }
     }
   };
 
@@ -476,10 +479,12 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
           );
           if (phoneFound && !hasEndedRef.current) {
             setPhoneDetected(true);
+            // Phone detection has highest priority - override any existing violations
             onViolationRef.current('Mobile phone detected');
             startViolationTimer('Mobile phone detected');
           } else if (!phoneFound) {
             setPhoneDetected(false);
+            // Only stop timer if this was a phone violation
             if (violationIntervalRef.current && currentViolation === 'Mobile phone detected') {
               stopViolationTimer();
             }
@@ -659,7 +664,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
       )}
 
       {/* Violation countdown */}
-      {isViolating && !phoneDetected && (
+      {isViolating && (
         <div style={{
           width: '200px', background: 'rgba(0,0,0,0.85)',
           border: '1px solid rgba(239,68,68,0.5)', borderRadius: '10px', padding: '8px 10px',
