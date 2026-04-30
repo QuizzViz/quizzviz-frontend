@@ -150,6 +150,7 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
 
   const stopViolationTimer = useCallback(() => {
     if (violationIntervalRef.current) {
+      console.log('[Proctoring] Stopping violation timer for:', currentViolation);
       clearInterval(violationIntervalRef.current);
       violationIntervalRef.current = null;
     }
@@ -498,8 +499,10 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
             startViolationTimer('Mobile phone detected');
           } else if (!phoneFound) {
             setPhoneDetected(false);
-            // Only stop timer if this was a phone violation
-            if (violationIntervalRef.current && currentViolation === 'Mobile phone detected') {
+            // Stop timer if this was a phone violation - check both current state and violation type
+            if (violationIntervalRef.current && 
+                (currentViolation === 'Mobile phone detected' || currentViolation.startsWith('Mobile phone'))) {
+              console.log('[Proctoring] Phone removed, stopping violation timer');
               stopViolationTimer();
             }
           }
