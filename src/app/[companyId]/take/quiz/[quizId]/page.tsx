@@ -383,6 +383,7 @@ const {
       });
 
       const percentage = total > 0 ? Math.round((correct / total) * 100 * 100) / 100 : 0;
+const topicPerformance = calculateTopicWisePerformance();
 
       const submissionData = {
         quiz_id: quizData.quiz_id,
@@ -396,6 +397,7 @@ const {
           correct_answers: correct,
           role: quizData.role,
           quiz_experience: quizData.experience,
+          topic_percentages: topicPerformance,
           time_taken: Math.max(1, Math.ceil((quizData.quiz_time * 60 - timeLeft) / 60))
         },
         attempt: attemptsInfo ? attemptsInfo.current + 1 : 1,
@@ -745,9 +747,9 @@ const {
     return { correct, total, percentage };
   };
 
- const calculateTopicPerformance = () => {
-  if (!quizData || !quizData.tech_stack || quizData.tech_stack.length === 0) {
-    return [];
+  const calculateTopicWisePerformance = () => {
+    if (!quizData || !quizData.tech_stack || quizData.tech_stack.length === 0) {
+      return [];
   }
 
   // Group questions by their actual topic field
@@ -783,13 +785,12 @@ const {
 
       return {
         name: topicName,
-        weight: topicWeight,
-        totalQuestions: topicQuestions.length,
-        correctAnswers: correctInTopic,
-        percentage: topicPercentage
+        percentage: topicPercentage,
+        total_questions: topicQuestions.length,
+        correct_questions: correctInTopic
       };
     })
-    .sort((a, b) => b.totalQuestions - a.totalQuestions);
+    .sort((a, b) => b.total_questions - a.total_questions);
 };
 
   const verifyQuizKey = async (): Promise<boolean> => {
@@ -1443,7 +1444,7 @@ const beginQuiz = useCallback(async () => {
                   </div>
 
                   {/* Topic-wise Performance Section */}
-{calculateTopicPerformance().length > 0 && (
+{calculateTopicWisePerformance().length > 0 && (
   <div className="bg-gray-800/30 rounded-xl p-6 mb-8">
     {/* Clickable header with arrow toggle */}
     <button
@@ -1454,7 +1455,7 @@ const beginQuiz = useCallback(async () => {
         <Target className="w-5 h-5 text-purple-400" />
         Topic-wise Performance
         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-900/50 text-purple-200 border border-purple-700/50">
-          {calculateTopicPerformance().length} topics
+          {calculateTopicWisePerformance().length} topics
         </span>
       </h4>
       <div className={`flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300 ${
@@ -1474,7 +1475,7 @@ const beginQuiz = useCallback(async () => {
       isTopicPerformanceOpen ? 'max-h-[1000px] opacity-100 mt-4' : 'max-h-0 opacity-0'
     }`}>
       <div className="space-y-4">
-        {calculateTopicPerformance().map((topic, index) => (
+        {calculateTopicWisePerformance().map((topic, index) => (
           <div key={index} className="bg-gray-900/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -1483,8 +1484,7 @@ const beginQuiz = useCallback(async () => {
                   topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                 }`} />
                 <span className="text-white font-medium">{topic.name}</span>
-                <span className="text-gray-400 text-sm">({topic.weight}% weight)</span>
-              </div>
+                              </div>
               <div className="text-right">
                 <div className={`text-lg font-bold ${
                   topic.percentage >= 70 ? 'text-green-400' :
@@ -1493,7 +1493,7 @@ const beginQuiz = useCallback(async () => {
                   {topic.percentage}%
                 </div>
                 <div className="text-gray-400 text-sm">
-                  {topic.correctAnswers}/{topic.totalQuestions} correct
+                  {topic.correct_questions}/{topic.total_questions} correct
                 </div>
               </div>
             </div>

@@ -250,16 +250,16 @@ const QuizAttemptPage = () => {
         const topicWeight = techStackItem ? techStackItem.weight : 0;
 
         return {
-          name: topicName,
+          topic_name: topicName,
           weight: topicWeight,
-          totalQuestions: topicQuestions.length,
-          correctAnswers: correctInTopic,
+          total_questions: topicQuestions.length,
+          correct_answers: correctInTopic,
           percentage: topicPercentage
         };
       });
-
+    
     // Sort by question count (descending) and only return topics with questions
-    return topicPerformance.sort((a, b) => b.totalQuestions - a.totalQuestions);
+    return topicPerformance.sort((a, b) => b.total_questions - a.total_questions);
   };
 
   const submitQuiz = useCallback(async (answers: Record<number, string>): Promise<boolean> => {
@@ -1332,7 +1332,7 @@ if (typeof data.quiz === 'string') {
                                     topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                                   }`} />
                                   <span className="text-white font-medium">{topic.name}</span>
-                                  <span className="text-gray-400 text-sm">{topic.totalQuestions} questions</span>
+                                  <span className="text-gray-400 text-sm">{topic.total_questions} questions</span>
                                 </div>
                                 <div className="text-right">
                                   <div className={`text-lg font-bold ${
@@ -1342,7 +1342,7 @@ if (typeof data.quiz === 'string') {
                                     {topic.percentage}%
                                   </div>
                                   <div className="text-gray-400 text-sm">
-                                    {topic.correctAnswers}/{topic.totalQuestions} correct
+                                    {topic.correct_questions}/{topic.total_questions} correct
                                   </div>
                                 </div>
                               </div>
