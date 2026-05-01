@@ -5,6 +5,13 @@ export interface UserAnswer {
   points_earned: number;
 }
 
+export interface TopicPercentage {
+  name: string;
+  percentage: number;
+  total_questions: number;
+  correct_questions: number;
+}
+
 export interface QuizResult {
   id: number;
   quiz_id: string;
@@ -18,7 +25,10 @@ export interface QuizResult {
     score: number;
     passed: boolean;
     total_percentages?: number;
-    topic_percentages?: { [key: string]: number };
+    topic_percentages?: TopicPercentage[];
+    role?: string;
+    time_taken?: number;
+    quiz_experience?: string;
   };
   attempt: number;
   created_at: string;
@@ -45,7 +55,10 @@ export interface QuizUserResponse {
     score: number;
     passed: boolean;
     total_percentages?: number;
-    topic_percentages?: { [key: string]: number };
+    topic_percentages?: TopicPercentage[];
+    role?: string;
+    time_taken?: number;
+    quiz_experience?: string;
   };
   attempt: number;
   created_at: string;

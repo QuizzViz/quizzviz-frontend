@@ -839,7 +839,7 @@ export default function ResultsDashboard() {
                                                 key={key}
                                                 className="hover:bg-zinc-900/60 cursor-pointer"
                                                 onClick={() =>
-                                                  router.push(`/${finalCompanyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`)
+                                                  window.open(`/${finalCompanyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`, '_blank')
                                                 }
                                               >
                                                 <TableCell onClick={(e) => e.stopPropagation()}>
