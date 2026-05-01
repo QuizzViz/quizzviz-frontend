@@ -1184,7 +1184,7 @@ const beginQuiz = useCallback(async () => {
     onClose={() => setShowAttemptsModal(false)}
     onStart={() => {
       setShowAttemptsModal(false);
-      beginQuiz();
+      // Stay on instructions page - user will click Start Quiz button
     }}
     isLoading={isButtonLoading}
   />
@@ -1764,7 +1764,7 @@ const beginQuiz = useCallback(async () => {
                           className="h-12 px-8 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
                         >
                           <ArrowRight className="mr-2 h-5 w-5" />
-                          Try again ({attemptsInfo.max - attemptsInfo.current} left)
+                          Try again ({attemptsInfo.max - attemptsInfo.current - 1} left)
                         </Button>
                       ) : (
                         <Button
