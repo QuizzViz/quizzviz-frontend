@@ -207,11 +207,11 @@ const QuizAttemptPage = () => {
   };
 
   const calculateTopicPerformance = () => {
-    if (!quizData || !quizData.techStack || quizData.techStack.length === 0) {
+    if (!quizData || !quizData.questions || quizData.questions.length === 0) {
       return [];
     }
 
-    // Group questions by their actual topic
+    // Group questions by their actual topics
     const questionsByTopic = quizData.questions.reduce((acc, question, index) => {
       const topicName = question.topic || 'Unknown Topic';
       if (!acc[topicName]) {
@@ -224,9 +224,13 @@ const QuizAttemptPage = () => {
       return acc;
     }, {} as Record<string, Array<{ question: Question; globalIndex: number }>>);
 
-    // Calculate performance for each topic
-    const topicPerformance = quizData.techStack.map(topic => {
-      const topicQuestions = questionsByTopic[topic.name] || [];
+    // Find matching techStack info for each actual topic
+    const topicPerformance = Object.entries(questionsByTopic).map(([topicName, topicQuestions]) => {
+      // Find matching techStack topic (case-insensitive partial match)
+      const matchingTechStack = quizData.techStack?.find(tech => 
+        tech.name.toLowerCase().includes(topicName.toLowerCase()) || 
+        topicName.toLowerCase().includes(tech.name.toLowerCase())
+      );
       
       // Calculate performance for this topic
       let correctInTopic = 0;
@@ -241,15 +245,18 @@ const QuizAttemptPage = () => {
         : 0;
 
       return {
-        name: topic.name,
-        weight: topic.weight,
+        name: topicName,
+        weight: matchingTechStack?.weight || 0,
         totalQuestions: topicQuestions.length,
         correctAnswers: correctInTopic,
         percentage: topicPercentage
       };
     });
 
-    return topicPerformance;
+    // Filter out topics with no questions and sort by question count (descending)
+    return topicPerformance
+      .filter(topic => topic.totalQuestions > 0)
+      .sort((a, b) => b.totalQuestions - a.totalQuestions);
   };
 
   const submitQuiz = useCallback(async (answers: Record<number, string>): Promise<boolean> => {
