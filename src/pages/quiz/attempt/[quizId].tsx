@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, AlertCircle, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, Maximize2, Monitor } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, AlertCircle, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, Maximize2, Monitor, ChevronDown, ChevronUp } from 'lucide-react';
 import { LoadingSpinner } from "@/components/ui/loading";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
@@ -117,6 +117,7 @@ const QuizAttemptPage = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isTopicPerformanceOpen, setIsTopicPerformanceOpen] = useState(true);
 
   // Check if user is on mobile and set up the component
   useEffect(() => {
@@ -211,9 +212,13 @@ const QuizAttemptPage = () => {
       return [];
     }
 
-    // Group questions by their actual topics
+    // Group questions by their actual topics (only include questions with valid topic names)
     const questionsByTopic = quizData.questions.reduce((acc, question, index) => {
-      const topicName = question.topic || 'Unknown Topic';
+      const topicName = question.topic?.trim();
+      if (!topicName || topicName === 'Unknown Topic' || topicName === '') {
+        return acc; // Skip questions without valid topic names
+      }
+      
       if (!acc[topicName]) {
         acc[topicName] = [];
       }
@@ -238,19 +243,21 @@ const QuizAttemptPage = () => {
         ? Math.round((correctInTopic / topicQuestions.length) * 100)
         : 0;
 
+      // Find the weight for this topic from techStack
+      const techStackItem = quizData.techStack.find(tech => tech.name === topicName);
+      const topicWeight = techStackItem ? techStackItem.weight : 0;
+
       return {
         name: topicName,
-        weight: 0, // No weight needed - using actual question distribution
+        weight: topicWeight,
         totalQuestions: topicQuestions.length,
         correctAnswers: correctInTopic,
         percentage: topicPercentage
       };
     });
 
-    // Filter out topics with no questions and sort by question count (descending)
-    return topicPerformance
-      .filter(topic => topic.totalQuestions > 0)
-      .sort((a, b) => b.totalQuestions - a.totalQuestions);
+    // Sort by question count (descending) - no need to filter since we already filtered invalid topics
+    return topicPerformance.sort((a, b) => b.totalQuestions - a.totalQuestions);
   };
 
   const submitQuiz = useCallback(async (answers: Record<number, string>): Promise<boolean> => {
@@ -1270,51 +1277,72 @@ if (typeof data.quiz === 'string') {
                   </div>
 
                   {/* Topic-wise Performance Section */}
-                  {quizData.techStack && quizData.techStack.length > 0 && (
+                  {calculateTopicPerformance().length > 0 && (
                     <div className="bg-gray-800/30 rounded-xl p-6 mb-8">
-                      <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-                        <Target className="w-5 h-5 text-purple-400" /> Topic-wise Performance
-                      </h4>
-                      <div className="space-y-4">
-                        {calculateTopicPerformance().map((topic, index) => (
-                          <div key={index} className="bg-gray-900/50 rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full ${
-                                  topic.percentage >= 70 ? 'bg-green-500' :
-                                  topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`} />
-                                <span className="text-white font-medium">{topic.name}</span>
-                                <span className="text-gray-400 text-sm">({topic.weight}% weight)</span>
-                              </div>
-                              <div className="text-right">
-                                <div className={`text-lg font-bold ${
-                                  topic.percentage >= 70 ? 'text-green-400' :
-                                  topic.percentage >= 50 ? 'text-yellow-400' : 'text-red-400'
-                                }`}>
-                                  {topic.percentage}%
+                      <button
+                        onClick={() => setIsTopicPerformanceOpen(!isTopicPerformanceOpen)}
+                        className="w-full flex items-center justify-between text-left hover:bg-gray-700/20 rounded-lg p-2 -m-2 transition-colors duration-200"
+                      >
+                        <h4 className="text-white font-semibold flex items-center gap-2">
+                          <Target className="w-5 h-5 text-purple-400" /> Topic-wise Performance
+                        </h4>
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <span className="text-sm">{calculateTopicPerformance().length} topics</span>
+                          {isTopicPerformanceOpen ? (
+                            <ChevronUp className="w-4 h-4 transition-transform duration-200" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 transition-transform duration-200" />
+                          )}
+                        </div>
+                      </button>
+                      
+                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        isTopicPerformanceOpen ? 'max-h-[1000px] opacity-100 mt-4' : 'max-h-0 opacity-0'
+                      }`}>
+                        <div className="space-y-4">
+                          {calculateTopicPerformance().map((topic, index) => (
+                            <div key={index} className="bg-gray-900/50 rounded-lg p-4 transform transition-all duration-300 hover:scale-[1.02] hover:bg-gray-900/70">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3 h-3 rounded-full animate-pulse ${
+                                    topic.percentage >= 70 ? 'bg-green-500' :
+                                    topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`} />
+                                  <span className="text-white font-medium">{topic.name}</span>
+                                  <span className="text-gray-400 text-sm">{topic.totalQuestions} questions</span>
                                 </div>
-                                <div className="text-gray-400 text-sm">
-                                  {topic.correctAnswers}/{topic.totalQuestions} correct
+                                <div className="text-right">
+                                  <div className={`text-lg font-bold ${
+                                    topic.percentage >= 70 ? 'text-green-400' :
+                                    topic.percentage >= 50 ? 'text-yellow-400' : 'text-red-400'
+                                  }`}>
+                                    {topic.percentage}%
+                                  </div>
+                                  <div className="text-gray-400 text-sm">
+                                    {topic.correctAnswers}/{topic.totalQuestions} correct
+                                  </div>
                                 </div>
                               </div>
+                              <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                                <div 
+                                  className={`h-2 rounded-full transition-all duration-700 ease-out ${
+                                    topic.percentage >= 70 ? 'bg-green-500' :
+                                    topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`}
+                                  style={{ 
+                                    width: `${topic.percentage}%`,
+                                    animation: 'slideIn 0.7s ease-out'
+                                  }}
+                                />
+                              </div>
+                              <div className="mt-2 text-xs text-gray-400">
+                                {topic.percentage >= 70 ? '🎉 Excellent performance in this area!' :
+                                 topic.percentage >= 50 ? '📈 Good understanding, room for improvement.' :
+                                 '📚 Focus on strengthening this topic.'}
+                              </div>
                             </div>
-                            <div className="w-full bg-gray-700 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full transition-all duration-500 ${
-                                  topic.percentage >= 70 ? 'bg-green-500' :
-                                  topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}
-                                style={{ width: `${topic.percentage}%` }}
-                              />
-                            </div>
-                            <div className="mt-2 text-xs text-gray-400">
-                              {topic.percentage >= 70 ? 'Excellent performance in this area!' :
-                               topic.percentage >= 50 ? 'Good understanding, room for improvement.' :
-                               'Focus on strengthening this topic.'}
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
