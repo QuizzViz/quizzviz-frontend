@@ -744,6 +744,48 @@ const {
     return { correct, total, percentage };
   };
 
+  const calculateTopicPerformance = () => {
+    if (!quizData || !quizData.tech_stack || quizData.tech_stack.length === 0) {
+      return [];
+    }
+
+    const techStack = quizData.tech_stack;
+    const topicPerformance = techStack.map(topic => {
+      // Calculate how many questions should belong to this topic based on weight
+      const totalQuestions = quizData.quiz.length;
+      const topicQuestionCount = Math.round((topic.weight / 100) * totalQuestions);
+      
+      // Find questions that belong to this topic
+      // Note: This is a simplified approach. In a real implementation, questions should have topic metadata
+      const startIndex = techStack.indexOf(topic);
+      const endIndex = Math.min(startIndex + topicQuestionCount, totalQuestions);
+      const topicQuestions = quizData.quiz.slice(startIndex, endIndex);
+      
+      // Calculate performance for this topic
+      let correctInTopic = 0;
+      topicQuestions.forEach((question, questionIndex) => {
+        const globalQuestionIndex = startIndex + questionIndex;
+        if (selectedAnswers[globalQuestionIndex] === question.correct_answer) {
+          correctInTopic++;
+        }
+      });
+      
+      const topicPercentage = topicQuestions.length > 0 
+        ? Math.round((correctInTopic / topicQuestions.length) * 100)
+        : 0;
+
+      return {
+        name: topic.name,
+        weight: topic.weight,
+        totalQuestions: topicQuestions.length,
+        correctAnswers: correctInTopic,
+        percentage: topicPercentage
+      };
+    });
+
+    return topicPerformance;
+  };
+
   const verifyQuizKey = async (): Promise<boolean> => {
     if (!formData.quizKey.trim()) { setVerificationError('Please enter a quiz key'); return false; }
     try {
@@ -1393,6 +1435,56 @@ const beginQuiz = useCallback(async () => {
                       <div className="text-sm text-gray-400">Total</div>
                     </div>
                   </div>
+
+                  {/* Topic-wise Performance Section */}
+                  {quizData.tech_stack && quizData.tech_stack.length > 0 && (
+                    <div className="bg-gray-800/30 rounded-xl p-6 mb-8">
+                      <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                        <Target className="w-5 h-5 text-purple-400" /> Topic-wise Performance
+                      </h4>
+                      <div className="space-y-4">
+                        {calculateTopicPerformance().map((topic, index) => (
+                          <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full ${
+                                  topic.percentage >= 70 ? 'bg-green-500' :
+                                  topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`} />
+                                <span className="text-white font-medium">{topic.name}</span>
+                                <span className="text-gray-400 text-sm">({topic.weight}% weight)</span>
+                              </div>
+                              <div className="text-right">
+                                <div className={`text-lg font-bold ${
+                                  topic.percentage >= 70 ? 'text-green-400' :
+                                  topic.percentage >= 50 ? 'text-yellow-400' : 'text-red-400'
+                                }`}>
+                                  {topic.percentage}%
+                                </div>
+                                <div className="text-gray-400 text-sm">
+                                  {topic.correctAnswers}/{topic.totalQuestions} correct
+                                </div>
+                              </div>
+                            </div>
+                            <div className="w-full bg-gray-700 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-500 ${
+                                  topic.percentage >= 70 ? 'bg-green-500' :
+                                  topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                }`}
+                                style={{ width: `${topic.percentage}%` }}
+                              />
+                            </div>
+                            <div className="mt-2 text-xs text-gray-400">
+                              {topic.percentage >= 70 ? 'Excellent performance in this area!' :
+                               topic.percentage >= 50 ? 'Good understanding, room for improvement.' :
+                               'Focus on strengthening this topic.'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className={`p-6 rounded-xl mb-8 border ${
                     calculateScore().percentage >= 70 ? 'bg-green-500/10 border-green-500/30'
