@@ -1087,17 +1087,9 @@ if (typeof data.quiz === 'string') {
                 <CardContent className="p-8">
 ...
                   <div className="mb-6">
-                    <h2 className="text-2xl font-semibold text-white mb-4 leading-relaxed">
+                    <h2 className="text-2xl font-semibold text-white mb-6 leading-relaxed">
                       {quizData?.questions?.[currentQuestionIndex]?.question || 'Loading question...'}
                     </h2>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                        {quizData?.questions?.[currentQuestionIndex]?.type === 'theory' ? '📚 Theory' : '💻 Code Analysis'}
-                      </span>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                        🏷️ {quizData?.questions?.[currentQuestionIndex]?.topic || 'Unknown Topic'}
-                      </span>
-                    </div>
                   </div>
 
                   {quizData?.questions?.[currentQuestionIndex]?.code_snippet && (
