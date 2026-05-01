@@ -168,6 +168,103 @@ function CameraPermissionModal({ onGranted, onDismiss }: {
   );
 }
 
+function AttemptsModal({
+  attemptsInfo,
+  onClose,
+  onStart,
+  isLoading,
+}: {
+  attemptsInfo: { current: number; max: number };
+  onClose: () => void;
+  onStart: () => void;
+  isLoading: boolean;
+}) {
+  const remaining = attemptsInfo.max - attemptsInfo.current;
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+
+        {/* Icon */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-500/15 rounded-xl flex items-center justify-center border border-blue-500/20">
+              <AlertCircle className="w-5 h-5 text-blue-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white">Multiple attempts allowed</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-300 text-xl leading-none transition-colors"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Attempt dots tracker */}
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-5">
+          <p className="text-xs text-gray-400 mb-3">Your attempts for this quiz</p>
+          <div className="flex items-center gap-2">
+            {Array.from({ length: attemptsInfo.max }).map((_, i) => (
+              <div
+                key={i}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  i < attemptsInfo.current
+                    ? 'bg-red-500'
+                    : i === attemptsInfo.current
+                    ? 'bg-blue-500 ring-2 ring-blue-500/30'
+                    : 'bg-white/15'
+                }`}
+              />
+            ))}
+            <span className="text-sm text-gray-300 ml-2">
+              Attempt {attemptsInfo.current + 1} of {attemptsInfo.max}
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 mt-3">
+            You have{' '}
+            <span className="text-blue-400 font-medium">{remaining} more attempt{remaining !== 1 ? 's' : ''}</span>{' '}
+            after this one.
+          </p>
+        </div>
+
+        {/* Info rows */}
+        <div className="space-y-0 mb-5 border border-white/10 rounded-xl overflow-hidden">
+          {[
+            { label: 'Each attempt', value: 'Independent score' },
+            { label: 'Questions', value: 'Reshuffled each attempt' },
+            { label: 'Remaining after this', value: `${remaining} attempt${remaining !== 1 ? 's' : ''}` },
+          ].map(({ label, value }, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between px-4 py-3 text-sm border-b border-white/[0.07] last:border-b-0"
+            >
+              <span className="text-gray-400">{label}</span>
+              <span className="text-gray-200 font-medium">{value}</span>
+            </div>
+          ))}
+        </div>
+
+        <Button
+          onClick={onStart}
+          disabled={isLoading}
+          className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl"
+        >
+          {isLoading ? (
+            <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Starting...</>
+          ) : (
+            <>Start attempt {attemptsInfo.current + 1} <ArrowRight className="ml-2 h-5 w-5" /></>
+          )}
+        </Button>
+
+        <p className="text-center text-xs text-gray-500 mt-3">
+          Questions are reshuffled each attempt
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function QuizPage({ params }: PageProps) {
   const { companyId, quizId } = use(params);
   const router = useRouter();
@@ -249,6 +346,7 @@ export default function QuizPage({ params }: PageProps) {
 
   const [attemptsInfo, setAttemptsInfo] = useState<{ current: number; max: number }>({ current: 0, max: 1 });
   const [showingMaxAttemptsNotification, setShowingMaxAttemptsNotification] = useState(false);
+  const [showAttemptsModal, setShowAttemptsModal] = useState(false);
 
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
   const { data: usageData, isLoading: usageLoading } = useCompanyUsageByCompanyId(companyId);
@@ -274,6 +372,7 @@ const {
   });
   const exitConfirmationRef = useRef(false);
   const hasSubmittedRef = useRef(false);
+  const hasShownAttemptsModalRef = useRef(false);
 
   // Fetch initial quiz data from publish service
   useEffect(() => {
@@ -726,6 +825,18 @@ const topicPerformance = calculateTopicWisePerformance();
     }
   }, [step, quizStarted, requestFullscreen, showWarningMessage, handleFullscreenChange, submitQuiz]);
 
+  useEffect(() => {
+    if (
+      step === 'instructions' &&
+      quizData?.max_attempts &&
+      quizData.max_attempts > 1 &&
+      !hasShownAttemptsModalRef.current
+    ) {
+      hasShownAttemptsModalRef.current = true;
+      setShowAttemptsModal(true);
+    }
+  }, [step, quizData]);
+
   const shuffleArray = <T,>(array: T[]): T[] => {
     const newArray = [...array];
     for (let i = newArray.length - 1; i > 0; i--) {
@@ -955,6 +1066,25 @@ const beginQuiz = useCallback(async () => {
     setIsButtonLoading(false);
   }
 }, [checkUserAttempts, attemptsInfo, isButtonLoading, startQuizFlow]);
+
+  const handleRetry = useCallback(() => {
+    setStep('instructions');
+    setCurrentQuestionIndex(0);
+    setSelectedAnswers({});
+    setTimeLeft(quizData ? quizData.quiz_time * 60 : 0);
+    setQuizStarted(false);
+    setProctoringStarted(false);
+    hasSubmittedRef.current = false;
+    isSubmittingRef.current = false;
+    exitConfirmationRef.current = false;
+    hasShownAttemptsModalRef.current = false;
+
+    if (quizData) {
+      const reshuffled = shuffleArray([...quizData.quiz]).map(q => shuffleOptions(q));
+      setQuizData(prev => prev ? { ...prev, quiz: reshuffled } : prev);
+    }
+  }, [quizData, shuffleOptions]);
+
   const handleNextQuestion = () => {
     if (currentQuestionIndex < (quizData?.quiz.length || 0) - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -1048,6 +1178,18 @@ const beginQuiz = useCallback(async () => {
   />
 )}
 
+{showAttemptsModal && (
+  <AttemptsModal
+    attemptsInfo={attemptsInfo}
+    onClose={() => setShowAttemptsModal(false)}
+    onStart={() => {
+      setShowAttemptsModal(false);
+      beginQuiz();
+    }}
+    isLoading={isButtonLoading}
+  />
+)}
+
       <header className="relative z-20 p-6 border-b border-gray-800/50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold text-white flex items-center">
@@ -1085,7 +1227,7 @@ const beginQuiz = useCallback(async () => {
                 Mobile and tablet devices are not supported for proctored assessments. Please switch to a desktop or laptop to continue.
               </p>
               <Button variant="outline" asChild className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
-                <Link href="/"><Home className="w-4 h-4 mr-2" /> Back to Home</Link>
+                <Link href="/"><Home className="w-4 h-4" /> Back to Home</Link>
               </Button>
             </CardContent>
           </Card>
@@ -1108,7 +1250,7 @@ const beginQuiz = useCallback(async () => {
                   <Link href="/pricing">Upgrade Plan</Link>
                 </Button>
                 <Button variant="outline" asChild className="w-full border-gray-600 text-gray-300 hover:bg-gray-800">
-                  <Link href="/"><Home className="w-4 h-4 mr-2" /> Back to Home</Link>
+                  <Link href="/"><Home className="w-4 h-4" /> Back to Home</Link>
                 </Button>
               </div>
             </CardContent>
@@ -1197,9 +1339,20 @@ const beginQuiz = useCallback(async () => {
                   <BookOpen className="w-8 h-8 text-white" />
                 </div>
                 <h1 className="text-3xl font-bold text-white mb-2">{quizData?.role} Quiz</h1>
-                <p className="text-gray-400">
+                <p className="text-gray-400 mb-3">
                   {quizData?.experience ? `${quizData.experience.charAt(0).toUpperCase() + quizData.experience.slice(1)} yrs` : 'Quiz'}
                 </p>
+                {quizData?.max_attempts && quizData.max_attempts > 1 && (
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-500/15 text-blue-300 border border-blue-500/20">
+                      <AlertCircle className="w-3 h-3" />
+                      {quizData.max_attempts} attempts allowed
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-500/15 text-green-300 border border-green-500/20">
+                      Attempt {attemptsInfo.current + 1} of {quizData.max_attempts}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <Card className="border-0 bg-gray-900/50 backdrop-blur-xl mb-8">
@@ -1558,11 +1711,85 @@ const beginQuiz = useCallback(async () => {
                   </div>
 
                   <div className="text-center">
-                    <Button asChild className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]">
-                      <Link href="/" className="flex items-center">
-                        <Home className="mr-2 h-5 w-5" /> Return to Home
-                      </Link>
-                    </Button>
+                    <div className="flex flex-col gap-3">
+                      {/* Attempt status banner */}
+                      {quizData?.max_attempts && quizData.max_attempts > 1 && (
+                        <>
+                          {attemptsInfo.current < attemptsInfo.max ? (
+                            <div className="flex items-center gap-3 p-4 bg-blue-500/10 border border-blue-500/25 rounded-xl mb-2">
+                              <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-blue-300">
+                                  {attemptsInfo.max - attemptsInfo.current} attempt{attemptsInfo.max - attemptsInfo.current !== 1 ? 's' : ''} remaining
+                                </p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  Want to improve your score?
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/25 rounded-xl mb-2">
+                              <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-red-300">No attempts remaining</p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  You've used all {attemptsInfo.max} attempts for this quiz.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Attempt dots */}
+                          <div className="flex items-center gap-2 px-4 py-3 bg-white/[0.03] border border-white/[0.07] rounded-xl mb-2">
+                            <span className="text-xs text-gray-500 mr-1">Attempts:</span>
+                            {Array.from({ length: attemptsInfo.max }).map((_, i) => (
+                              <div
+                                key={i}
+                                className={`w-2.5 h-2.5 rounded-full ${
+                                  i < attemptsInfo.current ? 'bg-red-500' : 'bg-white/15'
+                                }`}
+                              />
+                            ))}
+                            <span className="text-xs text-gray-400 ml-1">
+                              {attemptsInfo.current} used · {attemptsInfo.max - attemptsInfo.current} left
+                            </span>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Primary CTA */}
+                      {attemptsInfo.current < attemptsInfo.max ? (
+                        <Button
+                          onClick={handleRetry}
+                          className="h-12 px-8 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
+                        >
+                          <ArrowRight className="mr-2 h-5 w-5" />
+                          Try again ({attemptsInfo.max - attemptsInfo.current} left)
+                        </Button>
+                      ) : (
+                        <Button
+                          asChild
+                          className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
+                        >
+                          <Link href="/" className="flex items-center">
+                            <Home className="mr-2 h-5 w-5" /> Return to Home
+                          </Link>
+                        </Button>
+                      )}
+
+                      {/* Secondary: always show Return to Home if attempts remain */}
+                      {attemptsInfo.current < attemptsInfo.max && (
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="h-11 px-8 border-gray-700 text-gray-300 hover:bg-gray-800 rounded-xl"
+                        >
+                          <Link href="/" className="flex items-center">
+                            <Home className="mr-2 h-4 w-4" /> Return to Home
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
