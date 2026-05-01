@@ -1720,7 +1720,7 @@ const beginQuiz = useCallback(async () => {
                               <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0" />
                               <div>
                                 <p className="text-sm font-medium text-blue-300">
-                                  {attemptsInfo.max - attemptsInfo.current} attempt{attemptsInfo.max - attemptsInfo.current !== 1 ? 's' : ''} remaining
+                                  {attemptsInfo.max - attemptsInfo.current - 1} attempt{attemptsInfo.max - attemptsInfo.current - 1 !== 1 ? 's' : ''} remaining
                                 </p>
                                 <p className="text-xs text-gray-400 mt-0.5">
                                   Want to improve your score?
@@ -1751,7 +1751,7 @@ const beginQuiz = useCallback(async () => {
                               />
                             ))}
                             <span className="text-xs text-gray-400 ml-1">
-                              {attemptsInfo.current} used · {attemptsInfo.max - attemptsInfo.current} left
+                              {attemptsInfo.current + 1} used · {attemptsInfo.max - attemptsInfo.current - 1} left
                             </span>
                           </div>
                         </>
