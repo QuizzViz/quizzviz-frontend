@@ -16,9 +16,14 @@ export function QuestionCard({ question, questionNumber, onEdit, onDelete, isPub
     <Card className="bg-zinc-950 border-white/10">
       <CardHeader>
         <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <span className="text-xl font-bold text-white">{questionNumber}.</span>
-            <Badge className="ml-2">{question.type.replace(/_/g, " ")}</Badge>
+            <Badge className="ml-2 bg-blue-500/20 text-blue-400 border-blue-500/30">
+              {question.type.replace(/_/g, " ") === 'code analysis' ? '💻 Code Analysis' : '📚 Theory'}
+            </Badge>
+            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+              🏷️ {question.topic || 'Unknown Topic'}
+            </Badge>
           </div>
           {!isPublished && (
             <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
