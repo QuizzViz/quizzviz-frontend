@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/table";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import Link from "next/link";
 
 type QuizResult = {
   quiz_id: string;
@@ -823,7 +824,7 @@ export default function ResultsDashboard() {
                                     <TableBody>
                                       {filteredCandidates.length === 0 ? (
                                         <TableRow>
-                                          <TableCell colSpan={6} className="text-center py-12 text-gray-500">
+                                          <TableCell colSpan={6} className="text-center py-12 text-gray-500 relative z-10">
                                             {selectedStart !== null
                                               ? "No candidates in selected score range"
                                               : "No results yet for this quiz"}
@@ -837,21 +838,21 @@ export default function ResultsDashboard() {
                                             return (
                                               <TableRow
                                                 key={key}
-                                                className="hover:bg-zinc-900/60 cursor-pointer"
-                                                onClick={() =>
-                                                  window.open(`/${finalCompanyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`, '_blank')
-                                                }
+                                                className="hover:bg-zinc-900/60 cursor-pointer relative"
                                               >
-                                                <TableCell onClick={(e) => e.stopPropagation()}>
+                                                <Link href={`/${finalCompanyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer" className="absolute inset-0 z-0" aria-label={`View ${c.username}'s analytics`}/>
+                                                <TableCell onClick={(e) => e.stopPropagation()} className="relative z-10">
                                                   <input
                                                     type="checkbox"
                                                     checked={!!selectedUsers[key]}
                                                     onChange={() => toggleUserSelection(key)}
-                                                    className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800"
+                                                    className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800 relative z-10"
                                                   />
                                                 </TableCell>
-                                                <TableCell className="font-medium">{c.username}</TableCell>
-                                                <TableCell className="hidden md:table-cell truncate max-w-xs">
+                                                <TableCell className="font-medium relative z-10">{c.username}</TableCell>
+                                                <TableCell className="hidden md:table-cell truncate max-w-xs relative z-10">
                                                   {c.user_email}
                                                 </TableCell>
                                                 <TableCell>
@@ -869,8 +870,8 @@ export default function ResultsDashboard() {
                                                     {c.result.score.toFixed(1)}%
                                                   </span>
                                                 </TableCell>
-                                                <TableCell>{c.attempt}</TableCell>
-                                                <TableCell className="hidden sm:table-cell">
+                                                <TableCell className="relative z-10">{c.attempt}</TableCell>
+                                                <TableCell className="hidden sm:table-cell relative z-10">
                                                   {formatDate(c.created_at)}
                                                 </TableCell>
                                               </TableRow>
