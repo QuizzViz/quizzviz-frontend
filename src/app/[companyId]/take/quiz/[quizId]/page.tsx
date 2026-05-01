@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor,ChevronDown, ChevronUp } from 'lucide-react';
 import { LoadingSpinner } from "@/components/ui/loading";
 
 import { toast } from "@/hooks/use-toast";
@@ -177,6 +177,7 @@ export default function QuizPage({ params }: PageProps) {
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [showCameraModal, setShowCameraModal] = useState(false);
   const proceedAfterCameraRef = useRef<(() => void) | null>(null);
+  const [isTopicPerformanceOpen, setIsTopicPerformanceOpen] = useState(true);
 
   // Shuffle options for all quiz questions
   const shuffleOptions = useCallback((question: Question): Question => {
@@ -744,47 +745,52 @@ const {
     return { correct, total, percentage };
   };
 
-  const calculateTopicPerformance = () => {
-    if (!quizData || !quizData.tech_stack || quizData.tech_stack.length === 0) {
-      return [];
-    }
+ const calculateTopicPerformance = () => {
+  if (!quizData || !quizData.tech_stack || quizData.tech_stack.length === 0) {
+    return [];
+  }
 
-    const techStack = quizData.tech_stack;
-    const topicPerformance = techStack.map(topic => {
-      // Calculate how many questions should belong to this topic based on weight
-      const totalQuestions = quizData.quiz.length;
-      const topicQuestionCount = Math.round((topic.weight / 100) * totalQuestions);
-      
-      // Find questions that belong to this topic
-      // Note: This is a simplified approach. In a real implementation, questions should have topic metadata
-      const startIndex = techStack.indexOf(topic);
-      const endIndex = Math.min(startIndex + topicQuestionCount, totalQuestions);
-      const topicQuestions = quizData.quiz.slice(startIndex, endIndex);
-      
-      // Calculate performance for this topic
+  // Group questions by their actual topic field
+  const questionsByTopic = quizData.quiz.reduce((acc, question, index) => {
+    const topicName = (question as any).topic?.trim();
+    if (!topicName || topicName === 'Unknown Topic' || topicName === '') {
+      return acc; // Skip questions without valid topic names
+    }
+    if (!acc[topicName]) {
+      acc[topicName] = [];
+    }
+    acc[topicName].push({ question, globalIndex: index });
+    return acc;
+  }, {} as Record<string, Array<{ question: Question; globalIndex: number }>>);
+
+  // Only include topics that actually have questions
+  return Object.entries(questionsByTopic)
+    .filter(([_, topicQuestions]) => topicQuestions.length > 0)
+    .map(([topicName, topicQuestions]) => {
       let correctInTopic = 0;
-      topicQuestions.forEach((question, questionIndex) => {
-        const globalQuestionIndex = startIndex + questionIndex;
-        if (selectedAnswers[globalQuestionIndex] === question.correct_answer) {
+      topicQuestions.forEach(({ question, globalIndex }) => {
+        if (selectedAnswers[globalIndex] === question.correct_answer) {
           correctInTopic++;
         }
       });
-      
-      const topicPercentage = topicQuestions.length > 0 
+
+      const topicPercentage = topicQuestions.length > 0
         ? Math.round((correctInTopic / topicQuestions.length) * 100)
         : 0;
 
+      const techStackItem = quizData.tech_stack?.find(tech => tech.name === topicName);
+      const topicWeight = techStackItem ? techStackItem.weight : 0;
+
       return {
-        name: topic.name,
-        weight: topic.weight,
+        name: topicName,
+        weight: topicWeight,
         totalQuestions: topicQuestions.length,
         correctAnswers: correctInTopic,
         percentage: topicPercentage
       };
-    });
-
-    return topicPerformance;
-  };
+    })
+    .sort((a, b) => b.totalQuestions - a.totalQuestions);
+};
 
   const verifyQuizKey = async (): Promise<boolean> => {
     if (!formData.quizKey.trim()) { setVerificationError('Please enter a quiz key'); return false; }
@@ -1437,54 +1443,80 @@ const beginQuiz = useCallback(async () => {
                   </div>
 
                   {/* Topic-wise Performance Section */}
-                  {quizData.tech_stack && quizData.tech_stack.length > 0 && (
-                    <div className="bg-gray-800/30 rounded-xl p-6 mb-8">
-                      <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-                        <Target className="w-5 h-5 text-purple-400" /> Topic-wise Performance
-                      </h4>
-                      <div className="space-y-4">
-                        {calculateTopicPerformance().map((topic, index) => (
-                          <div key={index} className="bg-gray-900/50 rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full ${
-                                  topic.percentage >= 70 ? 'bg-green-500' :
-                                  topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`} />
-                                <span className="text-white font-medium">{topic.name}</span>
-                                <span className="text-gray-400 text-sm">({topic.weight}% weight)</span>
-                              </div>
-                              <div className="text-right">
-                                <div className={`text-lg font-bold ${
-                                  topic.percentage >= 70 ? 'text-green-400' :
-                                  topic.percentage >= 50 ? 'text-yellow-400' : 'text-red-400'
-                                }`}>
-                                  {topic.percentage}%
-                                </div>
-                                <div className="text-gray-400 text-sm">
-                                  {topic.correctAnswers}/{topic.totalQuestions} correct
-                                </div>
-                              </div>
-                            </div>
-                            <div className="w-full bg-gray-700 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full transition-all duration-500 ${
-                                  topic.percentage >= 70 ? 'bg-green-500' :
-                                  topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}
-                                style={{ width: `${topic.percentage}%` }}
-                              />
-                            </div>
-                            <div className="mt-2 text-xs text-gray-400">
-                              {topic.percentage >= 70 ? 'Excellent performance in this area!' :
-                               topic.percentage >= 50 ? 'Good understanding, room for improvement.' :
-                               'Focus on strengthening this topic.'}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+{calculateTopicPerformance().length > 0 && (
+  <div className="bg-gray-800/30 rounded-xl p-6 mb-8">
+    {/* Clickable header with arrow toggle */}
+    <button
+      onClick={() => setIsTopicPerformanceOpen(!isTopicPerformanceOpen)}
+      className="w-full flex items-center justify-between text-left hover:bg-gray-700/20 rounded-lg p-2 -m-2 transition-all duration-200"
+    >
+      <h4 className="text-white font-semibold flex items-center gap-2">
+        <Target className="w-5 h-5 text-purple-400" />
+        Topic-wise Performance
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-900/50 text-purple-200 border border-purple-700/50">
+          {calculateTopicPerformance().length} topics
+        </span>
+      </h4>
+      <div className={`flex items-center justify-center w-7 h-7 rounded-full transition-all duration-300 ${
+        isTopicPerformanceOpen
+          ? 'bg-purple-600/20 text-purple-300'
+          : 'bg-gray-600/20 text-gray-300'
+      }`}>
+        {isTopicPerformanceOpen
+          ? <ChevronUp className="w-4 h-4" />
+          : <ChevronDown className="w-4 h-4" />
+        }
+      </div>
+    </button>
+
+    {/* Collapsible content */}
+    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+      isTopicPerformanceOpen ? 'max-h-[1000px] opacity-100 mt-4' : 'max-h-0 opacity-0'
+    }`}>
+      <div className="space-y-4">
+        {calculateTopicPerformance().map((topic, index) => (
+          <div key={index} className="bg-gray-900/50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${
+                  topic.percentage >= 70 ? 'bg-green-500' :
+                  topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                }`} />
+                <span className="text-white font-medium">{topic.name}</span>
+                <span className="text-gray-400 text-sm">({topic.weight}% weight)</span>
+              </div>
+              <div className="text-right">
+                <div className={`text-lg font-bold ${
+                  topic.percentage >= 70 ? 'text-green-400' :
+                  topic.percentage >= 50 ? 'text-yellow-400' : 'text-red-400'
+                }`}>
+                  {topic.percentage}%
+                </div>
+                <div className="text-gray-400 text-sm">
+                  {topic.correctAnswers}/{topic.totalQuestions} correct
+                </div>
+              </div>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  topic.percentage >= 70 ? 'bg-green-500' :
+                  topic.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                }`}
+                style={{ width: `${topic.percentage}%` }}
+              />
+            </div>
+            <div className="mt-2 text-xs text-gray-400">
+              {topic.percentage >= 70 ? 'Excellent performance in this area!' :
+               topic.percentage >= 50 ? 'Good understanding, room for improvement.' :
+               'Focus on strengthening this topic.'}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
                   <div className={`p-6 rounded-xl mb-8 border ${
                     calculateScore().percentage >= 70 ? 'bg-green-500/10 border-green-500/30'
