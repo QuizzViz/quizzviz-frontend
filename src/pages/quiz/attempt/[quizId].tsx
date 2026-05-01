@@ -25,6 +25,7 @@ interface Question {
   code_snippet?: string | null;
   options: Record<string, string>;
   correct_answer: string;
+  topic: string;
 }
 
 interface QuizData {
@@ -210,22 +211,27 @@ const QuizAttemptPage = () => {
       return [];
     }
 
+    // Group questions by their actual topic
+    const questionsByTopic = quizData.questions.reduce((acc, question, index) => {
+      const topicName = question.topic || 'Unknown Topic';
+      if (!acc[topicName]) {
+        acc[topicName] = [];
+      }
+      acc[topicName].push({
+        question,
+        globalIndex: index
+      });
+      return acc;
+    }, {} as Record<string, Array<{ question: Question; globalIndex: number }>>);
+
+    // Calculate performance for each topic
     const topicPerformance = quizData.techStack.map(topic => {
-      // Calculate how many questions should belong to this topic based on weight
-      const totalQuestions = quizData.questions.length;
-      const topicQuestionCount = Math.round((topic.weight / 100) * totalQuestions);
-      
-      // Find questions that belong to this topic
-      // Note: This is a simplified approach. In a real implementation, questions should have topic metadata
-      const startIndex = quizData.techStack.indexOf(topic);
-      const endIndex = Math.min(startIndex + topicQuestionCount, totalQuestions);
-      const topicQuestions = quizData.questions.slice(startIndex, endIndex);
+      const topicQuestions = questionsByTopic[topic.name] || [];
       
       // Calculate performance for this topic
       let correctInTopic = 0;
-      topicQuestions.forEach((question, questionIndex) => {
-        const globalQuestionIndex = startIndex + questionIndex;
-        if (selectedAnswers[globalQuestionIndex] === question.correct_answer) {
+      topicQuestions.forEach(({ question, globalIndex }) => {
+        if (selectedAnswers[globalIndex] === question.correct_answer) {
           correctInTopic++;
         }
       });
@@ -1080,9 +1086,19 @@ if (typeof data.quiz === 'string') {
               <Card className="border-0 bg-gray-900/50 backdrop-blur-xl shadow-2xl mb-6">
                 <CardContent className="p-8">
 ...
-                  <h2 className="text-2xl font-semibold text-white mb-6 leading-relaxed">
-                    {quizData?.questions?.[currentQuestionIndex]?.question || 'Loading question...'}
-                  </h2>
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-semibold text-white mb-4 leading-relaxed">
+                      {quizData?.questions?.[currentQuestionIndex]?.question || 'Loading question...'}
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        {quizData?.questions?.[currentQuestionIndex]?.type === 'theory' ? '📚 Theory' : '💻 Code Analysis'}
+                      </span>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                        🏷️ {quizData?.questions?.[currentQuestionIndex]?.topic || 'Unknown Topic'}
+                      </span>
+                    </div>
+                  </div>
 
                   {quizData?.questions?.[currentQuestionIndex]?.code_snippet && (
                     <div className="mb-8 rounded-xl overflow-hidden border border-gray-700">
