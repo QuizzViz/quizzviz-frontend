@@ -94,7 +94,7 @@ export function QuestionForm({
               </div>
             )}
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="questionType" className="block text-sm mb-1">
                   Question Type
@@ -107,6 +107,33 @@ export function QuestionForm({
                 >
                   <option value="theory">Theory</option>
                   <option value="code_analysis">Code Analysis</option>
+                </select>
+              </div>
+              
+              <div>
+                <Label htmlFor="topic" className="block text-sm mb-1">
+                  Topic
+                </Label>
+                <select
+                  id="topic"
+                  value={form.topic}
+                  onChange={(e) => handleFormChange("topic", e.target.value)}
+                  className="w-full rounded-md bg-zinc-900 border border-white/10 p-2"
+                  required
+                >
+                  <option value="">Select Topic</option>
+                  <option value="System Design">System Design</option>
+                  <option value="Networking">Networking</option>
+                  <option value="Database">Database</option>
+                  <option value="OOP">OOP</option>
+                  <option value="Algorithms">Algorithms</option>
+                  <option value="Data Structures">Data Structures</option>
+                  <option value="Web Development">Web Development</option>
+                  <option value="Mobile Development">Mobile Development</option>
+                  <option value="Cloud Computing">Cloud Computing</option>
+                  <option value="DevOps">DevOps</option>
+                  <option value="Security">Security</option>
+                  <option value="Testing">Testing</option>
                 </select>
               </div>
               
@@ -157,7 +184,7 @@ export function QuestionForm({
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting || !form.question || !Object.values(form.options).every(Boolean) || (form.type === 'code_analysis' && !form.code_snippet)}
+              disabled={isSubmitting || !form.question || !form.topic || !Object.values(form.options).every(Boolean) || (form.type === 'code_analysis' && !form.code_snippet)}
             >
               {isSubmitting ? 'Saving...' : 'Save'}
             </Button>

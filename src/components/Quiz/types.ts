@@ -21,6 +21,7 @@ export interface QuizQuestion {
   code_snippet?: string | null;
   options?: Record<string, string> | null;
   correct_answer: string;
+  topic: string;
 }
 
 export interface PublishSettings {
@@ -38,6 +39,7 @@ export interface QuestionFormData {
   code_snippet?: string | null;
   options: { A: string; B: string; C: string; D: string };
   correct_answer: "A" | "B" | "C" | "D";
+  topic: string;
 }
 
 export interface QuizPaginationProps {

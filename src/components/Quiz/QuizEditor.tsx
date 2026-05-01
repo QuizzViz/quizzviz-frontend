@@ -66,6 +66,7 @@ export function QuizEditor() {
     code_snippet: "",
     options: { A: "", B: "", C: "", D: "" },
     correct_answer: "A",
+    topic: "",
   });
 
   // Set origin once on mount
@@ -116,6 +117,7 @@ export function QuizEditor() {
         code_snippet: q.code_snippet ?? null,
         options: q.options ?? { A: "", B: "", C: "", D: "" },
         correct_answer: q.correct_answer ?? "A",
+        topic: q.topic ?? "",
         ...q,
       }));
 
@@ -315,6 +317,7 @@ export function QuizEditor() {
       code_snippet: data.type === "code_analysis" ? data.code_snippet : null,
       options: { ...data.options },
       correct_answer: data.correct_answer,
+      topic: data.topic,
     };
 
     const updated = [...localQuestions];
@@ -436,6 +439,7 @@ export function QuizEditor() {
       correct_answer: ['A', 'B', 'C', 'D'].includes(question.correct_answer)
         ? question.correct_answer as 'A' | 'B' | 'C' | 'D'
         : 'A', // Default to 'A' if invalid
+      topic: question.topic || "",
     });
     setIsModalOpen(true);
   };
@@ -449,6 +453,7 @@ export function QuizEditor() {
       code_snippet: "",
       options: { A: "", B: "", C: "", D: "" },
       correct_answer: "A",
+      topic: "",
     });
     setIsModalOpen(true);
   };
