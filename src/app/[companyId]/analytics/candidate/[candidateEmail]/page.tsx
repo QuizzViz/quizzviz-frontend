@@ -21,12 +21,13 @@ import {
   Trophy,
   Target,
   TrendingUp,
-  Calendar,
   FileText,
-  Table,
   Award,
   BarChart3,
   Loader2,
+  Sparkles,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -70,12 +71,9 @@ export default function CandidateDetailPage() {
 
   const downloadExcel = async () => {
     if (!candidateAnalytics) return;
-
     try {
       setDownloading("excel");
-
       const wb = XLSX.utils.book_new();
-
       const summaryData = [
         ["Candidate Summary", ""],
         ["Name", candidateAnalytics.username],
@@ -85,18 +83,14 @@ export default function CandidateDetailPage() {
         ["Highest Score", `${candidateAnalytics.highest_score}%`],
         ["Latest Attempt", candidateAnalytics.latest_attempt],
       ];
-
       const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
       XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
-
       const topicData = [["Topic", "Average %", "Highest %"]];
       Object.entries(candidateAnalytics.topic_performance).forEach(([topic, performance]) => {
         topicData.push([topic, performance.average.toFixed(2), performance.highest.toFixed(2)]);
       });
-
       const topicWs = XLSX.utils.aoa_to_sheet(topicData);
       XLSX.utils.book_append_sheet(wb, topicWs, "Topic Performance");
-
       const attemptsData = [["Attempt", "Quiz ID", "Score", "Passed", "Date"]];
       candidateAnalytics.attempts.forEach((attempt) => {
         attemptsData.push([
@@ -107,12 +101,9 @@ export default function CandidateDetailPage() {
           new Date(attempt.created_at).toLocaleDateString(),
         ]);
       });
-
       const attemptsWs = XLSX.utils.aoa_to_sheet(attemptsData);
       XLSX.utils.book_append_sheet(wb, attemptsWs, "All Attempts");
-
       XLSX.writeFile(wb, `${candidateAnalytics.username.replace(/\s+/g, "_")}_quiz_results.xlsx`);
-
       toast({ title: "Success", description: "Excel file downloaded successfully" });
     } catch (error) {
       console.error("Error downloading Excel:", error);
@@ -124,28 +115,22 @@ export default function CandidateDetailPage() {
 
   const downloadPDF = async () => {
     if (!candidateAnalytics) return;
-
     try {
       setDownloading("pdf");
-
       const doc = new jsPDF();
-
       doc.setFontSize(20);
       doc.text("Candidate Quiz Report", 20, 20);
-
       doc.setFontSize(12);
       doc.text(`Name: ${candidateAnalytics.username}`, 20, 40);
       doc.text(`Email: ${candidateAnalytics.email}`, 20, 50);
       doc.text(`Total Attempts: ${candidateAnalytics.total_attempts}`, 20, 60);
       doc.text(`Average Score: ${candidateAnalytics.average_score}%`, 20, 70);
       doc.text(`Highest Score: ${candidateAnalytics.highest_score}%`, 20, 80);
-
       const topicData = Object.entries(candidateAnalytics.topic_performance).map(([topic, performance]) => [
         topic,
         `${performance.average.toFixed(2)}%`,
         `${performance.highest.toFixed(2)}%`,
       ]);
-
       autoTable(doc, {
         head: [["Topic", "Average %", "Highest %"]],
         body: topicData,
@@ -153,7 +138,6 @@ export default function CandidateDetailPage() {
         theme: "grid",
         styles: { fontSize: 10 },
       });
-
       const attemptsData = candidateAnalytics.attempts.map((attempt) => [
         attempt.attempt.toString(),
         attempt.quiz_id,
@@ -161,7 +145,6 @@ export default function CandidateDetailPage() {
         attempt.result.passed ? "Yes" : "No",
         new Date(attempt.created_at).toLocaleDateString(),
       ]);
-
       autoTable(doc, {
         head: [["Attempt", "Quiz ID", "Score", "Passed", "Date"]],
         body: attemptsData,
@@ -169,9 +152,7 @@ export default function CandidateDetailPage() {
         theme: "grid",
         styles: { fontSize: 10 },
       });
-
       doc.save(`${candidateAnalytics.username.replace(/\s+/g, "_")}_quiz_results.pdf`);
-
       toast({ title: "Success", description: "PDF downloaded successfully" });
     } catch (error) {
       console.error("Error downloading PDF:", error);
@@ -179,6 +160,31 @@ export default function CandidateDetailPage() {
     } finally {
       setDownloading(null);
     }
+  };
+
+  // Score color helpers
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-emerald-400";
+    if (score >= 60) return "text-amber-400";
+    return "text-rose-400";
+  };
+
+  const getScoreRingColor = (score: number) => {
+    if (score >= 80) return "from-emerald-500 to-teal-400";
+    if (score >= 60) return "from-amber-500 to-yellow-400";
+    return "from-rose-500 to-pink-400";
+  };
+
+  const getTopicBarColor = (pct: number) => {
+    if (pct >= 80) return "from-emerald-500 via-teal-400 to-cyan-400";
+    if (pct >= 60) return "from-amber-500 via-orange-400 to-yellow-400";
+    return "from-rose-500 via-pink-500 to-fuchsia-500";
+  };
+
+  const getTopicTextColor = (pct: number) => {
+    if (pct >= 80) return "text-emerald-400";
+    if (pct >= 60) return "text-amber-400";
+    return "text-rose-400";
   };
 
   if (loading) {
@@ -205,271 +211,305 @@ export default function CandidateDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <DashboardSideBar />
-      <div className="lg:pl-64">
+    <div className="min-h-screen bg-[#0a0a0f] text-white flex">
+
+      {/* Sidebar */}
+      <div className="bg-zinc-950 border-r border-zinc-800/60 shrink-0">
+        <DashboardSideBar />
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader />
 
-        <div className="p-4 lg:p-6">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl p-6 mb-8 border border-purple-500/30">
-            <div className="flex items-center justify-between">
-              {/* Left: Back button + candidate info */}
-              <div className="flex items-center space-x-6">
-                <Button
-                  variant="ghost"
-                  onClick={() => window.close()}
-                  className="text-purple-300 hover:text-white hover:bg-white/10 rounded-lg"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Analytics
-                </Button>
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30">
-                    <User className="w-8 h-8 text-white" />
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 lg:p-6 space-y-6">
+
+            {/* ── Hero Header Card ── */}
+            <div className="relative overflow-hidden rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-950/60 via-[#12091f] to-fuchsia-950/40 p-6">
+              {/* Decorative glow blobs */}
+              <div className="pointer-events-none absolute -top-10 -left-10 h-48 w-48 rounded-full bg-purple-600/20 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-10 -right-10 h-48 w-48 rounded-full bg-fuchsia-600/15 blur-3xl" />
+
+              <div className="relative flex items-center justify-between flex-wrap gap-4">
+                {/* Left */}
+                <div className="flex items-center gap-5 flex-wrap">
+                  <Button
+                    variant="ghost"
+                    onClick={() => window.close()}
+                    className="text-purple-300 hover:text-white hover:bg-purple-500/15 rounded-xl border border-purple-500/20 transition-all"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+
+                  {/* Avatar */}
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-purple-500/40">
+                      <User className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-400 rounded-full border-2 border-[#0a0a0f] flex items-center justify-center">
+                      <Sparkles className="w-2.5 h-2.5 text-emerald-900" />
+                    </div>
                   </div>
+
                   <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-300 via-purple-300 to-fuchsia-300 bg-clip-text text-transparent">
                       {candidateAnalytics.username}
                     </h1>
-                    <p className="text-gray-300 text-lg flex items-center mt-1">
-                      <Mail className="w-5 h-5 mr-2 text-purple-400" />
+                    <p className="text-gray-400 flex items-center mt-1 text-sm">
+                      <Mail className="w-4 h-4 mr-2 text-purple-400" />
                       {candidateAnalytics.email}
                     </p>
                   </div>
                 </div>
-              </div>
 
-              {/* Right: Download buttons */}
-              <div className="flex space-x-2">
-                <Button
-                  onClick={downloadExcel}
-                  disabled={downloading === "excel"}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0 shadow-lg shadow-green-500/30"
-                >
-                  {downloading === "excel" ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4 mr-2" />
-                  )}
-                  Excel
-                </Button>
-                <Button
-                  onClick={downloadPDF}
-                  disabled={downloading === "pdf"}
-                  className="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white border-0 shadow-lg shadow-red-500/30"
-                >
-                  {downloading === "pdf" ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4 mr-2" />
-                  )}
-                  PDF
-                </Button>
+                {/* Download buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={downloadExcel}
+                    disabled={downloading === "excel"}
+                    className="relative overflow-hidden bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white border-0 shadow-lg shadow-emerald-500/25 font-semibold px-5 transition-all duration-200 hover:shadow-emerald-500/40 hover:scale-105"
+                  >
+                    {downloading === "excel" ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    Excel
+                  </Button>
+                  <Button
+                    onClick={downloadPDF}
+                    disabled={downloading === "pdf"}
+                    className="relative overflow-hidden bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white border-0 shadow-lg shadow-rose-500/25 font-semibold px-5 transition-all duration-200 hover:shadow-rose-500/40 hover:scale-105"
+                  >
+                    {downloading === "pdf" ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    PDF
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-500/30 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-purple-300">Total Attempts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-4">
+            {/* ── Quick Stats ── */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Total Attempts */}
+              <div className="group relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/50 to-[#0d0818] p-5 hover:border-violet-500/40 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center gap-4">
+                  <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 p-3 shadow-lg shadow-violet-500/30">
                     <FileText className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-white">{candidateAnalytics.total_attempts}</div>
-                    <div className="text-xs text-purple-300">Quiz completions</div>
+                    <p className="text-3xl font-bold text-white">{candidateAnalytics.total_attempts}</p>
+                    <p className="text-xs text-violet-300 mt-0.5 font-medium uppercase tracking-wide">Total Attempts</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="mt-3 h-1 w-full rounded-full bg-violet-900/40">
+                  <div className="h-1 rounded-full bg-gradient-to-r from-violet-500 to-purple-400 w-3/4" />
+                </div>
+              </div>
 
-            <Card className="bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 border-emerald-500/30 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-emerald-300">Average Score</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center mr-4">
+              {/* Average Score */}
+              <div className="group relative overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/50 to-[#050d18] p-5 hover:border-cyan-500/40 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center gap-4">
+                  <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 p-3 shadow-lg shadow-cyan-500/30">
                     <Target className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-white">{candidateAnalytics.average_score}%</div>
-                    <div className="text-xs text-emerald-300">Overall performance</div>
+                    <p className="text-3xl font-bold text-white">{candidateAnalytics.average_score}%</p>
+                    <p className="text-xs text-cyan-300 mt-0.5 font-medium uppercase tracking-wide">Average Score</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="mt-3 h-1 w-full rounded-full bg-cyan-900/40">
+                  <div
+                    className="h-1 rounded-full bg-gradient-to-r from-cyan-500 to-blue-400"
+                    style={{ width: `${Math.min(candidateAnalytics.average_score, 100)}%` }}
+                  />
+                </div>
+              </div>
 
-            <Card className="bg-gradient-to-br from-amber-600/20 to-amber-800/20 border-amber-500/30 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-amber-300">Highest Score</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg flex items-center justify-center mr-4">
+              {/* Highest Score */}
+              <div className="group relative overflow-hidden rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/50 to-[#110d00] p-5 hover:border-amber-500/40 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center gap-4">
+                  <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 p-3 shadow-lg shadow-amber-500/30">
                     <Trophy className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-white">{candidateAnalytics.highest_score}%</div>
-                    <div className="text-xs text-amber-300">Best performance</div>
+                    <p className="text-3xl font-bold text-white">{candidateAnalytics.highest_score}%</p>
+                    <p className="text-xs text-amber-300 mt-0.5 font-medium uppercase tracking-wide">Highest Score</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <div className="mt-3 h-1 w-full rounded-full bg-amber-900/40">
+                  <div
+                    className="h-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-400"
+                    style={{ width: `${Math.min(candidateAnalytics.highest_score, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
 
-          {/* Detailed Attempts */}
-          <Card className="bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 border-zinc-700/50 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center text-white">
-                <BarChart3 className="w-5 h-5 mr-2 text-purple-400" />
-                Detailed Attempt Results
-              </CardTitle>
-              <CardDescription className="text-zinc-400">
-                Performance breakdown for each quiz attempt
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
+            {/* ── Detailed Attempts ── */}
+            <div className="rounded-2xl border border-zinc-800/60 bg-gradient-to-br from-zinc-900/60 to-[#0a0a0f] overflow-hidden">
+              {/* Section header */}
+              <div className="px-6 py-5 border-b border-zinc-800/60 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-purple-500/15 border border-purple-500/20">
+                  <BarChart3 className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Detailed Attempt Results</h2>
+                  <p className="text-xs text-zinc-500 mt-0.5">Performance breakdown for each quiz attempt</p>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-5">
                 {candidateAnalytics.attempts.map((attempt, index) => (
                   <div
                     key={index}
-                    className="bg-gradient-to-br from-zinc-900/80 to-zinc-800/80 rounded-xl p-6 border border-zinc-700/50"
+                    className="group relative overflow-hidden rounded-2xl border border-zinc-700/40 bg-gradient-to-br from-zinc-900/80 to-[#0d0d14] hover:border-purple-500/30 transition-all duration-300"
                   >
-                    {/* Attempt Header */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg shadow-purple-500/30">
-                          Attempt #{attempt.attempt}
+                    {/* Left accent stripe based on score */}
+                    <div
+                      className={`absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-gradient-to-b ${getScoreRingColor(attempt.result.score)}`}
+                    />
+
+                    <div className="pl-6 pr-6 pt-5 pb-5">
+                      {/* Attempt top row */}
+                      <div className="flex items-center justify-between flex-wrap gap-4 mb-5">
+                        {/* Left: badge + date */}
+                        <div className="flex items-center gap-3">
+                          <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white px-3.5 py-1 rounded-full text-xs font-bold tracking-wide shadow-md shadow-purple-500/20">
+                            Attempt #{attempt.attempt}
+                          </span>
+                          <span className="text-zinc-400 text-sm">
+                            {new Date(attempt.created_at).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
                         </div>
-                        <div className="text-zinc-300 text-sm">
-                          {new Date(attempt.created_at).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-6">
-                        <div className="text-right">
-                          <p className="text-sm text-zinc-400">Overall Score</p>
-                          <div className="flex items-center">
-                            <p
-                              className={`text-2xl font-bold ${
-                                attempt.result.score >= 80
-                                  ? "text-green-400"
-                                  : attempt.result.score >= 60
-                                  ? "text-yellow-400"
-                                  : "text-red-400"
-                              }`}
-                            >
-                              {attempt.result.score}%
+
+                        {/* Right: score + questions */}
+                        <div className="flex items-center gap-6">
+                          <div className="text-right">
+                            <p className="text-xs text-zinc-500 uppercase tracking-wide mb-1">Score</p>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-2xl font-bold ${getScoreColor(attempt.result.score)}`}>
+                                {attempt.result.score}%
+                              </span>
+                              {attempt.result.passed ? (
+                                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                                  <CheckCircle2 className="w-3 h-3" /> Passed
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">
+                                  <XCircle className="w-3 h-3" /> Failed
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-zinc-500 uppercase tracking-wide mb-1">Correct</p>
+                            <p className="text-lg font-bold text-white">
+                              {attempt.result.correct_answers}
+                              <span className="text-zinc-500 font-normal text-sm">/{attempt.result.total_questions}</span>
                             </p>
-                            {attempt.result.passed && (
-                              <Badge className="ml-2 bg-green-600 text-white">Passed</Badge>
-                            )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-zinc-400">Questions</p>
-                          <p className="text-lg font-semibold text-white">
-                            {attempt.result.correct_answers}/{attempt.result.total_questions}
-                          </p>
-                        </div>
                       </div>
-                    </div>
 
-                    {/* Topic Breakdown */}
-                    {attempt.result.topic_percentages && attempt.result.topic_percentages.length > 0 && (
-                      <div>
-                        <h4 className="text-lg font-medium text-white mb-4 flex items-center">
-                          <TrendingUp className="w-5 h-5 mr-2 text-purple-400" />
-                          Topic Performance
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {attempt.result.topic_percentages.map((topic, topicIndex) => (
-                            <div
-                              key={topicIndex}
-                              className="bg-gradient-to-br from-zinc-800/60 to-zinc-900/60 rounded-lg p-4 border border-zinc-600/50"
-                            >
-                              <div className="flex items-center justify-between mb-3">
-                                <h5 className="font-medium text-white">{topic.name}</h5>
-                                <div className="flex items-center space-x-2">
-                                  <span
-                                    className={`text-lg font-bold ${
-                                      topic.percentage >= 80
-                                        ? "text-emerald-400"
-                                        : topic.percentage >= 60
-                                        ? "text-amber-400"
-                                        : "text-red-400"
-                                    }`}
-                                  >
-                                    {topic.percentage}%
-                                  </span>
-                                  {topic.percentage >= 90 && <Award className="w-4 h-4 text-yellow-400" />}
+                      {/* Score progress bar */}
+                      <div className="mb-5 h-1.5 w-full rounded-full bg-zinc-800">
+                        <div
+                          className={`h-1.5 rounded-full bg-gradient-to-r ${getScoreRingColor(attempt.result.score)} transition-all duration-500`}
+                          style={{ width: `${Math.min(attempt.result.score, 100)}%` }}
+                        />
+                      </div>
+
+                      {/* Topic Breakdown */}
+                      {attempt.result.topic_percentages && attempt.result.topic_percentages.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-zinc-300 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                            <TrendingUp className="w-4 h-4 text-purple-400" />
+                            Topic Breakdown
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {attempt.result.topic_percentages.map((topic, topicIndex) => (
+                              <div
+                                key={topicIndex}
+                                className="relative rounded-xl border border-zinc-700/40 bg-zinc-900/60 p-4 hover:border-zinc-600/60 transition-all"
+                              >
+                                {/* Topic header */}
+                                <div className="flex items-start justify-between mb-3">
+                                  <h5 className="text-sm font-medium text-zinc-200 leading-tight pr-2">{topic.name}</h5>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <span className={`text-base font-bold ${getTopicTextColor(topic.percentage)}`}>
+                                      {topic.percentage}%
+                                    </span>
+                                    {topic.percentage >= 90 && (
+                                      <Award className="w-3.5 h-3.5 text-amber-400" />
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="space-y-2 text-sm">
-                                <div className="flex justify-between text-zinc-300">
-                                  <span>Correct:</span>
-                                  <span className="text-white">
+
+                                {/* Correct count */}
+                                <div className="flex justify-between text-xs text-zinc-500 mb-2">
+                                  <span>Correct</span>
+                                  <span className="text-zinc-300 font-medium">
                                     {topic.correct_questions}/{topic.total_questions}
                                   </span>
                                 </div>
-                                <div className="w-full bg-zinc-700 rounded-full h-2">
+
+                                {/* Progress bar */}
+                                <div className="h-1.5 w-full rounded-full bg-zinc-800">
                                   <div
-                                    className={`h-2 rounded-full transition-all duration-500 ${
-                                      topic.percentage >= 80
-                                        ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
-                                        : topic.percentage >= 60
-                                        ? "bg-gradient-to-r from-amber-500 to-amber-600"
-                                        : "bg-gradient-to-r from-red-500 to-red-600"
-                                    }`}
+                                    className={`h-1.5 rounded-full bg-gradient-to-r ${getTopicBarColor(topic.percentage)} transition-all duration-500`}
                                     style={{ width: `${Math.min(topic.percentage, 100)}%` }}
                                   />
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Additional Info */}
-                    {attempt.result.role && (
-                      <div className="mt-4 pt-4 border-t border-zinc-700/50">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-zinc-400">Role:</span>
-                          <span className="text-white font-medium">{attempt.result.role}</span>
+                      {/* Additional Info */}
+                      {attempt.result.role && (
+                        <div className="mt-4 pt-4 border-t border-zinc-800/60 flex flex-wrap gap-x-6 gap-y-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-zinc-500">Role:</span>
+                            <span className="text-zinc-200 font-medium">{attempt.result.role}</span>
+                          </div>
+                          {attempt.result.time_taken !== undefined && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-zinc-500">Time Taken:</span>
+                              <span className="text-zinc-200 font-medium">{attempt.result.time_taken} min</span>
+                            </div>
+                          )}
+                          {attempt.result.quiz_experience && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-zinc-500">Experience:</span>
+                              <span className="text-zinc-200 font-medium">{attempt.result.quiz_experience} yrs</span>
+                            </div>
+                          )}
                         </div>
-                        {attempt.result.time_taken !== undefined && (
-                          <div className="flex items-center justify-between text-sm mt-2">
-                            <span className="text-zinc-400">Time Taken:</span>
-                            <span className="text-white font-medium">{attempt.result.time_taken} min</span>
-                          </div>
-                        )}
-                        {attempt.result.quiz_experience && (
-                          <div className="flex items-center justify-between text-sm mt-2">
-                            <span className="text-zinc-400">Experience Level:</span>
-                            <span className="text-white font-medium">{attempt.result.quiz_experience} years</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+
+          </div>
+        </main>
       </div>
     </div>
   );
