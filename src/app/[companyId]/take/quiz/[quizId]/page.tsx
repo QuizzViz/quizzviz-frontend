@@ -179,7 +179,7 @@ function AttemptsModal({
   onStart: () => void;
   isLoading: boolean;
 }) {
-  const remaining = attemptsInfo.max - attemptsInfo.current -1;
+  const remaining = attemptsInfo.max - attemptsInfo.current - 1;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1747,7 +1747,7 @@ const beginQuiz = useCallback(async () => {
                               <div
                                 key={i}
                                 className={`w-2.5 h-2.5 rounded-full ${
-                                  i < attemptsInfo.current ? 'bg-red-500' : 'bg-white/15'
+                                  i < attemptsInfo.current + 1 ? 'bg-red-500' : 'bg-white/15'
                                 }`}
                               />
                             ))}
