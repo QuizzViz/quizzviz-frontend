@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { SignedIn, SignedOut, useUser, useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { useCachedFetch } from "@/hooks/useCachedFetch";
 import Head from "next/head";
 import * as XLSX from "xlsx";
@@ -262,6 +263,7 @@ export default function ResultsDashboard() {
   const { companyInfo, isLoading: isCompanyLoading, error: companyError } = useCompanyInfo();
   const finalCompanyId = companyInfo?.id || '';
   const { userRole, loading: roleLoading } = useUserRole(finalCompanyId);
+  const router = useRouter();
 
   // Fetch quiz results
   const { data: quizResults, isLoading, refetch: refetchResults } = useCachedFetch<QuizResult[] | { results: QuizResult[] } | { error: string }>(
@@ -833,8 +835,14 @@ export default function ResultsDashboard() {
                                           .map((c) => {
                                             const key = `${c.username}|${c.user_email}`;
                                             return (
-                                              <TableRow key={key} className="hover:bg-zinc-900/60">
-                                                <TableCell>
+                                              <TableRow
+                                                key={key}
+                                                className="hover:bg-zinc-900/60 cursor-pointer"
+                                                onClick={() =>
+                                                  router.push(`/${finalCompanyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`)
+                                                }
+                                              >
+                                                <TableCell onClick={(e) => e.stopPropagation()}>
                                                   <input
                                                     type="checkbox"
                                                     checked={!!selectedUsers[key]}
