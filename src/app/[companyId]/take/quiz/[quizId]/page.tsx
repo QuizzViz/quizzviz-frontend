@@ -179,7 +179,7 @@ function AttemptsModal({
   onStart: () => void;
   isLoading: boolean;
 }) {
-  const remaining = attemptsInfo.max - attemptsInfo.current;
+  const remaining = attemptsInfo.max - attemptsInfo.current -1;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -830,12 +830,13 @@ const topicPerformance = calculateTopicWisePerformance();
       step === 'instructions' &&
       quizData?.max_attempts &&
       quizData.max_attempts > 1 &&
-      !hasShownAttemptsModalRef.current
+      !hasShownAttemptsModalRef.current &&
+      attemptsInfo.max > 1 // Ensure attempts data is loaded
     ) {
       hasShownAttemptsModalRef.current = true;
       setShowAttemptsModal(true);
     }
-  }, [step, quizData]);
+  }, [step, quizData, attemptsInfo]);
 
   const shuffleArray = <T,>(array: T[]): T[] => {
     const newArray = [...array];
