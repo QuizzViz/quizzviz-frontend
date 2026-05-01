@@ -229,34 +229,36 @@ const QuizAttemptPage = () => {
       return acc;
     }, {} as Record<string, Array<{ question: Question; globalIndex: number }>>);
 
-    // Calculate performance for each actual topic
-    const topicPerformance = Object.entries(questionsByTopic).map(([topicName, topicQuestions]) => {
-      // Calculate performance for this topic
-      let correctInTopic = 0;
-      topicQuestions.forEach(({ question, globalIndex }) => {
-        if (selectedAnswers[globalIndex] === question.correct_answer) {
-          correctInTopic++;
-        }
+    // Calculate performance for each topic that has actual questions
+    const topicPerformance = Object.entries(questionsByTopic)
+      .filter(([topicName, topicQuestions]) => topicQuestions.length > 0) // Only include topics with questions
+      .map(([topicName, topicQuestions]) => {
+        // Calculate performance for this topic
+        let correctInTopic = 0;
+        topicQuestions.forEach(({ question, globalIndex }) => {
+          if (selectedAnswers[globalIndex] === question.correct_answer) {
+            correctInTopic++;
+          }
+        });
+        
+        const topicPercentage = topicQuestions.length > 0 
+          ? Math.round((correctInTopic / topicQuestions.length) * 100)
+          : 0;
+
+        // Find the weight for this topic from techStack
+        const techStackItem = quizData.techStack.find(tech => tech.name === topicName);
+        const topicWeight = techStackItem ? techStackItem.weight : 0;
+
+        return {
+          name: topicName,
+          weight: topicWeight,
+          totalQuestions: topicQuestions.length,
+          correctAnswers: correctInTopic,
+          percentage: topicPercentage
+        };
       });
-      
-      const topicPercentage = topicQuestions.length > 0 
-        ? Math.round((correctInTopic / topicQuestions.length) * 100)
-        : 0;
 
-      // Find the weight for this topic from techStack
-      const techStackItem = quizData.techStack.find(tech => tech.name === topicName);
-      const topicWeight = techStackItem ? techStackItem.weight : 0;
-
-      return {
-        name: topicName,
-        weight: topicWeight,
-        totalQuestions: topicQuestions.length,
-        correctAnswers: correctInTopic,
-        percentage: topicPercentage
-      };
-    });
-
-    // Sort by question count (descending) - no need to filter since we already filtered invalid topics
+    // Sort by question count (descending) and only return topics with questions
     return topicPerformance.sort((a, b) => b.totalQuestions - a.totalQuestions);
   };
 
@@ -1278,23 +1280,44 @@ if (typeof data.quiz === 'string') {
 
                   {/* Topic-wise Performance Section */}
                   {calculateTopicPerformance().length > 0 && (
-                    <div className="bg-gray-800/30 rounded-xl p-6 mb-8">
-                      <button
-                        onClick={() => setIsTopicPerformanceOpen(!isTopicPerformanceOpen)}
-                        className="w-full flex items-center justify-between text-left hover:bg-gray-700/20 rounded-lg p-2 -m-2 transition-colors duration-200"
-                      >
-                        <h4 className="text-white font-semibold flex items-center gap-2">
-                          <Target className="w-5 h-5 text-purple-400" /> Topic-wise Performance
-                        </h4>
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <span className="text-sm">{calculateTopicPerformance().length} topics</span>
-                          {isTopicPerformanceOpen ? (
-                            <ChevronUp className="w-4 h-4 transition-transform duration-200" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 transition-transform duration-200" />
-                          )}
-                        </div>
-                      </button>
+                    <div className="bg-gradient-to-r from-gray-800/40 to-gray-800/30 rounded-xl p-6 mb-8 border border-gray-700/30 shadow-lg">
+                      {/* Enhanced Header with prominent toggle */}
+                      <div className="group">
+                        <button
+                          onClick={() => setIsTopicPerformanceOpen(!isTopicPerformanceOpen)}
+                          className="w-full flex items-center justify-between text-left hover:bg-gray-700/30 rounded-xl p-4 -m-2 transition-all duration-300 group-hover:shadow-md"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <Target className="w-6 h-6 text-purple-400 group-hover:text-purple-300 transition-colors duration-200" />
+                              <h4 className="text-white font-bold text-lg">Topic-wise Performance</h4>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-900/50 text-purple-200 border border-purple-700/50">
+                                {calculateTopicPerformance().length} topics
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Prominent Arrow Toggle */}
+                          <div className="flex items-center gap-3">
+                            <span className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-200">
+                              {isTopicPerformanceOpen ? 'Hide details' : 'Show details'}
+                            </span>
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 ${
+                              isTopicPerformanceOpen 
+                                ? 'bg-purple-600/20 text-purple-300 hover:bg-purple-600/30' 
+                                : 'bg-gray-600/20 text-gray-300 hover:bg-gray-600/30'
+                            }`}>
+                              {isTopicPerformanceOpen ? (
+                                <ChevronUp className="w-5 h-5 transition-transform duration-300" />
+                              ) : (
+                                <ChevronDown className="w-5 h-5 transition-transform duration-300" />
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      </div>
                       
                       <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
                         isTopicPerformanceOpen ? 'max-h-[1000px] opacity-100 mt-4' : 'max-h-0 opacity-0'
