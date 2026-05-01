@@ -1747,12 +1747,12 @@ const beginQuiz = useCallback(async () => {
                               <div
                                 key={i}
                                 className={`w-2.5 h-2.5 rounded-full ${
-                                  i < attemptsInfo.current + 1 ? 'bg-red-500' : 'bg-white/15'
+                                  i < attemptsInfo.current ? 'bg-red-500' : 'bg-white/15'
                                 }`}
                               />
                             ))}
                             <span className="text-xs text-gray-400 ml-1">
-                              {attemptsInfo.current + 1} used · {attemptsInfo.max - attemptsInfo.current - 1} left
+                              {attemptsInfo.current} used · {attemptsInfo.max - attemptsInfo.current} left
                             </span>
                           </div>
                         </>
