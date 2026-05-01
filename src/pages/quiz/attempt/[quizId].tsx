@@ -28,6 +28,13 @@ interface Question {
   topic: string;
 }
 
+interface TopicPerformance {
+  name: string;
+  percentage: number;
+  total_questions: number;
+  correct_questions: number;
+}
+
 interface QuizData {
   quiz_id: string;
   role: string;
@@ -207,7 +214,7 @@ const QuizAttemptPage = () => {
     return { correct, total, percentage };
   };
 
-  const calculateTopicPerformance = () => {
+  const calculateTopicPerformance = (): TopicPerformance[] => {
     if (!quizData || !quizData.questions || quizData.questions.length === 0) {
       return [];
     }
@@ -250,11 +257,10 @@ const QuizAttemptPage = () => {
         const topicWeight = techStackItem ? techStackItem.weight : 0;
 
         return {
-          topic_name: topicName,
-          weight: topicWeight,
+          name: topicName,
+          percentage: topicPercentage,
           total_questions: topicQuestions.length,
-          correct_answers: correctInTopic,
-          percentage: topicPercentage
+          correct_questions: correctInTopic
         };
       });
     
@@ -1323,7 +1329,7 @@ if (typeof data.quiz === 'string') {
                         isTopicPerformanceOpen ? 'max-h-[1000px] opacity-100 mt-4' : 'max-h-0 opacity-0'
                       }`}>
                         <div className="space-y-4">
-                          {calculateTopicPerformance().map((topic, index) => (
+                          {calculateTopicPerformance().map((topic, index:number) => (
                             <div key={index} className="bg-gray-900/50 rounded-lg p-4 transform transition-all duration-300 hover:scale-[1.02] hover:bg-gray-900/70">
                               <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
