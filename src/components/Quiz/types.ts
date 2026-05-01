@@ -1,6 +1,7 @@
 export interface QuizSummary {
   role: any;
   techStack: any;
+  tech_stack?: any; // Handle both camelCase and snake_case from backend
   quiz_id: string;
   user_id: string;
   experience: string;

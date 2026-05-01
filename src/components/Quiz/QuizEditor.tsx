@@ -175,7 +175,7 @@ export function QuizEditor() {
 
         const payload = {
           role: currentQuiz.role,
-          techStack: currentQuiz.techStack,
+          techStack: currentQuiz.techStack || currentQuiz.tech_stack,
           experience: currentQuiz.experience,
           num_questions: questions.length,
           theory_questions_percentage: currentQuiz.theory_questions_percentage,
@@ -186,7 +186,7 @@ export function QuizEditor() {
         };
 
         console.log("payload :", payload)
-        console.log("Tech Stack :", currentQuiz.techStack)
+        console.log("Tech Stack :", currentQuiz.techStack || currentQuiz.tech_stack)
         const res = await fetch(`/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}`, {
           method: "PATCH",
           headers: {
@@ -254,10 +254,10 @@ export function QuizEditor() {
   quiz_id: quizId,
   companyId: companyId,
   role: currentQuiz?.role ?? "",
-  tech_stack: Array.isArray(currentQuiz?.techStack) 
-    ? currentQuiz.techStack 
-    : typeof currentQuiz?.techStack === 'string'
-      ? JSON.parse(currentQuiz.techStack)
+  tech_stack: Array.isArray(currentQuiz?.techStack || currentQuiz?.tech_stack) 
+    ? currentQuiz?.techStack || currentQuiz?.tech_stack
+    : typeof (currentQuiz?.techStack || currentQuiz?.tech_stack) === 'string'
+      ? JSON.parse(currentQuiz?.techStack || currentQuiz?.tech_stack)
       : [],
   experience: currentQuiz?.experience ?? "1-3",
   questions: localQuestions,
