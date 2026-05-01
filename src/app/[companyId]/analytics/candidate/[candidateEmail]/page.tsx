@@ -236,19 +236,21 @@ export default function CandidateDetailPage() {
         
         <div className="p-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
-                onClick={() => router.back()}
+                onClick={() => window.close()}
                 className="text-gray-400 hover:text-white"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
+                Back to Analytics
               </Button>
               <div>
                 <h1 className="text-3xl font-bold flex items-center">
-                  <User className="w-8 h-8 mr-3" />
+                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mr-3">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
                   {candidateAnalytics.username}
                 </h1>
                 <p className="text-gray-400 flex items-center mt-1">
@@ -288,162 +290,179 @@ export default function CandidateDetailPage() {
             </div>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-400">Total Attempts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <FileText className="w-8 h-8 text-blue-500 mr-3" />
-                  <div>
-                    <div className="text-2xl font-bold">{candidateAnalytics.total_attempts}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-400">Average Score</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <Target className="w-8 h-8 text-green-500 mr-3" />
-                  <div>
-                    <div className="text-2xl font-bold">{candidateAnalytics.average_score}%</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-400">Highest Score</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <Trophy className="w-8 h-8 text-yellow-500 mr-3" />
-                  <div>
-                    <div className="text-2xl font-bold">{candidateAnalytics.highest_score}%</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-400">Latest Attempt</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <Calendar className="w-8 h-8 text-purple-500 mr-3" />
-                  <div>
-                    <div className="text-2xl font-bold">#{candidateAnalytics.latest_attempt}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Topic Performance */}
-          <Card className="bg-zinc-900 border-zinc-800 mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BarChart3 className="w-5 h-5 mr-2" />
-                Topic Performance
-              </CardTitle>
-              <CardDescription>
-                Performance breakdown by topic across all attempts
-              </CardDescription>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Total Attempts</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(candidateAnalytics.topic_performance).map(([topic, performance]) => (
-                  <div key={topic} className="bg-zinc-800 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-white">{topic}</h3>
-                      {performance.highest >= 90 && (
-                        <Badge className="bg-yellow-600 text-white">
-                          <Award className="w-3 h-3 mr-1" />
-                          Highest
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Average:</span>
-                        <span className="font-medium">{performance.average.toFixed(2)}%</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Highest:</span>
-                        <span className="font-medium text-green-400">{performance.highest.toFixed(2)}%</span>
-                      </div>
-                      <div className="w-full bg-zinc-700 rounded-full h-2">
-                        <div
-                          className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full"
-                          style={{ width: `${Math.min(performance.average, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center">
+                <FileText className="w-8 h-8 text-purple-500 mr-3" />
+                <div>
+                  <div className="text-2xl font-bold">{candidateAnalytics.total_attempts}</div>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Detailed Attempts */}
           <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Table className="w-5 h-5 mr-2" />
-                All Attempts
-              </CardTitle>
-              <CardDescription>
-                Detailed results for each quiz attempt
-              </CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Average Score</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-zinc-700">
-                      <th className="text-left py-3 px-4">Attempt</th>
-                      <th className="text-left py-3 px-4">Quiz ID</th>
-                      <th className="text-left py-3 px-4">Score</th>
-                      <th className="text-left py-3 px-4">Status</th>
-                      <th className="text-left py-3 px-4">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {candidateAnalytics.attempts.map((attempt, index) => (
-                      <tr key={index} className="border-b border-zinc-800 hover:bg-zinc-800/50">
-                        <td className="py-3 px-4">#{attempt.attempt}</td>
-                        <td className="py-3 px-4 font-mono text-sm">{attempt.quiz_id}</td>
-                        <td className="py-3 px-4">
-                          <span className={`font-semibold ${
+              <div className="flex items-center">
+                <Target className="w-8 h-8 text-green-500 mr-3" />
+                <div>
+                  <div className="text-2xl font-bold">{candidateAnalytics.average_score}%</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Highest Score</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center">
+                <Trophy className="w-8 h-8 text-yellow-500 mr-3" />
+                <div>
+                  <div className="text-2xl font-bold">{candidateAnalytics.highest_score}%</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detailed Attempts */}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <BarChart3 className="w-5 h-5 mr-2" />
+              Detailed Attempt Results
+            </CardTitle>
+            <CardDescription>
+              Performance breakdown for each quiz attempt
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {candidateAnalytics.attempts.map((attempt, index) => (
+                <div key={index} className="bg-zinc-800 rounded-xl p-6 border border-zinc-700">
+                  {/* Attempt Header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        Attempt #{attempt.attempt}
+                      </div>
+                      <div className="text-zinc-400 text-sm">
+                        {new Date(attempt.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-6">
+                      <div className="text-right">
+                        <p className="text-sm text-zinc-400">Overall Score</p>
+                        <div className="flex items-center">
+                          <p className={`text-2xl font-bold ${
                             attempt.result.score >= 80 ? 'text-green-400' : 
                             attempt.result.score >= 60 ? 'text-yellow-400' : 'text-red-400'
                           }`}>
                             {attempt.result.score}%
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge className={attempt.result.passed ? 'bg-green-600' : 'bg-red-600'}>
+                          </p>
+                          <Badge className={`ml-2 ${
+                            attempt.result.passed ? 'bg-green-600' : 'bg-red-600'
+                          }`}>
                             {attempt.result.passed ? 'Passed' : 'Failed'}
                           </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-gray-400">
-                          {new Date(attempt.created_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-zinc-400">Questions</p>
+                        <p className="text-lg font-semibold text-white">
+                          {attempt.result.correct_answers}/{attempt.result.total_questions}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Topic Breakdown */}
+                  {attempt.result.topic_percentages && attempt.result.topic_percentages.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-medium text-white mb-4 flex items-center">
+                        <TrendingUp className="w-5 h-5 mr-2 text-purple-400" />
+                        Topic Performance
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {attempt.result.topic_percentages.map((topic, topicIndex) => (
+                          <div key={topicIndex} className="bg-zinc-900/50 rounded-lg p-4 border border-zinc-600/30">
+                            <div className="flex items-center justify-between mb-3">
+                              <h5 className="font-medium text-white">{topic.name}</h5>
+                              <div className="flex items-center space-x-2">
+                                <span className={`text-lg font-bold ${
+                                  topic.percentage >= 80 ? 'text-green-400' : 
+                                  topic.percentage >= 60 ? 'text-yellow-400' : 'text-red-400'
+                                }`}>
+                                  {topic.percentage}%
+                                </span>
+                                {topic.percentage >= 90 && (
+                                  <Award className="w-4 h-4 text-yellow-400" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between text-zinc-400">
+                                <span>Correct:</span>
+                                <span className="text-white">{topic.correct_questions}/{topic.total_questions}</span>
+                              </div>
+                              <div className="w-full bg-zinc-700 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full transition-all duration-500 ${
+                                    topic.percentage >= 80 ? 'bg-green-500' :
+                                    topic.percentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`}
+                                  style={{ width: `${Math.min(topic.percentage, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Additional Info */}
+                  {attempt.result.role && (
+                    <div className="mt-4 pt-4 border-t border-zinc-700">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-zinc-400">Role:</span>
+                        <span className="text-white font-medium">{attempt.result.role}</span>
+                      </div>
+                      {attempt.result.time_taken !== undefined && (
+                        <div className="flex items-center justify-between text-sm mt-2">
+                          <span className="text-zinc-400">Time Taken:</span>
+                          <span className="text-white font-medium">{attempt.result.time_taken} min</span>
+                        </div>
+                      )}
+                      {attempt.result.quiz_experience && (
+                        <div className="flex items-center justify-between text-sm mt-2">
+                          <span className="text-zinc-400">Experience Level:</span>
+                          <span className="text-white font-medium">{attempt.result.quiz_experience} years</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
         </div>
       </div>
     </div>

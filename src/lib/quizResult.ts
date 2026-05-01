@@ -1,4 +1,4 @@
-import { QuizUserResponse, CandidateAnalytics, ErrorResponse } from '@/types/quizResult';
+import { QuizUserResponse, CandidateAnalytics, ErrorResponse, TopicPercentage } from '@/types/quizResult';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL || '';
 
@@ -13,8 +13,19 @@ export class QuizResultAPI {
   /**
    * Helper function to safely extract topic percentages from result
    */
-  static getTopicPercentages(result: QuizUserResponse['result']): { [key: string]: number } | undefined {
+  static getTopicPercentages(result: QuizUserResponse['result']): TopicPercentage[] | undefined {
     return result.topic_percentages;
+  }
+
+  /**
+   * Helper function to convert topic percentages array to key-value object for analytics
+   */
+  static convertTopicPercentagesToObject(topicPercentages: TopicPercentage[]): { [key: string]: number } {
+    const result: { [key: string]: number } = {};
+    topicPercentages.forEach(topic => {
+      result[topic.name] = topic.percentage;
+    });
+    return result;
   }
 
   /**
@@ -87,25 +98,49 @@ export class QuizResultAPI {
         throw new Error('No quiz results found for this candidate');
       }
 
+      // Convert to QuizUserResponse format
+      const formattedResults: QuizUserResponse[] = allResults.map(result => ({
+        id: result.id,
+        quiz_id: result.quiz_id,
+        owner_id: result.owner_id,
+        username: result.username,
+        user_email: result.user_email,
+        user_answers: result.user_answers || [],
+        result: {
+          total_questions: result.result?.total_questions || 0,
+          correct_answers: result.result?.correct_answers || 0,
+          score: result.result?.score || 0,
+          passed: result.result?.passed || false,
+          total_percentages: result.result?.total_percentages,
+          topic_percentages: result.result?.topic_percentages || [],
+          role: result.result?.role,
+          time_taken: result.result?.time_taken,
+          quiz_experience: result.result?.quiz_experience,
+        },
+        attempt: result.attempt || 1,
+        created_at: result.created_at,
+        updated_at: result.updated_at,
+      }));
+
       // Calculate analytics
-      const totalAttempts = allResults.length;
-      const scores = allResults.map(result => result.result.score);
+      const totalAttempts = formattedResults.length;
+      const scores = formattedResults.map(result => result.result.score);
       const averageScore = scores.reduce((sum, score) => sum + score, 0) / totalAttempts;
       const highestScore = Math.max(...scores);
-      const latestAttempt = Math.max(...allResults.map(result => result.attempt));
+      const latestAttempt = Math.max(...formattedResults.map(result => result.attempt));
 
       // Calculate topic performance
       const topicPerformance: { [topic: string]: { total: number; average: number; highest: number } } = {};
       
-      allResults.forEach(result => {
+      formattedResults.forEach(result => {
         const topicPercentages = this.getTopicPercentages(result.result);
         if (topicPercentages) {
-          Object.entries(topicPercentages).forEach(([topic, percentage]) => {
-            if (!topicPerformance[topic]) {
-              topicPerformance[topic] = { total: 0, average: 0, highest: 0 };
+          topicPercentages.forEach(topic => {
+            if (!topicPerformance[topic.name]) {
+              topicPerformance[topic.name] = { total: 0, average: 0, highest: 0 };
             }
-            topicPerformance[topic].total += percentage;
-            topicPerformance[topic].highest = Math.max(topicPerformance[topic].highest, percentage);
+            topicPerformance[topic.name].total += topic.percentage;
+            topicPerformance[topic.name].highest = Math.max(topicPerformance[topic.name].highest, topic.percentage);
           });
         }
       });
@@ -116,14 +151,14 @@ export class QuizResultAPI {
       });
 
       return {
-        username: allResults[0].username,
-        email: allResults[0].user_email,
+        username: formattedResults[0].username,
+        email: formattedResults[0].user_email,
         total_attempts: totalAttempts,
         average_score: Math.round(averageScore * 100) / 100,
         highest_score: highestScore,
         latest_attempt: latestAttempt,
         topic_performance: topicPerformance,
-        attempts: allResults.sort((a, b) => b.attempt - a.attempt) // Sort by attempt number descending
+        attempts: formattedResults.sort((a, b) => b.attempt - a.attempt) // Sort by attempt number descending
       };
     } catch (error) {
       throw new Error(`Failed to get candidate analytics: ${error instanceof Error ? error.message : 'Unknown error'}`);
