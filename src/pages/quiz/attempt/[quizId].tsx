@@ -224,14 +224,8 @@ const QuizAttemptPage = () => {
       return acc;
     }, {} as Record<string, Array<{ question: Question; globalIndex: number }>>);
 
-    // Find matching techStack info for each actual topic
+    // Calculate performance for each actual topic
     const topicPerformance = Object.entries(questionsByTopic).map(([topicName, topicQuestions]) => {
-      // Find matching techStack topic (case-insensitive partial match)
-      const matchingTechStack = quizData.techStack?.find(tech => 
-        tech.name.toLowerCase().includes(topicName.toLowerCase()) || 
-        topicName.toLowerCase().includes(tech.name.toLowerCase())
-      );
-      
       // Calculate performance for this topic
       let correctInTopic = 0;
       topicQuestions.forEach(({ question, globalIndex }) => {
@@ -246,7 +240,7 @@ const QuizAttemptPage = () => {
 
       return {
         name: topicName,
-        weight: matchingTechStack?.weight || 0,
+        weight: 0, // No weight needed - using actual question distribution
         totalQuestions: topicQuestions.length,
         correctAnswers: correctInTopic,
         percentage: topicPercentage
