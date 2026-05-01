@@ -19,10 +19,10 @@ export function QuestionCard({ question, questionNumber, onEdit, onDelete, isPub
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-xl font-bold text-white">{questionNumber}.</span>
             <Badge className="ml-2 bg-blue-500/20 text-blue-400 border-blue-500/30">
-              {question.type.replace(/_/g, " ") === 'code analysis' ? '💻 Code Analysis' : '📚 Theory'}
+              {question.type.replace(/_/g, " ") === 'code analysis' ? 'Code Analysis' : 'Theory'}
             </Badge>
             <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-              🏷️ {question.topic || 'Unknown Topic'}
+             {question.topic || 'Unknown Topic'}
             </Badge>
           </div>
           {!isPublished && (
