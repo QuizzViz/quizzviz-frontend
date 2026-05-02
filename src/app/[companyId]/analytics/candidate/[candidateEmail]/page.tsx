@@ -657,7 +657,7 @@ export default function CandidateDetailPage() {
       ]);
       autoTable(doc, { head: [["Attempt", "Quiz ID", "Score", "Quiz Role", "Date"]], body: attemptsData, startY: doc.lastAutoTable?.finalY || 150, theme: "grid", styles: { fontSize: 10 } });
       doc.save(`${candidateAnalytics.username.replace(/\s+/g, "_")}_quiz_results.pdf`);
-      toast({ title: "Success", description: "PDF downloaded successfully" });
+      toast({ title: "Success", description: "PDF downloaded successfully", className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30" });
     } catch (error) {
       toast({ title: "Error", description: "Failed to download PDF", variant: "destructive" });
     } finally {
