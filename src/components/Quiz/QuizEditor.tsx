@@ -529,6 +529,7 @@ export function QuizEditor() {
         }}
         onSubmit={handleSaveQuestion}
         initialData={formData}
+        techStack={currentQuiz?.techStack || currentQuiz?.tech_stack}
       />
 
       <ShareQuizModal
