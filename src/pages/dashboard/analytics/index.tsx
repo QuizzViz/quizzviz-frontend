@@ -842,13 +842,13 @@ export default function ResultsDashboard() {
                                               >
                                                 <Link href={`/${finalCompanyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`}
                                                 target="_blank"
-                                                rel="noopener noreferrer" className="absolute inset-0 z-0" aria-label={`View ${c.username}'s analytics`}/>
-                                                <TableCell onClick={(e) => e.stopPropagation()} className="relative z-10">
+                                                rel="noopener noreferrer" className="absolute inset-0 z-20" aria-label={`View ${c.username}'s analytics`}/>
+                                                <TableCell className="relative z-30">
                                                   <input
                                                     type="checkbox"
                                                     checked={!!selectedUsers[key]}
                                                     onChange={() => toggleUserSelection(key)}
-                                                    className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800 relative z-10"
+                                                    className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800 relative z-40"
                                                   />
                                                 </TableCell>
                                                 <TableCell className="font-medium relative z-10">{c.username}</TableCell>
