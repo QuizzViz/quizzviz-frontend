@@ -371,22 +371,28 @@ export default function CandidateDetailPage() {
                 {candidateAnalytics.attempts.map((attempt, index) => (
                   <div
                     key={index}
-                    className="group relative overflow-hidden rounded-2xl border border-zinc-700/40 bg-gradient-to-br from-zinc-900/80 to-[#0d0d14] hover:border-purple-500/30 transition-all duration-300"
+                    className="group relative overflow-hidden rounded-2xl border border-zinc-700/40 bg-gradient-to-br from-zinc-900/80 via-[#0d0d14] to-zinc-950/60 hover:border-purple-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10"
                   >
                     {/* Left accent stripe based on score */}
                     <div
-                      className={`absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-gradient-to-b ${getScoreRingColor(attempt.result.score)}`}
+                      className={`absolute left-0 top-0 h-full w-1.5 rounded-l-2xl bg-gradient-to-b ${getScoreRingColor(attempt.result.score)} shadow-lg`}
+                    />
+                    
+                    {/* Subtle glow effect */}
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-r ${getScoreRingColor(attempt.result.score)} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}
                     />
 
-                    <div className="pl-6 pr-6 pt-5 pb-5">
+                    <div className="pl-7 pr-6 pt-6 pb-6 relative">
                       {/* Attempt top row */}
                       <div className="flex items-center justify-between flex-wrap gap-4 mb-5">
                         {/* Left: badge + date */}
-                        <div className="flex items-center gap-3">
-                          <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white px-3.5 py-1 rounded-full text-xs font-bold tracking-wide shadow-md shadow-purple-500/20">
-                            Attempt #{attempt.attempt}
+                        <div className="flex items-center gap-4">
+                          <span className="relative bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white px-4 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-lg shadow-purple-500/30 border border-purple-400/20">
+                            <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <span className="relative">Attempt #{attempt.attempt}</span>
                           </span>
-                          <span className="text-zinc-400 text-sm">
+                          <span className="text-zinc-400 text-sm font-medium">
                             {new Date(attempt.created_at).toLocaleDateString("en-US", {
                               year: "numeric",
                               month: "short",
@@ -398,38 +404,34 @@ export default function CandidateDetailPage() {
                         </div>
 
                         {/* Right: score + questions */}
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-8">
                           <div className="text-right">
-                            <p className="text-xs text-zinc-500 uppercase tracking-wide mb-1">Score</p>
-                            <div className="flex items-center gap-2">
-                              <span className={`text-2xl font-bold ${getScoreColor(attempt.result.score)}`}>
+                            <p className="text-xs text-zinc-500 uppercase tracking-wide mb-1.5 font-semibold">Score</p>
+                            <div className="flex items-center gap-3">
+                              <span className={`text-3xl font-bold ${getScoreColor(attempt.result.score)} drop-shadow-sm`}>
                                 {attempt.result.score}%
                               </span>
-                              {attempt.result.passed ? (
-                                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                                  <CheckCircle2 className="w-3 h-3" /> Passed
-                                </span>
-                              ) : (
-                                <span className="flex items-center gap-1 text-xs font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-full">
-                                  <XCircle className="w-3 h-3" /> Failed
+                              {attempt.result.passed && (
+                                <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full shadow-sm">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Passed
                                 </span>
                               )}
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-xs text-zinc-500 uppercase tracking-wide mb-1">Correct</p>
-                            <p className="text-lg font-bold text-white">
+                            <p className="text-xs text-zinc-500 uppercase tracking-wide mb-1.5 font-semibold">Correct</p>
+                            <p className="text-xl font-bold text-white">
                               {attempt.result.correct_answers}
-                              <span className="text-zinc-500 font-normal text-sm">/{attempt.result.total_questions}</span>
+                              <span className="text-zinc-500 font-normal text-base ml-1">/{attempt.result.total_questions}</span>
                             </p>
                           </div>
                         </div>
                       </div>
 
                       {/* Score progress bar */}
-                      <div className="mb-5 h-1.5 w-full rounded-full bg-zinc-800">
+                      <div className="mb-6 h-2 w-full rounded-full bg-zinc-800/60 overflow-hidden">
                         <div
-                          className={`h-1.5 rounded-full bg-gradient-to-r ${getScoreRingColor(attempt.result.score)} transition-all duration-500`}
+                          className={`h-2 rounded-full bg-gradient-to-r ${getScoreRingColor(attempt.result.score)} transition-all duration-700 ease-out shadow-sm`}
                           style={{ width: `${Math.min(attempt.result.score, 100)}%` }}
                         />
                       </div>
@@ -437,15 +439,17 @@ export default function CandidateDetailPage() {
                       {/* Topic Breakdown */}
                       {attempt.result.topic_percentages && attempt.result.topic_percentages.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-semibold text-zinc-300 mb-3 flex items-center gap-2 uppercase tracking-wide">
-                            <TrendingUp className="w-4 h-4 text-purple-400" />
-                            Topic Breakdown
+                          <h4 className="text-sm font-semibold text-zinc-300 mb-4 flex items-center gap-2.5 uppercase tracking-wide">
+                            <div className="p-1.5 rounded-lg bg-purple-500/15 border border-purple-500/20">
+                              <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
+                            </div>
+                            Topic Performance
                           </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {attempt.result.topic_percentages.map((topic, topicIndex) => (
                               <div
                                 key={topicIndex}
-                                className="relative rounded-xl border border-zinc-700/40 bg-zinc-900/60 p-4 hover:border-zinc-600/60 transition-all"
+                                className="relative rounded-xl border border-zinc-700/40 bg-gradient-to-br from-zinc-900/60 to-zinc-800/40 p-4 hover:border-zinc-600/60 transition-all duration-200 hover:shadow-md hover:shadow-zinc-900/50"
                               >
                                 {/* Topic header */}
                                 <div className="flex items-start justify-between mb-3">
@@ -461,17 +465,17 @@ export default function CandidateDetailPage() {
                                 </div>
 
                                 {/* Correct count */}
-                                <div className="flex justify-between text-xs text-zinc-500 mb-2">
-                                  <span>Correct</span>
-                                  <span className="text-zinc-300 font-medium">
+                                <div className="flex justify-between text-xs text-zinc-500 mb-3">
+                                  <span className="font-medium">Correct</span>
+                                  <span className="text-zinc-300 font-semibold">
                                     {topic.correct_questions}/{topic.total_questions}
                                   </span>
                                 </div>
 
                                 {/* Progress bar */}
-                                <div className="h-1.5 w-full rounded-full bg-zinc-800">
+                                <div className="h-2 w-full rounded-full bg-zinc-800/60 overflow-hidden">
                                   <div
-                                    className={`h-1.5 rounded-full bg-gradient-to-r ${getTopicBarColor(topic.percentage)} transition-all duration-500`}
+                                    className={`h-2 rounded-full bg-gradient-to-r ${getTopicBarColor(topic.percentage)} transition-all duration-700 ease-out shadow-sm`}
                                     style={{ width: `${Math.min(topic.percentage, 100)}%` }}
                                   />
                                 </div>
@@ -483,21 +487,21 @@ export default function CandidateDetailPage() {
 
                       {/* Additional Info */}
                       {attempt.result.role && (
-                        <div className="mt-4 pt-4 border-t border-zinc-800/60 flex flex-wrap gap-x-6 gap-y-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-zinc-500">Role:</span>
-                            <span className="text-zinc-200 font-medium">{attempt.result.role}</span>
+                        <div className="mt-5 pt-5 border-t border-zinc-800/60 flex flex-wrap gap-x-8 gap-y-3">
+                          <div className="flex items-center gap-2.5 text-sm">
+                            <span className="text-zinc-500 font-medium">Role:</span>
+                            <span className="text-zinc-200 font-semibold">{attempt.result.role}</span>
                           </div>
                           {attempt.result.time_taken !== undefined && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-zinc-500">Time Taken:</span>
-                              <span className="text-zinc-200 font-medium">{attempt.result.time_taken} min</span>
+                            <div className="flex items-center gap-2.5 text-sm">
+                              <span className="text-zinc-500 font-medium">Time Taken:</span>
+                              <span className="text-zinc-200 font-semibold">{attempt.result.time_taken} min</span>
                             </div>
                           )}
                           {attempt.result.quiz_experience && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-zinc-500">Experience:</span>
-                              <span className="text-zinc-200 font-medium">{attempt.result.quiz_experience} yrs</span>
+                            <div className="flex items-center gap-2.5 text-sm">
+                              <span className="text-zinc-500 font-medium">Experience:</span>
+                              <span className="text-zinc-200 font-semibold">{attempt.result.quiz_experience} yrs</span>
                             </div>
                           )}
                         </div>
