@@ -11,6 +11,7 @@ interface QuestionFormProps {
   onSubmit: (data: QuestionFormData) => void;
   initialData: QuestionFormData;
   isSubmitting?: boolean;
+  techStack?: Array<{ name: string; weight: number }>;
 }
 
 export function QuestionForm({ 
@@ -18,7 +19,8 @@ export function QuestionForm({
   onClose, 
   onSubmit, 
   initialData,
-  isSubmitting = false 
+  isSubmitting = false,
+  techStack = []
 }: QuestionFormProps) {
   const [form, setForm] = React.useState<QuestionFormData>(initialData);
 
@@ -49,6 +51,16 @@ export function QuestionForm({
       } 
     }));
   };
+
+  // Use tech stack items directly as available topics
+  const availableTopics = React.useMemo(() => {
+    if (!techStack || techStack.length === 0) {
+      return [];
+    }
+    
+    // Return tech stack items as they are - these are the topics from quiz generation
+    return techStack.map(tech => tech.name);
+  }, [techStack]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,18 +134,11 @@ export function QuestionForm({
                   required
                 >
                   <option value="">Select Topic</option>
-                  <option value="System Design">System Design</option>
-                  <option value="Networking">Networking</option>
-                  <option value="Database">Database</option>
-                  <option value="OOP">OOP</option>
-                  <option value="Algorithms">Algorithms</option>
-                  <option value="Data Structures">Data Structures</option>
-                  <option value="Web Development">Web Development</option>
-                  <option value="Mobile Development">Mobile Development</option>
-                  <option value="Cloud Computing">Cloud Computing</option>
-                  <option value="DevOps">DevOps</option>
-                  <option value="Security">Security</option>
-                  <option value="Testing">Testing</option>
+                  {availableTopics.map((topic) => (
+                    <option key={topic} value={topic}>
+                      {topic}
+                    </option>
+                  ))}
                 </select>
               </div>
               
