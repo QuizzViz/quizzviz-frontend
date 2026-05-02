@@ -653,9 +653,9 @@ export default function CandidateDetailPage() {
       autoTable(doc, { head: [["Topic", "Average %", "Highest %"]], body: topicData, startY: 100, theme: "grid", styles: { fontSize: 10 } });
       const attemptsData = candidateAnalytics.attempts.map((attempt) => [
         attempt.attempt.toString(), attempt.quiz_id, `${attempt.result.score}%`,
-        attempt.result.passed ? "Yes" : "No", new Date(attempt.created_at).toLocaleDateString(),
+        attempt.result.role || "N/A", new Date(attempt.created_at).toLocaleDateString(),
       ]);
-      autoTable(doc, { head: [["Attempt", "Quiz ID", "Score", "Passed", "Date"]], body: attemptsData, startY: doc.lastAutoTable?.finalY || 150, theme: "grid", styles: { fontSize: 10 } });
+      autoTable(doc, { head: [["Attempt", "Quiz ID", "Score", "Quiz Role", "Date"]], body: attemptsData, startY: doc.lastAutoTable?.finalY || 150, theme: "grid", styles: { fontSize: 10 } });
       doc.save(`${candidateAnalytics.username.replace(/\s+/g, "_")}_quiz_results.pdf`);
       toast({ title: "Success", description: "PDF downloaded successfully" });
     } catch (error) {
@@ -950,19 +950,7 @@ export default function CandidateDetailPage() {
                                 <span className="text-zinc-600 font-normal text-base">/{attempt.result.total_questions}</span>
                               </p>
                             </div>
-                            <div className="text-center">
-                              <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Status</p>
-                              {attempt.result.passed ? (
-                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-3 py-1.5 rounded-full">
-                                  <CheckCircle2 className="w-3.5 h-3.5" /> Passed
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/25 px-3 py-1.5 rounded-full">
-                                  <XCircle className="w-3.5 h-3.5" /> Failed
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                                                      </div>
                         </div>
 
                         {/* ── Score progress bar ── */}
