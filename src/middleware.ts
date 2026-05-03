@@ -97,15 +97,6 @@ export default clerkMiddleware(async (auth, request) => {
       redirectResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
       return redirectResponse;
     }
-      
-      // Otherwise redirect to dashboard
-      const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
-      redirectResponse.headers.set('X-Frame-Options', 'DENY');
-      redirectResponse.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
-      redirectResponse.headers.set('X-Content-Type-Options', 'nosniff');
-      redirectResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-      return redirectResponse;
-    }
 
     // If user is not signed in and trying to access protected route, redirect to signup
     if (!userId && !isPublicRoute(request)) {
