@@ -47,11 +47,11 @@ export async function POST(req: NextRequest) {
     const file = formData.get('files') as File;
     const role = formData.get('role') as string;
     const experience = formData.get('experience') as string || "1-3";
-    const numQuestions = parseInt(formData.get('numQuestions') as string) || 10;
-    const theoryQuestionsPercentage = parseInt(formData.get('theoryQuestionsPercentage') as string) || 50;
-    const codeAnalysisQuestionsPercentage = parseInt(formData.get('codeAnalysisQuestionsPercentage') as string) || 50;
-    const isPublish = formData.get('isPublish') === 'true';
-    const isDeleted = formData.get('isDeleted') === 'true';
+    const numQuestions = parseInt(formData.get('num_questions') as string) || 10;
+    const theoryQuestionsPercentage = parseInt(formData.get('theory_questions_percentage') as string) || 50;
+    const codeAnalysisQuestionsPercentage = parseInt(formData.get('code_analysis_questions_percentage') as string) || 50;
+    const isPublish = formData.get('is_publish') === 'true';
+    const isDeleted = formData.get('is_deleted') === 'true';
 
     // Validate required fields
     if (!file) {
@@ -81,6 +81,16 @@ export async function POST(req: NextRequest) {
     backendFormData.append('company_id', companyId);
     backendFormData.append('is_publish', isPublish.toString());
     backendFormData.append('is_deleted', isDeleted.toString());
+
+    // Debug: Log all FormData entries
+    console.log('Backend FormData contents:');
+    for (const [key, value] of backendFormData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    }
 
     console.log('Sending file-based quiz generation request:', {
       url: BACKEND_URL,

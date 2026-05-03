@@ -301,6 +301,13 @@ const QuizAttemptPage = () => {
       
       let correct = 0;
       const total = quizData.questions.length
+      
+      // Ensure quizData.questions is an array before mapping
+      if (!Array.isArray(quizData.questions)) {
+        console.error('quizData.questions is not an array:', quizData.questions);
+        throw new Error('Invalid quiz data: Questions must be an array');
+      }
+      
       quizData.questions.map((question, index) => {
         const answer = allAnswers[index] || '';
         const isCorrect = answer === question.correct_answer;
@@ -811,6 +818,12 @@ if (typeof data.quiz === 'string') {
   console.error('Unexpected quiz data type:', typeof data.quiz, data.quiz);
   throw new Error('Invalid quiz data format: Quiz data is not a string or array');
 }
+
+        // Ensure parsedQuiz is an array before proceeding
+        if (!Array.isArray(parsedQuiz)) {
+          console.error('parsedQuiz is not an array:', parsedQuiz);
+          throw new Error('Invalid quiz data: Questions must be an array');
+        }
 
         // Validate each question structure
         parsedQuiz = parsedQuiz.map((q, index) => {
