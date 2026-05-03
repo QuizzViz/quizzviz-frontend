@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Download, Copy, FileText, Code, FileCode } from 'lucide-react';
+import { Copy, Download, X, FileText, Trash2, Code, FileCode } from "lucide-react";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -227,51 +227,53 @@ export default function FilePreviewModal({
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyContent}
-              disabled={!content || isLoading}
-              className="h-8"
-            >
-              <Copy className="h-4 w-4 mr-1" />
-              Copy
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownload}
-              disabled={!file}
-              className="h-8"
-            >
-              <Download className="h-4 w-4 mr-1" />
-              Download
-            </Button>
-            {onRemove && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleRemove}
-                disabled={!file}
-                className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-800"
+                onClick={handleCopyContent}
+                disabled={!content || isLoading}
+                className="h-8 border-green-200 hover:bg-green-50 dark:border-green-800 dark:hover:bg-green-950/20"
               >
-                <X className="h-4 w-4 mr-1" />
-                Remove
+                <Copy className="h-4 w-4 mr-1" />
+                Copy
               </Button>
-            )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownload}
+                disabled={!file}
+                className="h-8 border-blue-200 hover:bg-blue-50 dark:border-blue-800 dark:hover:bg-blue-950/20"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download
+              </Button>
+              {onRemove && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemove}
+                  disabled={!file}
+                  className="h-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 border-red-200 dark:border-red-800"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Remove
+                </Button>
+              )}
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-8"
+              className="h-8 w-8 p-0 hover:bg-muted"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
@@ -290,15 +292,15 @@ export default function FilePreviewModal({
             </div>
           ) : (
             <div className="h-full">
-              <ScrollArea className="h-full max-h-[60vh] border rounded-lg">
-                <div className="p-4">
+              <div className="h-full overflow-auto border rounded-lg bg-muted/30">
+                <div className="p-6">
                   {content ? (
                     <pre className={cn(
                       "text-sm leading-relaxed whitespace-pre-wrap break-words overflow-x-auto",
-                      "bg-muted/30 rounded-lg p-4 font-mono min-h-full",
+                      "font-mono text-xs min-h-full",
                       getLanguageClass(file?.name || '')
                     )}>
-                      <code className="text-xs">{content}</code>
+                      <code>{content}</code>
                     </pre>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
@@ -306,7 +308,7 @@ export default function FilePreviewModal({
                     </div>
                   )}
                 </div>
-              </ScrollArea>
+              </div>
             </div>
           )}
         </div>
