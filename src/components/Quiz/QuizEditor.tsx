@@ -81,12 +81,21 @@ export function QuizEditor() {
     queryKey: ["quizzes", companyInfo?.id],
     enabled: isUserLoaded && !!user?.id && !!companyInfo?.id && !isCompanyLoading,
     queryFn: async () => {
-      const res = await fetch(`/api/quizzes?companyId=${encodeURIComponent(companyInfo!.id)}`);
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(errText || `Failed to fetch quizzes (${res.status})`);
+      try {
+        console.log('QuizEditor - Fetching quizzes for company:', companyInfo?.id);
+        const res = await fetch(`/api/quizzes?companyId=${encodeURIComponent(companyInfo!.id)}`);
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error('QuizEditor - Failed to fetch quizzes:', res.status, errText);
+          throw new Error(errText || `Failed to fetch quizzes (${res.status})`);
+        }
+        const data = await res.json();
+        console.log('QuizEditor - Successfully fetched quizzes:', data.length, 'items');
+        return data;
+      } catch (error) {
+        console.error('QuizEditor - Error fetching quizzes:', error);
+        throw error;
       }
-      return res.json();
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -467,25 +476,20 @@ export function QuizEditor() {
     setIsModalOpen(true);
   };
 
-  // Debug: Log loading states
-  console.log('QuizEditor Debug - Loading states:', {
-    isUserLoaded,
-    isCompanyLoading,
-    isQuizzesLoading,
-    isLoadingPublished,
-    currentQuiz: currentQuiz ? 'found' : 'not found',
-    publishedQuiz: publishedQuiz ? 'found' : 'not found',
-    companyInfo: companyInfo ? 'found' : 'not found',
-    quizzesData: quizzesData ? quizzesData.length + ' items' : 'not found',
-    quizId
-  });
+  // Enhanced loading states with better error handling
+  if (!isUserLoaded || isCompanyLoading || isQuizzesLoading) {
+    console.log('QuizEditor - Still loading basic data...');
+    return <PageLoading fullScreen />;
+  }
 
-  if (!isUserLoaded || isCompanyLoading || isQuizzesLoading || (currentQuiz?.is_publish && isLoadingPublished)) {
-    console.log('QuizEditor - Still loading...');
+  // Additional loading for published quiz data if needed
+  if (currentQuiz?.is_publish && isLoadingPublished) {
+    console.log('QuizEditor - Loading published quiz data...');
     return <PageLoading fullScreen />;
   }
 
   if (quizzesError) {
+    console.error('QuizEditor - Quizzes error:', quizzesError);
     return (
       <div className="p-6 bg-red-950/40 border border-red-500/50 rounded-lg text-red-300">
         Failed to load quiz: {quizzesError instanceof Error ? quizzesError.message : "Unknown error"}
@@ -493,8 +497,10 @@ export function QuizEditor() {
     );
   }
 
+  // Check if currentQuiz is undefined (shouldn't happen if quizId exists and data is loaded)
   if (!currentQuiz) {
-    return <div className="text-center py-10 text-gray-400">Quiz not found</div>;
+    console.warn('QuizEditor - Current quiz is undefined despite having quizId:', quizId);
+    return <div className="text-center py-10 text-gray-400">Quiz data not available</div>;
   }
 
   return (
@@ -552,7 +558,7 @@ export function QuizEditor() {
         }}
         onSubmit={handleSaveQuestion}
         initialData={formData}
-        techStack={currentQuiz?.techStack || currentQuiz?.tech_stack}
+        techStack={Array.isArray(currentQuiz?.techStack) ? currentQuiz.techStack : Array.isArray(currentQuiz?.tech_stack) ? currentQuiz.tech_stack : []}
       />
 
       <ShareQuizModal
