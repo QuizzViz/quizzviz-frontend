@@ -1,5 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { QuizResult, ErrorResponse } from '@/types/quizResult';
+import { getAuth } from "@clerk/nextjs/server";
+import { getCompanyId } from '@/lib/company';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}`;
 
@@ -12,12 +14,22 @@ interface QuizResultResponse {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get company ID from query parameters (auth no longer required)
+    // Get auth info
+    const { getToken, userId } = getAuth(request);
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized - User not authenticated' },
+        { status: 401 }
+      );
+    }
+    
+    // Get company ID from query parameters
     const { searchParams } = new URL(request.url);
     const company_id = searchParams.get('company_id');
     const quizId = searchParams.get('quiz_id');
     const skip = searchParams.get('skip') || '0';
-    const limit = searchParams.get('limit') || '1000';
+    const limit = searchParams.get('limit') || '10000';
 
     if (!company_id) {
       return NextResponse.json(
@@ -26,25 +38,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('Company ID from query params:', company_id);
+    const token = await getToken();
+    
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+    }
 
     // Build the URL with query parameters
     let url: string;
     
     if (quizId) {
       // Get results for a specific quiz
-      url = `${API_BASE_URL}/result/owner/${encodeURIComponent(company_id)}/quiz/${encodeURIComponent(quizId)}`;
+      url = `${API_BASE_URL}/result/owner/${encodeURIComponent(company_id)}/quiz/${encodeURIComponent(quizId)}?skip=${skip}&limit=${limit}`;
     } else {
       // Get all results for the company
-      url = `${API_BASE_URL}/result/owner/${encodeURIComponent(company_id)}`;
+      url = `${API_BASE_URL}/result/owner/${encodeURIComponent(company_id)}?skip=${skip}&limit=${limit}`;
     }
 
-    // Add pagination parameters
-    const apiUrl = new URL(url);
-    apiUrl.searchParams.append('skip', skip);
-    apiUrl.searchParams.append('limit', limit);
-
-    console.log('Making request to:', apiUrl.toString());
+    console.log('Making request to:', url);
 
     // Get auth token from request headers and pass to backend
     const authHeader = request.headers.get('authorization');
@@ -56,7 +70,7 @@ export async function GET(request: NextRequest) {
       headers['Authorization'] = authHeader;
     }
 
-    const response = await fetch(apiUrl.toString(), {
+    const response = await fetch(url, {
       method: 'GET',
       headers,
     });
