@@ -9,26 +9,33 @@ import { DashboardHeader } from "@/components/Dashboard/Header";
 import { QuizEditor } from "@/components/Quiz/QuizEditor";
 import { useUserPlanContext } from "@/contexts/UserPlanContext";
 import { PageLoading } from "@/components/ui/page-loading";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 export default function QuizDetailsPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const { toast } = useToast();
   const { plan, isLoading: isPlanLoading } = useUserPlanContext();
-  
-  // Get the quiz ID from the URL
+
   const { quizId } = router.query as { quizId?: string };
-  
-  // Get user info for the page title
-  const userName = user?.fullName || user?.username || user?.emailAddresses?.[0]?.emailAddress || "User";
+
+  const userName =
+    user?.fullName ||
+    user?.username ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    "User";
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
+
+  // ✅ THE FIX: Wait for router to be ready before accessing router.query
+  const isRouterReady = router.isReady;
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Head>
         <title>Quiz Editor | QuizzViz</title>
       </Head>
-      
+
       <SignedIn>
         <div className="flex min-h-screen">
           {/* Sidebar */}
@@ -39,25 +46,27 @@ export default function QuizDetailsPage() {
             navTextSizeClass="text-base"
             itemPaddingClass="p-3.5"
           />
-          
+
           {/* Main content */}
           <div className="flex-1 flex flex-col relative z-10">
-            <DashboardHeader 
-               />
-            
+            <DashboardHeader />
+
             <main className="flex-1 p-6 pt-14 relative">
-              {(!isLoaded || isPlanLoading) ? (
+              {/* ✅ THE FIX: Include !isRouterReady in the loading condition */}
+              {!isRouterReady || !isLoaded || isPlanLoading ? (
                 <PageLoading fullScreen />
               ) : !quizId ? (
                 <div className="text-white/70">No quiz selected.</div>
               ) : (
-                <QuizEditor />
+                <ErrorBoundary>
+                  <QuizEditor />
+                </ErrorBoundary>
               )}
             </main>
           </div>
         </div>
       </SignedIn>
-      
+
       <SignedOut>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">

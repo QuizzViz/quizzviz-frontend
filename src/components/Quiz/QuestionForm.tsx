@@ -54,12 +54,16 @@ export function QuestionForm({
 
   // Use tech stack items directly as available topics
   const availableTopics = React.useMemo(() => {
-    if (!techStack || techStack.length === 0) {
+    if (!techStack || !Array.isArray(techStack) || techStack.length === 0) {
       return [];
     }
     
-    // Return tech stack items as they are - these are the topics from quiz generation
-    return techStack.map(tech => tech.name);
+    // Return tech stack items as strings - these are the topics from quiz generation
+    return techStack.map(tech => {
+      if (typeof tech === 'string') return tech;
+      if (typeof tech === 'object' && tech?.name) return tech.name;
+      return String(tech);
+    }).filter(Boolean);
   }, [techStack]);
 
   const handleSubmit = (e: React.FormEvent) => {
