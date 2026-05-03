@@ -55,13 +55,10 @@ export default function Dashboard() {
   const maxQuestions = 100; // Enterprise plan limit
   const quizLimit = 20; // Monthly quiz limit
 
-  // Simulate loading data
+  // Remove artificial delay - let TanStack Query handle caching efficiently
   useEffect(() => {
     if (isLoaded) {
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
-      return () => clearTimeout(timer);
+      setIsLoading(false);
     }
   }, [isLoaded]);
 

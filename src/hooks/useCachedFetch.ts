@@ -67,11 +67,11 @@ export function useCachedFetch<TData = unknown, TError = Error>(
 
       return response.json();
     },
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes (cache time)
+    staleTime: 60 * 1000, // 1 minute - balance between freshness and performance
+    gcTime: 5 * 60 * 1000, // 5 minutes cache time
     enabled,
-    refetchOnWindowFocus: false, // Don't refetch when window regains focus
-    refetchOnMount: true, // Always refetch on mount
+    refetchOnWindowFocus: true, // Refetch when user returns to tab - great for real-time updates
+    refetchOnMount: 'always', // Always refetch on mount for fresh data
     retry: 1,
     ...queryOptions,
   });
