@@ -173,7 +173,21 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
     
     // Notify other tabs that generation has started
     if (quizGeneration?.startGeneration) {
-      quizGeneration.startGeneration(topic.trim());
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        quizGeneration.startGeneration(uploadedFiles[0].name);
+      } else {
+        const validTechStack = techStack.filter(tech => 
+          tech && 
+          typeof tech === 'object' && 
+          'name' in tech && 
+          typeof tech.name === 'string' && 
+          tech.name.trim() !== '' &&
+          'weight' in tech && 
+          typeof tech.weight === 'number' &&
+          tech.weight > 0
+        );
+        quizGeneration.startGeneration(`${role} - ${validTechStack.map((t: any) => t.name).join(', ') || 'Tech Stack'}`);
+      }
     }
 
     try {
@@ -194,6 +208,7 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         formData.append('codeAnalysisQuestionsPercentage', codePct.toString());
         formData.append('isPublish', 'false');
         formData.append('isDeleted', 'false');
+        formData.append('company_id', companyInfo?.id || '');
         
         console.log('Sending file-based quiz generation request:', {
           role,
@@ -223,7 +238,6 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         );
         
         const payload = {
-          topic: topic.trim(),
           experience: experienceToApi(experience),
           num_questions: numQuestions,
           theory_questions_percentage: 100 - codePct,

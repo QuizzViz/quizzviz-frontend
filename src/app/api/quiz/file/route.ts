@@ -1,69 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from "@clerk/nextjs/server";
+import { getCompanyId } from '@/lib/company';
 
-// Helper function to get company ID for a user
-async function getCompanyId(userId: string, token: string): Promise<string> {
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/company/check?owner_id=${encodeURIComponent(userId)}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        cache: 'no-store'
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch company information');
-    }
-
-    const data = await response.json();
-    if (!data.companies || data.companies.length === 0) {
-      throw new Error('No company found for this user');
-    }
-
-    return data.companies[0].id;
-  } catch (error) {
-    console.error('Error fetching company ID:', error);
-    throw new Error('Failed to get company information');
-  }
-}
-
-// Helper function to get company info
-async function getCompanyInfo(userId: string, token: string): Promise<{id: string; name: string; owner_email: string} | null> {
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/company/check?owner_id=${encodeURIComponent(userId)}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        cache: 'no-store'
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch company information');
-    }
-
-    const data = await response.json();
-    if (!data.companies || data.companies.length === 0) {
-      return null;
-    }
-
-    return {
-      id: data.companies[0].id,
-      name: data.companies[0].name,
-      owner_email: data.companies[0].owner_email
-    };
-  } catch (error) {
-    console.error('Error fetching company info:', error);
-    return null;
-  }
-}
 
 const BACKEND_URL = `${process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL}/quizz-from-file`;
 
@@ -98,11 +36,20 @@ export async function POST(req: NextRequest) {
       }, { status: 401 });
     }
     
-    // Get company ID for the user
-    const companyId = await getCompanyId(authUserId, sessionToken);
-
-    // Parse form data
+    // Parse form data first to get company_id
     const formData = await req.formData();
+    const companyIdFromForm = formData.get('company_id') as string;
+    
+    // Create a body object for getCompanyId function
+    const bodyForCompanyId = { company_id: companyIdFromForm };
+    
+    // Get company ID using the same function as tech stack route
+    const companyResult = await getCompanyId(req, bodyForCompanyId);
+    if ('error' in companyResult) {
+      return companyResult.error;
+    }
+    const { company_id: companyId } = companyResult;
+
     
     // Extract required fields
     const file = formData.get('file') as File;
@@ -129,15 +76,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get company information
-    const companyInfo = await getCompanyInfo(authUserId, sessionToken);
-    
-    if (!companyInfo) {
-      return NextResponse.json({
-        error: 'Company not found',
-        details: 'Please create or join a company first'
-      }, { status: 403 });
-    }
+    // Company info is already validated by getCompanyId, no need for additional check
 
     // Create FormData for the backend request
     const backendFormData = new FormData();
