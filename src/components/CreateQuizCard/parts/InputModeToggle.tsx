@@ -114,42 +114,6 @@ export function InputModeToggle({ mode, onModeChange, className }: InputModeTogg
           </div>
         </button>
       </div>
-
-      {/* Mode Description Card */}
-      <div className={cn(
-        'mt-3 p-3.5 rounded-xl border transition-all duration-300',
-        mode === 'tech_stack'
-          ? 'bg-green-500/5 border-green-500/20'
-          : 'bg-blue-500/5 border-blue-500/20'
-      )}>
-        <div className="flex items-start gap-3">
-          <div className={cn(
-            'flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg shadow-sm transition-all duration-300',
-            mode === 'tech_stack'
-              ? 'bg-gradient-to-br from-green-400 to-emerald-500'
-              : 'bg-gradient-to-br from-blue-400 to-indigo-500'
-          )}>
-            {mode === 'tech_stack'
-              ? <BarChart3 className="h-4 w-4 text-white" />
-              : <FileText className="h-4 w-4 text-white" />
-            }
-          </div>
-          <div>
-            <div className={cn(
-              'text-xs font-semibold mb-0.5 transition-colors',
-              mode === 'tech_stack' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'
-            )}>
-              {mode === 'tech_stack' ? 'Tech Stack Mode' : 'File Upload Mode'}
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {mode === 'tech_stack'
-                ? 'Generate questions from our curated knowledge base. Ideal for technical interviews and skill assessments.'
-                : 'Upload code files, docs, or text to create tailored questions from your own content.'
-              }
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

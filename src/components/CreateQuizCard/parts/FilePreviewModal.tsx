@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, X, FileText, Trash2, Code, FileCode, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Copy, Download,FileText, Trash2, Code, FileCode, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -237,17 +237,6 @@ export default function FilePreviewModal({ isOpen, onClose, file, onRemove }: Fi
                 Remove
               </Button>
             )}
-
-            {/* Close */}
-            <div className="w-px h-5 bg-border/50 mx-1" />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0 rounded-lg hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all duration-200"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </div>
 
