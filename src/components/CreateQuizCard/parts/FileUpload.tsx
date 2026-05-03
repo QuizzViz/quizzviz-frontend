@@ -26,7 +26,7 @@ interface FileUploadProps {
 export default function FileUpload({ 
   value = [], 
   onChange, 
-  maxFiles = 5,
+  maxFiles = 1,
   accept = ".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb,.swift,.kt,.scala,.pl,.hs,.m,.r,.sql,.html,.css,.json,.xml,.yaml,.yml"
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
@@ -66,7 +66,7 @@ export default function FileUpload({
     if (value.length >= maxFiles) {
       toast({
         title: "Maximum files reached",
-        description: `You can only upload up to ${maxFiles} files.`,
+        description: `You can only upload up to ${maxFiles} file.`,
         variant: "destructive",
       });
       return;
@@ -180,8 +180,8 @@ export default function FileUpload({
         
         // Show success toast with green theme
         toast({
-          title: "Files uploaded successfully!",
-          description: `${newFiles.length} file(s) uploaded successfully.`,
+          title: "File uploaded successfully!",
+          description: `${newFiles.length} file uploaded successfully.`,
         className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
         });
         
@@ -267,11 +267,11 @@ export default function FileUpload({
       <div className="space-y-2">
         <Label className="text-foreground font-medium flex items-center gap-2">
           <Upload className="h-4 w-4" />
-          Upload Files 
+          Upload File 
           <span className="text-red-500 ml-1">*</span>
         </Label>
         <p className="text-sm text-muted-foreground">
-          Upload code files, documentation, or any text files to generate quiz questions from their content.
+          Upload a code file, documentation, or any text file to generate quiz questions from its content.
         </p>
       </div>
 
@@ -320,10 +320,10 @@ export default function FileUpload({
             
             <div className="space-y-3">
               <p className="text-lg font-semibold text-foreground">
-                {isUploading ? "Uploading files..." : dragActive ? "Drop files here!" : "Drag & drop files here"}
+                {isUploading ? "Uploading file..." : dragActive ? "Drop file here!" : "Drag & drop file here"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {isUploading ? "Please wait while we process your files" : "or click to browse your files"}
+                {isUploading ? "Please wait while we process your file" : "or click to browse your files"}
               </p>
             </div>
             
@@ -347,7 +347,7 @@ export default function FileUpload({
                 ) : (
                   <>
                     <Upload className="h-4 w-4 mr-2" />
-                    Select Files
+                    Select File
                   </>
                 )}
               </Button>
@@ -356,7 +356,7 @@ export default function FileUpload({
                 ref={fileInputRef}
                 id="file-input"
                 type="file"
-                multiple
+                multiple={false}
                 accept={accept}
                 onChange={handleFileInput}
                 className="hidden"
@@ -373,7 +373,7 @@ export default function FileUpload({
               </p>
               <p className="flex items-center justify-center gap-4">
                 <span>Max size: <strong>15MB</strong></span>
-                <span>Max files: <strong>{maxFiles}</strong></span>
+                <span>Max file: <strong>1</strong></span>
               </p>
             </div>
           </div>
@@ -385,7 +385,7 @@ export default function FileUpload({
         <div className="space-y-3">
           <Label className="text-foreground font-medium flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-500 animate-pulse" />
-            Uploaded Files ({value.length})
+            Uploaded File ({value.length})
           </Label>
           <div className="space-y-2">
             {value.map((uploadedFile, index) => (
