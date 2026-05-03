@@ -183,14 +183,19 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
-    // Get company ID by passing the body to avoid double-reading
-    const companyResult = await getCompanyId(request, body);
-    if ('error' in companyResult) {
-      return companyResult.error;
-    }
-    const { company_id } = companyResult;
+    // Check if company_id is already in the body (from frontend)
+    let company_id = body.company_id;
     
-    // Add company_id to the request body
+    // If not in body, try to get it from query params or fallback to getCompanyId
+    if (!company_id) {
+      const companyResult = await getCompanyId(request);
+      if ('error' in companyResult) {
+        return companyResult.error;
+      }
+      company_id = companyResult.company_id;
+    }
+    
+    // Ensure company_id is in the body for createQuiz function
     body.company_id = company_id;
     const data = await createQuiz(company_id, token, body);
     return NextResponse.json(data, { status: 201 });
