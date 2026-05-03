@@ -156,9 +156,17 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       }
     }
     
-    // Ensure we have a company ID
-    if (!companyInfo?.id) {
+    // Ensure we have a valid company ID
+    const companyId = companyInfo?.id;
+    if (!companyId) {
       setError("Company information is required. Please refresh the page and try again.");
+      return;
+    }
+    
+    // Validate company ID format (should be a UUID or proper ID, not 'perfectprompthunt')
+    if (typeof companyId !== 'string' || companyId.length < 10 || companyId.includes('perfectprompthunt')) {
+      console.error('Invalid company ID detected:', companyId);
+      setError("Invalid company ID. Please log out and log back in to refresh your session.");
       return;
     }
     
@@ -262,8 +270,8 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         console.log('Sending payload with tech stack:', JSON.stringify(payload, null, 2));
         console.log('Sending quiz generation request:', payload);
         
-        // Build the API URL with companyId if available
-        const apiUrl = `/api/quizzes${companyInfo?.id ? `?companyId=${encodeURIComponent(companyInfo.id)}` : ''}`;
+        // Build the API URL - company_id goes in body, not query parameter
+        const apiUrl = `/api/quizzes`;
         
         response = await fetch(apiUrl, {
           method: 'POST',
