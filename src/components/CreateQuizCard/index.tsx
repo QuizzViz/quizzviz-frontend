@@ -8,6 +8,7 @@ import ExperienceCountRow from "./parts/ExperienceCountRow";
 import CodeTheorySlider from "./parts/CodeTheorySlider";
 import ReasoningPanel from "./parts/ReasoningPanel";
 import FileUpload from "./parts/FileUpload";
+import { InputModeToggle, type InputMode } from "./parts/InputModeToggle";
 import { useCreateQuizV2 } from "./hooks/useCreateQuizV2";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
@@ -20,6 +21,7 @@ import { useUserPlan } from "@/hooks/useUserPlan";
 import { RoleSelect } from "./parts/RoleSelect";
 import { TechStackInput } from "./parts/TechStackInput";
 import { TECHNOLOGIES } from "@/constants/technologies";
+import { cn } from "@/lib/utils";
 
 interface CreateQuizCardProps {
   maxQuestions?: number;
@@ -45,6 +47,7 @@ export default function CreateQuizCard({
   const [role, setRole] = useState("Software Engineer");
   const [techStack, setTechStack] = useState<TechStackItem[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [inputMode, setInputMode] = useState<InputMode>('tech_stack');
 
   const getRoleBasedTechStack = (selectedRole: string): TechStackItem[] => {
     const roleTechMap: { [key: string]: string[] } = {
@@ -209,46 +212,50 @@ export default function CreateQuizCard({
   const handleGenerateClick = (codePct: number) => {
     setError("");
 
-    if (!uploadedFiles || uploadedFiles.length === 0) {
-      if (!techStack || techStack.length === 0) {
-        setError(
-          "Please add at least one technology to your tech stack or upload files"
-        );
+    if (inputMode === 'file_upload') {
+      // File upload mode - check if files are uploaded
+      if (!uploadedFiles || uploadedFiles.length === 0) {
+        setError("Please upload files to generate quiz questions");
         return;
       }
-
-      const validTechStack = techStack.filter(
-        (tech) => tech && tech.name && tech.weight !== undefined
-      );
-
-      if (validTechStack.length === 0) {
-        setError("Invalid tech stack configuration");
-        return;
-      }
-
-      const totalWeight = validTechStack.reduce(
-        (sum, tech) => sum + tech.weight,
-        0
-      );
-
-      if (Math.abs(totalWeight - 100) > 1) {
-        setError("Tech stack weights must sum to 100%");
-        return;
-      }
-
-      const sanitizedTechStack: TechStackItem[] = validTechStack.map(
-        (tech) => ({
-          id: tech.id || Math.random().toString(36).substr(2, 9),
-          name: tech.name.trim(),
-          weight: Math.round(tech.weight),
-        })
-      );
-
-      _handleGenerate(sanitizedTechStack, codePct, role, uploadedFiles);
+      _handleGenerate([], codePct, role, uploadedFiles);
       return;
     }
 
-    _handleGenerate([], codePct, role, uploadedFiles);
+    // Tech stack mode - check if tech stack is configured
+    if (!techStack || techStack.length === 0) {
+      setError("Please add at least one technology to your tech stack");
+      return;
+    }
+
+    const validTechStack = techStack.filter(
+      (tech) => tech && tech.name && tech.weight !== undefined
+    );
+
+    if (validTechStack.length === 0) {
+      setError("Invalid tech stack configuration");
+      return;
+    }
+
+    const totalWeight = validTechStack.reduce(
+      (sum, tech) => sum + tech.weight,
+      0
+    );
+
+    if (Math.abs(totalWeight - 100) > 1) {
+      setError("Tech stack weights must sum to 100%");
+      return;
+    }
+
+    const sanitizedTechStack: TechStackItem[] = validTechStack.map(
+      (tech) => ({
+        id: tech.id || Math.random().toString(36).substr(2, 9),
+        name: tech.name.trim(),
+        weight: Math.round(tech.weight),
+      })
+    );
+
+    _handleGenerate(sanitizedTechStack, codePct, role, []);
   };
 
   const handleUpgradeClick = () => {
@@ -292,19 +299,45 @@ export default function CreateQuizCard({
             <RoleSelect value={role} onChange={setRole} />
           </div>
 
-          <div className="space-y-2">
-            <TechStackInput
-              value={techStack}
-              onChange={setTechStack}
-              availableTechs={TECHNOLOGIES.map((tech) => ({
-                value: tech,
-                label: tech,
-              }))}
+          {/* Input Mode Toggle */}
+          <div className="space-y-4">
+            <InputModeToggle 
+              mode={inputMode} 
+              onModeChange={setInputMode}
+              className="w-full"
             />
           </div>
 
-          <div className="space-y-2">
-            <FileUpload value={uploadedFiles} onChange={setUploadedFiles} maxFiles={5} />
+          {/* Conditional Content Based on Mode */}
+          <div className="space-y-6">
+            <div className={cn(
+              "transition-all duration-500 ease-in-out",
+              inputMode === 'tech_stack' 
+                ? "opacity-100 translate-y-0" 
+                : "opacity-0 -translate-y-4 pointer-events-none absolute"
+            )}>
+              <div className="space-y-2">
+                <TechStackInput
+                  value={techStack}
+                  onChange={setTechStack}
+                  availableTechs={TECHNOLOGIES.map((tech) => ({
+                    value: tech,
+                    label: tech,
+                  }))}
+                />
+              </div>
+            </div>
+
+            <div className={cn(
+              "transition-all duration-500 ease-in-out",
+              inputMode === 'file_upload' 
+                ? "opacity-100 translate-y-0" 
+                : "opacity-0 -translate-y-4 pointer-events-none absolute"
+            )}>
+              <div className="space-y-2">
+                <FileUpload value={uploadedFiles} onChange={setUploadedFiles} maxFiles={5} />
+              </div>
+            </div>
           </div>
 
           <ExperienceCountRow
@@ -341,8 +374,8 @@ export default function CreateQuizCard({
                       }`}
                       disabled={
                         !role ||
-                        (techStack.length === 0 &&
-                          uploadedFiles.length === 0) ||
+                        (inputMode === 'tech_stack' && techStack.length === 0) ||
+                        (inputMode === 'file_upload' && uploadedFiles.length === 0) ||
                         planLimits.isQuizLimitReached
                       }
                       onClick={() => handleGenerateClick(codePercentage)}
@@ -356,9 +389,11 @@ export default function CreateQuizCard({
                         <>
                           <Zap className="h-4 w-4 mr-2" />
                           {!role ||
-                          (techStack.length === 0 &&
-                            uploadedFiles.length === 0)
-                            ? "Role and Tech Stack or Files are required"
+                          (inputMode === 'tech_stack' && techStack.length === 0) ||
+                          (inputMode === 'file_upload' && uploadedFiles.length === 0)
+                            ? inputMode === 'tech_stack' 
+                              ? "Role and Tech Stack are required"
+                              : "Role and Files are required"
                             : "Generate Quiz"}
                         </>
                       )}
@@ -366,7 +401,8 @@ export default function CreateQuizCard({
                   </div>
                 </TooltipTrigger>
                 {(!role ||
-                  (techStack.length === 0 && uploadedFiles.length === 0) ||
+                  (inputMode === 'tech_stack' && techStack.length === 0) ||
+                  (inputMode === 'file_upload' && uploadedFiles.length === 0) ||
                   planLimits.isQuizLimitReached) && (
                   <TooltipContent className="w-64 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
                     <div className="space-y-2">
@@ -398,7 +434,9 @@ export default function CreateQuizCard({
                                 )} Click to upgrade your plan.`
                               : !role
                               ? "Please select a role before generating."
-                              : "Please add at least one technology to your tech stack or upload files."}
+                              : inputMode === 'tech_stack'
+                                ? "Please add at least one technology to your tech stack."
+                                : "Please upload files to generate quiz questions."}
                           </p>
                         </div>
                       </div>

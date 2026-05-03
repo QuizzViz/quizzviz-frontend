@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { X, Plus, BarChart3, AlertCircle } from 'lucide-react';
+import { X, Plus, BarChart3, AlertCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +8,7 @@ import { TOPICS } from "@/constants/topics";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 export interface TechStackItem {
   id: string;
@@ -239,9 +240,10 @@ export function TechStackInput({ value, onChange, availableTechs: externalAvaila
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Label className="text-foreground text-sm">Tech Stack</Label>
+            <BarChart3 className="h-4 w-4 text-green-500" />
+            <Label className="text-foreground text-sm font-medium">Tech Stack</Label>
           </div>
-          <Badge className="text-xs bg-gradient-to-r from-green-500 to-blue-500 text-white border-0">
+          <Badge className="text-xs bg-gradient-to-r from-green-500 to-blue-500 text-white border-0 shadow-sm">
             {value.length}/{maxTechs} technologies
           </Badge>
         </div>
@@ -313,6 +315,7 @@ export function TechStackInput({ value, onChange, availableTechs: externalAvaila
                 onClick={distributeEqually}
                 className="text-xs h-8 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200"
               >
+                <Sparkles className="h-3 w-3 mr-1" />
                 Distribute Equally
               </Button>
             </div>
@@ -343,7 +346,7 @@ export function TechStackInput({ value, onChange, availableTechs: externalAvaila
         )}
 
         {value.length === 0 && (
-          <div className="text-center py-12 px-4 border-2 border-dashed border-border rounded-lg">
+          <div className="text-center py-12 px-4 border-2 border-dashed border-border rounded-lg bg-gradient-to-br from-muted/20 to-muted/10">
             <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground text-sm">
               No technologies selected. Add technologies to get started.

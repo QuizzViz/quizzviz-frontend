@@ -2,9 +2,11 @@ import { useState, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Upload, X, FileText, Code, FileCode } from "lucide-react";
+import { Upload, X, FileText, Code, FileCode, CheckCircle2, Sparkles, Eye } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import FilePreviewModal from "./FilePreviewModal";
 
 interface UploadedFile {
   file: File;
@@ -29,6 +31,10 @@ export default function FileUpload({
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedSuccessfully, setUploadedSuccessfully] = useState(false);
+  const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const { toast } = useToast();
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -150,17 +156,61 @@ export default function FileUpload({
     }));
 
     if (newFiles.length > 0) {
-      onChange([...value, ...newFiles]);
-      toast({
-        title: "Files uploaded",
-        description: `${newFiles.length} file(s) uploaded successfully.`,
-      });
+      setIsUploading(true);
+      setUploadProgress(0);
+      
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 100);
+      
+      // Complete upload after simulation
+      setTimeout(() => {
+        setUploadProgress(100);
+        onChange([...value, ...newFiles]);
+        setIsUploading(false);
+        setUploadedSuccessfully(true);
+        
+        // Show success toast with green theme
+        toast({
+          title: "Files uploaded successfully!",
+          description: `${newFiles.length} file(s) uploaded successfully.`,
+          className: "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/50",
+        });
+        
+        setTimeout(() => setUploadedSuccessfully(false), 2000);
+      }, 1000);
     }
   }, [value, maxFiles, onChange, toast]);
 
   const removeFile = useCallback((id: string) => {
     onChange(value.filter(file => file.id !== id));
   }, [value, onChange]);
+
+  const handleFileClick = useCallback((file: UploadedFile) => {
+    setPreviewFile(file);
+    setIsPreviewOpen(true);
+  }, []);
+
+  const handlePreviewClose = useCallback(() => {
+    setIsPreviewOpen(false);
+    setPreviewFile(null);
+  }, []);
+
+  const handleRemoveFromPreview = useCallback((fileId: string) => {
+    removeFile(fileId);
+    toast({
+      title: "File removed",
+      description: "File has been removed from the upload list.",
+      className: "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50",
+    });
+  }, [removeFile, toast]);
 
   const getFileIcon = (fileName: string) => {
     const extension = fileName.split('.').pop()?.toLowerCase();
@@ -210,77 +260,142 @@ export default function FileUpload({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label className="text-foreground font-medium">Upload Files (Optional)</Label>
+        <Label className="text-foreground font-medium flex items-center gap-2">
+          <Upload className="h-4 w-4" />
+          Upload Files (Optional)
+        </Label>
         <p className="text-sm text-muted-foreground">
           Upload code files, documentation, or any text files to generate quiz questions from their content.
         </p>
       </div>
 
       {/* Upload Area */}
-      <Card className={`border-2 transition-colors ${
+      <Card className={cn(
+        "border-2 transition-all duration-300 relative overflow-hidden",
         dragActive 
-          ? 'border-primary bg-primary/5' 
-          : 'border-dashed border-muted-foreground/25 hover:border-muted-foreground/50'
-      }`}>
-        <CardContent className="p-6">
+          ? 'border-green-500 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 shadow-lg shadow-green-500/20' 
+          : uploadedSuccessfully
+          ? 'border-green-400 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30'
+          : 'border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/30',
+        isUploading && "opacity-75"
+      )}>
+        {uploadedSuccessfully && (
+          <div className="absolute inset-0 flex items-center justify-center bg-green-500/10 backdrop-blur-sm z-10">
+            <div className="flex flex-col items-center gap-2">
+              <CheckCircle2 className="h-16 w-16 text-green-500 animate-pulse" />
+              <span className="text-green-700 dark:text-green-400 font-medium">Upload Complete!</span>
+            </div>
+          </div>
+        )}
+        
+        <CardContent className="p-8">
           <div
-            className="text-center space-y-4"
+            className="text-center space-y-6"
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
           >
             <div className="flex justify-center">
-              <Upload className="h-12 w-12 text-muted-foreground" />
+              <div className={cn(
+                "p-4 rounded-full transition-all duration-300",
+                dragActive 
+                  ? "bg-gradient-to-br from-green-500 to-blue-500 shadow-lg shadow-green-500/30 scale-110" 
+                  : uploadedSuccessfully
+                  ? "bg-gradient-to-br from-green-400 to-emerald-400 shadow-lg shadow-green-400/30"
+                  : "bg-muted hover:bg-muted/80"
+              )}>
+                <Upload className={cn(
+                  "h-8 w-8 transition-all duration-300",
+                  dragActive || uploadedSuccessfully ? "text-white animate-bounce" : "text-muted-foreground"
+                )} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <p className="text-lg font-medium text-foreground">
-                Drag & drop files here
+            
+            <div className="space-y-3">
+              <p className="text-lg font-semibold text-foreground">
+                {isUploading ? "Uploading files..." : dragActive ? "Drop files here!" : "Drag & drop files here"}
               </p>
               <p className="text-sm text-muted-foreground">
-                or click to browse
+                {isUploading ? "Please wait while we process your files" : "or click to browse your files"}
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => document.getElementById('file-input')?.click()}
-              disabled={value.length >= maxFiles}
-            >
-              Select Files
-            </Button>
-            <input
-              id="file-input"
-              type="file"
-              multiple
-              accept={accept}
-              onChange={handleFileInput}
-              className="hidden"
-              disabled={value.length >= maxFiles}
-            />
-            <p className="text-xs text-muted-foreground">
-              Supported formats: Code files (.js, .ts, .py, .java, etc.), text files (.txt, .md), and configuration files (.json, .yaml, etc.)
-              <br />
-              Maximum file size: 15MB | Maximum files: {maxFiles}
-            </p>
+            
+            <div className="flex flex-col items-center gap-4">
+              <Button
+                type="button"
+                className={cn(
+                  "px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-md",
+                  dragActive || uploadedSuccessfully
+                    ? "bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white border-0"
+                    : "bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white border-0 hover:shadow-lg hover:shadow-green-500/25"
+                )}
+                onClick={() => document.getElementById('file-input')?.click()}
+                disabled={value.length >= maxFiles || isUploading}
+              >
+                {isUploading ? (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Select Files
+                  </>
+                )}
+              </Button>
+              
+              <input
+                id="file-input"
+                type="file"
+                multiple
+                accept={accept}
+                onChange={handleFileInput}
+                className="hidden"
+                disabled={value.length >= maxFiles || isUploading}
+              />
+            </div>
+            
+            <div className="space-y-2 text-xs text-muted-foreground">
+              <p className="flex items-center justify-center gap-2">
+                <span className="font-medium">Supported formats:</span>
+                <span className="bg-muted/70 px-2 py-1 rounded">Code files</span>
+                <span className="bg-muted/70 px-2 py-1 rounded">Text files</span>
+                <span className="bg-muted/70 px-2 py-1 rounded">Config files</span>
+              </p>
+              <p className="flex items-center justify-center gap-4">
+                <span>Max size: <strong>15MB</strong></span>
+                <span>Max files: <strong>{maxFiles}</strong></span>
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Uploaded Files */}
       {value.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-foreground font-medium">Uploaded Files</Label>
+        <div className="space-y-3">
+          <Label className="text-foreground font-medium flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            Uploaded Files ({value.length})
+          </Label>
           <div className="space-y-2">
-            {value.map((uploadedFile) => (
-              <Card key={uploadedFile.id} className="p-3">
+            {value.map((uploadedFile, index) => (
+              <Card 
+                key={uploadedFile.id} 
+                className="p-4 border border-border/50 hover:border-green-500/50 transition-all duration-200 hover:shadow-md hover:shadow-green-500/10 cursor-pointer group"
+                onClick={() => handleFileClick(uploadedFile)}
+              >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="text-muted-foreground">
-                      {getFileIcon(uploadedFile.name)}
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-green-100 to-blue-100 dark:from-green-900/30 dark:to-blue-900/30 flex-shrink-0">
+                      <div className="text-green-600 dark:text-green-400">
+                        {getFileIcon(uploadedFile.name)}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {uploadedFile.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -288,15 +403,34 @@ export default function FileUpload({
                       </p>
                     </div>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFile(uploadedFile.id)}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/20 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFileClick(uploadedFile);
+                      }}
+                      title="Preview file"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile(uploadedFile.id);
+                      }}
+                      className="text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200"
+                      title="Remove file"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))}
@@ -304,13 +438,32 @@ export default function FileUpload({
         </div>
       )}
 
-      {/* Upload Progress (if needed) */}
-      {uploadProgress > 0 && uploadProgress < 100 && (
-        <div className="space-y-2">
-          <Label className="text-foreground font-medium">Upload Progress</Label>
-          <Progress value={uploadProgress} className="w-full" />
+      {/* Upload Progress */}
+      {isUploading && (
+        <div className="space-y-3">
+          <Label className="text-foreground font-medium flex items-center gap-2">
+            <Sparkles className="h-4 w-4 animate-spin text-green-500" />
+            Upload Progress
+          </Label>
+          <div className="space-y-2">
+            <Progress 
+              value={uploadProgress} 
+              className="w-full h-2 bg-muted" 
+            />
+            <p className="text-xs text-muted-foreground text-center">
+              {uploadProgress}% complete...
+            </p>
+          </div>
         </div>
       )}
+
+      {/* File Preview Modal */}
+      <FilePreviewModal
+        isOpen={isPreviewOpen}
+        onClose={handlePreviewClose}
+        file={previewFile}
+        onRemove={handleRemoveFromPreview}
+      />
     </div>
   );
 }
