@@ -213,27 +213,9 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       if (uploadedFiles && uploadedFiles.length > 0) {
         const firstFile = uploadedFiles[0];
 
-        // ✅ FIX: Read file text content FIRST before touching the File object
-        // in FormData. Once a File is appended to FormData, its stream is
-        // locked and calling .text() on it afterwards throws
-        // "Body is unusable: Body has already been read".
-        let fileContent = '';
-        const isTextFile =
-          firstFile.file.type === 'text/plain' ||
-          firstFile.file.name.endsWith('.txt') ||
-          firstFile.file.name.endsWith('.md');
-
-        if (isTextFile) {
-          try {
-            fileContent = await firstFile.file.text(); // Read BEFORE appending
-          } catch (e) {
-            console.warn('Could not read file text content:', e);
-          }
-        }
-
-        // NOW build FormData — file stream is still intact at this point
+        // Build FormData - backend will handle file reading
         const formData = new FormData();
-        formData.append('file', firstFile.file);               // stream untouched ✅
+        formData.append('files', firstFile.file);
         formData.append('role', role);
         formData.append('experience', experienceToApi(experience));
         formData.append('num_questions', numQuestions.toString());
@@ -243,11 +225,6 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         formData.append('is_deleted', 'false');
         formData.append('company_id', companyId);
 
-        // Append pre-read text content if available
-        if (fileContent) {
-          formData.append('file_content', fileContent);
-        }
-        
         console.log('Sending file-based quiz generation request:', {
           role,
           experience: experienceToApi(experience),
@@ -256,7 +233,6 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
           codeAnalysisQuestionsPercentage: codePct,
           fileName: firstFile.name,
           fileSize: firstFile.size,
-          hasFileContent: !!fileContent,
         });
         
         response = await fetch('/api/quiz/file', {

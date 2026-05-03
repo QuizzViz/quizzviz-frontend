@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     
     // Extract required fields
-    const file = formData.get('file') as File;
+    const file = formData.get('files') as File;
     const role = formData.get('role') as string;
     const experience = formData.get('experience') as string || "1-3";
     const numQuestions = parseInt(formData.get('numQuestions') as string) || 10;
