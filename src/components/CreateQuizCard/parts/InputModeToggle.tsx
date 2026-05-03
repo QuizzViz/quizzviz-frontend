@@ -70,12 +70,6 @@ export function InputModeToggle({ mode, onModeChange, className }: InputModeTogg
           </div>
           <div className="text-left leading-tight">
             <div className="font-semibold text-sm leading-none">Tech Stack</div>
-            <div className={cn(
-              'text-[11px] mt-0.5 transition-colors',
-              mode === 'tech_stack' ? 'text-white/70' : 'text-muted-foreground'
-            )}>
-              Predefined topics
-            </div>
           </div>
         </button>
 
@@ -105,12 +99,6 @@ export function InputModeToggle({ mode, onModeChange, className }: InputModeTogg
           </div>
           <div className="text-left leading-tight">
             <div className="font-semibold text-sm leading-none">File Upload</div>
-            <div className={cn(
-              'text-[11px] mt-0.5 transition-colors',
-              mode === 'file_upload' ? 'text-white/70' : 'text-muted-foreground'
-            )}>
-              Your content
-            </div>
           </div>
         </button>
       </div>

@@ -267,10 +267,11 @@ export default function FileUpload({
       <div className="space-y-2">
         <Label className="text-foreground font-medium flex items-center gap-2">
           <Upload className="h-4 w-4" />
-          Upload Files (Optional)
+          Upload Files 
+          <span className="text-red-500 ml-1">*</span>
         </Label>
         <p className="text-sm text-muted-foreground">
-          Upload code files, documentation, or any text files to generate quiz questions from their content.
+          Upload code files, documentation, or any text files to generate quiz questions from their content. <span className="text-red-500 font-medium">At least one file is required.</span>
         </p>
       </div>
 
