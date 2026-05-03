@@ -268,7 +268,7 @@ const PricingPage = () => {
                         <h3 className={`text-xl font-bold text-white mb-0.5 ${plan.popular ? 'bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent' : ''}`}>
                           {plan.name}
                         </h3>
-                        <p className="text-gray-400 text-xs">{plan.tagline.replace('Recommended', '')}</p>
+                        {!plan.popular && <p className="text-gray-400 text-xs">{plan.tagline}</p>}
                       </div>
                       <div className={`bg-gradient-to-br ${plan.popular ? 'from-amber-500/20 to-orange-500/20 border-amber-500/30' : 'from-emerald-500/20 to-teal-500/20 border-emerald-500/30'} p-2.5 rounded-xl border`}>
                         <Building2 className={`w-6 h-6 ${plan.popular ? 'text-amber-400' : 'text-emerald-400'}`} />
