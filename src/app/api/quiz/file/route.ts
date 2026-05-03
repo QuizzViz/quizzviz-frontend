@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     
     // Extract required fields
-    const file = formData.get('files') as File;
+    const files = formData.getAll('files') as File[];
     const role = formData.get('role') as string;
     const experience = formData.get('experience') as string || "1-3";
     const numQuestions = parseInt(formData.get('num_questions') as string) || 10;
@@ -54,10 +54,10 @@ export async function POST(req: NextRequest) {
     const isDeleted = formData.get('is_deleted') === 'true';
 
     // Validate required fields
-    if (!file) {
+    if (!files || files.length === 0) {
       return NextResponse.json({ 
         error: 'Bad Request',
-        details: 'File is required'
+        details: 'At least one file is required'
       }, { status: 400 });
     }
 
@@ -84,11 +84,13 @@ export async function POST(req: NextRequest) {
 
     const BACKEND_URL_WITH_PARAMS = `${BACKEND_URL}?${params.toString()}`;
 
-    // ✅ FIX: Only send the file in FormData
+    // ✅ FIX: Send all files in FormData
     const backendFormData = new FormData();
-    backendFormData.append('files', file);  // Note: backend expects 'files' not 'file'
+    files.forEach((file, index) => {
+      backendFormData.append('files', file);  // Note: backend expects 'files' not 'file'
+    });
 
-    // Debug: Log FormData contents (should only contain file now)
+    // Debug: Log FormData contents (should contain all files now)
     console.log('Backend FormData contents:');
     for (const [key, value] of backendFormData.entries()) {
       if (value instanceof File) {
@@ -97,6 +99,7 @@ export async function POST(req: NextRequest) {
         console.log(`${key}: ${value}`);
       }
     }
+    console.log(`Total files being sent: ${files.length}`);
 
     console.log('Sending file-based quiz generation request:', {
       url: BACKEND_URL_WITH_PARAMS,
@@ -114,10 +117,11 @@ export async function POST(req: NextRequest) {
         is_publish: isPublish,
         is_deleted: isDeleted
       },
-      file: {
-        file_size: file.size,
-        file_type: file.type
-      }
+      files: files.map(f => ({
+        file_size: f.size,
+        file_type: f.type,
+        file_name: f.name
+      }))
     });
     
     console.log('=== FILE UPLOAD DEBUG ===');

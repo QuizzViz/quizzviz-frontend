@@ -212,11 +212,13 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       
       // Use file upload endpoint if files are provided
       if (uploadedFiles && uploadedFiles.length > 0) {
-        const firstFile = uploadedFiles[0];
-
         // Build FormData - backend will handle file reading
         const formData = new FormData();
-        formData.append('files', firstFile.file);
+        
+        // Append all uploaded files
+        uploadedFiles.forEach((uploadedFile, index) => {
+          formData.append('files', uploadedFile.file);
+        });
         formData.append('role', role);
         formData.append('experience', experienceToApi(experience));
         formData.append('num_questions', numQuestions.toString());
@@ -232,8 +234,9 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
           numQuestions,
           theoryQuestionsPercentage: 100 - codePct,
           codeAnalysisQuestionsPercentage: codePct,
-          fileName: firstFile.name,
-          fileSize: firstFile.size,
+          fileCount: uploadedFiles.length,
+          fileNames: uploadedFiles.map(f => f.name),
+          fileSizes: uploadedFiles.map(f => f.size),
         });
         
         response = await fetch('/api/quiz/file', {
