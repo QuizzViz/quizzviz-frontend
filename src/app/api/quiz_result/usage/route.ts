@@ -1,4 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
+import { getAuth } from "@clerk/nextjs/server";
+import { getCompanyId } from '@/lib/company';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}`;
 
@@ -22,7 +24,17 @@ interface CompanyUsageResponse {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get company ID from query parameters (auth no longer required)
+    // Get auth info
+    const { getToken, userId } = getAuth(request);
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized - User not authenticated' },
+        { status: 401 }
+      );
+    }
+    
+    // Get company ID from query parameters
     const { searchParams } = new URL(request.url);
     const company_id = searchParams.get('company_id');
     
@@ -36,7 +48,14 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    console.log('Company ID from query params:', company_id);
+    const token = await getToken();
+    
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+    }
 
     // Build the URL for company usage endpoint
     const url = `${API_BASE_URL}/result/owner/${encodeURIComponent(company_id)}/usage`;
