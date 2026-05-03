@@ -193,9 +193,7 @@ export default function MyQuizzesPage() {
       setDeleteDialogOpen(false);
       setQuizToDelete(null);
       
-      console.log('Quiz deleted successfully');
     } catch (error) {
-      console.error('Error deleting quiz:', error);
       setFetchError(error instanceof Error ? error.message : 'Failed to delete quiz');
     } finally {
       setIsDeleting(false);

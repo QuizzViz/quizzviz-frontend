@@ -354,7 +354,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
         smoothedSimilarityRef.current    = 1.0;
         prevRawSimilarityRef.current     = 1.0;
         setCalibrated(true);
-        console.log('[Proctoring] Face baseline locked ✓');
       }
       return;
     }
@@ -482,7 +481,6 @@ const CameraProctoring: React.FC<CameraProctoringProps> = ({
             }
           }
         } catch (err) {
-          console.log('[Proctoring] Phone detection error:', err);
         }
       }, PHONE_DETECTION_INTERVAL_MS);
     } catch (err) {

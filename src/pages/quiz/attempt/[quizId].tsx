@@ -270,7 +270,6 @@ const QuizAttemptPage = () => {
 
   const submitQuiz = useCallback(async (answers: Record<number, string>): Promise<boolean> => {
     if (hasSubmittedRef.current) {
-      console.log('Quiz already submitted, skipping duplicate submission...');
       return true;
     }
     
@@ -283,14 +282,12 @@ const QuizAttemptPage = () => {
     }
     
     try {
-      console.log('Initial answers:', answers);
       
       const allAnswers: Record<number, string> = {};
       quizData.questions.forEach((_, index) => {
         allAnswers[index] = answers[index] ?? '';
       });
       
-      console.log('Processed answers before submission:', allAnswers);
       quizData.questions.forEach((_, index) => {
         if (!allAnswers.hasOwnProperty(index)) {
           allAnswers[index] = '';
@@ -304,7 +301,6 @@ const QuizAttemptPage = () => {
       
       // Ensure quizData.questions is an array before mapping
       if (!Array.isArray(quizData.questions)) {
-        console.error('quizData.questions is not an array:', quizData.questions);
         throw new Error('Invalid quiz data: Questions must be an array');
       }
       
@@ -312,12 +308,6 @@ const QuizAttemptPage = () => {
         const answer = allAnswers[index] || '';
         const isCorrect = answer === question.correct_answer;
         if (isCorrect) correct++;
-        
-        console.log(`Question ${index + 1}:`, { 
-          answer, 
-          correctAnswer: question.correct_answer, 
-          isCorrect 
-        });
         
         return {
           question_id: question.id.toString(),
@@ -327,14 +317,8 @@ const QuizAttemptPage = () => {
         };
       });
       
-      console.log('Processed answers:', { 
-        correct, 
-        total
-      });
-      
       return true;
     } catch (error) {
-      console.error('Error submitting quiz:', error);
       return false;
     } finally {
       setStep('results');
@@ -348,7 +332,6 @@ const QuizAttemptPage = () => {
         ...prev,
         [currentQuestionIndex]: answer
       };
-      console.log('Selected answers updated:', newAnswers);
       return newAnswers;
     });
   }, [currentQuestionIndex]);
@@ -370,14 +353,13 @@ const QuizAttemptPage = () => {
       }
       setIsFullscreen(true);
     } catch (err) {
-      console.error('Fullscreen error:', err);
       setIsFullscreen(false);
     }
   }, []);
 
   const exitFullscreen = useCallback(() => {
     if (document.exitFullscreen) {
-      document.exitFullscreen().catch(console.error);
+      document.exitFullscreen().catch(() => {});
     } else if ((document as any).webkitExitFullscreen) {
       (document as any).webkitExitFullscreen();
     } else if ((document as any).msExitFullscreen) {
@@ -431,7 +413,6 @@ const QuizAttemptPage = () => {
 
   // Handle proctoring violations
   const handleProctoringViolation = useCallback((message: string) => {
-    console.log('Proctoring violation:', message);
     showWarningMessage(`Proctoring: ${message}`);
     
     toast({
@@ -444,7 +425,6 @@ const QuizAttemptPage = () => {
   }, [showWarningMessage]);
 
   const handleProctoringEnd = useCallback((reason: string) => {
-    console.log('Proctoring ended:', reason);
     
     toast({
       variant: 'destructive',
@@ -497,7 +477,6 @@ const QuizAttemptPage = () => {
               fullscreenRestored = true;
               break;
             } catch (err) {
-              console.warn(`Fullscreen restore attempt ${attempt + 1} failed, retrying...`);
               await new Promise(resolve => setTimeout(resolve, 200));
             }
           }
@@ -530,7 +509,6 @@ const QuizAttemptPage = () => {
             }
           });
         } catch (err) {
-          console.error('Fullscreen error:', err);
         }
       };
       
@@ -657,7 +635,10 @@ const QuizAttemptPage = () => {
         if (widthThreshold || heightThreshold) {
           showWarningMessage('Developer tools are not allowed during the quiz!');
           window.dispatchEvent(new Event('resize'));
-          document.body.innerHTML = '';
+          // Clear DOM safely
+          while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+          }
           window.location.reload();
         }
       }, 1000);
@@ -750,11 +731,8 @@ const QuizAttemptPage = () => {
       const pathSegments = window.location.pathname.split('/');
       const quizId = pathSegments[pathSegments.length - 1];
       
-      console.log('URL Path Segments:', pathSegments);
-      console.log('Extracted Quiz ID:', quizId);
       
       if (!quizId || quizId === 'attempt') {
-        console.error('No valid quiz ID found in URL');
         toast({
           title: 'Error',
           description: 'Invalid quiz link. Please try again from the dashboard.',
@@ -767,7 +745,6 @@ const QuizAttemptPage = () => {
       }
       
       try {
-        console.log('Fetching quiz with ID:', quizId);
         const token = await getToken();
         if (!token) {
           throw new Error('Authentication token not found');
@@ -788,7 +765,6 @@ const QuizAttemptPage = () => {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          console.error('Failed to fetch quiz:', { status: response.status, errorData });
           throw new Error(errorData.error || `Failed to fetch quiz (Status: ${response.status})`);
         }
 
@@ -798,7 +774,6 @@ const QuizAttemptPage = () => {
           data.quiz = data.questions;
         }
 
-        console.log('Received quiz data:', data);
         
         let parsedQuiz: Question[] = [];
 if (typeof data.quiz === 'string') {
@@ -809,26 +784,22 @@ if (typeof data.quiz === 'string') {
     }
     parsedQuiz = parsed;
   } catch (parseError) {
-    console.error('JSON Parse Error:', parseError, 'Raw quiz data:', data.quiz);
     throw new Error('Invalid quiz data format: Failed to parse quiz JSON - ' + (parseError as Error).message);
   }
 } else if (Array.isArray(data.quiz)) {
   parsedQuiz = data.quiz;
 } else {
-  console.error('Unexpected quiz data type:', typeof data.quiz, data.quiz);
   throw new Error('Invalid quiz data format: Quiz data is not a string or array');
 }
 
         // Ensure parsedQuiz is an array before proceeding
         if (!Array.isArray(parsedQuiz)) {
-          console.error('parsedQuiz is not an array:', parsedQuiz);
           throw new Error('Invalid quiz data: Questions must be an array');
         }
 
         // Validate each question structure
         parsedQuiz = parsedQuiz.map((q, index) => {
           if (!q.question || !q.options || !q.correct_answer) {
-            console.warn(`Invalid question structure at index ${index}:`, q);
             throw new Error(`Invalid question at position ${index + 1}: Missing required fields`);
           }
           return q;
@@ -848,7 +819,6 @@ if (typeof data.quiz === 'string') {
           quiz_time: (data.num_questions || parsedQuiz.length) * 3 * 60, // 3 minutes per question
         };
         
-        console.log('Parsed quiz data:', quizData);
         
         if (isMounted) {
           setQuizData(quizData);
@@ -857,7 +827,6 @@ if (typeof data.quiz === 'string') {
         }
         
       } catch (error: any) {
-        console.error('Error in fetchQuiz:', error);
         
         if (!isMounted) return;
         

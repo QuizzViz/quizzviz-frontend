@@ -82,7 +82,6 @@ export function QuizEditor() {
     enabled: isUserLoaded && !!user?.id && !!companyInfo?.id && !isCompanyLoading,
     queryFn: async () => {
       try {
-        console.log('QuizEditor - Fetching quizzes for company:', companyInfo?.id);
         const res = await fetch(`/api/quizzes?companyId=${encodeURIComponent(companyInfo!.id)}`);
         if (!res.ok) {
           const errText = await res.text();
@@ -90,7 +89,6 @@ export function QuizEditor() {
           throw new Error(errText || `Failed to fetch quizzes (${res.status})`);
         }
         const data = await res.json();
-        console.log('QuizEditor - Successfully fetched quizzes:', data.length, 'items');
         return data;
       } catch (error) {
         console.error('QuizEditor - Error fetching quizzes:', error);
@@ -205,8 +203,6 @@ export function QuizEditor() {
           companyId: companyInfo?.id,
         };
 
-        console.log("payload :", payload)
-        console.log("Tech Stack :", currentQuiz.techStack || currentQuiz.tech_stack)
         const res = await fetch(`/api/quiz/${encodeURIComponent(currentQuiz.quiz_id)}`, {
           method: "PATCH",
           headers: {
@@ -243,9 +239,6 @@ export function QuizEditor() {
 
   // Publish handler
   const handlePublishConfirm = async (secretKey: string) => {
-    console.log("Publishing quiz with companyInfo:", companyInfo);
-    console.log("Quiz ID:", quizId);
-    console.log("User:", user?.id);
     
     // Get company ID from multiple sources for fallback
     let companyId = companyInfo?.id;
@@ -478,13 +471,11 @@ export function QuizEditor() {
 
   // Enhanced loading states with better error handling
   if (!isUserLoaded || isCompanyLoading || isQuizzesLoading) {
-    console.log('QuizEditor - Still loading basic data...');
     return <PageLoading fullScreen />;
   }
 
   // Additional loading for published quiz data if needed
   if (currentQuiz?.is_publish && isLoadingPublished) {
-    console.log('QuizEditor - Loading published quiz data...');
     return <PageLoading fullScreen />;
   }
 

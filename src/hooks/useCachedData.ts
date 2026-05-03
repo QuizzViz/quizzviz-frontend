@@ -37,7 +37,6 @@ export function useCachedData<T>({
       
       if (!dependenciesChanged) {
         // Use cached data
-        console.log(`🎯 Using cached data for ${cacheKey}`);
         setData(cached.data);
         setLoading(false);
         setError(null);
@@ -46,7 +45,6 @@ export function useCachedData<T>({
     }
     
     // Fetch fresh data
-    console.log(`🔄 Fetching fresh data for ${cacheKey}`);
     setLoading(true);
     setError(null);
     
@@ -72,13 +70,11 @@ export function useCachedData<T>({
   // Function to manually clear cache
   const clearCache = () => {
     cacheRef.current.delete(cacheKey);
-    console.log(`🗑️ Cleared cache for ${cacheKey}`);
   };
 
   // Function to force refresh
   const refresh = () => {
     cacheRef.current.delete(cacheKey);
-    console.log(`🔄 Force refreshing ${cacheKey}`);
     setLoading(true);
     fetcher()
       .then((freshData) => {
@@ -132,19 +128,16 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
       if (membersCache && (now - membersCache.timestamp) < CACHE_TTL) {
         shouldFetchMembers = false;
         setMembers(membersCache.data);
-        console.log('🎯 Using cached members data');
       }
       
       if (roleCache && (now - roleCache.timestamp) < CACHE_TTL) {
         shouldFetchRole = false;
         setUserRole(roleCache.data);
-        console.log('🎯 Using cached user role data');
       }
       
       if (companyCache && (now - companyCache.timestamp) < CACHE_TTL) {
         shouldFetchCompany = false;
         setCompany(companyCache.data);
-        console.log('🎯 Using cached company data');
       }
       
       if (!shouldFetchMembers && !shouldFetchRole && !shouldFetchCompany) {
@@ -173,7 +166,6 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
                   timestamp: now
                 };
                 setCompany(companyData);
-                console.log('📦 Cached company data');
               }
             })
         );
@@ -194,18 +186,11 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
             
             // Store company_id in sessionStorage for member users
             if (data && data.company_id && typeof window !== 'undefined') {
-              console.log('About to store userCompanyId:', data.company_id);
-              console.log('Before storage - sessionStorage keys:', Object.keys(sessionStorage));
               sessionStorage.setItem('userCompanyId', data.company_id);
               localStorage.setItem('userCompanyId', data.company_id);
-              console.log('After storage - sessionStorage keys:', Object.keys(sessionStorage));
-              console.log('Stored userCompanyId from cached role data:', data.company_id);
-              console.log('Verification - sessionStorage.getItem:', sessionStorage.getItem('userCompanyId'));
             } else {
-              console.log('Not storing userCompanyId - data:', data, 'has company_id:', !!data?.company_id);
             }
             
-            console.log('📦 Cached user role data');
           })
           .catch(error => {
             console.error('Failed to fetch user role - member may have been deleted:', error);
@@ -220,8 +205,7 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
               localStorage.removeItem('userCompanyId');
               sessionStorage.removeItem('userRole');
               localStorage.removeItem('userRole');
-              console.log('Cleared userCompanyId and userRole from storage due to role fetch failure');
-            }
+              }
           })
         );
       }
@@ -238,7 +222,6 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
               timestamp: now
             };
             setMembers(data);
-            console.log('📦 Cached members data');
           })
         );
       }
@@ -246,7 +229,6 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
       Promise.all(fetchPromises)
         .then(() => {
           setLoading(false);
-          console.log('✅ Dashboard data cached successfully');
         })
         .catch(err => {
           console.error('❌ Error fetching dashboard data:', err);
@@ -260,7 +242,6 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
   const refreshAll = async () => {
     if (!getToken) return;
     
-    console.log('🔄 Force refreshing all dashboard data');
     setLoading(true);
     
     // Clear cache
@@ -299,7 +280,6 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
             if (data && data.company_id && typeof window !== 'undefined') {
               sessionStorage.setItem('userCompanyId', data.company_id);
               localStorage.setItem('userCompanyId', data.company_id);
-              console.log('Stored userCompanyId from refresh role data:', data.company_id);
             }
           })
           .catch(error => {
@@ -314,7 +294,6 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
               localStorage.removeItem('userCompanyId');
               sessionStorage.removeItem('userRole');
               localStorage.removeItem('userRole');
-              console.log('Cleared userCompanyId and userRole from storage due to role refresh failure');
             }
           })
       );
@@ -332,7 +311,6 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
     
     try {
       await Promise.all(fetchPromises);
-      console.log('✅ Dashboard data refreshed successfully');
     } catch (err) {
       console.error('❌ Error refreshing dashboard data:', err);
     } finally {

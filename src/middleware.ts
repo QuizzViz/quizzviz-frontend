@@ -59,13 +59,11 @@ export default clerkMiddleware(async (auth, request) => {
 
   // 1. Bots bypass everything
   if (isBot) {
-    console.log(`Bot detected: ${ua}`);
     return response;
   }
 
   // 2. Public routes bypass auth checks
   if (isPublicRoute(request)) {
-    console.log(`Public route: ${pathname}`);
     return response;
   }
 
@@ -91,15 +89,14 @@ export default clerkMiddleware(async (auth, request) => {
         return response;
       }
       
-      // Authenticated users: check for OAuth intent
-      const { searchParams } = request.nextUrl;
-      const message = searchParams.get('message');
-      const email = searchParams.get('email');
-      
-      // Allow access if there's a message or email parameter (OAuth redirect)
-      if (message || email) {
-        return response;
-      }
+      // Authenticated users: redirect to dashboard (OAuth handled by Clerk)
+      const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
+      redirectResponse.headers.set('X-Frame-Options', 'DENY');
+      redirectResponse.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+      redirectResponse.headers.set('X-Content-Type-Options', 'nosniff');
+      redirectResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+      return redirectResponse;
+    }
       
       // Otherwise redirect to dashboard
       const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));

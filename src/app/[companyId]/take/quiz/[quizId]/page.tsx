@@ -278,8 +278,6 @@ export default function QuizPage({ params }: PageProps) {
 
   // Shuffle options for all quiz questions
   const shuffleOptions = useCallback((question: Question): Question => {
-    console.log('Shuffling options for question:', question.type, question.question);
-    console.log('Original options:', question.options);
     
     if (question.options && typeof question.options === 'object') {
       const options = { ...question.options };
@@ -449,7 +447,6 @@ const {
 
   const submitQuiz = useCallback(async (answers: Record<number, string>): Promise<boolean> => {
     if (hasSubmittedRef.current) {
-      console.log('Quiz already submitted, skipping duplicate submission...');
       return true;
     }
     hasSubmittedRef.current = true;
@@ -589,14 +586,12 @@ const topicPerformance = calculateTopicWisePerformance();
 
   // ── Proctoring handlers — NO quiz termination on camera init failure ──────────
   const handleProctoringViolation = useCallback((message: string) => {
-    console.log('Proctoring violation:', message);
     showWarningMessage(`Proctoring: ${message}`);
     // Intentionally NOT showing a toast every violation – the on-screen widget shows it
   }, [showWarningMessage]);
 
   // Only called by CameraProctoring when a hard violation (>15s or multiple faces) fires
   const handleProctoringEnd = useCallback((reason: string) => {
-    console.log('Proctoring ended:', reason);
     if (hasSubmittedRef.current) return;
 
     toast({
@@ -780,7 +775,10 @@ const topicPerformance = calculateTopicWisePerformance();
         if (widthThreshold || heightThreshold) {
           showWarningMessage('Developer tools are not allowed during the quiz!');
           window.dispatchEvent(new Event('resize'));
-          document.body.innerHTML = '';
+          // Clear DOM safely
+          while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+          }
           window.location.reload();
         }
       }, 1000);

@@ -40,23 +40,10 @@ export function QuizHeader({
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const { companyInfo, isLoading: isCompanyLoading } = useCompanyInfo();
   const { userRole, loading: roleLoading } = useUserRole(companyInfo?.id || '');
-  console.log('QuizHeader - Company object from useCompanyInfo:', companyInfo);
-  console.log('QuizHeader - User role from useUserRole:', userRole);
-  console.log('QuizHeader - Role loading:', roleLoading);
-  console.log('QuizHeader - Can publish quiz:', canPerformAction(userRole, 'publish_quiz'));
-  console.log('QuizHeader - Quiz user_id:', quiz?.user_id);
-  console.log('QuizHeader - Current user ID:', user?.id);
   
   // Check if quiz exists before accessing its properties
   if (!quiz) return null;
   
-  console.log('Can publish quiz:', canPerformAction(userRole, 'publish_quiz'));
-  console.log('Can update quiz:', canPerformAction(userRole, 'update_quiz', { isQuizOwner: quiz.user_id === user?.id }));
-  console.log('Quiz settings:', settings);
-  console.log('Secret key available:', !!settings?.secretKey);
-  console.log('Secret key value:', settings?.secretKey);
-  console.log('Quiz published status:', isPublished);
-  console.log('Full settings object:', JSON.stringify(settings, null, 2));
 
   const handleShareClick = () => {
     setIsShareModalOpen(true);
@@ -72,7 +59,6 @@ export function QuizHeader({
         companyId = sessionStorage.getItem('company_id') || localStorage.getItem('userCompanyId') || "";
       }
       
-      console.log('Final companyId being sent:', companyId);
       
       // Use PUT to update the quiz status and handle unpublishing
       const response = await fetch(`/api/quizzes`, {

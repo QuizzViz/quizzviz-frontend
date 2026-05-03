@@ -26,17 +26,6 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
   const isInvitedMember = !!sessionStorageCompanyId;
 
-  console.log('DashboardAccess Debug BEFORE useCompanies:', {
-    sessionStorageCompanyId,
-    localStorageCompanyId,
-    isInvitedMember,
-    userId: user?.id,
-    isLoaded,
-    willPassUndefinedToUseCompanies: isInvitedMember,
-    sessionStorageKeys: typeof window !== 'undefined' ? Object.keys(sessionStorage) : [],
-    localStorageKeys: typeof window !== 'undefined' ? Object.keys(localStorage) : []
-  });
-
   // CRITICAL: For invited members, pass undefined to force sessionStorage logic
   // For company owners, pass user ID to fetch by owner_id
   const useCompaniesParam = isInvitedMember ? undefined : user?.id;
@@ -71,21 +60,18 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
 
   // CRITICAL: For invited members, validate they are still a valid member before allowing access
   if (isInvitedMember || hasStorageCompanyId) {
-    console.log('Invited member or storage detected, validating access...');
     
     // If we have company data, verify the user is still a member
     // If no company data, allow access (will be validated by API calls)
     if (company && user?.id) {
       // Check if current user is the owner (always valid)
       if (company.owner_id === user.id) {
-        console.log('User is company owner, allowing access');
         return <>{children}</>;
       }
       
       // For non-owners, we need to validate they are still a member
       // This will be handled by the role fetching in useCachedDashboardData
       // If they're not a member anymore, the role fetch will fail and clear their cache
-      console.log('User is member, access will be validated by role fetch');
       return <>{children}</>;
     }
     
@@ -129,7 +115,6 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
 
   // For invited members or users with storage: if company data failed to load but storage exists, allow access
   if (!company && (isInvitedMember || hasStorageCompanyId)) {
-    console.log('User has storage company_id, allowing dashboard access despite fetch failure');
     return <>{children}</>;
   }
 

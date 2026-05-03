@@ -35,6 +35,7 @@ import { useCachedDashboardData } from "@/hooks/useCachedData";
 import { generateCompanyId, validateCompanyData } from "@/utils/companyValidation";
 import { usePlanLimits, getLimitMessage, getUpgradeCTA } from "@/hooks/usePlanLimits";
 import { useUserPlan } from '@/hooks/useUserPlan';
+import { sanitizeRoleData, isValidCompanyId } from '@/utils/securityUtils';
 
 interface CompanyMember {
   id: string;
@@ -398,7 +399,7 @@ export default function TeamsPage() {
             }
           }
         } catch (error) {
-          console.error("Error checking user deletion status:", error);
+          // Error checking user deletion status
         }
       }
     };
@@ -430,14 +431,6 @@ export default function TeamsPage() {
   const effectiveRole = userRole || fallbackRole;
 
   useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.log("useUserRole hook state changed:", {
-        userRole,
-        dataLoading,
-        companyId: company?.company_id,
-        userId: user?.id,
-      });
-    }
   }, [userRole, dataLoading, company?.company_id, user?.id]);
 
   useEffect(() => {
@@ -451,16 +444,22 @@ export default function TeamsPage() {
           const storedRole = sessionStorageRole || localStorageRole;
 
           if (storedRole) {
-            const tempRole = JSON.parse(storedRole);
-            sessionStorage.setItem("userRole", JSON.stringify(tempRole));
-            sessionStorage.setItem("userCompanyId", company.company_id);
-            localStorage.setItem("userRole", JSON.stringify(tempRole));
-            localStorage.setItem("userCompanyId", company.company_id);
-            shouldCreateFallback = false;
-            setTimeout(() => window.dispatchEvent(new Event("storage")), 50);
+            try {
+              const tempRole = JSON.parse(storedRole);
+              const sanitizedRole = sanitizeRoleData(tempRole);
+              if (sanitizedRole) {
+                sessionStorage.setItem("userRole", JSON.stringify(sanitizedRole));
+                sessionStorage.setItem("userCompanyId", company.company_id);
+                localStorage.setItem("userRole", JSON.stringify(sanitizedRole));
+                localStorage.setItem("userCompanyId", company.company_id);
+                shouldCreateFallback = false;
+                setTimeout(() => window.dispatchEvent(new Event("storage")), 50);
+              }
+            } catch (e) {
+              // Invalid role data, skip storage
+            }
           }
         } catch (e) {
-          console.error("Error checking stored roles:", e);
         }
       }
 
@@ -481,10 +480,13 @@ export default function TeamsPage() {
           };
 
           if (typeof window !== "undefined") {
+            const sanitizedCompanyId = tempOwnerRole.company_id;
+            if (sanitizedCompanyId && isValidCompanyId(sanitizedCompanyId)) {
+              sessionStorage.setItem('userCompanyId', sanitizedCompanyId);
+              localStorage.setItem('userCompanyId', sanitizedCompanyId);
+            }
             sessionStorage.setItem("userRole", JSON.stringify(tempOwnerRole));
-            sessionStorage.setItem("userCompanyId", company.company_id);
             localStorage.setItem("userRole", JSON.stringify(tempOwnerRole));
-            localStorage.setItem("userCompanyId", company.company_id);
             setTimeout(() => window.dispatchEvent(new Event("storage")), 50);
           }
         }
@@ -533,7 +535,6 @@ export default function TeamsPage() {
         className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
     } catch (error) {
-      console.error("Error refreshing:", error);
       toast({
         title: "Error",
         description: "Failed to refresh team members",

@@ -23,7 +23,6 @@ export function CodeTheorySlider({ codePercentage, onCodePercentageChange }: Cod
     percentage = Math.max(0, Math.min(100, percentage));
     const roundedPercentage = Math.round(percentage / 5) * 5;
     
-    console.log('Slider moved to:', { raw: percentage, rounded: roundedPercentage });
     onCodePercentageChange(roundedPercentage);
   };
 

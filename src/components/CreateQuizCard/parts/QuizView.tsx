@@ -38,7 +38,6 @@ const QuizView: FC<{
         companyId: data?.company_id,
         tech_stack: data?.tech_stack
       };
-      console.log("requestBody :", requestBody)
       
       const response = await fetch('/api/quiz/publish', {
         method: 'POST',
