@@ -92,7 +92,7 @@ export default function OurMission() {
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-100">Select & Generate</h4>
-                    <p className="text-gray-400 text-sm mt-1">Choose your tech stack and difficulty level, then generate your quiz with one click.</p>
+                    <p className="text-gray-400 text-sm mt-1">Choose your tech stack and experience level, then generate your quiz with one click.</p>
                   </div>
                 </div>
 
