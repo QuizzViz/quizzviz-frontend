@@ -16,54 +16,55 @@ export interface CompanyDetails {
   updated_at: string;
 }
 
-export async function getCompanyId(request: NextRequest, body?: any): Promise<{ company_id: string } | { error: Response }> {
+export async function getCompanyId(
+  request: NextRequest, 
+  body?: any
+): Promise<{ company_id: string } | { error: Response }> {
   try {
-    // First, try to get company_id from query parameters (for invited members)
+    // 1. Try query params first
     const { searchParams } = new URL(request.url);
     const queryCompanyId = searchParams.get('company_id');
-    
     if (queryCompanyId) {
       console.log('Found company_id in query params:', queryCompanyId);
       return { company_id: queryCompanyId };
     }
 
-    // Second, try to get company_id from request body (for invited members sending in POST body)
+    // 2. Try explicitly passed body (caller reads body and passes it in)
     if (body && body.company_id) {
       console.log('Found company_id in request body:', body.company_id);
       return { company_id: body.company_id };
     }
 
-    // Try to parse body if not provided (for backward compatibility)
-    try {
-      const parsedBody = await request.json().catch(() => null);
-      if (parsedBody && parsedBody.company_id) {
-        console.log('Found company_id in parsed request body:', parsedBody.company_id);
-        return { company_id: parsedBody.company_id };
-      }
-    } catch (e) {
-      // Ignore JSON parsing errors, continue to next method
-      console.log('Could not parse request body for company_id');
-    }
-    
-    // Fallback to original auth-based logic (for company owners)
+    // 3. Fallback: fetch from company service using auth
     const { userId, getToken } = getAuth(request);
-    
     if (!userId) {
-      return { error: new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 }) };
+      return { 
+        error: new Response(
+          JSON.stringify({ error: 'Unauthorized' }), 
+          { status: 401 }
+        ) 
+      };
     }
 
     const token = await getToken();
-    
     if (!token) {
-      return { error: new Response(JSON.stringify({ error: 'Unauthorized - No token' }), { status: 401 }) };
+      return { 
+        error: new Response(
+          JSON.stringify({ error: 'Unauthorized - No token' }), 
+          { status: 401 }
+        ) 
+      };
     }
 
-    const response = await fetch(`${COMPANY_SERVICE_URL}/companies?owner_id=${userId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(
+      `${COMPANY_SERVICE_URL}/companies?owner_id=${userId}`, 
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
@@ -76,65 +77,33 @@ export async function getCompanyId(request: NextRequest, body?: any): Promise<{ 
     }
 
     const responseData = await response.json();
-    console.log('Company data received:', JSON.stringify(responseData, null, 2));
-    
-    // First, try to parse the response data
-    let data;
-    try {
-      // Check if the response is a string that needs to be parsed
-      data = typeof responseData === 'string' ? JSON.parse(responseData) : responseData;
-    } catch (e) {
-      console.error('Error parsing company data:', e);
-      data = responseData; // Use as is if parsing fails
-    }
-    
-    // Log the parsed data for debugging
-    console.log('Parsed company data:', JSON.stringify(data, null, 2));
+    const data = typeof responseData === 'string' 
+      ? JSON.parse(responseData) 
+      : responseData;
     
     let companyId: string | undefined;
     
-    // Handle case where data is an array (direct response from /companies?owner_id=)
     if (Array.isArray(data) && data.length > 0) {
       companyId = data[0]?.company_id || data[0]?.id;
-      console.log('Found company ID in array response:', companyId);
-    }
-    // Handle case where data is an object with a companies array
-    else if (data && typeof data === 'object' && Array.isArray(data.companies) && data.companies.length > 0) {
+    } else if (data && Array.isArray(data.companies) && data.companies.length > 0) {
       companyId = data.companies[0]?.company_id || data.companies[0]?.id;
-      console.log('Found company ID in data.companies array:', companyId);
-    }
-    // Handle case where company_id is at the root
-    else if (data?.company_id) {
+    } else if (data?.company_id) {
       companyId = data.company_id;
-      console.log('Found company ID at root level (company_id):', companyId);
-    }
-    // Handle case where id is at the root
-    else if (data?.id) {
+    } else if (data?.id) {
       companyId = data.id;
-      console.log('Found company ID at root level (id):', companyId);
     }
     
     if (!companyId) {
-      const errorMsg = 'No valid company ID found in response';
-      console.error(errorMsg, { responseData, parsedData: data });
       return { 
         error: new Response(JSON.stringify({ 
-          error: errorMsg,
-          details: 'The company service response did not contain a valid company ID',
-          responseData: data,
-          rawResponse: responseData
-        }, null, 2), { 
-          status: 404,
-          headers: { 'Content-Type': 'application/json' }
-        })
+          error: 'No valid company ID found in response',
+        }), { status: 404 })
       };
     }
     
-    console.log('Successfully extracted company ID:', companyId);
     return { company_id: companyId };
     
   } catch (error) {
-    console.error('Error fetching company ID:', error);
     return { 
       error: new Response(JSON.stringify({ 
         error: 'Internal server error',

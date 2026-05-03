@@ -170,40 +170,34 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { userId, getToken } = getAuth(request);
-    
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const token = await getToken();
-    
     if (!token) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No token' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized - No token' }, { status: 401 });
     }
 
+    // Read body ONCE here
     const body = await request.json();
     
-    // Get company_id from body only — don't call getCompanyId(request) after reading body
-    const company_id = body.company_id;
-    
+    let company_id = body.company_id;
+
+    // Only call getCompanyId if company_id not in body, pass body explicitly
     if (!company_id) {
-      return NextResponse.json({ 
-        error: 'Company ID is required',
-        details: 'Company ID must be provided in request body'
-      }, { status: 400 });
+      const companyResult = await getCompanyId(request, body); // pass body!
+      if ('error' in companyResult) {
+        return companyResult.error;
+      }
+      company_id = companyResult.company_id;
     }
-    
+
+    body.company_id = company_id;
     const data = await createQuiz(company_id, token, body);
     return NextResponse.json(data, { status: 201 });
 
   } catch (error: any) {
-    console.error('Error in POST /api/quizzes:', error);
     return handleApiError(error);
   }
 }
