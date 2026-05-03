@@ -71,9 +71,10 @@ export async function POST(req: NextRequest) {
     // Company info is already validated by getCompanyId, no need for additional check
 
     // Build backend FormData fresh — do NOT reuse req's formData
+    // Order matters! Match backend endpoint signature exactly
     const backendFormData = new FormData();
-    backendFormData.append('files', file);  // Note: backend expects 'files' not 'file'
     backendFormData.append('role', role);
+    backendFormData.append('files', file);  // Note: backend expects 'files' not 'file'
     backendFormData.append('experience', experience);
     backendFormData.append('num_questions', numQuestions.toString());
     backendFormData.append('theory_questions_percentage', theoryQuestionsPercentage.toString());

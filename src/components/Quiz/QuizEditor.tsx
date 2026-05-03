@@ -467,7 +467,21 @@ export function QuizEditor() {
     setIsModalOpen(true);
   };
 
+  // Debug: Log loading states
+  console.log('QuizEditor Debug - Loading states:', {
+    isUserLoaded,
+    isCompanyLoading,
+    isQuizzesLoading,
+    isLoadingPublished,
+    currentQuiz: currentQuiz ? 'found' : 'not found',
+    publishedQuiz: publishedQuiz ? 'found' : 'not found',
+    companyInfo: companyInfo ? 'found' : 'not found',
+    quizzesData: quizzesData ? quizzesData.length + ' items' : 'not found',
+    quizId
+  });
+
   if (!isUserLoaded || isCompanyLoading || isQuizzesLoading || (currentQuiz?.is_publish && isLoadingPublished)) {
+    console.log('QuizEditor - Still loading...');
     return <PageLoading fullScreen />;
   }
 
