@@ -626,7 +626,7 @@ export default function CandidateDetailPage() {
       const attemptsWs = XLSX.utils.aoa_to_sheet(attemptsData);
       XLSX.utils.book_append_sheet(wb, attemptsWs, "All Attempts");
       XLSX.writeFile(wb, `${candidateAnalytics.username.replace(/\s+/g, "_")}_quiz_results.xlsx`);
-      toast({ title: "Success", description: "Excel file downloaded successfully" });
+      toast({ title: "Success", description: "Excel file downloaded successfully", className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30" });
     } catch (error) {
       toast({ title: "Error", description: "Failed to download Excel file", variant: "destructive" });
     } finally {
