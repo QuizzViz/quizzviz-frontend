@@ -50,7 +50,7 @@ interface UseCreateQuizReturn {
   isLoadingCompany: boolean;
   
   // Actions
-  handleGenerate: (techStack: any[],codePercentage?: number,  role?: string) => Promise<void>;
+  handleGenerate: (techStack: any[], codePercentage?: number, role?: string, uploadedFiles?: any[]) => Promise<void>;
 }
 
 // Encapsulates all state and behavior for CreateQuiz workflow
@@ -118,7 +118,7 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
   }, [quizGeneration]);
 
   // API call + animation toggles
-  const handleGenerate = useCallback(async (techStack: any[], codePercentage: number = 50, role?: string): Promise<void> => {
+  const handleGenerate = useCallback(async (techStack: any[], codePercentage: number = 50, role?: string, uploadedFiles?: any[]): Promise<void> => {
     if (isReasoning || isFetching) return;
 
     const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
@@ -130,26 +130,30 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       setError("Experience is required");
       return;
     }
-    if (!techStack || !Array.isArray(techStack) || techStack.length === 0) {
-      setError("At least one technology is required in the tech stack");
-      return;
-    }
-  
-    // Ensure all tech stack items have valid names and weights
-    const validTechStack = techStack.filter(tech => 
-      tech && 
-      typeof tech === 'object' && 
-      'name' in tech && 
-      typeof tech.name === 'string' && 
-      tech.name.trim() !== '' &&
-      'weight' in tech && 
-      typeof tech.weight === 'number' &&
-      tech.weight > 0
-    );
-  
-    if (validTechStack.length === 0) {
-      setError("Please add at least one valid technology with a weight greater than 0");
-      return;
+    
+    // If no files are uploaded, require tech stack
+    if (!uploadedFiles || uploadedFiles.length === 0) {
+      if (!techStack || !Array.isArray(techStack) || techStack.length === 0) {
+        setError("At least one technology is required in the tech stack when no files are uploaded");
+        return;
+      }
+    
+      // Ensure all tech stack items have valid names and weights
+      const validTechStack = techStack.filter(tech => 
+        tech && 
+        typeof tech === 'object' && 
+        'name' in tech && 
+        typeof tech.name === 'string' && 
+        tech.name.trim() !== '' &&
+        'weight' in tech && 
+        typeof tech.weight === 'number' &&
+        tech.weight > 0
+      );
+    
+      if (validTechStack.length === 0) {
+        setError("Please add at least one valid technology with a weight greater than 0");
+        return;
+      }
     }
     
     // Ensure we have a company ID
@@ -173,39 +177,81 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
     }
 
     try {
-      // Prepare the payload with the provided code percentage
       const codePct = Math.max(0, Math.min(100, codePercentage));
-      const payload = {
-        topic: topic.trim(),
-        experience: experienceToApi(experience),
-        num_questions: numQuestions,
-        theory_questions_percentage: 100 - codePct,
-        code_analysis_questions_percentage: codePct,
-        user_id: user?.id,
-        role: role,
-        timestamp: Date.now(),
-        techStack: validTechStack.map(tech => ({
-          name: tech.name.trim(),
-          weight: Math.round(tech.weight)
-        })),
-        is_deleted: false,
-        is_publish: false,
-        company_id: companyInfo?.id || ''
-      };
+      let response: Response;
       
-      console.log('Sending payload with tech stack:', JSON.stringify(payload, null, 2));
-
-      console.log('Sending quiz generation request:', payload);
-      
-      // Build the API URL with companyId if available
-      const apiUrl = `/api/quizzes${companyInfo?.id ? `?companyId=${encodeURIComponent(companyInfo.id)}` : ''}`;
-      
-      // Make a single API call to generate and save the quiz
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      // Use file upload endpoint if files are provided
+      if (uploadedFiles && uploadedFiles.length > 0) {
+        // Use the first file for quiz generation (as per backend endpoint design)
+        const firstFile = uploadedFiles[0];
+        
+        const formData = new FormData();
+        formData.append('file', firstFile.file);
+        formData.append('role', role);
+        formData.append('experience', experienceToApi(experience));
+        formData.append('numQuestions', numQuestions.toString());
+        formData.append('theoryQuestionsPercentage', (100 - codePct).toString());
+        formData.append('codeAnalysisQuestionsPercentage', codePct.toString());
+        formData.append('isPublish', 'false');
+        formData.append('isDeleted', 'false');
+        
+        console.log('Sending file-based quiz generation request:', {
+          role,
+          experience: experienceToApi(experience),
+          numQuestions,
+          theoryQuestionsPercentage: 100 - codePct,
+          codeAnalysisQuestionsPercentage: codePct,
+          fileName: firstFile.name,
+          fileSize: firstFile.size
+        });
+        
+        response = await fetch('/api/quiz/file', {
+          method: 'POST',
+          body: formData,
+        });
+      } else {
+        // Use regular endpoint with tech stack
+        const validTechStack = techStack.filter(tech => 
+          tech && 
+          typeof tech === 'object' && 
+          'name' in tech && 
+          typeof tech.name === 'string' && 
+          tech.name.trim() !== '' &&
+          'weight' in tech && 
+          typeof tech.weight === 'number' &&
+          tech.weight > 0
+        );
+        
+        const payload = {
+          topic: topic.trim(),
+          experience: experienceToApi(experience),
+          num_questions: numQuestions,
+          theory_questions_percentage: 100 - codePct,
+          code_analysis_questions_percentage: codePct,
+          user_id: user?.id,
+          role: role,
+          timestamp: Date.now(),
+          techStack: validTechStack.map(tech => ({
+            name: tech.name.trim(),
+            weight: Math.round(tech.weight)
+          })),
+          is_deleted: false,
+          is_publish: false,
+          company_id: companyInfo?.id || ''
+        };
+        
+        console.log('Sending payload with tech stack:', JSON.stringify(payload, null, 2));
+        console.log('Sending quiz generation request:', payload);
+        
+        // Build the API URL with companyId if available
+        const apiUrl = `/api/quizzes${companyInfo?.id ? `?companyId=${encodeURIComponent(companyInfo.id)}` : ''}`;
+        
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
 
       const responseText = await response.text();
       console.log('Raw API response:', responseText);
