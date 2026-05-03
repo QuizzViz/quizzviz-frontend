@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   try {
     // Get authentication details from Clerk
     const auth = getAuth(req);
-    const { userId: authUserId } = auth;
+    const { userId: authUserId, getToken } = auth;
     
     if (!authUserId) {
       return NextResponse.json({ 
@@ -18,21 +18,13 @@ export async function POST(req: NextRequest) {
       }, { status: 401 });
     }
     
-    // Get the session token from cookies
-    const cookieHeader = req.headers.get('cookie') || '';
-    const cookies = Object.fromEntries(
-      cookieHeader.split(';').map(c => {
-        const [key, ...vals] = c.trim().split('=');
-        return [key, vals.join('=')];
-      })
-    );
-    
-    const sessionToken = cookies.__session || '';
+    // Use Clerk's getToken() instead of reading cookies manually
+    const sessionToken = await getToken();
     
     if (!sessionToken) {
       return NextResponse.json({ 
         error: 'Unauthorized',
-        details: 'No authentication token found in cookies'
+        details: 'No authentication token found'
       }, { status: 401 });
     }
     
@@ -78,9 +70,9 @@ export async function POST(req: NextRequest) {
 
     // Company info is already validated by getCompanyId, no need for additional check
 
-    // Create FormData for the backend request
+    // Build backend FormData fresh — do NOT reuse req's formData
     const backendFormData = new FormData();
-    backendFormData.append('file', file);
+    backendFormData.append('files', file);  // Note: backend expects 'files' not 'file'
     backendFormData.append('role', role);
     backendFormData.append('experience', experience);
     backendFormData.append('num_questions', numQuestions.toString());
@@ -111,13 +103,29 @@ export async function POST(req: NextRequest) {
       console.log(`  ${key}:`, value);
     }
 
+    console.log('=== FILE UPLOAD DEBUG ===');
+    console.log('Backend URL:', BACKEND_URL);
+    console.log('Session token exists:', !!sessionToken);
+    console.log('FormData entries:');
+    for (let [key, value] of backendFormData.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: File - name: ${value.name}, size: ${value.size}, type: ${value.type}`);
+      } else {
+        console.log(`  ${key}:`, value);
+      }
+    }
+
     const backendResp = await fetch(BACKEND_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${sessionToken}`
+        // Do NOT set Content-Type — let fetch set multipart boundary automatically
       },
       body: backendFormData,
     });
+
+    console.log('Backend response status:', backendResp.status);
+    console.log('Backend response headers:', Object.fromEntries(backendResp.headers.entries()));
 
     const contentType = backendResp.headers.get('content-type') || '';
 
@@ -125,8 +133,11 @@ export async function POST(req: NextRequest) {
       let errorData;
       try {
         errorData = await backendResp.json();
+        console.error('Backend error response:', errorData);
       } catch (e) {
-        errorData = { error: await backendResp.text() };
+        const errorText = await backendResp.text();
+        errorData = { error: errorText };
+        console.error('Backend error text:', errorText);
       }
       
       // Check for non-software topic error

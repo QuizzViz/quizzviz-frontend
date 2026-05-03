@@ -44,7 +44,13 @@ async function fetchQuizzes(token: string, company_id: string) {
 }
 
 async function createQuiz(company_id: string, token: string, body: any) {
+  console.log('=== CREATE QUIZ DEBUG ===');
+  console.log('Company ID:', company_id);
+  console.log('Token exists:', !!token);
+  console.log('Request body:', JSON.stringify(body, null, 2));
+  
   if (!body) {
+    console.error('Request body is missing');
     throw new Error('Request body is required');
   }
 
@@ -183,20 +189,16 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
-    // Check if company_id is already in the body (from frontend)
-    let company_id = body.company_id;
+    // Get company_id from body only — don't call getCompanyId(request) after reading body
+    const company_id = body.company_id;
     
-    // If not in body, try to get it from query params or fallback to getCompanyId
     if (!company_id) {
-      const companyResult = await getCompanyId(request);
-      if ('error' in companyResult) {
-        return companyResult.error;
-      }
-      company_id = companyResult.company_id;
+      return NextResponse.json({ 
+        error: 'Company ID is required',
+        details: 'Company ID must be provided in request body'
+      }, { status: 400 });
     }
     
-    // Ensure company_id is in the body for createQuiz function
-    body.company_id = company_id;
     const data = await createQuiz(company_id, token, body);
     return NextResponse.json(data, { status: 201 });
 
