@@ -289,23 +289,25 @@ export default function FilePreviewModal({
               </div>
             </div>
           ) : (
-            <ScrollArea className="h-full border rounded-lg">
-              <div className="p-4">
-                {content ? (
-                  <pre className={cn(
-                    "text-sm leading-relaxed whitespace-pre-wrap break-words",
-                    "bg-muted/30 rounded-lg p-4 font-mono",
-                    getLanguageClass(file?.name || '')
-                  )}>
-                    <code>{content}</code>
-                  </pre>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No content to display
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+            <div className="h-full">
+              <ScrollArea className="h-full max-h-[60vh] border rounded-lg">
+                <div className="p-4">
+                  {content ? (
+                    <pre className={cn(
+                      "text-sm leading-relaxed whitespace-pre-wrap break-words overflow-x-auto",
+                      "bg-muted/30 rounded-lg p-4 font-mono min-h-full",
+                      getLanguageClass(file?.name || '')
+                    )}>
+                      <code className="text-xs">{content}</code>
+                    </pre>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No content to display
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
           )}
         </div>
       </DialogContent>

@@ -152,7 +152,7 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(({
       </div>
 
       {isOpen && (
-        <div className={cn("absolute z-10 mt-1 w-full rounded-md bg-popover shadow-lg", popoverClassName)}>
+        <div className={cn("absolute z-50 mt-1 w-full rounded-md bg-popover shadow-lg border border-border/50", popoverClassName)}>
           <div className="max-h-60 overflow-auto rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
             {filteredOptions.length === 0 ? (
               <div className="px-4 py-2 text-sm text-muted-foreground">

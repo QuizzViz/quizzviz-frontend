@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,7 @@ export default function FileUpload({
   const [uploadedSuccessfully, setUploadedSuccessfully] = useState(false);
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -181,7 +182,7 @@ export default function FileUpload({
         toast({
           title: "Files uploaded successfully!",
           description: `${newFiles.length} file(s) uploaded successfully.`,
-          className: "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/50",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
         });
         
         setTimeout(() => setUploadedSuccessfully(false), 2000);
@@ -191,7 +192,11 @@ export default function FileUpload({
 
   const removeFile = useCallback((id: string) => {
     onChange(value.filter(file => file.id !== id));
-  }, [value, onChange]);
+    // Clear the file input to allow re-uploading the same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [value, onChange, fileInputRef]);
 
   const handleFileClick = useCallback((file: UploadedFile) => {
     setPreviewFile(file);
@@ -208,7 +213,7 @@ export default function FileUpload({
     toast({
       title: "File removed",
       description: "File has been removed from the upload list.",
-      className: "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/50",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
     });
   }, [removeFile, toast]);
 
@@ -347,6 +352,7 @@ export default function FileUpload({
               </Button>
               
               <input
+                ref={fileInputRef}
                 id="file-input"
                 type="file"
                 multiple
@@ -377,15 +383,21 @@ export default function FileUpload({
       {value.length > 0 && (
         <div className="space-y-3">
           <Label className="text-foreground font-medium flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <CheckCircle2 className="h-4 w-4 text-green-500 animate-pulse" />
             Uploaded Files ({value.length})
           </Label>
           <div className="space-y-2">
             {value.map((uploadedFile, index) => (
               <Card 
                 key={uploadedFile.id} 
-                className="p-4 border border-border/50 hover:border-green-500/50 transition-all duration-200 hover:shadow-md hover:shadow-green-500/10 cursor-pointer group"
+                className={cn(
+                  "p-4 border transition-all duration-300 cursor-pointer group",
+                  "hover:border-green-500/50 hover:shadow-md hover:shadow-green-500/10",
+                  "animate-in slide-in-from-bottom-2 fade-in-0",
+                  index === value.length - 1 && uploadedSuccessfully && "ring-2 ring-green-500/50 ring-offset-2"
+                )}
                 onClick={() => handleFileClick(uploadedFile)}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
@@ -395,9 +407,17 @@ export default function FileUpload({
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {uploadedFile.name}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {uploadedFile.name}
+                        </p>
+                        {index === value.length - 1 && uploadedSuccessfully && (
+                          <div className="flex items-center gap-1 text-green-500">
+                            <CheckCircle2 className="h-3 w-3 animate-pulse" />
+                            <span className="text-xs font-medium">New</span>
+                          </div>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {formatFileSize(uploadedFile.size)}
                       </p>
