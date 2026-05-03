@@ -252,14 +252,7 @@ const PricingPage = () => {
                 <div className={`absolute -inset-0.5 bg-gradient-to-r ${plan.popular ? 'from-amber-500 to-orange-500' : 'from-emerald-500 to-teal-500'} rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500`}></div>
                 
                 {/* Popular Badge */}
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                    <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                      {plan.tagline}
-                    </div>
-                  </div>
-                )}
-                
+                                
                 <div className="relative bg-gradient-to-br from-gray-900 to-gray-950 rounded-2xl shadow-2xl overflow-hidden border border-gray-800">
                   <div className="p-6">
                     {/* Plan Header */}
@@ -268,7 +261,7 @@ const PricingPage = () => {
                         <h3 className={`text-xl font-bold text-white mb-0.5 ${plan.popular ? 'bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent' : ''}`}>
                           {plan.name}
                         </h3>
-                        {!plan.popular && <p className="text-gray-400 text-xs">{plan.tagline}</p>}
+                        <p className="text-gray-400 text-xs">{plan.tagline}</p>
                       </div>
                       <div className={`bg-gradient-to-br ${plan.popular ? 'from-amber-500/20 to-orange-500/20 border-amber-500/30' : 'from-emerald-500/20 to-teal-500/20 border-emerald-500/30'} p-2.5 rounded-xl border`}>
                         <Building2 className={`w-6 h-6 ${plan.popular ? 'text-amber-400' : 'text-emerald-400'}`} />
