@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Code, Upload, BarChart3, Layers, FileText } from 'lucide-react';
+import { BarChart3, FileText, Layers, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type InputMode = 'tech_stack' | 'file_upload';
@@ -12,126 +12,141 @@ interface InputModeToggleProps {
 }
 
 export function InputModeToggle({ mode, onModeChange, className }: InputModeToggleProps) {
+  const [hovered, setHovered] = useState<InputMode | null>(null);
+
   return (
-    <div className={cn("relative w-full z-0", className)}>
-      {/* Header with icon and gradient */}
-      <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20">
-        <div className="p-2 rounded-lg bg-gradient-to-r from-green-500 to-blue-500">
-          <Layers className="h-4 w-4 text-white" />
+    <div className={cn('relative w-full', className)}>
+      {/* Section Label */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-green-500 to-blue-500 shadow-sm">
+          <Layers className="h-3.5 w-3.5 text-white" />
         </div>
-        <div className="flex-1">
-          <h3 className="text-sm font-semibold text-foreground">Quiz Content Source</h3>
-          <p className="text-xs text-muted-foreground">Choose how you want to generate your quiz</p>
+        <div>
+          <span className="text-sm font-semibold text-foreground tracking-tight">Quiz Content Source</span>
+          <span className="ml-2 text-xs text-muted-foreground">Choose how to generate your quiz</span>
         </div>
       </div>
-      
-      {/* Toggle Container */}
-      <div className="relative bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl p-1.5 border border-border/50 shadow-sm">
-        {/* Sliding indicator */}
-        <div 
+
+      {/* Toggle Pills */}
+      <div className="relative flex gap-2 p-1 rounded-2xl bg-muted/60 border border-border/40 shadow-inner backdrop-blur-sm">
+        {/* Animated Background Pill */}
+        <div
           className={cn(
-            "absolute top-1.5 bottom-1.5 rounded-xl shadow-lg transition-all duration-500 ease-out bg-gradient-to-r",
-            mode === 'tech_stack' 
-              ? "left-1.5 right-[50%] from-green-500 to-green-600" 
-              : "left-[50%] right-1.5 from-blue-500 to-blue-600"
+            'absolute top-1 bottom-1 rounded-xl transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] shadow-md',
+            mode === 'tech_stack'
+              ? 'left-1 right-[50%] bg-gradient-to-r from-green-500 to-emerald-500'
+              : 'left-[50%] right-1 bg-gradient-to-r from-blue-500 to-indigo-500'
           )}
         >
-          <div className="absolute inset-0 rounded-xl bg-white/20 backdrop-blur-sm" />
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-white/10 to-transparent" />
+          {/* Gloss overlay */}
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/25 to-transparent" />
+          {/* Subtle inner glow */}
+          <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/20" />
         </div>
-        
-        {/* Buttons */}
-        <div className="relative flex">
-          {/* Tech Stack Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onModeChange('tech_stack')}
-            className={cn(
-              "relative z-10 flex-1 transition-all duration-300 py-4 rounded-xl",
-              mode === 'tech_stack'
-                ? "text-white hover:text-white/90 shadow-lg"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className={cn(
-                "p-2 rounded-lg transition-all duration-300",
-                mode === 'tech_stack' 
-                  ? "bg-white/20 backdrop-blur-sm" 
-                  : "bg-muted/50"
-              )}>
-                <BarChart3 className="h-5 w-5" />
-              </div>
-              <div className="text-center">
-                <span className="font-semibold text-sm">Tech Stack</span>
-                <div className="text-xs opacity-80 mt-0.5">Predefined topics</div>
-              </div>
+
+        {/* Tech Stack Button */}
+        <button
+          onClick={() => onModeChange('tech_stack')}
+          onMouseEnter={() => setHovered('tech_stack')}
+          onMouseLeave={() => setHovered(null)}
+          className={cn(
+            'relative z-10 flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl',
+            'transition-all duration-200 text-sm font-medium',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50',
+            mode === 'tech_stack'
+              ? 'text-white'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <div className={cn(
+            'flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200',
+            mode === 'tech_stack'
+              ? 'bg-white/20 text-white'
+              : hovered === 'tech_stack'
+                ? 'bg-green-500/10 text-green-500'
+                : 'bg-muted text-muted-foreground'
+          )}>
+            <BarChart3 className="h-4 w-4" />
+          </div>
+          <div className="text-left leading-tight">
+            <div className="font-semibold text-sm leading-none">Tech Stack</div>
+            <div className={cn(
+              'text-[11px] mt-0.5 transition-colors',
+              mode === 'tech_stack' ? 'text-white/70' : 'text-muted-foreground'
+            )}>
+              Predefined topics
             </div>
-          </Button>
-          
-          {/* File Upload Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onModeChange('file_upload')}
-            className={cn(
-              "relative z-10 flex-1 transition-all duration-300 py-4 rounded-xl",
-              mode === 'file_upload'
-                ? "text-white hover:text-white/90 shadow-lg"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className={cn(
-                "p-2 rounded-lg transition-all duration-300",
-                mode === 'file_upload' 
-                  ? "bg-white/20 backdrop-blur-sm" 
-                  : "bg-muted/50"
-              )}>
-                <FileText className="h-5 w-5" />
-              </div>
-              <div className="text-center">
-                <span className="font-semibold text-sm">File Upload</span>
-                <div className="text-xs opacity-80 mt-0.5">Your content</div>
-              </div>
+          </div>
+        </button>
+
+        {/* File Upload Button */}
+        <button
+          onClick={() => onModeChange('file_upload')}
+          onMouseEnter={() => setHovered('file_upload')}
+          onMouseLeave={() => setHovered(null)}
+          className={cn(
+            'relative z-10 flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl',
+            'transition-all duration-200 text-sm font-medium',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50',
+            mode === 'file_upload'
+              ? 'text-white'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <div className={cn(
+            'flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200',
+            mode === 'file_upload'
+              ? 'bg-white/20 text-white'
+              : hovered === 'file_upload'
+                ? 'bg-blue-500/10 text-blue-500'
+                : 'bg-muted text-muted-foreground'
+          )}>
+            <FileText className="h-4 w-4" />
+          </div>
+          <div className="text-left leading-tight">
+            <div className="font-semibold text-sm leading-none">File Upload</div>
+            <div className={cn(
+              'text-[11px] mt-0.5 transition-colors',
+              mode === 'file_upload' ? 'text-white/70' : 'text-muted-foreground'
+            )}>
+              Your content
             </div>
-          </Button>
-        </div>
+          </div>
+        </button>
       </div>
-      
-      {/* Mode Description */}
-      <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-green-50/50 to-blue-50/50 dark:from-green-950/20 dark:to-blue-950/20 border border-green-200/50 dark:border-green-800/30">
+
+      {/* Mode Description Card */}
+      <div className={cn(
+        'mt-3 p-3.5 rounded-xl border transition-all duration-300',
+        mode === 'tech_stack'
+          ? 'bg-green-500/5 border-green-500/20'
+          : 'bg-blue-500/5 border-blue-500/20'
+      )}>
         <div className="flex items-start gap-3">
           <div className={cn(
-            "p-2 rounded-lg transition-all duration-300",
-            mode === 'tech_stack' 
-              ? "bg-green-500 text-white" 
-              : "bg-blue-500 text-white"
+            'flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg shadow-sm transition-all duration-300',
+            mode === 'tech_stack'
+              ? 'bg-gradient-to-br from-green-400 to-emerald-500'
+              : 'bg-gradient-to-br from-blue-400 to-indigo-500'
           )}>
-            {mode === 'tech_stack' ? (
-              <BarChart3 className="h-4 w-4" />
-            ) : (
-              <FileText className="h-4 w-4" />
-            )}
+            {mode === 'tech_stack'
+              ? <BarChart3 className="h-4 w-4 text-white" />
+              : <FileText className="h-4 w-4 text-white" />
+            }
           </div>
-          <div className="flex-1">
-            <div className="font-semibold text-sm text-foreground mb-1">
+          <div>
+            <div className={cn(
+              'text-xs font-semibold mb-0.5 transition-colors',
+              mode === 'tech_stack' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'
+            )}>
               {mode === 'tech_stack' ? 'Tech Stack Mode' : 'File Upload Mode'}
             </div>
-            <div className="text-xs leading-relaxed text-muted-foreground">
-              {mode === 'tech_stack' ? (
-                <>
-                  Select technologies and topics to generate quiz questions from our comprehensive knowledge base. 
-                  Perfect for technical interviews and skill assessments.
-                </>
-              ) : (
-                <>
-                  Upload your own code files, documentation, or text files to generate personalized quiz questions. 
-                  Great for custom training materials and specific content.
-                </>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {mode === 'tech_stack'
+                ? 'Generate questions from our curated knowledge base. Ideal for technical interviews and skill assessments.'
+                : 'Upload code files, docs, or text to create tailored questions from your own content.'
+              }
+            </p>
           </div>
         </div>
       </div>
