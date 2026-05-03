@@ -40,15 +40,15 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const companyIdFromForm = formData.get('company_id') as string;
     
-    // Create a body object for getCompanyId function
-    const bodyForCompanyId = { company_id: companyIdFromForm };
-    
-    // Get company ID using the same function as tech stack route
-    const companyResult = await getCompanyId(req, bodyForCompanyId);
-    if ('error' in companyResult) {
-      return companyResult.error;
+    // Validate company ID directly since we already have it from form data
+    if (!companyIdFromForm) {
+      return NextResponse.json({
+        error: 'Company ID is required',
+        details: 'Company ID must be provided in form data'
+      }, { status: 400 });
     }
-    const { company_id: companyId } = companyResult;
+    
+    const companyId = companyIdFromForm;
 
     
     // Extract required fields
