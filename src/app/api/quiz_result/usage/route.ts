@@ -42,10 +42,15 @@ export async function GET(request: NextRequest) {
     const url = `${API_BASE_URL}/result/owner/${encodeURIComponent(company_id)}/usage`;
     console.log('Making request to:', url);
 
-    // No authentication needed - just accept headers
+    // Get auth token from request headers and pass to backend
+    const authHeader = request.headers.get('authorization');
     const headers: Record<string, string> = {
       'accept': 'application/json',
     };
+    
+    if (authHeader) {
+      headers['Authorization'] = authHeader;
+    }
 
     const response = await fetch(url, {
       method: 'GET',
