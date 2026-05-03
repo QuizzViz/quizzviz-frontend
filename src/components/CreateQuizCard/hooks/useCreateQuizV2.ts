@@ -187,7 +187,8 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
     // Notify other tabs that generation has started
     if (quizGeneration?.startGeneration) {
       if (uploadedFiles && uploadedFiles.length > 0) {
-        quizGeneration.startGeneration(uploadedFiles[0].name);
+        // For file uploads, show just the role like tech stack mode
+        quizGeneration.startGeneration(role);
       } else {
         const validTechStack = techStack.filter(tech => 
           tech && 
