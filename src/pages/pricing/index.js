@@ -16,7 +16,8 @@ const plans = [
     quarterlyPrice: '282',
     yearlyPrice: '1010',
     tagline: 'Perfect for startups',
-    monthlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/2cbc34b9-8d5d-4c22-8914-2cf33f8165e6",
+    // monthlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/2cbc34b9-8d5d-4c22-8914-2cf33f8165e6",
+    monthlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/18300c31-94d2-44b1-9963-5fa31617fc0c",
     quarterlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/f9215dd2-ff70-4299-a967-d765f37cc708",
     yearlyLink: "https://quizzviz1.lemonsqueezy.com/checkout/buy/acaeddc9-da1d-4539-8cc5-d130eca8363c",
     features: [
