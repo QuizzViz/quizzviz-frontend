@@ -105,6 +105,11 @@ export async function POST(req: NextRequest) {
         file_type: file.type
       }
     });
+    
+    console.log('Backend FormData contents:');
+    for (let [key, value] of backendFormData.entries()) {
+      console.log(`  ${key}:`, value);
+    }
 
     const backendResp = await fetch(BACKEND_URL, {
       method: 'POST',
@@ -164,6 +169,12 @@ export async function POST(req: NextRequest) {
     
   } catch (err: any) {
     console.error('API error in /api/quiz/file:', err);
+    console.error('Error details:', {
+      message: err?.message,
+      stack: err?.stack,
+      name: err?.name,
+      status: err?.status
+    });
     return NextResponse.json({ 
       error: err?.message || 'Internal Server Error',
       details: process.env.NODE_ENV === 'development' ? err.stack : undefined
