@@ -118,10 +118,16 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
   }, [quizGeneration]);
 
   // API call + animation toggles
-  const handleGenerate = useCallback(async (techStack: any[], codePercentage: number = 50, role?: string, uploadedFiles?: any[]): Promise<void> => {
+  const handleGenerate = useCallback(async (
+    techStack: any[],
+    codePercentage: number = 50,
+    role?: string,
+    uploadedFiles?: any[]
+  ): Promise<void> => {
     if (isReasoning || isFetching) return;
 
     const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
+
     if (!role) {
       setError("Role is required");
       return;
@@ -138,7 +144,6 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         return;
       }
     
-      // Ensure all tech stack items have valid names and weights
       const validTechStack = techStack.filter(tech => 
         tech && 
         typeof tech === 'object' && 
@@ -163,8 +168,8 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       return;
     }
     
-    // Validate company ID format (should be a UUID or proper ID, not 'perfectprompthunt')
-    if (typeof companyId !== 'string' || companyId.length < 10 || companyId.includes('perfectprompthunt')) {
+    // Validate company ID format
+    if (typeof companyId !== 'string' || companyId.length < 10) {
       console.error('Invalid company ID detected:', companyId);
       setError("Invalid company ID. Please log out and log back in to refresh your session.");
       return;
@@ -194,7 +199,9 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
           typeof tech.weight === 'number' &&
           tech.weight > 0
         );
-        quizGeneration.startGeneration(`${role} - ${validTechStack.map((t: any) => t.name).join(', ') || 'Tech Stack'}`);
+        quizGeneration.startGeneration(
+          `${role} - ${validTechStack.map((t: any) => t.name).join(', ') || 'Tech Stack'}`
+        );
       }
     }
 
@@ -204,11 +211,29 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       
       // Use file upload endpoint if files are provided
       if (uploadedFiles && uploadedFiles.length > 0) {
-        // Use the first file for quiz generation (as per backend endpoint design)
         const firstFile = uploadedFiles[0];
-        
+
+        // ✅ FIX: Read file text content FIRST before touching the File object
+        // in FormData. Once a File is appended to FormData, its stream is
+        // locked and calling .text() on it afterwards throws
+        // "Body is unusable: Body has already been read".
+        let fileContent = '';
+        const isTextFile =
+          firstFile.file.type === 'text/plain' ||
+          firstFile.file.name.endsWith('.txt') ||
+          firstFile.file.name.endsWith('.md');
+
+        if (isTextFile) {
+          try {
+            fileContent = await firstFile.file.text(); // Read BEFORE appending
+          } catch (e) {
+            console.warn('Could not read file text content:', e);
+          }
+        }
+
+        // NOW build FormData — file stream is still intact at this point
         const formData = new FormData();
-        formData.append('file', firstFile.file);
+        formData.append('file', firstFile.file);               // stream untouched ✅
         formData.append('role', role);
         formData.append('experience', experienceToApi(experience));
         formData.append('num_questions', numQuestions.toString());
@@ -216,11 +241,11 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         formData.append('code_analysis_questions_percentage', codePct.toString());
         formData.append('is_publish', 'false');
         formData.append('is_deleted', 'false');
-        formData.append('company_id', companyInfo?.id || '');
-        
-        // Add file content for backend analysis
-        if (firstFile.file.type === 'text/plain' || firstFile.file.name.endsWith('.txt') || firstFile.file.name.endsWith('.md')) {
-          formData.append('file_content', await firstFile.file.text());
+        formData.append('company_id', companyId);
+
+        // Append pre-read text content if available
+        if (fileContent) {
+          formData.append('file_content', fileContent);
         }
         
         console.log('Sending file-based quiz generation request:', {
@@ -230,13 +255,17 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
           theoryQuestionsPercentage: 100 - codePct,
           codeAnalysisQuestionsPercentage: codePct,
           fileName: firstFile.name,
-          fileSize: firstFile.size
+          fileSize: firstFile.size,
+          hasFileContent: !!fileContent,
         });
         
         response = await fetch('/api/quiz/file', {
           method: 'POST',
+          // Do NOT set Content-Type header — browser sets it automatically
+          // with the correct multipart boundary for FormData
           body: formData,
         });
+
       } else {
         // Use regular endpoint with tech stack
         const validTechStack = techStack.filter(tech => 
@@ -264,16 +293,12 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
           })),
           is_deleted: false,
           is_publish: false,
-          company_id: companyInfo?.id || ''
+          company_id: companyId,
         };
         
-        console.log('Sending payload with tech stack:', JSON.stringify(payload, null, 2));
-        console.log('Sending quiz generation request:', payload);
+        console.log('Sending quiz generation request:', JSON.stringify(payload, null, 2));
         
-        // Build the API URL - company_id goes in body, not query parameter
-        const apiUrl = `/api/quizzes`;
-        
-        response = await fetch(apiUrl, {
+        response = await fetch('/api/quizzes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -294,7 +319,6 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
 
       // Check for error in successful response (200 but with error field)
       if (responseData.error) {
-        // Handle topic-related errors
         if (responseData.error.includes('not related to software')) {
           const topicError: TopicError = {
             error: responseData.error,
@@ -312,22 +336,18 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
           return;
         }
         
-        // Handle other errors in successful response
         const errorMessage = responseData.message || responseData.error || 'Failed to generate quiz';
         setError(errorMessage);
         safeCompleteGeneration(false, { error: 'Error', message: errorMessage });
         return;
       }
       
-      // Ensure the quiz has the expected structure
+      // Normalise quiz_id field
       if (!responseData.quiz_id && responseData.id) {
         responseData.quiz_id = responseData.id;
       }
 
-      // If we get here, the response was successful and contains quiz data
       setQuizData(responseData);
-      
-      // Complete generation - this will show the success notification
       safeCompleteGeneration(true, responseData);
       
     } catch (error) {
@@ -408,7 +428,7 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
   // Update global progress when local progress changes
   useEffect(() => {
     if (isReasoning && quizGenContext?.setGenerationProgress) {
-      const progressValue = Math.min(99, Math.max(0, progress)); // Cap at 99% until complete
+      const progressValue = Math.min(99, Math.max(0, progress));
       quizGenContext.setGenerationProgress(progressValue);
     }
   }, [progress, isReasoning, quizGenContext]);
