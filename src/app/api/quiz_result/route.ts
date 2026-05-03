@@ -46,10 +46,15 @@ export async function GET(request: NextRequest) {
 
     console.log('Making request to:', apiUrl.toString());
 
-    // No auth token needed for GET requests - backend removed auth requirement
+    // Get auth token from request headers and pass to backend
+    const authHeader = request.headers.get('authorization');
     const headers: Record<string, string> = {
       'accept': 'application/json',
     };
+    
+    if (authHeader) {
+      headers['Authorization'] = authHeader;
+    }
 
     const response = await fetch(apiUrl.toString(), {
       method: 'GET',

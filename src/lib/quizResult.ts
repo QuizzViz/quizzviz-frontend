@@ -2,6 +2,21 @@ import { QuizUserResponse, CandidateAnalytics, ErrorResponse, TopicPercentage } 
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL || '';
 
+// Helper function to get auth token from cookies (same as useCachedFetch)
+const getAuthToken = () => {
+  if (typeof document === 'undefined') return null;
+  
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, ...values] = cookie.trim().split('=');
+    if (key && values.length > 0) {
+      acc[key] = values.join('=');
+    }
+    return acc;
+  }, {} as Record<string, string>);
+  
+  return cookies.__session || null;
+};
+
 export class QuizResultAPI {
   /**
    * Helper function to safely extract total percentages from result
@@ -37,12 +52,20 @@ export class QuizResultAPI {
   ): Promise<QuizUserResponse> {
     const url = `${API_BASE_URL}/quiz/${encodeURIComponent(quizId)}/candidate/${encodeURIComponent(candidateEmail)}`;
     
+    // Get auth token and add to headers
+    const authToken = getAuthToken();
+    const requestHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'accept': 'application/json',
+    };
+    
+    if (authToken) {
+      requestHeaders['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'accept': 'application/json',
-      },
+      headers: requestHeaders,
     });
 
     if (!response.ok) {
@@ -66,12 +89,20 @@ export class QuizResultAPI {
     url.searchParams.append('skip', skip.toString());
     url.searchParams.append('limit', limit.toString());
     
+    // Get auth token and add to headers
+    const authToken = getAuthToken();
+    const requestHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'accept': 'application/json',
+    };
+    
+    if (authToken) {
+      requestHeaders['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const response = await fetch(url.toString(), {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'accept': 'application/json',
-      },
+      headers: requestHeaders,
     });
 
     if (!response.ok) {
