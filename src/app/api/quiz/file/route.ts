@@ -70,20 +70,25 @@ export async function POST(req: NextRequest) {
 
     // Company info is already validated by getCompanyId, no need for additional check
 
-    // Build backend FormData fresh — do NOT reuse req's formData
-    // Order matters! Match backend endpoint signature exactly
-    const backendFormData = new FormData();
-    backendFormData.append('role', role);
-    backendFormData.append('files', file);  // Note: backend expects 'files' not 'file'
-    backendFormData.append('experience', experience);
-    backendFormData.append('num_questions', numQuestions.toString());
-    backendFormData.append('theory_questions_percentage', theoryQuestionsPercentage.toString());
-    backendFormData.append('code_analysis_questions_percentage', codeAnalysisQuestionsPercentage.toString());
-    backendFormData.append('company_id', companyId);
-    backendFormData.append('is_publish', isPublish.toString());
-    backendFormData.append('is_deleted', isDeleted.toString());
+    // ✅ FIX: Send non-file params as URL query parameters
+    const params = new URLSearchParams({
+      role,
+      experience,
+      num_questions: numQuestions.toString(),
+      theory_questions_percentage: theoryQuestionsPercentage.toString(),
+      code_analysis_questions_percentage: codeAnalysisQuestionsPercentage.toString(),
+      company_id: companyId,
+      is_publish: isPublish.toString(),
+      is_deleted: isDeleted.toString(),
+    });
 
-    // Debug: Log all FormData entries
+    const BACKEND_URL_WITH_PARAMS = `${BACKEND_URL}?${params.toString()}`;
+
+    // ✅ FIX: Only send the file in FormData
+    const backendFormData = new FormData();
+    backendFormData.append('files', file);  // Note: backend expects 'files' not 'file'
+
+    // Debug: Log FormData contents (should only contain file now)
     console.log('Backend FormData contents:');
     for (const [key, value] of backendFormData.entries()) {
       if (value instanceof File) {
@@ -94,29 +99,31 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Sending file-based quiz generation request:', {
-      url: BACKEND_URL,
+      url: BACKEND_URL_WITH_PARAMS,
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${sessionToken}`
       },
-      body: {
+      queryParams: {
         role,
         experience,
         num_questions: numQuestions,
         company_id: companyId,
+        theory_questions_percentage: theoryQuestionsPercentage,
+        code_analysis_questions_percentage: codeAnalysisQuestionsPercentage,
+        is_publish: isPublish,
+        is_deleted: isDeleted
+      },
+      file: {
         file_size: file.size,
         file_type: file.type
       }
     });
     
-    console.log('Backend FormData contents:');
-    for (let [key, value] of backendFormData.entries()) {
-      console.log(`  ${key}:`, value);
-    }
-
     console.log('=== FILE UPLOAD DEBUG ===');
-    console.log('Backend URL:', BACKEND_URL);
+    console.log('Backend URL:', BACKEND_URL_WITH_PARAMS);
     console.log('Session token exists:', !!sessionToken);
+    console.log('Query parameters:', params.toString());
     console.log('FormData entries:');
     for (let [key, value] of backendFormData.entries()) {
       if (value instanceof File) {
@@ -126,7 +133,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const backendResp = await fetch(BACKEND_URL, {
+    const backendResp = await fetch(BACKEND_URL_WITH_PARAMS, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${sessionToken}`
