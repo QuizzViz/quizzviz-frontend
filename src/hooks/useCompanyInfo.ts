@@ -104,8 +104,11 @@ export function useCompanyInfo() {
     // For company owners, use fetched company data
     if (companyData?.companies?.[0]) {
       const company = companyData.companies[0];
+      const retrievedCompanyId = company.company_id || company.id || '';
+      console.log('Company data retrieved:', { company, retrievedCompanyId });
+      
       return {
-        id: (company.company_id || company.id || '') as string,
+        id: retrievedCompanyId as string,
         name: company.name as string,
         owner_email: company.owner_email || '',
         created_at: company.created_at,
@@ -113,9 +116,12 @@ export function useCompanyInfo() {
       };
     }
     
-    // Fallback
+    // Fallback - but ensure we have a valid company ID
+    const fallbackCompanyId = companyId || '';
+    console.log('Using fallback company ID:', { metadataCompanyId, localStorageCompanyId, fallbackCompanyId });
+    
     return {
-      id: (companyId || '') as string,
+      id: fallbackCompanyId as string,
       name: (companyName || 'Company') as string,
       owner_email: '',
       created_at: undefined

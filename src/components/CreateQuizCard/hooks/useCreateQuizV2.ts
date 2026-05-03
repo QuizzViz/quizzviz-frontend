@@ -203,12 +203,17 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         formData.append('file', firstFile.file);
         formData.append('role', role);
         formData.append('experience', experienceToApi(experience));
-        formData.append('numQuestions', numQuestions.toString());
-        formData.append('theoryQuestionsPercentage', (100 - codePct).toString());
-        formData.append('codeAnalysisQuestionsPercentage', codePct.toString());
-        formData.append('isPublish', 'false');
-        formData.append('isDeleted', 'false');
+        formData.append('num_questions', numQuestions.toString());
+        formData.append('theory_questions_percentage', (100 - codePct).toString());
+        formData.append('code_analysis_questions_percentage', codePct.toString());
+        formData.append('is_publish', 'false');
+        formData.append('is_deleted', 'false');
         formData.append('company_id', companyInfo?.id || '');
+        
+        // Add file content for backend analysis
+        if (firstFile.file.type === 'text/plain' || firstFile.file.name.endsWith('.txt') || firstFile.file.name.endsWith('.md')) {
+          formData.append('file_content', await firstFile.file.text());
+        }
         
         console.log('Sending file-based quiz generation request:', {
           role,
