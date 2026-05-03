@@ -41,7 +41,6 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
         throw new Error('Missing user ID or company ID');
       }
 
-      console.log('🔄 Fetching fresh user role:', { userId: user.id, companyId });
 
       const token = await getToken();
       if (!token) {
@@ -64,7 +63,6 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
         
         // Check if member has been deleted
         if (response.status === 410 || errorData.deleted) {
-          console.log('Member has been deleted, logging out...');
           
           // Clear all stored data
           clearStoredUserRole();
@@ -88,7 +86,6 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
       }
 
       const data: UserRole = await response.json();
-      console.log('✅ User role fetched and cached:', data);
       
       return data;
     },
@@ -104,7 +101,6 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
         // Store company_id in both sessionStorage and localStorage for member users
         sessionStorage.setItem('userCompanyId', userRole.company_id);
         localStorage.setItem('userCompanyId', userRole.company_id);
-        console.log('Stored userCompanyId from role data:', userRole.company_id);
       }
     }
   }, [userRole]);
@@ -156,12 +152,6 @@ class RoleCacheManager {
   // Notify listeners of role changes
   notifyRoleChange(newRole: UserRole | null) {
     if (detectRoleChange(this.lastKnownRole, newRole)) {
-      console.log('🔄 Role change detected:', {
-        oldRole: this.lastKnownRole?.role,
-        newRole: newRole?.role,
-        oldStatus: this.lastKnownRole?.status,
-        newStatus: newRole?.status
-      });
       
       this.lastKnownRole = newRole;
       
@@ -204,7 +194,6 @@ class RoleCacheManager {
       });
     }
     
-    console.log('🗑️ All role caches invalidated due to role change');
   }
 
   // Force refresh role for a specific user/company

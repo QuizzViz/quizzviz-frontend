@@ -15,21 +15,11 @@ export default function SSOCallback() {
     if (!isSignedIn) {
       const authIntent = sessionStorage.getItem("authIntent");
 
-      console.log("SSO Callback - Failed OAuth Detected:", {
-        isSignedIn,
-        authIntent,
-        callbackComplete,
-        isLoaded
-      });
-
       if (authIntent === "signin") {
-        console.log("Redirecting to signup for failed OAuth signin...");
         router.push("/signup?message=No account found. Please sign up with Google.");
       } else if (authIntent === "signup") {
-        console.log("Redirecting to signin for failed OAuth signup...");
         router.push("/signin?message=Account already exists. Please sign in with Google.");
       } else {
-        console.log("Redirecting to signin (no auth intent)...");
         router.push("/signin");
       }
 
@@ -38,11 +28,6 @@ export default function SSOCallback() {
 
     if (isSignedIn && user) {
       const authIntent = sessionStorage.getItem('authIntent');
-
-      console.log('SSO Callback Success:', {
-        authIntent,
-        userEmail: user.primaryEmailAddress?.emailAddress,
-      });
 
       // Clear after reading
       sessionStorage.removeItem('authIntent');

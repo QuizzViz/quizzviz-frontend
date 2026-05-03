@@ -105,7 +105,6 @@ export function useCompanyInfo() {
     if (companyData?.companies?.[0]) {
       const company = companyData.companies[0];
       const retrievedCompanyId = company.company_id || company.id || '';
-      console.log('Company data retrieved:', { company, retrievedCompanyId });
       
       return {
         id: retrievedCompanyId as string,
@@ -118,7 +117,6 @@ export function useCompanyInfo() {
     
     // Fallback - but ensure we have a valid company ID
     const fallbackCompanyId = companyId || '';
-    console.log('Using fallback company ID:', { metadataCompanyId, localStorageCompanyId, fallbackCompanyId });
     
     return {
       id: fallbackCompanyId as string,

@@ -25,13 +25,11 @@ export async function getCompanyId(
     const { searchParams } = new URL(request.url);
     const queryCompanyId = searchParams.get('company_id');
     if (queryCompanyId) {
-      console.log('Found company_id in query params:', queryCompanyId);
       return { company_id: queryCompanyId };
     }
 
     // 2. Try explicitly passed body (caller reads body and passes it in)
     if (body && body.company_id) {
-      console.log('Found company_id in request body:', body.company_id);
       return { company_id: body.company_id };
     }
 

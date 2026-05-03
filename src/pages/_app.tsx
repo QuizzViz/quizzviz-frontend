@@ -27,7 +27,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       try {
         Hotjar.init(siteId, hotjarVersion);
       } catch (err) {
-        console.error("Hotjar init failed:", err);
+        // Hotjar initialization failed
       }
     }
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY as string, {

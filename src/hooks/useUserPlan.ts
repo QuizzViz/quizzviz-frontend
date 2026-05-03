@@ -45,7 +45,6 @@ const fetchUserPlan = async (userId: string | null | undefined, getToken: () => 
   });
 
   if (!response.ok) {
-    console.log('Failed to fetch company, defaulting to Free plan');
     return { plan_name: 'Free' };
   }
 
