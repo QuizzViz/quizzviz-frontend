@@ -335,7 +335,7 @@ export default function CreateQuizCard({
                 : "opacity-0 -translate-y-4 pointer-events-none absolute"
             )}>
               <div className="space-y-2">
-                <FileUpload value={uploadedFiles} onChange={setUploadedFiles} maxFiles={5} />
+                <FileUpload value={uploadedFiles} onChange={setUploadedFiles} maxFiles={1} />
               </div>
             </div>
           </div>
