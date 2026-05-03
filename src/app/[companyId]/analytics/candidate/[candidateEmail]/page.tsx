@@ -716,21 +716,49 @@ export default function CandidateDetailPage() {
   // ── Loading / not-found states ─────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#09090f] text-white flex items-center justify-center">
-        <LoadingSpinner />
+      <div className="min-h-screen bg-[#09090f] text-white flex">
+        {/* Sidebar */}
+        <div className="bg-zinc-950 border-r border-zinc-800/60 shrink-0">
+          <DashboardSideBar />
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <DashboardHeader />
+
+          <main className="flex-1 overflow-y-auto">
+            <div className="flex items-center justify-center h-full">
+              <LoadingSpinner />
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
 
   if (!candidateAnalytics) {
     return (
-      <div className="min-h-screen bg-[#09090f] text-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Candidate Not Found</h1>
-          <p className="text-gray-400 mb-6">No quiz results found for this candidate.</p>
-          <Button onClick={() => router.back()} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Go Back
-          </Button>
+      <div className="min-h-screen bg-[#09090f] text-white flex">
+        {/* Sidebar */}
+        <div className="bg-zinc-950 border-r border-zinc-800/60 shrink-0">
+          <DashboardSideBar />
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <DashboardHeader />
+
+          <main className="flex-1 overflow-y-auto">
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <h1 className="text-2xl font-bold mb-4">Candidate Not Found</h1>
+                <p className="text-gray-400 mb-6">No quiz results found for this candidate.</p>
+                <Button onClick={() => router.back()} variant="outline">
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Go Back
+                </Button>
+              </div>
+            </div>
+          </main>
         </div>
       </div>
     );
