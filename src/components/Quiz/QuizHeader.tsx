@@ -7,7 +7,7 @@ import { ShareQuizModal } from "./ShareQuizModal";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useUser } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
-import {useCompanies} from "@/hooks/useCompanies";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useUserRole } from "@/hooks/useUserRole";
 import { canPerformAction } from "@/utils/rolePermissions";
 interface QuizHeaderProps {
@@ -38,9 +38,9 @@ export function QuizHeader({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
-  const {company} = useCompanies(user?.id);
-  const { userRole, loading: roleLoading } = useUserRole(company?.company_id || '');
-  console.log('QuizHeader - Company object from useCompanies:', company);
+  const { companyInfo, isLoading: isCompanyLoading } = useCompanyInfo();
+  const { userRole, loading: roleLoading } = useUserRole(companyInfo?.id || '');
+  console.log('QuizHeader - Company object from useCompanyInfo:', companyInfo);
   console.log('QuizHeader - User role from useUserRole:', userRole);
   console.log('QuizHeader - Role loading:', roleLoading);
   console.log('QuizHeader - Can publish quiz:', canPerformAction(userRole, 'publish_quiz'));
@@ -67,7 +67,7 @@ export function QuizHeader({
       setIsUnpublishing(true);
       
       // Get companyId with multiple fallbacks
-      let companyId = company?.company_id;
+      let companyId = companyInfo?.id;
       if (!companyId && typeof window !== 'undefined') {
         companyId = sessionStorage.getItem('company_id') || localStorage.getItem('userCompanyId') || "";
       }
@@ -185,7 +185,7 @@ export function QuizHeader({
       <ShareQuizModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        quizLink={`${window.location.origin}/${company?.company_id}/take/quiz/${quizId}`}
+        quizLink={`${window.location.origin}/${companyInfo?.id}/take/quiz/${quizId}`}
         quizKey={settings?.secretKey || ''}
       />
       

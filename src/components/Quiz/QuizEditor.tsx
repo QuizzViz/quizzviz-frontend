@@ -107,7 +107,16 @@ export function QuizEditor() {
       if (Array.isArray(currentQuiz.quiz)) {
         questionsData = currentQuiz.quiz;
       } else if (typeof currentQuiz.quiz === "string") {
-        questionsData = JSON.parse(currentQuiz.quiz);
+        const parsed = JSON.parse(currentQuiz.quiz);
+        questionsData = Array.isArray(parsed) ? parsed : [];
+      } else {
+        questionsData = [];
+      }
+
+      // Ensure questionsData is actually an array before mapping
+      if (!Array.isArray(questionsData)) {
+        console.warn("questionsData is not an array:", questionsData);
+        questionsData = [];
       }
 
       const formatted = questionsData.map((q: any, idx: number) => ({
