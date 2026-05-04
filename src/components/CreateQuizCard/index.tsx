@@ -209,6 +209,18 @@ export default function CreateQuizCard({
     handleGenerate: _handleGenerate,
   } = useCreateQuizV2();
 
+  useEffect(() => {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Quiz Generation Failed",
+        description: typeof error === 'string' ? error : 'An error occurred while generating the quiz',
+      });
+      // Clear error after showing toast to prevent duplicate notifications
+      setTimeout(() => setError(null), 100);
+    }
+  }, [error, toast, setError]);
+
   const handleGenerateClick = (codePct: number) => {
     setError("");
 
@@ -447,12 +459,6 @@ export default function CreateQuizCard({
             </TooltipProvider>
           </div>
         </div>
-
-        {error && (
-          <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 text-sm">
-            {error}
-          </div>
-        )}
 
         <ReasoningPanel
           visible={isReasoning}

@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         error: 'Quiz Generation Failed',
-        message: errorData?.error || 'Unknown error occurred',
+        message: errorData?.message || errorData?.error || 'Unknown error occurred',
         isTopicError: false
       }, { status: backendResp.status });
     }
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
       if (responseData.error) {
         return NextResponse.json({
           error: 'Quiz Generation Failed',
-          message: responseData.error,
+          message: responseData.message || responseData.error,
           isTopicError: false
         }, { status: 400 });
       }
