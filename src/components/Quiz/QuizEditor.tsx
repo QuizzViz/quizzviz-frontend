@@ -111,10 +111,16 @@ export function QuizEditor() {
     try {
       let questionsData: any[] = [];
 
+      // Handle different possible field names for questions
       if (Array.isArray(currentQuiz.quiz)) {
         questionsData = currentQuiz.quiz;
+      } else if (Array.isArray(currentQuiz.questions)) {
+        questionsData = currentQuiz.questions;
       } else if (typeof currentQuiz.quiz === "string") {
         const parsed = JSON.parse(currentQuiz.quiz);
+        questionsData = Array.isArray(parsed) ? parsed : [];
+      } else if (typeof currentQuiz.questions === "string") {
+        const parsed = JSON.parse(currentQuiz.questions);
         questionsData = Array.isArray(parsed) ? parsed : [];
       } else {
         questionsData = [];
@@ -126,16 +132,26 @@ export function QuizEditor() {
         questionsData = [];
       }
 
-      const formatted = questionsData.map((q: any, idx: number) => ({
-        id: q.id ?? `q-${idx}`,
-        type: q.type ?? "theory",
-        question: q.question ?? "No question text",
-        code_snippet: q.code_snippet ?? null,
-        options: q.options ?? { A: "", B: "", C: "", D: "" },
-        correct_answer: q.correct_answer ?? "A",
-        topic: q.topic ?? "",
-        ...q,
-      }));
+      const formatted = questionsData.map((q: any, idx: number) => {
+        // Preserve the original correct_answer from API response
+        const correctAnswer = q.correct_answer;
+        
+        // Log warning if correct_answer is invalid, but don't change it
+        if (correctAnswer && !['A', 'B', 'C', 'D'].includes(correctAnswer)) {
+          console.warn(`Invalid correct_answer "${correctAnswer}" for question ${idx}`, q);
+        }
+
+        return {
+          id: q.id ?? `q-${idx}`,
+          type: q.type ?? "theory",
+          question: q.question ?? "No question text",
+          code_snippet: q.code_snippet ?? null,
+          options: q.options ?? { A: "", B: "", C: "", D: "" },
+          correct_answer: correctAnswer ?? "",
+          topic: q.topic ?? "",
+          ...q,
+        };
+      });
 
       setLocalQuestions(formatted);
       setIsPublished(!!currentQuiz.is_publish);
@@ -550,6 +566,7 @@ export function QuizEditor() {
         onSubmit={handleSaveQuestion}
         initialData={formData}
         techStack={Array.isArray(currentQuiz?.techStack) ? currentQuiz.techStack : Array.isArray(currentQuiz?.tech_stack) ? currentQuiz.tech_stack : []}
+        existingQuestions={localQuestions}
       />
 
       <ShareQuizModal

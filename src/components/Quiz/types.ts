@@ -8,7 +8,8 @@ export interface QuizSummary {
   num_questions: number;
   theory_questions_percentage: number;
   code_analysis_questions_percentage: number;
-  quiz: string; // JSON string
+  quiz: string | QuizQuestion[]; // JSON string or array of questions
+  questions?: QuizQuestion[]; // Alternative field for questions
   created_at?: string;
   is_publish: boolean;
   quiz_key: string;
