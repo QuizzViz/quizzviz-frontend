@@ -295,8 +295,15 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
 
       // Handle error responses (non-200 status)
       if (!response.ok) {
+        console.error('Frontend received error response:', {
+          status: response.status,
+          responseData,
+          responseDataKeys: Object.keys(responseData),
+          message: responseData.message,
+          error: responseData.error
+        });
         const errorMessage = responseData.message || responseData.error || 'Failed to generate quiz';
-        console.error('API error response:', { status: response.status, error: errorMessage, responseData });
+        console.error('Final error message to display:', errorMessage);
         setError(errorMessage);
         safeCompleteGeneration(false, { error: 'Error', message: errorMessage });
         return;
