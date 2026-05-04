@@ -12,6 +12,7 @@ interface QuestionFormProps {
   initialData: QuestionFormData;
   isSubmitting?: boolean;
   techStack?: Array<{ name: string; weight: number }>;
+  existingQuestions?: Array<{ topic?: string }>;
 }
 
 export function QuestionForm({ 
@@ -20,7 +21,8 @@ export function QuestionForm({
   onSubmit, 
   initialData,
   isSubmitting = false,
-  techStack = []
+  techStack = [],
+  existingQuestions = []
 }: QuestionFormProps) {
   const [form, setForm] = React.useState<QuestionFormData>(initialData);
 
@@ -52,19 +54,36 @@ export function QuestionForm({
     }));
   };
 
-  // Use tech stack items directly as available topics
+  // Use tech stack items and existing question topics as available topics
   const availableTopics = React.useMemo(() => {
-    if (!techStack || !Array.isArray(techStack) || techStack.length === 0) {
-      return [];
+    const topics = new Set<string>();
+    
+    // Add tech stack items
+    if (techStack && Array.isArray(techStack)) {
+      techStack.forEach(tech => {
+        if (typeof tech === 'string') topics.add(tech);
+        else if (typeof tech === 'object' && tech?.name) topics.add(tech.name);
+        else topics.add(String(tech));
+      });
     }
     
-    // Return tech stack items as strings - these are the topics from quiz generation
-    return techStack.map(tech => {
-      if (typeof tech === 'string') return tech;
-      if (typeof tech === 'object' && tech?.name) return tech.name;
-      return String(tech);
-    }).filter(Boolean);
-  }, [techStack]);
+    // Add topics from existing questions
+    if (existingQuestions && Array.isArray(existingQuestions)) {
+      existingQuestions.forEach(question => {
+        if (question.topic && typeof question.topic === 'string') {
+          topics.add(question.topic);
+        }
+      });
+    }
+    
+    // Add topics from TOPICS constants as fallback
+    const { TOPICS } = require('@/constants/topics');
+    TOPICS.forEach((topic: any) => {
+      topics.add(topic.value);
+    });
+    
+    return Array.from(topics).filter(Boolean).sort();
+  }, [techStack, existingQuestions]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
