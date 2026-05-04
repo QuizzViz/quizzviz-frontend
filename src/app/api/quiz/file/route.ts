@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     // ✅ FIX: Send all files in FormData
     const backendFormData = new FormData();
     files.forEach((file, index) => {
-      backendFormData.append('files', file);  // Note: backend expects 'files' not 'file'
+      backendFormData.append('file', file);  // Backend expects 'file' (singular)
     });
 
     // Debug: Log FormData contents (should contain all files now)
