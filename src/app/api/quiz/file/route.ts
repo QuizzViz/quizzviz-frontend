@@ -156,6 +156,9 @@ export async function POST(req: NextRequest) {
       try {
         errorData = await backendResp.json();
         console.error('Backend error response:', errorData);
+        console.error('Backend error keys:', Object.keys(errorData));
+        console.error('Backend error.message:', errorData.message);
+        console.error('Backend error.error:', errorData.error);
       } catch (e) {
         const errorText = await backendResp.text();
         errorData = { error: errorText };
@@ -170,9 +173,12 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
       }
 
+      const finalMessage = errorData?.message || errorData?.error || 'Unknown error occurred';
+      console.error('Final message to frontend:', finalMessage);
+      
       return NextResponse.json({
         error: 'Quiz Generation Failed',
-        message: errorData?.message || errorData?.error || 'Unknown error occurred',
+        message: finalMessage,
         isTopicError: false
       }, { status: backendResp.status });
     }
