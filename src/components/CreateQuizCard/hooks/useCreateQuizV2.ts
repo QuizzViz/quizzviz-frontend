@@ -282,6 +282,7 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
 
       const responseText = await response.text();
       console.log('Raw API response:', responseText);
+      console.log('Response status:', response.status);
       
       let responseData;
       try {
@@ -290,6 +291,15 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       } catch (e) {
         console.error('Failed to parse quiz response:', e);
         throw new Error('Invalid response format from server');
+      }
+
+      // Handle error responses (non-200 status)
+      if (!response.ok) {
+        const errorMessage = responseData.message || responseData.error || 'Failed to generate quiz';
+        console.error('API error response:', { status: response.status, error: errorMessage, responseData });
+        setError(errorMessage);
+        safeCompleteGeneration(false, { error: 'Error', message: errorMessage });
+        return;
       }
 
       // Check for error in successful response (200 but with error field)
@@ -324,7 +334,6 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
 
       setQuizData(responseData);
       safeCompleteGeneration(true, responseData);
-      
     } catch (error) {
       console.error('Error generating quiz:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to generate quiz';
