@@ -17,6 +17,7 @@ import { LoadingSpinner } from "@/components/ui/loading";
 import { toast } from "@/hooks/use-toast";
 import { formatTime } from '@/lib/utils';
 import { formatCompanyIdToName } from '@/utils/companyUtils';
+import { isQuizExpired as isQuizExpiredUTC, formatUTCLocal } from '@/utils/timezoneUtils';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { useUser } from '@clerk/nextjs';
@@ -349,8 +350,8 @@ export default function QuizPage({ params }: PageProps) {
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
   const { data: usageData, isLoading: usageLoading } = useCompanyUsageByCompanyId(companyId);
 
-  // Check if quiz has expired
-  const isQuizExpired = quizData?.quiz_expiration_time ? new Date(quizData.quiz_expiration_time) < new Date() : false;
+  // Check if quiz has expired (timezone-aware)
+  const isQuizExpired = quizData?.quiz_expiration_time ? isQuizExpiredUTC(quizData.quiz_expiration_time) : false;
 
   const currentUsage = {
     quizzesThisMonth: 0,

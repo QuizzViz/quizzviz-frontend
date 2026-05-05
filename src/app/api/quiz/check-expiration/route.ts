@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
 import { getCompanyId } from '@/lib/company';
+import { isQuizExpired } from '@/utils/timezoneUtils';
 
 const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_QUIZZ_GENERATION_SERVICE_URL;
 const PUBLISH_SERVICE_URL = process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL;
@@ -144,10 +145,8 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        const expirationDate = new Date(quiz.quiz_expiration_time);
-        
-        // Check if quiz has expired
-        if (now > expirationDate) {
+        // Check if quiz has expired (timezone-aware)
+        if (isQuizExpired(quiz.quiz_expiration_time)) {
           console.log(`Processing expired quiz: ${quiz.quiz_id} (${quiz.role || quiz.topic})`);
           expiredCount++;
 
