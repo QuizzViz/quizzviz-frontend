@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { clerkClient, getAuth } from '@clerk/nextjs/server';
 import { useCompanies } from '@/hooks/useCompanies';
+import { isQuizExpired } from '@/utils/timezoneUtils';
 // Types
 type ApiResponse<T = any> = {
   success: boolean;
@@ -162,14 +163,12 @@ export default async function handler(
 
     let quizData: PublishedQuiz = await response.json();
     
-    // Check if the quiz has expired
+    // Check if the quiz has expired (timezone-aware)
     if (quizData.quiz_expiration_time) {
-      const expirationDate = new Date(quizData.quiz_expiration_time);
-      const now = new Date();
-      console.log(`Time now: ${now}`);
-      console.log(`Expiration time: ${expirationDate}`);
+      console.log(`Checking expiration for quiz: ${quizId}`);
+      console.log(`Expiration time (UTC): ${quizData.quiz_expiration_time}`);
       
-      if (now > expirationDate) {
+      if (isQuizExpired(quizData.quiz_expiration_time)) {
         console.log(`Quiz ${quizId} has expired, unpublishing...`);
         
         try {
