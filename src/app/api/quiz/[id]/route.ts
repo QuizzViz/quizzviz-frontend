@@ -176,6 +176,30 @@ export async function DELETE(
     }
 
     console.log('Quiz deleted successfully:', quizId);
+
+    // Delete associated analytics/quiz results
+    try {
+      const analyticsUrl = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}/result/quiz/${quizId}?company_id=${companyId}`;
+      
+      const analyticsResponse = await fetch(analyticsUrl, {
+        method: 'DELETE',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (analyticsResponse.ok) {
+        console.log('Analytics deleted successfully for quiz:', quizId);
+      } else {
+        console.error('Failed to delete analytics for quiz:', quizId, 'Status:', analyticsResponse.status);
+        // Don't fail the entire operation if analytics deletion fails
+      }
+    } catch (analyticsError) {
+      console.error('Error deleting analytics for quiz:', quizId, analyticsError);
+      // Don't fail the entire operation if analytics deletion fails
+    }
+
     return new NextResponse(null, { status: 204 });
   } catch (error: any) {
     console.error('Error in DELETE /api/quiz/[id]:', error);
