@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import { LoadingSpinner } from "@/components/ui/loading";
+import { useQuizExpirationChecker } from "@/components/QuizExpirationChecker";
 
 interface QuizSummary {
   quiz_id: string;
@@ -76,6 +77,12 @@ export default function MyQuizzesPage() {
   // Now get user role after companyId is defined
   const { userRole, loading: roleLoading } = useUserRole(companyId);
   const companyName = user?.unsafeMetadata?.companyName as string || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
+  
+  // Set up automatic expiration checking (every 5 minutes)
+  useQuizExpirationChecker({ 
+    autoCheck: true, 
+    checkInterval: 5 * 60 * 1000 
+  });
   
   // Determine which API endpoint to use
   let companyUrl = '';

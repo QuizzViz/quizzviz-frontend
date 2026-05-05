@@ -348,17 +348,21 @@ export default function QuizPage({ params }: PageProps) {
 
   const warningTimeoutRef = useRef<NodeJS.Timeout>();
   const { data: usageData, isLoading: usageLoading } = useCompanyUsageByCompanyId(companyId);
-const currentUsage = {
-  quizzesThisMonth: 0,
-  totalCandidates: usageData?.current_month?.unique_candidates || 0,
-  teamMembers: 0
-};
 
-const {
-  isCandidateLimitReached,
-  candidateLimit,
-  currentCandidates,
-} = usePlanLimitsByCompanyId(companyId, currentUsage);
+  // Check if quiz has expired
+  const isQuizExpired = quizData?.quiz_expiration_time ? new Date(quizData.quiz_expiration_time) < new Date() : false;
+
+  const currentUsage = {
+    quizzesThisMonth: 0,
+    totalCandidates: usageData?.current_month?.unique_candidates || 0,
+    teamMembers: 0
+  };
+
+  const {
+    isCandidateLimitReached,
+    candidateLimit,
+    currentCandidates,
+  } = usePlanLimitsByCompanyId(companyId, currentUsage);
 
   const activityMonitorRef = useRef({
     lastActivity: Date.now(),
@@ -1213,6 +1217,33 @@ const beginQuiz = useCallback(async () => {
 
       {usageLoading ? (
         <LoadingSpinner text="Checking availability..." />
+      ) : isQuizExpired ? (
+        <Card className="border-0 bg-white/5 backdrop-blur-lg shadow-xl rounded-2xl border border-white/10">
+          <CardContent className="p-8">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20 mx-auto mb-6">
+                <AlertTriangle className="w-10 h-10 text-red-400" />
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent mb-4">
+                Quiz Expired
+              </h1>
+              <p className="text-gray-300 mb-8 text-lg">
+                We apologize, but this quiz has expired and is no longer available for attempts.
+              </p>
+              <div className="bg-gray-800/50 rounded-xl p-4 mb-6 border border-gray-700">
+                <p className="text-sm text-gray-400 mb-2">Quiz Details:</p>
+                <p className="text-gray-300">
+                  {quizData?.topic || 'Unknown Topic'} • {quizData?.experience || 'Unknown Level'}
+                </p>
+              </div>
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-center">
+                <p className="text-blue-300 text-sm">
+                  Please contact the quiz administrator if you believe this is an error or need assistance with rescheduling.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       ) : isMobile ? (
         <div className="text-center">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-2">

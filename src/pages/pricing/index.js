@@ -132,7 +132,7 @@ const PricingPage = () => {
       toast({
         title: 'Success!',
         description: 'Company verified. Redirecting to checkout...',
-        className: 'bg-green-500 border-green-500 text-white',
+        className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
       });
         
       setTimeout(() => {
