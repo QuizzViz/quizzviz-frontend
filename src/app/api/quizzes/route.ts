@@ -233,6 +233,25 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Get company ID from query params or fetch it
+    let company_id = searchParams.get('companyId');
+    
+    // If no companyId in query params, try to get it from the user's company
+    if (!company_id) {
+      const companyResult = await getCompanyId(request);
+      if ('error' in companyResult) {
+        return companyResult.error;
+      }
+      company_id = companyResult.company_id;
+    }
+
+    if (!company_id) {
+      return NextResponse.json(
+        { error: 'Company ID is required' },
+        { status: 400 }
+      );
+    }
+
     const response = await fetch(`${BACKEND_BASE_URL}/quizz/${quizId}`, {
       method: 'DELETE',
       headers: {
@@ -244,6 +263,31 @@ export async function DELETE(request: NextRequest) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.detail || errorData.message || 'Failed to delete quiz');
+    }
+
+    console.log('Quiz deleted successfully:', quizId);
+
+    // Delete associated analytics/quiz results
+    try {
+      const analyticsUrl = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}/result/quiz/${quizId}?company_id=${company_id}`;
+      
+      const analyticsResponse = await fetch(analyticsUrl, {
+        method: 'DELETE',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (analyticsResponse.ok) {
+        console.log('Analytics deleted successfully for quiz:', quizId);
+      } else {
+        console.error('Failed to delete analytics for quiz:', quizId, 'Status:', analyticsResponse.status);
+        // Don't fail the entire operation if analytics deletion fails
+      }
+    } catch (analyticsError) {
+      console.error('Error deleting analytics for quiz:', quizId, analyticsError);
+      // Don't fail the entire operation if analytics deletion fails
     }
 
     return new NextResponse(null, { status: 204 });
