@@ -60,8 +60,7 @@ export async function POST(request: NextRequest) {
           options?: Record<string, unknown>
         ) => Promise<{ text: string; numpages: number }>;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pdfParseModule: any = await import('pdf-parse');
+        const pdfParseModule = await import('pdf-parse');
         const pdfParse: PdfParseFn = pdfParseModule.default ?? pdfParseModule;
 
         const pdfData = await pdfParse(Buffer.from(fileBuffer));
