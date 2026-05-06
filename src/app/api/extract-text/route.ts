@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
 
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     const fileBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(fileBuffer);
 
     // Handle plain text / code files directly
     const textExtensions = new Set([
@@ -26,31 +27,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ text });
     }
 
-    // Handle DOCX files
-    if (fileExtension === 'docx') {
-      try {
-        const mammoth = await import('mammoth');
-        const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
-        const text = result.value;
+   if (fileExtension === 'docx') {
+  try {
+    // safer import (prevents weird bundling bugs)
+    const mammoth = await import('mammoth');
 
-        if (!text || text.trim().length === 0) {
-          return NextResponse.json({
-            text: `Document appears to be empty or contains no extractable text.\n\nFile: ${file.name}\nSize: ${(file.size / 1024).toFixed(1)} KB`,
-          });
-        }
-
-        return NextResponse.json({ text });
-      } catch (error) {
-        console.error('DOCX extraction error:', error);
-        return NextResponse.json(
-          {
-            error: 'Failed to extract text from DOCX file',
-            detail: (error as Error)?.message || 'Unknown error',
-          },
-          { status: 500 }
-        );
-      }
+    if (!buffer || buffer.length === 0) {
+      throw new Error('Empty file buffer');
     }
+
+    const result = await mammoth.extractRawText({
+      buffer: buffer,
+    });
+
+    const text = result.value?.trim();
+
+    if (!text) {
+      return NextResponse.json({
+        text: 'No readable text found in DOCX (might be empty or unsupported format)',
+      });
+    }
+
+    return NextResponse.json({ text });
+
+  } catch (error) {
+    console.error('DOCX FULL ERROR:', error);
+    console.error('DOCX STACK:', (error as Error).stack);
+
+    return NextResponse.json(
+      {
+        error: 'DOCX parsing failed',
+        detail: String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
 
     // Handle PDF files
     if (fileExtension === 'pdf') {
