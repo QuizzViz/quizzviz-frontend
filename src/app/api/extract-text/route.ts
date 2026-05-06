@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Force Node.js runtime — mammoth and pdf-parse are Node-only packages
-// and will crash on Edge runtime
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
@@ -10,50 +8,28 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     const fileBuffer = await file.arrayBuffer();
 
     // Handle plain text / code files directly
-    if (
-      fileExtension === 'txt'  || fileExtension === 'md'   ||
-      fileExtension === 'js'   || fileExtension === 'ts'   ||
-      fileExtension === 'jsx'  || fileExtension === 'tsx'  ||
-      fileExtension === 'py'   || fileExtension === 'java' ||
-      fileExtension === 'cpp'  || fileExtension === 'c'    ||
-      fileExtension === 'cs'   || fileExtension === 'go'   ||
-      fileExtension === 'rs'   || fileExtension === 'php'  ||
-      fileExtension === 'rb'   || fileExtension === 'swift'||
-      fileExtension === 'kt'   || fileExtension === 'scala'||
-      fileExtension === 'pl'   || fileExtension === 'hs'   ||
-      fileExtension === 'm'    || fileExtension === 'r'    ||
-      fileExtension === 'sql'  || fileExtension === 'html' ||
-      fileExtension === 'css'  || fileExtension === 'json' ||
-      fileExtension === 'xml'  || fileExtension === 'yaml' ||
-      fileExtension === 'yml'
-    ) {
+    const textExtensions = new Set([
+      'txt', 'md', 'js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'go',
+      'rs', 'php', 'rb', 'swift', 'kt', 'scala', 'pl', 'hs', 'm', 'r', 'sql',
+      'html', 'css', 'json', 'xml', 'yaml', 'yml',
+    ]);
+
+    if (fileExtension && textExtensions.has(fileExtension)) {
       const text = await file.text();
       return NextResponse.json({ text });
     }
 
     // Handle DOCX files
-    // require() inside function body — mammoth accesses the filesystem at
-    // import time and will crash if bundled at the module level by Next.js
     if (fileExtension === 'docx') {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const mammoth = require('mammoth') as {
-          extractRawText: (opts: { arrayBuffer: ArrayBuffer }) => Promise<{
-            value: string;
-            messages: unknown[];
-          }>;
-        };
-
+        const mammoth = await import('mammoth');
         const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
         const text = result.value;
 
@@ -77,14 +53,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle PDF files
-    // Same reason as mammoth — require() must stay inside the function
     if (fileExtension === 'pdf') {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const pdfParse = require('pdf-parse') as (
+        type PdfParseFn = (
           buffer: Buffer,
           options?: Record<string, unknown>
         ) => Promise<{ text: string; numpages: number }>;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pdfParseModule: any = await import('pdf-parse');
+        const pdfParse: PdfParseFn = pdfParseModule.default ?? pdfParseModule;
 
         const pdfData = await pdfParse(Buffer.from(fileBuffer));
         const text = pdfData.text;
@@ -108,16 +86,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(
-      { error: 'Unsupported file type' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
 
   } catch (error) {
     console.error('Error extracting text:', error);
-    return NextResponse.json(
-      { error: 'Failed to extract text from file' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to extract text from file' }, { status: 500 });
   }
 }
