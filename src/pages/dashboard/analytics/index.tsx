@@ -585,7 +585,7 @@ export default function ResultsDashboard() {
                                 </div>
                               </div>
 
-                              {!roleLoading && canPerformAction(userRole, 'delete_analytics_all') ? (
+                              {userRole && canPerformAction(userRole, 'delete_analytics_all') ? (
                                 <Button
                                   variant="destructive"
                                   onClick={() =>
@@ -765,7 +765,7 @@ export default function ResultsDashboard() {
 
                                   <div className="flex flex-wrap gap-3">
                                     {hasSelectedUsers && (
-                                      !roleLoading && canPerformAction(userRole, 'delete_analytics_specific') ? (
+                                      userRole && canPerformAction(userRole, 'delete_analytics_specific') ? (
                                         <Button
                                           variant="destructive"
                                           size="sm"

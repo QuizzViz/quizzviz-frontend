@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 
 interface ExpirationCheckResult {
@@ -18,6 +19,7 @@ export function QuizExpirationChecker({
   checkInterval?: number; 
 }) {
   const { user } = useUser();
+  const queryClient = useQueryClient();
   const [isChecking, setIsChecking] = useState(false);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
 
@@ -37,6 +39,9 @@ export function QuizExpirationChecker({
 
       if (result.success) {
         setLastCheck(new Date());
+        
+        // Invalidate quiz cache to refresh My Quizzes page
+        queryClient.invalidateQueries({ queryKey: ['quizzes'] });
         
         if (result.expired && result.expired > 0) {
           toast({

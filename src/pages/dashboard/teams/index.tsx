@@ -409,7 +409,7 @@ export default function TeamsPage() {
     return () => clearInterval(interval);
   }, [user?.id, companyIdForMember, getToken, router, signOut]);
 
-  const canInvite = canPerformAction(userRole, "invite_members") && !planLimits.isTeamMemberLimitReached;
+  const canInvite = userRole && canPerformAction(userRole, "invite_members") && !planLimits.isTeamMemberLimitReached;
 
   const fallbackRole =
     !userRole &&
@@ -912,7 +912,7 @@ export default function TeamsPage() {
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="text-sm max-w-xs">
-                                {!canPerformAction(userRole, "invite_members")
+                                {!userRole || !canPerformAction(userRole, "invite_members")
                                   ? `This action requires ${getActionAllowedRoles("invite_members")} permissions.`
                                   : planLimits.isTeamMemberLimitReached
                                   ? `${getLimitMessage("teamMember", plan as any)} Upgrade your plan to add more members.`
