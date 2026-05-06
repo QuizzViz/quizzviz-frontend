@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor,ChevronDown, ChevronUp, Briefcase, TrendingUp, Building2, User } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, UserIcon, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor,ChevronDown, ChevronUp, Briefcase, TrendingUp, Building2 } from 'lucide-react';
 import { LoadingSpinner } from "@/components/ui/loading";
 
 import { toast } from "@/hooks/use-toast";
@@ -1126,8 +1126,8 @@ const beginQuiz = useCallback(async () => {
   const quizInstructions = [
     { icon: <Shield className="w-5 h-5 text-red-500" />, title: 'Honor Code', text: 'This is an individual assessment. Cheating will result in disqualification.' },
     { icon: <BookOpen className="w-5 h-5 text-blue-500" />, title: 'Quiz Details', text: `${quizData?.num_questions || 'Multiple'} questions • ${quizData?.quiz_time || 30} minutes` },
-    { icon: <User className="w-5 h-5 text-orange-500" />, title: 'Identity Verification', text: 'Only the person whose information was provided can attempt this quiz. Face verification will be performed.' },
-    { icon: <User className="w-5 h-5 text-orange-500" />, title: 'Solo Attempt Required', text: 'You must attempt this quiz alone in a private room. No other person should be present.' },
+    { icon: <UserIcon className="w-5 h-5 text-orange-500" />, title: 'Identity Verification', text: 'Only the person whose information was provided can attempt this quiz. Face verification will be performed.' },
+    { icon: <UserIcon className="w-5 h-5 text-orange-500" />, title: 'Solo Attempt Required', text: 'You must attempt this quiz alone in a private room. No other person should be present.' },
     { icon: <AlertTriangle className="w-5 h-5 text-red-600" />, title: 'Multiple People Detection', text: 'If two or more people are detected during the quiz, it will be terminated immediately.' },
     { icon: <Lock className="w-5 h-5 text-red-500" />, title: 'No Devices Allowed', text: 'Mobile phones, tablets, or any other electronic devices are strictly prohibited during the quiz.' },
     { icon: <Eye className="w-5 h-5 text-purple-400" />, title: 'No External Help', text: 'No books, notes, websites, or any other sources of assistance are permitted.' },
@@ -1247,7 +1247,7 @@ const beginQuiz = useCallback(async () => {
                     {/* Role */}
                     <div className="flex items-start gap-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700/20">
                       <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                        <User className="w-5 h-5 text-blue-400" />
+                        <UserIcon className="w-5 h-5 text-blue-400" />
                       </div>
                       <div className="flex-1">
                         <p className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Position</p>
@@ -1349,7 +1349,7 @@ const beginQuiz = useCallback(async () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-gray-300 font-medium flex items-center gap-2">
-                    <User className="w-4 h-4 text-blue-400" /> Full Name
+                    <UserIcon className="w-4 h-4 text-blue-400" /> Full Name
                   </Label>
                   <Input
                     id="name" name="name" value={formData.name} onChange={handleInputChange}
