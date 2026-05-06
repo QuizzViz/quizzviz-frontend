@@ -257,6 +257,11 @@ const getFileIcon = (fileName: string) => {
       return <Code className="h-4 w-4" />;
     case 'sql':
       return <FileCode className="h-4 w-4" />;
+    case 'pdf':
+      return <FileText className="h-4 w-4 text-red-500" />;
+    case 'doc':
+    case 'docx':
+      return <FileText className="h-4 w-4 text-blue-500" />;
     default:
       return <FileText className="h-4 w-4" />;
   }
@@ -370,6 +375,7 @@ const getFileIcon = (fileName: string) => {
                 <span className="bg-muted/70 px-2 py-1 rounded">Code files</span>
                 <span className="bg-muted/70 px-2 py-1 rounded">Text files</span>
                 <span className="bg-muted/70 px-2 py-1 rounded">Config files</span>
+                <span className="bg-muted/70 px-2 py-1 rounded">Document files</span>
               </p>
               <p className="flex items-center justify-center gap-4">
                 <span>Max size: <strong>15MB</strong></span>
