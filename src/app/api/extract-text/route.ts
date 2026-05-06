@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mammoth from 'mammoth';
 
-// pdf-parse doesn't support ESM default import — use require instead
-const pdfParse = require('pdf-parse') as (buffer: Buffer) => Promise<{
-  text: string;
-  numpages: number;
-}>;
+// Force Node.js runtime — mammoth and pdf-parse are Node-only packages
+// and will crash on Edge runtime
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,45 +41,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ text });
     }
 
-    // Handle DOCX files using mammoth.js
+    // Handle DOCX files
+    // require() inside function body — mammoth accesses the filesystem at
+    // import time and will crash if bundled at the module level by Next.js
     if (fileExtension === 'docx') {
       try {
-        console.log('Starting DOCX extraction for file:', file.name, 'Size:', file.size);
-        console.log('FileBuffer type:', typeof fileBuffer, 'Length:', fileBuffer.byteLength);
-        
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const mammoth = require('mammoth') as {
+          extractRawText: (opts: { arrayBuffer: ArrayBuffer }) => Promise<{
+            value: string;
+            messages: unknown[];
+          }>;
+        };
+
         const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
-        console.log('Mammoth extraction result:', { 
-          value: result.value?.substring(0, 100), 
-          messages: result.messages 
-        });
-        
         const text = result.value;
 
         if (!text || text.trim().length === 0) {
-          console.log('DOCX extraction returned empty text');
           return NextResponse.json({
             text: `Document appears to be empty or contains no extractable text.\n\nFile: ${file.name}\nSize: ${(file.size / 1024).toFixed(1)} KB`,
           });
         }
 
-        console.log('DOCX extraction successful, text length:', text.length);
         return NextResponse.json({ text });
       } catch (error) {
         console.error('DOCX extraction error:', error);
-        console.error('Error details:', {
-          message: (error as Error)?.message,
-          stack: (error as Error)?.stack,
-          name: (error as Error)?.name
-        });
-        return NextResponse.json({
-          text: `Failed to extract text from DOCX file. The file may be corrupted or password-protected.\n\nFile: ${file.name}\nSize: ${(file.size / 1024).toFixed(1)} KB\n\nError: ${(error as Error)?.message || 'Unknown error'}\n\nPlease download the file to view its content.`,
-        });
+        return NextResponse.json(
+          {
+            error: 'Failed to extract text from DOCX file',
+            detail: (error as Error)?.message || 'Unknown error',
+          },
+          { status: 500 }
+        );
       }
     }
 
-    // Handle PDF files using pdf-parse
+    // Handle PDF files
+    // Same reason as mammoth — require() must stay inside the function
     if (fileExtension === 'pdf') {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const pdfParse = require('pdf-parse') as (
+          buffer: Buffer,
+          options?: Record<string, unknown>
+        ) => Promise<{ text: string; numpages: number }>;
+
         const pdfData = await pdfParse(Buffer.from(fileBuffer));
         const text = pdfData.text;
 
@@ -95,9 +98,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ text: text.trim() });
       } catch (error) {
         console.error('PDF extraction error:', error);
-        return NextResponse.json({
-          text: `Failed to extract text from PDF file. The file may be corrupted, password-protected, or image-based.\n\nFile: ${file.name}\nSize: ${(file.size / 1024).toFixed(1)} KB\n\nPlease download the file to view its content.`,
-        });
+        return NextResponse.json(
+          {
+            error: 'Failed to extract text from PDF file',
+            detail: (error as Error)?.message || 'Unknown error',
+          },
+          { status: 500 }
+        );
       }
     }
 
