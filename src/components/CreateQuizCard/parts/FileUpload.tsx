@@ -27,7 +27,7 @@ export default function FileUpload({
   value = [], 
   onChange, 
   maxFiles = 1,
-  accept = ".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb,.swift,.kt,.scala,.pl,.hs,.m,.r,.sql,.html,.css,.json,.xml,.yaml,.yml,.pdf,.doc,.docx"
+  accept = ".txt,.pdf,.docx,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb,.swift,.kt,.scala,.pl,.hs,.m,.r,.sql,.html,.css,.json,.xml,.yaml,.yml,.pdf,.doc,.docx"
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -79,6 +79,9 @@ export default function FileUpload({
                         file.type === 'text/css' ||
                         file.type === 'application/json' ||
                         file.type === 'application/xml' ||
+                        file.type === 'application/pdf' ||
+                        file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                        file.type === 'application/msword' ||
                         file.type === 'text/x-java-source' ||
                         file.type === 'text/x-c++src' ||
                         file.type === 'text/x-csrc' ||
