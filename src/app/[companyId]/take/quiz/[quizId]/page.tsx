@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, UserIcon, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor,ChevronDown, ChevronUp, Briefcase, TrendingUp, Building2, User } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, UserIcon, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor,ChevronDown, ChevronUp, Briefcase, TrendingUp, Building2 } from 'lucide-react';
 import { LoadingSpinner } from "@/components/ui/loading";
 
 import { toast } from "@/hooks/use-toast";

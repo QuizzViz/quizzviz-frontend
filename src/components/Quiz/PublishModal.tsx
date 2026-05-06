@@ -294,7 +294,7 @@ export function PublishModal({
           {/* Expiration DateTime */}
           <div className="space-y-2">
             <Label htmlFor="expirationDate" className="text-sm font-medium text-white">
-              Expiration Date & Time
+              Expiration Date & Time (UTC+00)
             </Label>
             <div className="relative">
               <Input

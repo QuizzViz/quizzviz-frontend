@@ -995,6 +995,14 @@ export default function TeamsPage() {
               </div>
             </div>
           </SignedIn>
+          <SignedOut>
+            <div className="flex items-center justify-center h-screen">
+              <div className="text-center">
+                <h1 className="text-xl font-semibold mb-4 text-white">Redirecting to sign in...</h1>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto" />
+              </div>
+            </div>
+          </SignedOut>
 
           {/* ── Edit Role Dialog ──────────────────────────────────────────────── */}
           <Dialog
@@ -1132,14 +1140,6 @@ export default function TeamsPage() {
             </DialogContent>
           </Dialog>
 
-          <SignedOut>
-            <div className="flex items-center justify-center h-screen">
-              <div className="text-center">
-                <h1 className="text-xl font-semibold mb-4 text-white">Redirecting to sign in...</h1>
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto" />
-              </div>
-            </div>
-          </SignedOut>
         </div>
       </DashboardAccess>
     </>
