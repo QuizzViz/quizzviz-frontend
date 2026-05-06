@@ -220,38 +220,44 @@ export default function FileUpload({
     });
   }, [removeFile, toast]);
 
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    switch (extension) {
-      case 'js':
-      case 'jsx':
-      case 'ts':
-      case 'tsx':
-      case 'py':
-      case 'java':
-      case 'cpp':
-      case 'c':
-      case 'cs':
-      case 'go':
-      case 'rs':
-      case 'php':
-      case 'rb':
-      case 'swift':
-      case 'kt':
-      case 'scala':
-      case 'pl':
-      case 'hs':
-      case 'm':
-      case 'r':
-        return <Code className="h-4 w-4" />;
-      
-      default:
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-  };
+  const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const getFileIcon = (fileName: string) => {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'js':
+    case 'jsx':
+    case 'ts':
+    case 'tsx':
+    case 'py':
+    case 'java':
+    case 'cpp':
+    case 'c':
+    case 'cs':
+    case 'go':
+    case 'rs':
+    case 'php':
+    case 'rb':
+    case 'swift':
+    case 'kt':
+    case 'scala':
+    case 'pl':
+    case 'hs':
+    case 'm':
+    case 'r':
+      return <Code className="h-4 w-4" />;
+    case 'sql':
+      return <FileCode className="h-4 w-4" />;
+    default:
+      return <FileText className="h-4 w-4" />;
+  }
+};
 
   return (
     <div className="space-y-4">
