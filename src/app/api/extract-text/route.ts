@@ -68,19 +68,56 @@ export async function POST(request: NextRequest) {
 
  if (fileExtension === 'pdf') {
   try {
+    console.log('PDF Processing - File size:', buffer.length, 'bytes');
+    console.log('PDF Processing - File name:', file.name);
+    
+    // Check if buffer is valid
+    if (!buffer || buffer.length === 0) {
+      throw new Error('Empty PDF file');
+    }
+    
+    // Check minimum PDF size (PDF header is at least 5 bytes)
+    if (buffer.length < 5) {
+      throw new Error('File too small to be a valid PDF');
+    }
+    
+    // Check PDF signature
+    const pdfSignature = buffer.toString('utf8', 0, 5);
+    if (pdfSignature !== '%PDF-') {
+      console.error('Invalid PDF signature:', pdfSignature);
+      throw new Error('Invalid PDF format - missing PDF signature');
+    }
+    
     const pdfParse = (await import('pdf-parse')).default;
+    console.log('PDF parser imported successfully');
 
     const data = await pdfParse(buffer);
- console.log("DATA TEXT :",data.text || '')
+    console.log('PDF parsed successfully, text length:', data.text?.length || 0);
+    console.log('PDF text preview:', data.text?.substring(0, 100) || 'NO TEXT');
+    
+    if (!data.text || data.text.trim().length === 0) {
+      return NextResponse.json({
+        text: 'This PDF appears to be empty or contains only images. No text could be extracted.',
+      });
+    }
+    
     return NextResponse.json({
-      text: data.text || 'EMPTY',
+      text: data.text.trim(),
     });
 
-    
-
   } catch (err) {
-    console.error('PDF CRASH:', err);
-    throw err;
+    console.error('PDF Processing Error:', err);
+    console.error('Error details:', {
+      message: (err as Error).message,
+      stack: (err as Error).stack,
+      fileName: file.name,
+      fileSize: buffer.length
+    });
+    
+    // Return a user-friendly error message instead of throwing
+    return NextResponse.json({
+      text: `Unable to extract text from this PDF. The file may be corrupted, password-protected, or contain only images. Error: ${(err as Error).message}`,
+    });
   }
 }
 

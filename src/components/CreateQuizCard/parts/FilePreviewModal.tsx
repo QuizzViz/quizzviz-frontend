@@ -138,9 +138,13 @@ export default function FilePreviewModal({ isOpen, onClose, file, onRemove }: Fi
     }
   };
 
-  // Function to read PDF files
-  const readPdfFile = async (file: File) => {
+  // Function to read PDF files with retry mechanism
+  const readPdfFile = async (file: File, retryCount = 0) => {
+    const maxRetries = 2;
+    
     try {
+      console.log(`Reading PDF file (attempt ${retryCount + 1}/${maxRetries + 1}):`, file.name, file.size);
+      
       const formData = new FormData();
       formData.append('file', file);
       
@@ -151,20 +155,35 @@ export default function FilePreviewModal({ isOpen, onClose, file, onRemove }: Fi
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to extract text from PDF file');
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to extract text from PDF file`);
       }
       
       const result = await response.json();
       
       if (result.error) {
         setError(result.error);
+      } else if (result.text) {
+        // Check if the result is an error message disguised as text
+        if (result.text.includes('Unable to extract text') || result.text.includes('corrupted') || result.text.includes('password-protected')) {
+          setError(result.text);
+        } else {
+          setContent(result.text);
+        }
       } else {
-        setContent(result.text);
+        setError('No text content found in PDF file');
       }
       setIsLoading(false);
     } catch (error) {
-      console.error('Error reading PDF file:', error);
-      setError('Failed to extract text from PDF file. The file may be corrupted, password-protected, or image-based.');
+      console.error(`Error reading PDF file (attempt ${retryCount + 1}):`, error);
+      
+      // Retry if we haven't exhausted retries and it's a network/server error
+      if (retryCount < maxRetries && (error as Error).message.includes('HTTP')) {
+        console.log(`Retrying PDF read... (${retryCount + 1}/${maxRetries})`);
+        setTimeout(() => readPdfFile(file, retryCount + 1), 1000);
+        return;
+      }
+      
+      setError(`Failed to extract text from PDF file. ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsLoading(false);
     }
   };
