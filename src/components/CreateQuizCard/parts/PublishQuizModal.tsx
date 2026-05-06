@@ -31,8 +31,8 @@ export function PublishQuizModal({
   isPublishing,
 }: PublishQuizModalProps) {
   const [secretKey, setSecretKey] = useState("");
-  const [timeLimit, setTimeLimit] = useState<string>("30");
-  const [maxAttempts, setMaxAttempts] = useState<string>("1");
+  const [timeLimit, setTimeLimit] = useState<string>("");
+  const [maxAttempts, setMaxAttempts] = useState<string>("");
   const [expirationDate, setExpirationDate] = useState<string>("");
   const [expirationTime, setExpirationTime] = useState<string>("23:59");
   const [hasCopied, setHasCopied] = useState(false);
@@ -193,24 +193,19 @@ const {company} = useCompanies(user?.id);
               </Label>
               <div className="relative">
                 <Input
-                  id="timeLimit"
-                  type="number"
-                  min="1"
-                  value={timeLimit}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Allow empty string while typing
-                    setTimeLimit(value);
-                  }}
-                  onBlur={(e) => {
-                    // When focus leaves, ensure a minimum value
-                    const numValue = parseInt(timeLimit);
-                    if (isNaN(numValue) || numValue < 1) {
-                      setTimeLimit("30");
-                    }
-                  }}
-                  className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10"
-                />
+  id="timeLimit"
+  type="number"
+  value={timeLimit}
+  placeholder="30"
+  onChange={(e) => setTimeLimit(e.target.value)}
+  onBlur={() => {
+    const numValue = parseInt(timeLimit);
+    if (isNaN(numValue) || numValue < 1) {
+      setTimeLimit(""); // Keep empty, placeholder shows "30"
+    }
+  }}
+  className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10"
+/>
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <Clock className="h-4 w-4 text-gray-400" />
                 </div>
@@ -224,24 +219,19 @@ const {company} = useCompanies(user?.id);
               </Label>
               <div className="relative">
                 <Input
-                  id="maxAttempts"
-                  type="number"
-                  min="1"
-                  value={maxAttempts}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Allow empty string while typing
-                    setMaxAttempts(value);
-                  }}
-                  onBlur={(e) => {
-                    // When focus leaves, ensure a minimum value
-                    const numValue = parseInt(maxAttempts);
-                    if (isNaN(numValue) || numValue < 1) {
-                      setMaxAttempts("1");
-                    }
-                  }}
-                  className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10"
-                />
+  id="maxAttempts"
+  type="number"
+  value={maxAttempts}
+  placeholder="1"
+  onChange={(e) => setMaxAttempts(e.target.value)}
+  onBlur={() => {
+    const numValue = parseInt(maxAttempts);
+    if (isNaN(numValue) || numValue < 1) {
+      setMaxAttempts(""); // Keep empty, placeholder shows "1"
+    }
+  }}
+  className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10"
+/>
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
