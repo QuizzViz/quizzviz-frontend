@@ -1126,8 +1126,8 @@ const beginQuiz = useCallback(async () => {
   const quizInstructions = [
     { icon: <Shield className="w-5 h-5 text-red-500" />, title: 'Honor Code', text: 'This is an individual assessment. Cheating will result in disqualification.' },
     { icon: <BookOpen className="w-5 h-5 text-blue-500" />, title: 'Quiz Details', text: `${quizData?.num_questions || 'Multiple'} questions • ${quizData?.quiz_time || 30} minutes` },
-    { icon: <User className="w-5 h-5 text-orange-500" />, title: 'Identity Verification', text: 'Only the person whose information was provided can attempt this quiz. Face verification will be performed.' },
-    { icon: <User className="w-5 h-5 text-orange-500" />, title: 'Solo Attempt Required', text: 'You must attempt this quiz alone in a private room. No other person should be present.' },
+    { icon: <UserIcon className="w-5 h-5 text-orange-500" />, title: 'Identity Verification', text: 'Only the person whose information was provided can attempt this quiz. Face verification will be performed.' },
+    { icon: <UserIcon className="w-5 h-5 text-orange-500" />, title: 'Solo Attempt Required', text: 'You must attempt this quiz alone in a private room. No other person should be present.' },
     { icon: <AlertTriangle className="w-5 h-5 text-red-600" />, title: 'Multiple People Detection', text: 'If two or more people are detected during the quiz, it will be terminated immediately.' },
     { icon: <Lock className="w-5 h-5 text-red-500" />, title: 'No Devices Allowed', text: 'Mobile phones, tablets, or any other electronic devices are strictly prohibited during the quiz.' },
     { icon: <Eye className="w-5 h-5 text-purple-400" />, title: 'No External Help', text: 'No books, notes, websites, or any other sources of assistance are permitted.' },
@@ -1349,7 +1349,7 @@ const beginQuiz = useCallback(async () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-gray-300 font-medium flex items-center gap-2">
-                    <User className="w-4 h-4 text-blue-400" /> Full Name
+                    <UserIcon className="w-4 h-4 text-blue-400" /> Full Name
                   </Label>
                   <Input
                     id="name" name="name" value={formData.name} onChange={handleInputChange}
