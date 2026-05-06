@@ -1234,7 +1234,7 @@ const beginQuiz = useCallback(async () => {
               <div className="bg-gray-800/50 rounded-xl p-4 mb-6 border border-gray-700">
                 <p className="text-sm text-gray-400 mb-2">Quiz Details:</p>
                 <p className="text-gray-300">
-                  {quizData?.topic || 'Unknown Topic'} • {quizData?.experience || 'Unknown Level'}
+                  {quizData?.role || 'Unknown Role'} • {quizData?.experience ? `${quizData.experience} years` : 'Unknown Experience'} • {formatCompanyIdToName(quizData?.company_id || companyId)}
                 </p>
               </div>
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-center">

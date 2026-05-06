@@ -240,7 +240,7 @@ const {company} = useCompanies(user?.id);
           {/* Expiration Date & Time */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Expiration Date & Time
+              Expiration Date & Time (UTC+00)
             </Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">

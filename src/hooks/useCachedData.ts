@@ -17,7 +17,7 @@ export function useCachedData<T>({
   fetcher, 
   dependencies, 
   cacheKey, 
-  ttl = 5 * 60 * 1000 // 5 minutes default
+  ttl = 10 * 60 * 1000 // 10 minutes default
 }: UseCachedDataOptions<T>) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,10 +36,25 @@ export function useCachedData<T>({
       const dependenciesChanged = JSON.stringify(dependencies) !== JSON.stringify(cached.dependencies);
       
       if (!dependenciesChanged) {
-        // Use cached data
+        // Use cached data and refresh in background
         setData(cached.data);
         setLoading(false);
         setError(null);
+        
+        // Background refresh to keep data fresh
+        setTimeout(() => {
+          fetcher().then(freshData => {
+            const newEntry: CacheEntry<T> = {
+              data: freshData,
+              timestamp: Date.now(),
+              dependencies: dependencies
+            };
+            cacheRef.current.set(cacheKey, newEntry);
+          }).catch(err => {
+            console.warn('Background refresh failed:', err);
+          });
+        }, 2000); // Start background refresh after 2 seconds
+        
         return;
       }
     }
