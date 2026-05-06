@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mammoth from 'mammoth';
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+import * as pdfjslib from 'pdfjs-dist/legacy/build/pdf.js';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
-// Set up PDF.js worker
-GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+// Configure PDF.js for Node.js environment
+const pdfjs = pdfjslib as any;
+pdfjs.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/legacy/build/pdf.worker.js';
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest) {
     // Handle PDF files using pdf.js
     if (fileExtension === 'pdf') {
       try {
-        const pdf = await getDocument({ data: fileBuffer }).promise;
+        const pdf: PDFDocumentProxy = await pdfjs.getDocument({ data: fileBuffer }).promise;
         const numPages = pdf.numPages;
         let fullText = '';
         
