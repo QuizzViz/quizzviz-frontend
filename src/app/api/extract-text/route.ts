@@ -64,38 +64,39 @@ export async function POST(request: NextRequest) {
   }
 }
 
-    // Handle PDF files
     if (fileExtension === 'pdf') {
-      try {
-        type PdfParseFn = (
-          buffer: Buffer,
-          options?: Record<string, unknown>
-        ) => Promise<{ text: string; numpages: number }>;
+  try {
+    const pdfParse = (await import('pdf-parse')).default;
 
-        const pdfParseModule = await import('pdf-parse');
-        const pdfParse: PdfParseFn = pdfParseModule.default ?? pdfParseModule;
-
-        const pdfData = await pdfParse(Buffer.from(fileBuffer));
-        const text = pdfData.text;
-
-        if (!text || text.trim().length === 0) {
-          return NextResponse.json({
-            text: `PDF appears to be empty or contains no extractable text (may be image-based).\n\nFile: ${file.name}\nPages: ${pdfData.numpages}\nSize: ${(file.size / 1024).toFixed(1)} KB`,
-          });
-        }
-
-        return NextResponse.json({ text: text.trim() });
-      } catch (error) {
-        console.error('PDF extraction error:', error);
-        return NextResponse.json(
-          {
-            error: 'Failed to extract text from PDF file',
-            detail: (error as Error)?.message || 'Unknown error',
-          },
-          { status: 500 }
-        );
-      }
+    if (!buffer || buffer.length === 0) {
+      throw new Error('Empty PDF buffer');
     }
+
+    const pdfData = await pdfParse(buffer);
+
+    const text = pdfData.text?.trim();
+
+    if (!text) {
+      return NextResponse.json({
+        text: `No readable text found (likely scanned PDF).\n\nPages: ${pdfData.numpages}`,
+      });
+    }
+
+    return NextResponse.json({ text });
+
+  } catch (error) {
+    console.error('PDF FULL ERROR:', error);
+    console.error('PDF STACK:', (error as Error).stack);
+
+    return NextResponse.json(
+      {
+        error: 'PDF parsing failed',
+        detail: String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
 
     return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
 
