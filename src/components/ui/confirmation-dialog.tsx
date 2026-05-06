@@ -47,13 +47,13 @@ export function ConfirmationDialog({
             {cancelText}
           </Button>
           <Button 
-            variant={variant === 'destructive' ? 'destructive' : 'default'}
+            variant={variant}
             onClick={() => {
               onConfirm();
               onClose();
             }}
             disabled={isConfirming}
-            className={`${variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : ''} ${isConfirming ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={isConfirming ? 'opacity-50 cursor-not-allowed' : ''}
           >
             {confirmText}
           </Button>

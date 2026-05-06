@@ -199,15 +199,18 @@ const {company} = useCompanies(user?.id);
                   value={timeLimit}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Allow empty string for a moment so user can clear input
+                    // Allow empty string while typing
                     if (value === '') {
                       setTimeLimit(0);
                     } else {
-                      setTimeLimit(parseInt(value) || 30);
+                      const numValue = parseInt(value);
+                      if (!isNaN(numValue) && numValue >= 0) {
+                        setTimeLimit(numValue);
+                      }
                     }
                   }}
                   onBlur={(e) => {
-                    // When focus leaves, ensure a minimum value if it's 0 or empty
+                    // When focus leaves, ensure a minimum value
                     if (timeLimit < 1) {
                       setTimeLimit(30);
                     }
@@ -233,15 +236,18 @@ const {company} = useCompanies(user?.id);
                   value={maxAttempts}
                   onChange={(e) => {
                     const value = e.target.value;
-                    // Allow empty string for a moment so user can clear input
+                    // Allow empty string while typing
                     if (value === '') {
                       setMaxAttempts(0);
                     } else {
-                      setMaxAttempts(parseInt(value) || 1);
+                      const numValue = parseInt(value);
+                      if (!isNaN(numValue) && numValue >= 0) {
+                        setMaxAttempts(numValue);
+                      }
                     }
                   }}
                   onBlur={(e) => {
-                    // When focus leaves, ensure a minimum value if it's 0 or empty
+                    // When focus leaves, ensure a minimum value
                     if (maxAttempts < 1) {
                       setMaxAttempts(1);
                     }

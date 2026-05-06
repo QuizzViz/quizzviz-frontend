@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from '@clerk/nextjs/server';
+import { convertQuizExpirationToUTC } from '@/utils/quizTimezoneUtils';
 
 export async function POST(request: NextRequest) {
   const { getToken,userId } = getAuth(request);
@@ -136,10 +137,10 @@ export async function POST(request: NextRequest) {
     const theoryPercentage = Math.round((theoryCount / totalQuestions) * 100);
     const codeAnalysisPercentage = Math.round((codeAnalysisCount / totalQuestions) * 100);
 
-    // Format expiration
+    // Use expiration date as-is (already converted to UTC in frontend)
     const formattedExpirationDate = expirationDate
-      ? new Date(expirationDate).toISOString()
-      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      ? expirationDate
+      : convertQuizExpirationToUTC(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
     // ────────────────────────────────────────────────
     // Prepare body for external publish API
