@@ -8,7 +8,7 @@
  * @returns UTC ISO string for storage
  */
 export function convertToUTC(localDate: Date): string {
-  return new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000).toISOString();
+  return localDate.toISOString();
 }
 
 /**
@@ -17,8 +17,9 @@ export function convertToUTC(localDate: Date): string {
  * @returns Date in user's local timezone
  */
 export function convertFromUTC(utcString: string): Date {
-  const date = new Date(utcString);
-  return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+  // JavaScript Date constructor automatically parses UTC strings correctly
+  // The Date object internally stores time in UTC and displays in local timezone
+  return new Date(utcString);
 }
 
 /**
@@ -67,7 +68,15 @@ export function isQuizExpired(expirationUTC: string): boolean {
   const now = new Date();
   const expirationTime = new Date(expirationUTC);
   
-  return now > expirationTime;
+  console.log('Checking expiration:', {
+    now: now.toISOString(),
+    expirationTime: expirationTime.toISOString(),
+    nowTimestamp: now.getTime(),
+    expirationTimestamp: expirationTime.getTime(),
+    isExpired: now.getTime() > expirationTime.getTime()
+  });
+  
+  return now.getTime() > expirationTime.getTime();
 }
 
 /**
