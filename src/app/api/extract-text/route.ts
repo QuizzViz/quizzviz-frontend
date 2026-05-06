@@ -87,8 +87,16 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
 
-  } catch (error) {
-    console.error('Error extracting text:', error);
-    return NextResponse.json({ error: 'Failed to extract text from file' }, { status: 500 });
-  }
+  }catch (error) {
+  console.error('FULL ERROR:', error);
+  console.error('STACK:', (error as Error).stack);
+
+  return NextResponse.json(
+    {
+      error: 'PDF parsing failed',
+      detail: String(error),
+    },
+    { status: 500 }
+  );
+}
 }
