@@ -50,7 +50,6 @@ export function ConfirmationDialog({
             variant={variant}
             onClick={() => {
               onConfirm();
-              onClose();
             }}
             disabled={isConfirming}
             className={isConfirming ? 'opacity-50 cursor-not-allowed' : ''}
