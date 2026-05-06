@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
+const pkg = await import('pdf-parse/package.json');
+console.log('PDF PARSE VERSION:', pkg.version);
 
 export async function POST(request: NextRequest) {
   try {
