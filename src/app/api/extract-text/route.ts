@@ -64,37 +64,21 @@ export async function POST(request: NextRequest) {
   }
 }
 
-    if (fileExtension === 'pdf') {
+ if (fileExtension === 'pdf') {
   try {
     const pdfParse = (await import('pdf-parse')).default;
 
-    if (!buffer || buffer.length === 0) {
-      throw new Error('Empty PDF buffer');
-    }
+    const data = await pdfParse(buffer);
+ console.log("DATA TEXT :",data.text || '')
+    return NextResponse.json({
+      text: data.text || 'EMPTY',
+    });
 
-    const pdfData = await pdfParse(buffer);
+    
 
-    const text = pdfData.text?.trim();
-
-    if (!text) {
-      return NextResponse.json({
-        text: `No readable text found (likely scanned PDF).\n\nPages: ${pdfData.numpages}`,
-      });
-    }
-
-    return NextResponse.json({ text });
-
-  } catch (error) {
-    console.error('PDF FULL ERROR:', error);
-    console.error('PDF STACK:', (error as Error).stack);
-
-    return NextResponse.json(
-      {
-        error: 'PDF parsing failed',
-        detail: String(error),
-      },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error('PDF CRASH:', err);
+    throw err;
   }
 }
 
