@@ -168,6 +168,9 @@ export async function POST(request: NextRequest) {
       tech_stack: requestBody.tech_stack
     }, null, 2));
 
+
+    console.log("🔴 API ROUTE - expirationDate received:", expirationDate);
+    console.log("🔴 API ROUTE - formattedExpirationDate:", formattedExpirationDate);
     // ────────────────────────────────────────────────
     // Optional: Update quiz status in your backend
     // (using companyId instead of userId)

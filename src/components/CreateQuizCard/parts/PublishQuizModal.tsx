@@ -88,6 +88,8 @@ const {company} = useCompanies(user?.id);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+        console.log("🔴 SUBMIT FIRED"); // ADD THIS FIRST
+
     if (!secretKey.trim()) {
       toast({
         title: "Secret Key Required",
@@ -97,15 +99,15 @@ const {company} = useCompanies(user?.id);
       return;
     }
 
+     console.log("🟡 Before conversion:", `${expirationDate}T${expirationTime}`); // ADD THIS
+
     // Combine date and time for expiration and convert to UTC
     const expirationDateTime = expirationDate
       ? convertQuizExpirationToUTC(`${expirationDate}T${expirationTime}`)
       : convertQuizExpirationToUTC(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
-      console.log("DEBUG expiration:", {
-  raw: `${expirationDate}T${expirationTime}`,
-  converted: expirationDateTime
-});
+   console.log("🟢 After conversion:", expirationDateTime); // ADD THIS
+
     await onPublish({
       secretKey: secretKey.trim(),
       timeLimit: String(parseInt(timeLimit) || 30),
