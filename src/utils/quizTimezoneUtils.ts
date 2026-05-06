@@ -10,8 +10,17 @@ import { convertToUTC, formatUTCLocal, getUserTimezone, getUserTimezoneOffset } 
  * @returns UTC ISO string for database storage
  */
 export function convertQuizExpirationToUTC(localDateTime: string | Date): string {
+  if (typeof localDateTime === 'string' && localDateTime.includes('T')) {
+    const [datePart, timePart] = localDateTime.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
+    
+    // Multi-argument constructor ALWAYS treats values as local time — no ambiguity
+    return new Date(year, month - 1, day, hours, minutes, 0, 0).toISOString();
+  }
+  
   const date = typeof localDateTime === 'string' ? new Date(localDateTime) : localDateTime;
-  return convertToUTC(date);
+  return date.toISOString();
 }
 
 /**
