@@ -47,20 +47,35 @@ export async function POST(request: NextRequest) {
     // Handle DOCX files using mammoth.js
     if (fileExtension === 'docx') {
       try {
+        console.log('Starting DOCX extraction for file:', file.name, 'Size:', file.size);
+        console.log('FileBuffer type:', typeof fileBuffer, 'Length:', fileBuffer.byteLength);
+        
         const result = await mammoth.extractRawText({ arrayBuffer: fileBuffer });
+        console.log('Mammoth extraction result:', { 
+          value: result.value?.substring(0, 100), 
+          messages: result.messages 
+        });
+        
         const text = result.value;
 
         if (!text || text.trim().length === 0) {
+          console.log('DOCX extraction returned empty text');
           return NextResponse.json({
             text: `Document appears to be empty or contains no extractable text.\n\nFile: ${file.name}\nSize: ${(file.size / 1024).toFixed(1)} KB`,
           });
         }
 
+        console.log('DOCX extraction successful, text length:', text.length);
         return NextResponse.json({ text });
       } catch (error) {
         console.error('DOCX extraction error:', error);
+        console.error('Error details:', {
+          message: (error as Error)?.message,
+          stack: (error as Error)?.stack,
+          name: (error as Error)?.name
+        });
         return NextResponse.json({
-          text: `Failed to extract text from DOCX file. The file may be corrupted or password-protected.\n\nFile: ${file.name}\nSize: ${(file.size / 1024).toFixed(1)} KB\n\nPlease download the file to view its content.`,
+          text: `Failed to extract text from DOCX file. The file may be corrupted or password-protected.\n\nFile: ${file.name}\nSize: ${(file.size / 1024).toFixed(1)} KB\n\nError: ${(error as Error)?.message || 'Unknown error'}\n\nPlease download the file to view its content.`,
         });
       }
     }
