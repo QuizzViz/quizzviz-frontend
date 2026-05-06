@@ -23,21 +23,20 @@ const QuizView: FC<{
     setIsPublishing(true);
     try {
       const requestBody = {
-        quiz_id: data?.id,
-        settings: {
-          secretKey: settings.secretKey,
-          timeLimit: settings.timeLimit,
-          maxAttempts: settings.maxAttempts,
-          expirationDate: settings.expirationDate,
-        },
-        questions: data?.quiz || [],
-        publicLink: settings.publicLink,
-        topic: data?.role || 'General Knowledge',
-        experience: data?.experience || '1-3',
-        role: data?.role,
-        companyId: data?.company_id,
-        tech_stack: data?.tech_stack
-      };
+  quiz_id: data?.id,
+  questions: data?.quiz || [],
+  publicLink: settings.publicLink,
+  topic: data?.role || 'General Knowledge',
+  experience: data?.experience || '1-3',
+  role: data?.role,
+  companyId: data?.company_id,
+  tech_stack: data?.tech_stack,
+  // ✅ Move these to top level — route.ts reads them here
+  secretKey: settings.secretKey,
+  timeLimit: settings.timeLimit,
+  maxAttempts: settings.maxAttempts,
+  expirationDate: settings.expirationDate, // ← this is already UTC from modal
+};
       
       const response = await fetch('/api/quiz/publish', {
         method: 'POST',
