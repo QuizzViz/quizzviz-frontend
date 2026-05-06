@@ -272,6 +272,12 @@ export default function ResultsDashboard() {
       hasCachedRole.current = true;
     }
   }, [userRole, roleLoading]);
+
+  // Use effective role for permission checks
+  const effectiveRole = userRole || (hasCachedRole.current ? { 
+    id: 'cached', user_id: '', company_id: '', role: 'OWNER' as const, 
+    status: 'ACTIVE' as const, created_at: '', updated_at: '' 
+  } : null);
   const router = useRouter();
 
   // Fetch quiz results
@@ -593,7 +599,7 @@ export default function ResultsDashboard() {
                                 </div>
                               </div>
 
-                              {(userRole || hasCachedRole.current) && canPerformAction(userRole, 'delete_analytics_all') ? (
+                              {effectiveRole && canPerformAction(effectiveRole, 'delete_analytics_all') ? (
                                 <Button
                                   variant="destructive"
                                   onClick={() =>
@@ -773,7 +779,7 @@ export default function ResultsDashboard() {
 
                                   <div className="flex flex-wrap gap-3">
                                     {hasSelectedUsers && (
-                                      (userRole || hasCachedRole.current) && canPerformAction(userRole, 'delete_analytics_specific') ? (
+                                      effectiveRole && canPerformAction(effectiveRole, 'delete_analytics_specific') ? (
                                         <Button
                                           variant="destructive"
                                           size="sm"

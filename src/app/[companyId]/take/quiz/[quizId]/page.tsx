@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor,ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, User, Mail, Key, ArrowRight, Home, Trophy, Target, CheckCircle, BookOpen, Timer, Shield, Zap, Lock, Eye, AlertTriangle, Maximize2, Monitor,ChevronDown, ChevronUp, Briefcase, TrendingUp, Building2, User } from 'lucide-react';
 import { LoadingSpinner } from "@/components/ui/loading";
 
 import { toast } from "@/hooks/use-toast";
@@ -1231,20 +1231,55 @@ const beginQuiz = useCallback(async () => {
               <p className="text-gray-300 mb-8 text-lg">
                 We apologize, but this quiz has expired and is no longer available for attempts.
               </p>
-              <div className="bg-gray-800/50 rounded-xl p-6 mb-6 border border-gray-700">
-                <h3 className="text-lg font-semibold text-white mb-4">Quiz Details</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <span className="text-gray-400 w-24">Role:</span>
-                    <span className="text-white font-medium">{quizData?.role || 'Unknown Role'}</span>
+              <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-8 mb-6 border border-gray-700/50 shadow-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-xl flex items-center justify-center">
+                    <Briefcase className="w-6 h-6 text-blue-400" />
                   </div>
-                  <div className="flex items-center">
-                    <span className="text-gray-400 w-24">Experience:</span>
-                    <span className="text-white">{quizData?.experience ? `${quizData.experience} years` : 'Unknown Experience'}</span>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-2">Quiz Details</h3>
+                    <p className="text-gray-400 text-sm mb-4">This quiz has expired and is no longer available</p>
                   </div>
-                  <div className="flex items-center">
-                    <span className="text-gray-400 w-24">Company:</span>
-                    <span className="text-white">{formatCompanyIdToName(quizData?.company_id || companyId)}</span>
+                </div>
+                
+                <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-700/30">
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* Role */}
+                    <div className="flex items-start gap-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700/20">
+                      <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                        <User className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Position</p>
+                        <p className="text-white font-semibold text-lg">{quizData?.role || 'Unknown Role'}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Experience */}
+                    <div className="flex items-start gap-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700/20">
+                      <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-green-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Experience</p>
+                        <p className="text-white font-semibold text-lg">
+                          {quizData?.experience ? `${quizData.experience} years` : 'Unknown Experience'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Company */}
+                    <div className="flex items-start gap-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700/20">
+                      <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Organization</p>
+                        <p className="text-white font-semibold text-lg">
+                          {formatCompanyIdToName(quizData?.company_id || companyId)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

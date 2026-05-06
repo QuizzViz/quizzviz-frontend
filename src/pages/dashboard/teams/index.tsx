@@ -404,10 +404,6 @@ export default function TeamsPage() {
       }
     };
 
-    checkForDeletedUser();
-    const interval = setInterval(checkForDeletedUser, 30000);
-    return () => clearInterval(interval);
-  }, [user?.id, companyIdForMember, getToken, router, signOut]);
 
   // Check if we have cached role data available immediately
   const hasCachedRole = useRef(false);
@@ -417,7 +413,18 @@ export default function TeamsPage() {
     }
   }, [userRole, dataLoading]);
 
-  const canInvite = (userRole || hasCachedRole.current) && canPerformAction(userRole, "invite_members") && !planLimits.isTeamMemberLimitReached;
+  // Use effective role for permission checks
+  const effectiveRole = userRole || (hasCachedRole.current ? ({
+    id: 'cached', 
+    user_id: '', 
+    company_id: '', 
+    role: 'OWNER' as const, 
+    status: 'ACTIVE' as const, 
+    created_at: '', 
+    updated_at: '' 
+  }) : null);
+
+  const canInvite = effectiveRole && canPerformAction(effectiveRole, "invite_members") && !planLimits.isTeamMemberLimitReached;
 
   const fallbackRole =
     !userRole &&
@@ -920,7 +927,7 @@ export default function TeamsPage() {
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="text-sm max-w-xs">
-                                {!(userRole || hasCachedRole.current) || !canPerformAction(userRole, "invite_members")
+                                {!effectiveRole || !canPerformAction(effectiveRole, "invite_members")
                                   ? `This action requires ${getActionAllowedRoles("invite_members")} permissions.`
                                   : planLimits.isTeamMemberLimitReached
                                   ? `${getLimitMessage("teamMember", plan as any)} Upgrade your plan to add more members.`
