@@ -19,6 +19,7 @@ interface ConfirmationDialogProps {
   confirmText?: string;
   cancelText?: string;
   variant?: 'default' | 'destructive';
+  isConfirming?: boolean;
 }
 
 export function ConfirmationDialog({
@@ -30,6 +31,7 @@ export function ConfirmationDialog({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   variant = 'destructive',
+  isConfirming = false,
 }: ConfirmationDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -50,7 +52,8 @@ export function ConfirmationDialog({
               onConfirm();
               onClose();
             }}
-            className="bg-red-600 hover:bg-red-700"
+            disabled={isConfirming}
+            className={`${variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : ''} ${isConfirming ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {confirmText}
           </Button>

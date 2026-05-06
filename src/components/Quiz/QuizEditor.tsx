@@ -14,6 +14,7 @@ import { QuestionForm } from "./QuestionForm";
 import { PublishModal } from "./PublishModal";
 import { ShareQuizModal } from "./ShareQuizModal";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { convertQuizExpirationToUTC } from '@/utils/quizTimezoneUtils';
 
 import {
   QuizSummary,
@@ -57,7 +58,7 @@ export function QuizEditor() {
     secretKey: "",
     timeLimit: 30,
     maxAttempts: 1,
-    expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    expirationDate: convertQuizExpirationToUTC(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).split("T")[0],
     isSecretKeyRequired: true,
   });
   const [formData, setFormData] = useState<QuestionFormData>({

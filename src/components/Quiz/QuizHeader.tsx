@@ -183,6 +183,7 @@ export function QuizHeader({
         description="Are you sure you want to unpublish this quiz? The quiz will no longer be accessible to others."
         confirmText={isUnpublishing ? 'Unpublishing...' : 'Yes, Unpublish'}
         variant="default"
+        isConfirming={isUnpublishing}
       />
     </header>
   );

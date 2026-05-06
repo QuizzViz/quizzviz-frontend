@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@clerk/nextjs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useCompanies } from "@/hooks/useCompanies";
+import { convertQuizExpirationToUTC } from '@/utils/quizTimezoneUtils';
+
 interface PublishQuizModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -95,10 +97,10 @@ const {company} = useCompanies(user?.id);
       return;
     }
 
-    // Combine date and time for expiration
+    // Combine date and time for expiration and convert to UTC
     const expirationDateTime = expirationDate
-      ? new Date(`${expirationDate}T${expirationTime}`).toISOString()
-      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      ? convertQuizExpirationToUTC(`${expirationDate}T${expirationTime}`)
+      : convertQuizExpirationToUTC(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
     await onPublish({
       secretKey: secretKey.trim(),
@@ -195,7 +197,21 @@ const {company} = useCompanies(user?.id);
                   type="number"
                   min="1"
                   value={timeLimit}
-                  onChange={(e) => setTimeLimit(Number(e.target.value) || 30)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow empty string for a moment so user can clear input
+                    if (value === '') {
+                      setTimeLimit(0);
+                    } else {
+                      setTimeLimit(parseInt(value) || 30);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // When focus leaves, ensure a minimum value if it's 0 or empty
+                    if (timeLimit < 1) {
+                      setTimeLimit(30);
+                    }
+                  }}
                   className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10"
                 />
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -215,7 +231,21 @@ const {company} = useCompanies(user?.id);
                   type="number"
                   min="1"
                   value={maxAttempts}
-                  onChange={(e) => setMaxAttempts(Number(e.target.value) || 1)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow empty string for a moment so user can clear input
+                    if (value === '') {
+                      setMaxAttempts(0);
+                    } else {
+                      setMaxAttempts(parseInt(value) || 1);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // When focus leaves, ensure a minimum value if it's 0 or empty
+                    if (maxAttempts < 1) {
+                      setMaxAttempts(1);
+                    }
+                  }}
                   className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10"
                 />
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
