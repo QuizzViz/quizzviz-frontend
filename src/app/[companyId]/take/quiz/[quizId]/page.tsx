@@ -30,6 +30,7 @@ interface Question {
   code_snippet: string | null;
   options: Record<string, string>;
   correct_answer: string;
+  topic: string;
 }
 
 interface TechStackItem {
@@ -869,7 +870,7 @@ const topicPerformance = calculateTopicWisePerformance();
 
   // Group questions by their actual topic field
   const questionsByTopic = quizData.quiz.reduce((acc, question, index) => {
-    const topicName = (question as any).topic?.trim();
+    const topicName = question.topic?.trim();
     if (!topicName || topicName === 'Unknown Topic' || topicName === '') {
       return acc; // Skip questions without valid topic names
     }

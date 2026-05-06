@@ -44,6 +44,76 @@ export class QuizResultAPI {
   }
 
   /**
+   * Recalculate topic performance from original quiz data to fix incorrect stored topic percentages
+   */
+  static async recalculateTopicPerformance(quizId: string, userAnswers: any[]): Promise<TopicPercentage[]> {
+    try {
+      // Fetch the original quiz data from publish service
+      const publishServiceUrl = process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL || '';
+      const response = await fetch(`${publishServiceUrl}/publish/quiz/${quizId}`);
+      
+      if (!response.ok) {
+        console.warn('Could not fetch quiz data for topic recalculation, falling back to stored data');
+        return [];
+      }
+      
+      const quizData = await response.json();
+      
+      if (!quizData.quiz || !Array.isArray(quizData.quiz)) {
+        console.warn('Invalid quiz data structure, falling back to stored data');
+        return [];
+      }
+
+      // Group questions by topic and calculate performance
+      interface QuestionWithAnswer {
+        question: any;
+        userAnswer: any;
+        isCorrect: boolean;
+      }
+
+      const questionsByTopic = quizData.quiz.reduce((acc: Record<string, QuestionWithAnswer[]>, question: any, index: number) => {
+        const topicName = question.topic?.trim();
+        if (!topicName || topicName === 'Unknown Topic' || topicName === '') {
+          return acc; // Skip questions without valid topic names
+        }
+        
+        if (!acc[topicName]) {
+          acc[topicName] = [];
+        }
+        
+        // Find the corresponding user answer
+        const userAnswer = userAnswers[index];
+        acc[topicName].push({
+          question,
+          userAnswer,
+          isCorrect: userAnswer?.selected_option === question.correct_answer
+        });
+        
+        return acc;
+      }, {});
+
+      // Calculate topic percentages
+      const topicPercentages: TopicPercentage[] = Object.entries(questionsByTopic as Record<string, QuestionWithAnswer[]>).map(([topicName, topicQuestions]) => {
+        const correctInTopic = topicQuestions.filter((q: QuestionWithAnswer) => q.isCorrect).length;
+        const totalInTopic = topicQuestions.length;
+        const percentage = totalInTopic > 0 ? Math.round((correctInTopic / totalInTopic) * 100) : 0;
+
+        return {
+          name: topicName,
+          percentage,
+          total_questions: totalInTopic,
+          correct_questions: correctInTopic
+        };
+      });
+
+      return topicPercentages;
+    } catch (error) {
+      console.error('Error recalculating topic performance:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get quiz result for a specific candidate and quiz
    */
   static async getCandidateQuizResult(
@@ -160,11 +230,25 @@ export class QuizResultAPI {
       const highestScore = Math.max(...scores);
       const latestAttempt = Math.max(...formattedResults.map(result => result.attempt));
 
-      // Calculate topic performance
+      // Calculate topic performance with recalculation for existing data
       const topicPerformance: { [topic: string]: { total: number; average: number; highest: number } } = {};
       
-      formattedResults.forEach(result => {
-        const topicPercentages = this.getTopicPercentages(result.result);
+      // Process each result and recalculate topics if needed
+      for (const result of formattedResults) {
+        let topicPercentages = this.getTopicPercentages(result.result);
+        
+        // If stored topic data seems incorrect (0% for topics that should have data), try to recalculate
+        if (!topicPercentages || topicPercentages.length === 0 || 
+            topicPercentages.some(tp => tp.percentage === 0 && tp.total_questions > 0)) {
+          try {
+            topicPercentages = await this.recalculateTopicPerformance(result.quiz_id, result.user_answers);
+          } catch (error) {
+            console.warn('Failed to recalculate topics for quiz', result.quiz_id, error);
+            // Fall back to stored data
+            topicPercentages = this.getTopicPercentages(result.result);
+          }
+        }
+        
         if (topicPercentages) {
           topicPercentages.forEach(topic => {
             if (!topicPerformance[topic.name]) {
@@ -174,7 +258,7 @@ export class QuizResultAPI {
             topicPerformance[topic.name].highest = Math.max(topicPerformance[topic.name].highest, topic.percentage);
           });
         }
-      });
+      }
 
       // Calculate averages for each topic
       Object.keys(topicPerformance).forEach(topic => {

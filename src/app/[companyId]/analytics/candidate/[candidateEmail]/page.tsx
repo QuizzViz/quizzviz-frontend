@@ -578,7 +578,46 @@ export default function CandidateDetailPage() {
     try {
       setLoading(true);
       const analytics = await QuizResultAPI.getCandidateAnalytics(candidateEmail);
-      setCandidateAnalytics(analytics);
+      
+      // Fix topic performance for individual attempts that may have incorrect stored data
+      const fixedAttempts = await Promise.all(
+        analytics.attempts.map(async (attempt) => {
+          // Check if any topic has 0% but should have data (indicating incorrect calculation)
+          const hasIncorrectTopics = attempt.result.topic_percentages?.some(
+            tp => tp.percentage === 0 && tp.total_questions > 0
+          );
+          
+          if (hasIncorrectTopics && attempt.user_answers?.length > 0) {
+            try {
+              // Recalculate topic performance
+              const recalculatedTopics = await QuizResultAPI.recalculateTopicPerformance(
+                attempt.quiz_id, 
+                attempt.user_answers
+              );
+              
+              if (recalculatedTopics.length > 0) {
+                // Update the attempt with corrected topic data
+                return {
+                  ...attempt,
+                  result: {
+                    ...attempt.result,
+                    topic_percentages: recalculatedTopics
+                  }
+                };
+              }
+            } catch (error) {
+              console.warn('Failed to recalculate topics for attempt', attempt.quiz_id, error);
+            }
+          }
+          
+          return attempt;
+        })
+      );
+      
+      setCandidateAnalytics({
+        ...analytics,
+        attempts: fixedAttempts
+      });
     } catch (error) {
       console.error("Error fetching candidate analytics:", error);
       toast({
