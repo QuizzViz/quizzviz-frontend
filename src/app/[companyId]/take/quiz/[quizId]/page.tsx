@@ -1231,11 +1231,22 @@ const beginQuiz = useCallback(async () => {
               <p className="text-gray-300 mb-8 text-lg">
                 We apologize, but this quiz has expired and is no longer available for attempts.
               </p>
-              <div className="bg-gray-800/50 rounded-xl p-4 mb-6 border border-gray-700">
-                <p className="text-sm text-gray-400 mb-2">Quiz Details:</p>
-                <p className="text-gray-300">
-                  {quizData?.role || 'Unknown Role'} • {quizData?.experience ? `${quizData.experience} years` : 'Unknown Experience'} • {formatCompanyIdToName(quizData?.company_id || companyId)}
-                </p>
+              <div className="bg-gray-800/50 rounded-xl p-6 mb-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-4">Quiz Details</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <span className="text-gray-400 w-24">Role:</span>
+                    <span className="text-white font-medium">{quizData?.role || 'Unknown Role'}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-gray-400 w-24">Experience:</span>
+                    <span className="text-white">{quizData?.experience ? `${quizData.experience} years` : 'Unknown Experience'}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-gray-400 w-24">Company:</span>
+                    <span className="text-white">{formatCompanyIdToName(quizData?.company_id || companyId)}</span>
+                  </div>
+                </div>
               </div>
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-center">
                 <p className="text-blue-300 text-sm">
