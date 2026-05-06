@@ -27,7 +27,7 @@ export default function FileUpload({
   value = [], 
   onChange, 
   maxFiles = 1,
-  accept = ".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb,.swift,.kt,.scala,.pl,.hs,.m,.r,.sql,.html,.css,.json,.xml,.yaml,.yml"
+  accept = ".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb,.swift,.kt,.scala,.pl,.hs,.m,.r,.sql,.html,.css,.json,.xml,.yaml,.yml,.pdf,.doc,.docx"
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -124,7 +124,10 @@ export default function FileUpload({
                         file.name.endsWith('.json') ||
                         file.name.endsWith('.xml') ||
                         file.name.endsWith('.yaml') ||
-                        file.name.endsWith('.yml');
+                        file.name.endsWith('.yml') ||
+                        file.name.endsWith('.pdf') ||
+                        file.name.endsWith('.doc') ||
+                        file.name.endsWith('.docx');
       
       if (!isValidType) {
         toast({
@@ -241,25 +244,13 @@ export default function FileUpload({
       case 'm':
       case 'r':
         return <Code className="h-4 w-4" />;
-      case 'html':
-      case 'css':
-      case 'json':
-      case 'xml':
-      case 'yaml':
-      case 'yml':
-      case 'sql':
-        return <FileCode className="h-4 w-4" />;
+      
       default:
-        return <FileText className="h-4 w-4" />;
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (

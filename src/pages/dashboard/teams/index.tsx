@@ -402,29 +402,28 @@ export default function TeamsPage() {
           // Error checking user deletion status
         }
       }
-    };
-
-
-  // Check if we have cached role data available immediately
-  const hasCachedRole = useRef(false);
-  useEffect(() => {
-    if (userRole && !dataLoading) {
-      hasCachedRole.current = true;
     }
-  }, [userRole, dataLoading]);
+   checkForDeletedUser();
+}, [user?.id, companyIdForMember, getToken, signOut, router]);
 
-  // Use effective role for permission checks
-  const effectiveRole = userRole || (hasCachedRole.current ? ({
-    id: 'cached', 
-    user_id: '', 
-    company_id: '', 
-    role: 'OWNER' as const, 
-    status: 'ACTIVE' as const, 
-    created_at: '', 
-    updated_at: '' 
-  }) : null);
+  // // Check if we have cached role data available immediately
+  // const hasCachedRole = useRef(false);
+  // useEffect(() => {
+  //   if (userRole && !dataLoading) {
+  //     hasCachedRole.current = true;
+  //   }
+  // }, [userRole, dataLoading]);
 
-  const canInvite = effectiveRole && canPerformAction(effectiveRole, "invite_members") && !planLimits.isTeamMemberLimitReached;
+  // // Use effective role for permission checks
+  // const effectiveRole = userRole || (hasCachedRole.current ? ({
+  //   id: 'cached', 
+  //   user_id: '', 
+  //   company_id: '', 
+  //   role: 'OWNER' as const, 
+  //   status: 'ACTIVE' as const, 
+  //   created_at: '', 
+  //   updated_at: '' 
+  // }) : null);
 
   const fallbackRole =
     !userRole &&
@@ -444,6 +443,8 @@ export default function TeamsPage() {
       : userRole;
 
   const effectiveRole = userRole || fallbackRole;
+  const canInvite = effectiveRole && canPerformAction(effectiveRole, "invite_members") && !planLimits.isTeamMemberLimitReached;
+
 
   useEffect(() => {
   }, [userRole, dataLoading, company?.company_id, user?.id]);
