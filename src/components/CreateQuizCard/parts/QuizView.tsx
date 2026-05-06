@@ -15,8 +15,8 @@ const QuizView: FC<{
 
   const handlePublish = async (settings: {
     secretKey: string;
-    timeLimit: number;
-    maxAttempts: number;
+    timeLimit: string;
+    maxAttempts: string;
     expirationDate: string;
     publicLink: string;
   }) => {
