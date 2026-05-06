@@ -102,6 +102,10 @@ const {company} = useCompanies(user?.id);
       ? convertQuizExpirationToUTC(`${expirationDate}T${expirationTime}`)
       : convertQuizExpirationToUTC(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
+      console.log("DEBUG expiration:", {
+  raw: `${expirationDate}T${expirationTime}`,
+  converted: expirationDateTime
+});
     await onPublish({
       secretKey: secretKey.trim(),
       timeLimit: String(parseInt(timeLimit) || 30),
