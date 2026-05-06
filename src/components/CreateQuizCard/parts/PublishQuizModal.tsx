@@ -15,8 +15,8 @@ interface PublishQuizModalProps {
   quizId: string;
   onPublish: (settings: {
     secretKey: string;
-    timeLimit: number;
-    maxAttempts: number;
+    timeLimit: string;
+    maxAttempts: string;
     expirationDate: string;
     publicLink: string;
   }) => Promise<void>;
@@ -31,8 +31,8 @@ export function PublishQuizModal({
   isPublishing,
 }: PublishQuizModalProps) {
   const [secretKey, setSecretKey] = useState("");
-  const [timeLimit, setTimeLimit] = useState<number>(30);
-  const [maxAttempts, setMaxAttempts] = useState<number>(1);
+  const [timeLimit, setTimeLimit] = useState<string>("30");
+  const [maxAttempts, setMaxAttempts] = useState<string>("1");
   const [expirationDate, setExpirationDate] = useState<string>("");
   const [expirationTime, setExpirationTime] = useState<string>("23:59");
   const [hasCopied, setHasCopied] = useState(false);
@@ -104,8 +104,8 @@ const {company} = useCompanies(user?.id);
 
     await onPublish({
       secretKey: secretKey.trim(),
-      timeLimit,
-      maxAttempts,
+      timeLimit: String(parseInt(timeLimit) || 30),
+      maxAttempts: String(parseInt(maxAttempts) || 1),
       expirationDate: expirationDateTime,
       publicLink: formattedQuizLink // Ensure the formatted link is sent to the API
     });
@@ -200,19 +200,13 @@ const {company} = useCompanies(user?.id);
                   onChange={(e) => {
                     const value = e.target.value;
                     // Allow empty string while typing
-                    if (value === '') {
-                      setTimeLimit(0);
-                    } else {
-                      const numValue = parseInt(value);
-                      if (!isNaN(numValue) && numValue >= 0) {
-                        setTimeLimit(numValue);
-                      }
-                    }
+                    setTimeLimit(value);
                   }}
                   onBlur={(e) => {
                     // When focus leaves, ensure a minimum value
-                    if (timeLimit < 1) {
-                      setTimeLimit(30);
+                    const numValue = parseInt(timeLimit);
+                    if (isNaN(numValue) || numValue < 1) {
+                      setTimeLimit("30");
                     }
                   }}
                   className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10"
@@ -237,19 +231,13 @@ const {company} = useCompanies(user?.id);
                   onChange={(e) => {
                     const value = e.target.value;
                     // Allow empty string while typing
-                    if (value === '') {
-                      setMaxAttempts(0);
-                    } else {
-                      const numValue = parseInt(value);
-                      if (!isNaN(numValue) && numValue >= 0) {
-                        setMaxAttempts(numValue);
-                      }
-                    }
+                    setMaxAttempts(value);
                   }}
                   onBlur={(e) => {
                     // When focus leaves, ensure a minimum value
-                    if (maxAttempts < 1) {
-                      setMaxAttempts(1);
+                    const numValue = parseInt(maxAttempts);
+                    if (isNaN(numValue) || numValue < 1) {
+                      setMaxAttempts("1");
                     }
                   }}
                   className="pl-10 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 h-10"
