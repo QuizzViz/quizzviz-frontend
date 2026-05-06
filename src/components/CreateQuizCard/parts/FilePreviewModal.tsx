@@ -38,7 +38,8 @@ function getLanguageLabel(fileName: string): string {
     go: 'Go', rs: 'Rust', php: 'PHP', rb: 'Ruby', swift: 'Swift',
     kt: 'Kotlin', scala: 'Scala', pl: 'Perl', hs: 'Haskell',
     m: 'MATLAB', r: 'R', html: 'HTML', css: 'CSS', json: 'JSON',
-    xml: 'XML', yaml: 'YAML', yml: 'YAML', sql: 'SQL', md: 'Markdown', txt: 'Plain Text',
+    xml: 'XML', yaml: 'YAML', yml: 'YAML', sql: 'SQL', md: 'Markdown', 
+    txt: 'Plain Text', pdf: 'PDF Document', docx: 'Word Document', doc: 'Word Document',
   };
   return (ext && map[ext]) || 'Text';
 }
@@ -47,8 +48,10 @@ function getAccentColor(fileName: string) {
   const ext = fileName.split('.').pop()?.toLowerCase();
   const codeExts = ['js','jsx','ts','tsx','py','java','cpp','c','cs','go','rs','php','rb','swift','kt','scala','pl','hs','m','r'];
   const markupExts = ['html','css','json','xml','yaml','yml','sql'];
+  const documentExts = ['pdf','docx','doc'];
   if (ext && codeExts.includes(ext)) return 'green';
   if (ext && markupExts.includes(ext)) return 'blue';
+  if (ext && documentExts.includes(ext)) return 'red';
   return 'slate';
 }
 
@@ -75,22 +78,96 @@ export default function FilePreviewModal({ isOpen, onClose, file, onRemove }: Fi
     setIsLoading(true);
     setError('');
     setContent('');
+    
     try {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setContent(e.target?.result as string ?? '');
-        setIsLoading(false);
-      };
-      reader.onerror = () => {
-        setError('Failed to read file. Please check if the file is a valid text file.');
-        setIsLoading(false);
-      };
-      reader.readAsText(f);
-    } catch {
-      setError('Unexpected error reading file.');
+      const fileExtension = f.name.split('.').pop()?.toLowerCase();
+      
+      // Handle different file types
+      if (fileExtension === 'docx') {
+        await readDocxFile(f);
+      } else if (fileExtension === 'pdf') {
+        await readPdfFile(f);
+      } else {
+        // Handle text files normally
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setContent(e.target?.result as string ?? '');
+          setIsLoading(false);
+        };
+        reader.onerror = () => {
+          setError('Failed to read file. Please check if the file is a valid text file.');
+          setIsLoading(false);
+        };
+        reader.readAsText(f);
+      }
+    } catch (error) {
+      console.error('Error reading file:', error);
+      setError('Failed to read file. The file may be corrupted or in an unsupported format.');
       setIsLoading(false);
     }
   }, []);
+
+  // Function to read DOCX files
+  const readDocxFile = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/extract-text', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to extract text from DOCX file');
+      }
+      
+      const result = await response.json();
+      
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setContent(result.text);
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error reading DOCX file:', error);
+      setError('Failed to extract text from DOCX file. The file may be corrupted or password-protected.');
+      setIsLoading(false);
+    }
+  };
+
+  // Function to read PDF files
+  const readPdfFile = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/extract-text', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to extract text from PDF file');
+      }
+      
+      const result = await response.json();
+      
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setContent(result.text);
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error reading PDF file:', error);
+      setError('Failed to extract text from PDF file. The file may be corrupted, password-protected, or image-based.');
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && file) {
@@ -133,7 +210,7 @@ export default function FilePreviewModal({ isOpen, onClose, file, onRemove }: Fi
   }, [file, onRemove, onClose]);
 
   const accent = file ? getAccentColor(file.name) : 'slate';
-  const accentClasses = {
+  const accentClasses: Record<string, { iconBg: string; badge: string; copyBtn: string }> = {
     green: {
       iconBg: 'from-green-500 to-emerald-500',
       badge: 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20',
@@ -144,12 +221,18 @@ export default function FilePreviewModal({ isOpen, onClose, file, onRemove }: Fi
       badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
       copyBtn: 'border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-500/50',
     },
+    red: {
+      iconBg: 'from-red-500 to-rose-500',
+      badge: 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20',
+      copyBtn: 'border-red-500/30 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-500/50',
+    },
     slate: {
       iconBg: 'from-slate-500 to-slate-600',
       badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20',
       copyBtn: 'border-slate-500/30 hover:bg-slate-500/10 hover:text-slate-600 dark:hover:text-slate-400 hover:border-slate-500/50',
     },
-  }[accent];
+  };
+  const currentAccent = accentClasses[accent] || accentClasses.slate;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -161,7 +244,7 @@ export default function FilePreviewModal({ isOpen, onClose, file, onRemove }: Fi
           <div className="flex items-center gap-3 min-w-0">
             <div className={cn(
               'flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br shadow-sm text-white',
-              accentClasses.iconBg
+              currentAccent.iconBg
             )}>
               {file && getFileIcon(file.name)}
             </div>
@@ -184,7 +267,7 @@ export default function FilePreviewModal({ isOpen, onClose, file, onRemove }: Fi
                 {file && (
                   <>
                     <span className="text-muted-foreground/40 text-xs">·</span>
-                    <span className={cn('text-[11px] font-medium px-1.5 py-0.5 rounded-md', accentClasses.badge)}>
+                    <span className={cn('text-[11px] font-medium px-1.5 py-0.5 rounded-md', currentAccent.badge)}>
                       {getLanguageLabel(file.name)}
                     </span>
                   </>
@@ -205,7 +288,7 @@ export default function FilePreviewModal({ isOpen, onClose, file, onRemove }: Fi
                 'h-8 px-3 text-xs font-medium transition-all duration-200 gap-1.5',
                 copied
                   ? 'border-green-500/40 bg-green-500/10 text-green-600 dark:text-green-400'
-                  : accentClasses.copyBtn
+                  : currentAccent.copyBtn
               )}
             >
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
