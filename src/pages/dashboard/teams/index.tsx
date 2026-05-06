@@ -409,7 +409,15 @@ export default function TeamsPage() {
     return () => clearInterval(interval);
   }, [user?.id, companyIdForMember, getToken, router, signOut]);
 
-  const canInvite = userRole && canPerformAction(userRole, "invite_members") && !planLimits.isTeamMemberLimitReached;
+  // Check if we have cached role data available immediately
+  const hasCachedRole = useRef(false);
+  useEffect(() => {
+    if (userRole && !dataLoading) {
+      hasCachedRole.current = true;
+    }
+  }, [userRole, dataLoading]);
+
+  const canInvite = (userRole || hasCachedRole.current) && canPerformAction(userRole, "invite_members") && !planLimits.isTeamMemberLimitReached;
 
   const fallbackRole =
     !userRole &&
@@ -912,7 +920,7 @@ export default function TeamsPage() {
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="text-sm max-w-xs">
-                                {!userRole || !canPerformAction(userRole, "invite_members")
+                                {!(userRole || hasCachedRole.current) || !canPerformAction(userRole, "invite_members")
                                   ? `This action requires ${getActionAllowedRoles("invite_members")} permissions.`
                                   : planLimits.isTeamMemberLimitReached
                                   ? `${getLimitMessage("teamMember", plan as any)} Upgrade your plan to add more members.`

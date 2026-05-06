@@ -7,7 +7,7 @@ import { ArrowRight } from "lucide-react";
 import Head from "next/head";
 import CreateQuizCard from "@/components/CreateQuizCard";
 import { PageLoading } from "@/components/ui/page-loading";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
@@ -50,6 +50,14 @@ export default function Dashboard() {
     const token = await getToken();
     return token || '';
   });
+
+  // Check if we have cached role data available immediately
+  const hasCachedRole = useRef(false);
+  useEffect(() => {
+    if (userRole && !roleLoading) {
+      hasCachedRole.current = true;
+    }
+  }, [userRole, roleLoading]);
   
   // Set default values for Enterprise plan
   const maxQuestions = 100; // Enterprise plan limit
@@ -62,8 +70,8 @@ export default function Dashboard() {
     }
   }, [isLoaded]);
 
-  // Show loading while fetching role or if Clerk is not loaded yet
-  if (isLoading || roleLoading || !isLoaded) {
+  // Show loading only if Clerk is not loaded yet, use cached role for instant UI
+  if (isLoading || (!isLoaded && !hasCachedRole.current)) {
     return (
       <div className="min-h-screen bg-black text-white">
         <SignedIn>

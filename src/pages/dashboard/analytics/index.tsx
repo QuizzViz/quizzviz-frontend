@@ -264,6 +264,14 @@ export default function ResultsDashboard() {
   const { companyInfo, isLoading: isCompanyLoading, error: companyError } = useCompanyInfo();
   const finalCompanyId = companyInfo?.id || '';
   const { userRole, loading: roleLoading } = useUserRole(finalCompanyId);
+  
+  // Check if we have cached role data available immediately
+  const hasCachedRole = useRef(false);
+  useEffect(() => {
+    if (userRole && !roleLoading) {
+      hasCachedRole.current = true;
+    }
+  }, [userRole, roleLoading]);
   const router = useRouter();
 
   // Fetch quiz results
@@ -585,7 +593,7 @@ export default function ResultsDashboard() {
                                 </div>
                               </div>
 
-                              {userRole && canPerformAction(userRole, 'delete_analytics_all') ? (
+                              {(userRole || hasCachedRole.current) && canPerformAction(userRole, 'delete_analytics_all') ? (
                                 <Button
                                   variant="destructive"
                                   onClick={() =>
@@ -765,7 +773,7 @@ export default function ResultsDashboard() {
 
                                   <div className="flex flex-wrap gap-3">
                                     {hasSelectedUsers && (
-                                      userRole && canPerformAction(userRole, 'delete_analytics_specific') ? (
+                                      (userRole || hasCachedRole.current) && canPerformAction(userRole, 'delete_analytics_specific') ? (
                                         <Button
                                           variant="destructive"
                                           size="sm"
