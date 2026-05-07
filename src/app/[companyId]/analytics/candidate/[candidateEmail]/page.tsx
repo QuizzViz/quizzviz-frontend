@@ -522,12 +522,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { QuizResultAPI } from "@/lib/quizResult";
 import { CandidateAnalytics } from "@/types/quizResult";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { toast } from "@/hooks/use-toast";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
@@ -561,7 +560,6 @@ import autoTable from "jspdf-autotable";
 export default function CandidateDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user } = useUser();
   const { companyInfo } = useCompanyInfo();
 
@@ -571,16 +569,15 @@ export default function CandidateDetailPage() {
 
   const candidateEmail = params.candidateEmail as string;
   const companyId = params.companyId as string;
-  const quizId = searchParams?.get('quizId') || undefined;
 
   useEffect(() => {
     if (candidateEmail) fetchCandidateAnalytics();
-  }, [candidateEmail, quizId]);
+  }, [candidateEmail]);
 
   const fetchCandidateAnalytics = async () => {
     try {
       setLoading(true);
-      const analytics = await QuizResultAPI.getCandidateAnalytics(candidateEmail, 0, 100, quizId);
+      const analytics = await QuizResultAPI.getCandidateAnalytics(candidateEmail, 0, 100);
       
       // Fix topic performance for individual attempts that may have incorrect stored data
       const fixedAttempts = await Promise.all(
@@ -655,11 +652,10 @@ export default function CandidateDetailPage() {
       });
       const topicWs = XLSX.utils.aoa_to_sheet(topicData);
       XLSX.utils.book_append_sheet(wb, topicWs, "Topic Performance");
-      const attemptsData = [["Attempt", "Quiz ID", "Score", "Passed", "Date"]];
+      const attemptsData = [["Attempt", "Score", "Passed", "Date"]];
       candidateAnalytics.attempts.forEach((attempt) => {
         attemptsData.push([
           attempt.attempt.toString(),
-          attempt.quiz_id,
           `${attempt.result.score}%`,
           attempt.result.passed ? "Yes" : "No",
           new Date(attempt.created_at).toLocaleDateString(),
@@ -694,10 +690,10 @@ export default function CandidateDetailPage() {
       ]);
       autoTable(doc, { head: [["Topic", "Average %", "Highest %"]], body: topicData, startY: 100, theme: "grid", styles: { fontSize: 10 } });
       const attemptsData = candidateAnalytics.attempts.map((attempt) => [
-        attempt.attempt.toString(), attempt.quiz_id, `${attempt.result.score}%`,
+        attempt.attempt.toString(), `${attempt.result.score}%`,
         attempt.result.role || "N/A", new Date(attempt.created_at).toLocaleDateString(),
       ]);
-      autoTable(doc, { head: [["Attempt", "Quiz ID", "Score", "Quiz Role", "Date"]], body: attemptsData, startY: doc.lastAutoTable?.finalY || 150, theme: "grid", styles: { fontSize: 10 } });
+      autoTable(doc, { head: [["Attempt", "Score", "Quiz Role", "Date"]], body: attemptsData, startY: doc.lastAutoTable?.finalY || 150, theme: "grid", styles: { fontSize: 10 } });
       doc.save(`${candidateAnalytics.username.replace(/\s+/g, "_")}_quiz_results.pdf`);
       toast({ title: "Success", description: "PDF downloaded successfully", className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30" });
     } catch (error) {
@@ -853,14 +849,6 @@ export default function CandidateDetailPage() {
                       <Mail className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
                       {candidateAnalytics.email}
                     </p>
-                    {quizId && (
-                      <div className="flex items-center mt-2 text-sm">
-                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 px-2 py-0.5 text-xs">
-                          <FileText className="w-3 h-3 mr-1" />
-                          Quiz: {quizId}
-                        </Badge>
-                      </div>
-                    )}
                   </div>
                 </div>
 
