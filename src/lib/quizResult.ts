@@ -185,22 +185,30 @@ export class QuizResultAPI {
   }
 
   /**
-   * Get comprehensive analytics for a candidate across all quizzes
+   * Get comprehensive analytics for a candidate across all quizzes or specific quiz
    */
   static async getCandidateAnalytics(
     candidateEmail: string,
     skip: number = 0,
-    limit: number = 100
+    limit: number = 100,
+    quizId?: string
   ): Promise<CandidateAnalytics> {
     try {
       const allResults = await this.getCandidateAllResults(candidateEmail, skip, limit);
       
-      if (allResults.length === 0) {
-        throw new Error('No quiz results found for this candidate');
+      // Filter by quizId if provided
+      const filteredResults = quizId 
+        ? allResults.filter(result => result.quiz_id === quizId)
+        : allResults;
+      
+      if (filteredResults.length === 0) {
+        throw new Error(quizId 
+          ? `No quiz results found for this candidate in quiz: ${quizId}`
+          : 'No quiz results found for this candidate');
       }
 
       // Convert to QuizUserResponse format
-      const formattedResults: QuizUserResponse[] = allResults.map(result => ({
+      const formattedResults: QuizUserResponse[] = filteredResults.map(result => ({
         id: result.id,
         quiz_id: result.quiz_id,
         owner_id: result.owner_id,
