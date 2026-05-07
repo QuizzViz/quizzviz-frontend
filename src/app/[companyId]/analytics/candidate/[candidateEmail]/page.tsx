@@ -690,10 +690,10 @@ export default function CandidateDetailPage() {
       ]);
       autoTable(doc, { head: [["Topic", "Average %", "Highest %"]], body: topicData, startY: 100, theme: "grid", styles: { fontSize: 10 } });
       const attemptsData = candidateAnalytics.attempts.map((attempt) => [
-        attempt.attempt.toString(), `${attempt.result.score}%`,
-        attempt.result.role || "N/A", new Date(attempt.created_at).toLocaleDateString(),
+        attempt.result.role || "N/A", `${attempt.result.score}%`,
+        attempt.attempt.toString(), new Date(attempt.created_at).toLocaleDateString(),
       ]);
-      autoTable(doc, { head: [["Attempt", "Score", "Quiz Role", "Date"]], body: attemptsData, startY: doc.lastAutoTable?.finalY || 150, theme: "grid", styles: { fontSize: 10 } });
+      autoTable(doc, { head: [["Quiz Role", "Score", "Attempt", "Date"]], body: attemptsData, startY: doc.lastAutoTable?.finalY || 150, theme: "grid", styles: { fontSize: 10 } });
       doc.save(`${candidateAnalytics.username.replace(/\s+/g, "_")}_quiz_results.pdf`);
       toast({ title: "Success", description: "PDF downloaded successfully", className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30" });
     } catch (error) {
