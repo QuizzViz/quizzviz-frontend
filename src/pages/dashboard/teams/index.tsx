@@ -540,7 +540,7 @@ export default function TeamsPage() {
     }
   }, [isLoaded, user, router]);
 
-  const refreshMembersAndRole = async () => {
+  const refreshMembersAndRole = async (showToast = false) => {
     setIsFetchingMembers(true);
     try {
       await refreshAll();
@@ -940,7 +940,7 @@ export default function TeamsPage() {
                       )}
 
                       <Button
-                        onClick={refreshMembersAndRole}
+                        onClick={() => refreshMembersAndRole()}
                         disabled={isFetchingMembers}
                         className="bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 flex items-center gap-2 px-4 py-2 rounded-xl"
                       >
