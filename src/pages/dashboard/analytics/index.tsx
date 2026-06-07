@@ -480,7 +480,7 @@ export default function ResultsDashboard() {
     }
   };
 
-  if (isLoading || isCompanyLoading) {
+  if (isLoading || isCompanyLoading || roleLoading) {
     return (
       <div className="min-h-screen bg-black text-white">
         <DashboardAccess>

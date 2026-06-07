@@ -743,7 +743,7 @@ export default function TeamsPage() {
   };
 
   // ── Loading state ───────────────────────────────────────────────────────────
-  if (isLoading || !isLoaded) {
+  if (isLoading || !isLoaded || dataLoading) {
     return (
       <div className="min-h-screen bg-black text-white">
         <SignedIn>
@@ -808,7 +808,7 @@ export default function TeamsPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {!dataLoading && canInvite ? (
+                      {canInvite ? (
                         <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                           <DialogTrigger asChild>
                             <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 rounded-xl">
