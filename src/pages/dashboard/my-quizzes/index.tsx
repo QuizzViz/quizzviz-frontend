@@ -253,11 +253,11 @@ export default function MyQuizzesPage() {
                   <div className="border border-red-500/40 text-red-300 rounded-lg p-4">
                     {fetchError}
                   </div>
-                ) : isFetchingQuizzes && !quizzes ? (
+                ) : isFetchingQuizzes ? (
                   <div className="flex items-center justify-center py-10">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                ) : !quizzes || quizzes.length === 0 ? (
+                ) : quizzes.length === 0 ? (
                   <div className="border border-white/10 rounded-lg p-6">No quizzes to show yet.</div>
                 ) : (
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
