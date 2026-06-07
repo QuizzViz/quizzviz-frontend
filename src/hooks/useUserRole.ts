@@ -60,38 +60,39 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        
+
         // Check if member has been deleted
         if (response.status === 410 || errorData.deleted) {
-          
+
           // Clear all stored data
           clearStoredUserRole();
           clearCache();
-          
+
           // Sign out the user and redirect to home
           if (signOut) {
             await signOut();
           }
-          
+
           // Redirect to home page with a message
           if (typeof window !== 'undefined') {
             router.push('/?message=deleted');
           }
-          
+
           // Throw a specific error to prevent further processing
           throw new Error('MEMBER_DELETED');
         }
-        
+
         throw new Error(errorData.error || 'Failed to fetch user role');
       }
 
       const data: UserRole = await response.json();
-      
+
       return data;
     },
     dependencies: [user?.id, companyId],
     cacheKey,
-    ttl: 10 * 60 * 1000 // 10 minutes cache for role data
+    ttl: 10 * 60 * 1000, // 10 minutes cache for role data
+    usePersistentCache: true // Enable localStorage caching for role data
   });
 
   // Store company_id in sessionStorage for member users when role is fetched
