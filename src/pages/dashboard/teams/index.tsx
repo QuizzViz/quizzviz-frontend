@@ -528,6 +528,7 @@ export default function TeamsPage() {
   const [editingMember, setEditingMember] = useState<CompanyMember | null>(null);
   const [isEditRoleOpen, setIsEditRoleOpen] = useState(false);
   const [isSavingRole, setIsSavingRole] = useState(false);
+  const [originalRole, setOriginalRole] = useState<"OWNER" | "ADMIN" | "MEMBER" | null>(null);
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [isDeletingMember, setIsDeletingMember] = useState(false);
@@ -669,11 +670,14 @@ export default function TeamsPage() {
         throw new Error(err.error || "Failed to update role");
       }
 
-      toast({
-        title: "Role Updated",
-        description: `Role updated for ${editingMember.name}`,
-        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
-      });
+      // Only show toast if role actually changed
+      if (originalRole && originalRole !== editingMember.role) {
+        toast({
+          title: "Role Updated",
+          description: `Role updated for ${editingMember.name}`,
+          className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+        });
+      }
 
       if (user?.id && company?.company_id) {
         const tokenForRefresh = await getToken();
@@ -692,6 +696,7 @@ export default function TeamsPage() {
     } finally {
       setIsSavingRole(false);
       setIsEditRoleOpen(false);
+      setOriginalRole(null);
     }
   };
 
@@ -963,6 +968,7 @@ export default function TeamsPage() {
                           member={member}
                           onEditRole={(m) => {
                             setEditingMember(m);
+                            setOriginalRole(m.role);
                             setIsEditRoleOpen(true);
                           }}
                           onDelete={promptDeleteMember}
