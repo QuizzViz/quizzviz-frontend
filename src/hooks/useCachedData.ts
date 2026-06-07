@@ -11,36 +11,76 @@ interface UseCachedDataOptions<T> {
   dependencies: any[];
   cacheKey: string;
   ttl?: number; // Time to live in milliseconds (default: 5 minutes)
+  usePersistentCache?: boolean; // Use localStorage for persistent caching across page navigations
 }
 
-export function useCachedData<T>({ 
-  fetcher, 
-  dependencies, 
-  cacheKey, 
-  ttl = 10 * 60 * 1000 // 10 minutes default
+// Helper functions for localStorage cache
+const getStoredCache = <T,>(cacheKey: string): CacheEntry<T> | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem(`cache_${cacheKey}`);
+    return stored ? JSON.parse(stored) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const setStoredCache = <T,>(cacheKey: string, entry: CacheEntry<T>) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`cache_${cacheKey}`, JSON.stringify(entry));
+  } catch (e) {
+    // Storage might be full or disabled
+  }
+};
+
+const clearStoredCache = (cacheKey: string) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(`cache_${cacheKey}`);
+  } catch (e) {
+    // Ignore errors
+  }
+};
+
+export function useCachedData<T>({
+  fetcher,
+  dependencies,
+  cacheKey,
+  ttl = 10 * 60 * 1000, // 10 minutes default
+  usePersistentCache = false
 }: UseCachedDataOptions<T>) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Use ref to persist cache across re-renders
   const cacheRef = useRef<Map<string, CacheEntry<T>>>(new Map());
 
   useEffect(() => {
     const now = Date.now();
-    const cached = cacheRef.current.get(cacheKey);
-    
+    let cached = cacheRef.current.get(cacheKey);
+
+    // Check localStorage cache first if persistent caching is enabled
+    if (usePersistentCache && !cached) {
+      const storedCache = getStoredCache<T>(cacheKey);
+      if (storedCache) {
+        cached = storedCache;
+        cacheRef.current.set(cacheKey, storedCache);
+      }
+    }
+
     // Check if we have valid cached data
     if (cached && (now - cached.timestamp) < ttl) {
       // Check if dependencies have changed
       const dependenciesChanged = JSON.stringify(dependencies) !== JSON.stringify(cached.dependencies);
-      
+
       if (!dependenciesChanged) {
         // Use cached data and refresh in background
         setData(cached.data);
         setLoading(false);
         setError(null);
-        
+
         // Background refresh to keep data fresh
         setTimeout(() => {
           fetcher().then(freshData => {
@@ -50,28 +90,35 @@ export function useCachedData<T>({
               dependencies: dependencies
             };
             cacheRef.current.set(cacheKey, newEntry);
+            if (usePersistentCache) {
+              setStoredCache(cacheKey, newEntry);
+            }
           }).catch(err => {
             console.warn('Background refresh failed:', err);
           });
         }, 2000); // Start background refresh after 2 seconds
-        
+
         return;
       }
     }
-    
+
     // Fetch fresh data
     setLoading(true);
     setError(null);
-    
+
     fetcher()
       .then((freshData) => {
         // Cache the fresh data
-        cacheRef.current.set(cacheKey, {
+        const newEntry: CacheEntry<T> = {
           data: freshData,
           timestamp: now,
           dependencies: [...dependencies] // Store current dependencies
-        });
-        
+        };
+        cacheRef.current.set(cacheKey, newEntry);
+        if (usePersistentCache) {
+          setStoredCache(cacheKey, newEntry);
+        }
+
         setData(freshData);
         setLoading(false);
       })
@@ -85,20 +132,30 @@ export function useCachedData<T>({
   // Function to manually clear cache
   const clearCache = () => {
     cacheRef.current.delete(cacheKey);
+    if (usePersistentCache) {
+      clearStoredCache(cacheKey);
+    }
   };
 
   // Function to force refresh
   const refresh = () => {
     cacheRef.current.delete(cacheKey);
+    if (usePersistentCache) {
+      clearStoredCache(cacheKey);
+    }
     setLoading(true);
     fetcher()
       .then((freshData) => {
         const now = Date.now();
-        cacheRef.current.set(cacheKey, {
+        const newEntry: CacheEntry<T> = {
           data: freshData,
           timestamp: now,
           dependencies: [...dependencies]
-        });
+        };
+        cacheRef.current.set(cacheKey, newEntry);
+        if (usePersistentCache) {
+          setStoredCache(cacheKey, newEntry);
+        }
         setData(freshData);
         setLoading(false);
       })
@@ -118,43 +175,98 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
   const [userRole, setUserRole] = useState<any>(null);
   const [company, setCompany] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const cacheRef = useRef<{
     members?: { data: any[]; timestamp: number };
     userRole?: { data: any; timestamp: number };
     company?: { data: any; timestamp: number };
   }>({});
 
+  // Helper functions for localStorage cache
+  const getStoredDashboardCache = (key: string) => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem(`dashboard_cache_${key}`);
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const setStoredDashboardCache = (key: string, data: any, timestamp: number) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(`dashboard_cache_${key}`, JSON.stringify({ data, timestamp }));
+    } catch (e) {
+      // Storage might be full or disabled
+    }
+  };
+
+  const clearStoredDashboardCache = (key: string) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem(`dashboard_cache_${key}`);
+    } catch (e) {
+      // Ignore errors
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       const now = Date.now();
       const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-      
-      // Check cached data
-      const membersCache = cacheRef.current.members;
-      const roleCache = cacheRef.current.userRole;
-      const companyCache = cacheRef.current.company;
-      
+
+      // Check cached data from ref first, then localStorage
+      let membersCache = cacheRef.current.members;
+      let roleCache = cacheRef.current.userRole;
+      let companyCache = cacheRef.current.company;
+
+      // Check localStorage for cached data if not in ref
+      if (!membersCache && userId && companyId) {
+        const storedMembers = getStoredDashboardCache(`members_${userId}_${companyId}`);
+        if (storedMembers && (now - storedMembers.timestamp) < CACHE_TTL) {
+          membersCache = storedMembers;
+          cacheRef.current.members = storedMembers;
+        }
+      }
+
+      if (!roleCache && userId && companyId) {
+        const storedRole = getStoredDashboardCache(`role_${userId}_${companyId}`);
+        if (storedRole && (now - storedRole.timestamp) < CACHE_TTL) {
+          roleCache = storedRole;
+          cacheRef.current.userRole = storedRole;
+        }
+      }
+
+      if (!companyCache && (userId || companyId)) {
+        const cacheKey = companyId ? `company_${companyId}` : `company_user_${userId}`;
+        const storedCompany = getStoredDashboardCache(cacheKey);
+        if (storedCompany && (now - storedCompany.timestamp) < CACHE_TTL) {
+          companyCache = storedCompany;
+          cacheRef.current.company = storedCompany;
+        }
+      }
+
       let shouldFetchMembers = true;
       let shouldFetchRole = true;
       let shouldFetchCompany = true;
-      
+
       // Check if cached data is still valid
       if (membersCache && (now - membersCache.timestamp) < CACHE_TTL) {
         shouldFetchMembers = false;
         setMembers(membersCache.data);
       }
-      
+
       if (roleCache && (now - roleCache.timestamp) < CACHE_TTL) {
         shouldFetchRole = false;
         setUserRole(roleCache.data);
       }
-      
+
       if (companyCache && (now - companyCache.timestamp) < CACHE_TTL) {
         shouldFetchCompany = false;
         setCompany(companyCache.data);
       }
-      
+
       if (!shouldFetchMembers && !shouldFetchRole && !shouldFetchCompany) {
         setLoading(false);
         return;
@@ -180,6 +292,8 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
                   data: companyData,
                   timestamp: now
                 };
+                const cacheKey = companyId ? `company_${companyId}` : `company_user_${userId}`;
+                setStoredDashboardCache(cacheKey, companyData, now);
                 setCompany(companyData);
               }
             })
@@ -197,15 +311,16 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
               data,
               timestamp: now
             };
+            setStoredDashboardCache(`role_${userId}_${companyId}`, data, now);
             setUserRole(data);
-            
+
             // Store company_id in sessionStorage for member users
             if (data && data.company_id && typeof window !== 'undefined') {
               sessionStorage.setItem('userCompanyId', data.company_id);
               localStorage.setItem('userCompanyId', data.company_id);
             } else {
             }
-            
+
           })
           .catch(error => {
             console.error('Failed to fetch user role - member may have been deleted:', error);
@@ -236,6 +351,7 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
               data,
               timestamp: now
             };
+            setStoredDashboardCache(`members_${userId}_${companyId}`, data, now);
             setMembers(data);
           })
         );
@@ -256,11 +372,23 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
 
   const refreshAll = async () => {
     if (!getToken) return;
-    
+
     setLoading(true);
-    
+
     // Clear cache
     cacheRef.current = {};
+
+    // Clear localStorage cache
+    if (userId && companyId) {
+      clearStoredDashboardCache(`members_${userId}_${companyId}`);
+      clearStoredDashboardCache(`role_${userId}_${companyId}`);
+    }
+    if (companyId) {
+      clearStoredDashboardCache(`company_${companyId}`);
+    }
+    if (userId) {
+      clearStoredDashboardCache(`company_user_${userId}`);
+    }
     
     // Re-fetch everything
     const fetchPromises: Promise<any>[] = [];
@@ -277,7 +405,11 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
           .then(res => res.json())
           .then(data => {
             const companyData = data.companies?.[0] || data;
-            if (companyData) setCompany(companyData);
+            if (companyData) {
+              const cacheKey = companyId ? `company_${companyId}` : `company_user_${userId}`;
+              setStoredDashboardCache(cacheKey, companyData, Date.now());
+              setCompany(companyData);
+            }
           })
       );
     }
@@ -289,8 +421,9 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
         })
           .then(res => res.json())
           .then(data => {
+            setStoredDashboardCache(`role_${userId}_${companyId}`, data, Date.now());
             setUserRole(data);
-            
+
             // Store company_id in sessionStorage for member users
             if (data && data.company_id && typeof window !== 'undefined') {
               sessionStorage.setItem('userCompanyId', data.company_id);
@@ -320,7 +453,10 @@ export function useCachedDashboardData(userId?: string, companyId?: string, getT
           headers: { Authorization: `Bearer ${token}` }
         })
           .then(res => res.json())
-        .then(data => setMembers(data))
+        .then(data => {
+          setStoredDashboardCache(`members_${userId}_${companyId}`, data, Date.now());
+          setMembers(data);
+        })
       );
     }
     
