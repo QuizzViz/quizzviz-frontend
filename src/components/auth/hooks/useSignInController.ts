@@ -14,6 +14,8 @@ export function useSignInController() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<null | "oauth_google">(null);
   const [error, setError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+  const [redirectMessage, setRedirectMessage] = useState<string | null>(null);
 
   const handleOAuth = useCallback(
     async (provider: "oauth_google") => {
@@ -93,7 +95,7 @@ export function useSignInController() {
       const res = await signIn.create({ identifier: email, password });
       if (res.status === "complete") {
         await setActive({ session: res.createdSessionId });
-        router.push("/");
+        router.push("/dashboard");
       } else {
         setError("Additional steps required. Please use a social provider.");
       }
@@ -142,9 +144,13 @@ export function useSignInController() {
       });
       
       if (isAccountNotFound) {
-        // Redirect to sign up page with email pre-filled
+        // Show redirect message and delay redirect
         console.log("Redirecting to signup page...");
-        router.push(`/signup?email=${encodeURIComponent(email)}&message=${encodeURIComponent("No account found. Please sign up.")}`);
+        setRedirectMessage("Account doesn't exist. Redirecting to sign up page...");
+        setRedirecting(true);
+        setTimeout(() => {
+          router.push(`/signup?email=${encodeURIComponent(email)}&message=${encodeURIComponent("No account found. Please sign up.")}`);
+        }, 2000);
         return;
       }
       
@@ -172,6 +178,8 @@ export function useSignInController() {
     setError,
     isLoaded,
     user,
+    redirecting,
+    redirectMessage,
     // actions
     handleOAuth,
     onSubmit,

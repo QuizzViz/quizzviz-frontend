@@ -11,7 +11,7 @@ export default function SignInPage() {
   const router = useRouter();
   const {
     email, setEmail, password, setPassword, loading, oauthLoading, error,
-    isLoaded, user, handleOAuth, onSubmit, signOut, setError
+    isLoaded, user, handleOAuth, onSubmit, signOut, setError, redirecting, redirectMessage
   } = useSignInController();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -66,6 +66,15 @@ export default function SignInPage() {
       }
     }
   }, [user, router]);
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen w-full bg-background text-foreground flex flex-col items-center justify-center gap-4 p-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <p className="text-foreground/80">{redirectMessage}</p>
+      </div>
+    );
+  }
 
   if (isRedirecting || (isLoaded && user)) {
     return (
