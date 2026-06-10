@@ -16,6 +16,8 @@ export function useSignUpController() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<null | "oauth_google">(null);
   const [error, setError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+  const [redirectMessage, setRedirectMessage] = useState<string | null>(null);
 
   const handleOAuth = async (provider: "oauth_google") => {
     if (!isLoaded || !signUp || !signIn) return;
@@ -105,7 +107,11 @@ export function useSignUpController() {
 
       if (isAccountExists) {
         // Redirect to sign in page with email pre-filled
-        router.push(`/signin?email=${encodeURIComponent(email)}&message=${encodeURIComponent("Account already exists. Please sign in.")}`);
+        setRedirectMessage("Account already exists. Redirecting to sign in page...");
+        setRedirecting(true);
+        setTimeout(() => {
+          router.push(`/signin?email=${encodeURIComponent(email)}&message=${encodeURIComponent("Account already exists. Please sign in.")}`);
+        }, 2000);
         return;
       }
 
@@ -151,6 +157,8 @@ export function useSignUpController() {
     setError,
     isLoaded,
     user,
+    redirecting,
+    redirectMessage,
     // actions
     handleOAuth,
     submitSignUp,

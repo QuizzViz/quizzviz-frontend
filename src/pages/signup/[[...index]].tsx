@@ -12,7 +12,7 @@ export default function SignUpPage() {
   const router = useRouter();
   const {
     email, setEmail, password, setPassword, code, setCode, step, setStep,
-    loading, oauthLoading, error, isLoaded, user, handleOAuth, submitSignUp, verifyCode, signOut, setError
+    loading, oauthLoading, error, isLoaded, user, handleOAuth, submitSignUp, verifyCode, signOut, setError, redirecting, redirectMessage
   } = useSignUpController();
 
   useEffect(() => {
@@ -53,8 +53,15 @@ export default function SignUpPage() {
     }
   }, [user, router]);
 
-  
-  
+  if (redirecting) {
+    return (
+      <div className="min-h-screen w-full bg-background text-foreground flex flex-col items-center justify-center gap-4 p-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <p className="text-foreground/80">{redirectMessage}</p>
+      </div>
+    );
+  }
+
   return (
     <>
      <Head>
