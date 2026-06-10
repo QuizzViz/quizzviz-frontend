@@ -107,9 +107,12 @@ export function useSignUpController() {
 
       if (isAccountExists) {
         // Redirect to sign in page with email pre-filled
+        setLoading(false);
         setRedirectMessage("Account already exists. Redirecting to sign in page...");
         setRedirecting(true);
+        console.log("Setting redirecting to true, will redirect in 2 seconds");
         setTimeout(() => {
+          console.log("Redirecting to signin page");
           router.push(`/signin?email=${encodeURIComponent(email)}&message=${encodeURIComponent("Account already exists. Please sign in.")}`);
         }, 2000);
         return;

@@ -145,10 +145,13 @@ export function useSignInController() {
       
       if (isAccountNotFound) {
         // Show redirect message and delay redirect
+        setLoading(false);
         console.log("Redirecting to signup page...");
         setRedirectMessage("Account doesn't exist. Redirecting to sign up page...");
         setRedirecting(true);
+        console.log("Setting redirecting to true, will redirect in 2 seconds");
         setTimeout(() => {
+          console.log("Redirecting to signup page");
           router.push(`/signup?email=${encodeURIComponent(email)}&message=${encodeURIComponent("No account found. Please sign up.")}`);
         }, 2000);
         return;
