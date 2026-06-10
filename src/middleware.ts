@@ -19,6 +19,8 @@ const isPublicRoute = createRouteMatcher([
   '/invite/(.*)',       // Public route for email links
   '/auth/callback',      // Auth callback for redirects
   '/accept_invite',      // Public route for invites
+  '/signin',            // Public route - let components handle auth flow
+  '/signup',            // Public route - let components handle auth flow
 ]);
 
 // Bot detection
@@ -82,30 +84,15 @@ export default clerkMiddleware(async (auth, request) => {
     const onboardingComplete = publicMetadata.onboardingComplete === true;
     const hasCompany = !!publicMetadata.companyId;
 
-    // Handle signin/signup pages specifically
-    if (pathname === '/signin' || pathname === '/signup') {
-      if (!userId) {
-        // Unauthenticated users can access signin/signup
-        return response;
-      }
-      
-      // Authenticated users: redirect to dashboard (OAuth handled by Clerk)
-      const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
-      redirectResponse.headers.set('X-Frame-Options', 'DENY');
-      redirectResponse.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
-      redirectResponse.headers.set('X-Content-Type-Options', 'nosniff');
-      redirectResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-      return redirectResponse;
-    }
-
-    // If user is not signed in and trying to access protected route, redirect to signup
+    // If user is not signed in and trying to access protected route, redirect to signin
+    // Let signin/signup pages handle account existence detection and redirects
     if (!userId && !isPublicRoute(request)) {
-      const signupRedirect = NextResponse.redirect(new URL('/signup', request.url));
-      signupRedirect.headers.set('X-Frame-Options', 'DENY');
-      signupRedirect.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
-      signupRedirect.headers.set('X-Content-Type-Options', 'nosniff');
-      signupRedirect.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-      return signupRedirect;
+      const signinRedirect = NextResponse.redirect(new URL('/signin', request.url));
+      signinRedirect.headers.set('X-Frame-Options', 'DENY');
+      signinRedirect.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
+      signinRedirect.headers.set('X-Content-Type-Options', 'nosniff');
+      signinRedirect.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+      return signinRedirect;
     }
 
     // Handle onboarding flow
