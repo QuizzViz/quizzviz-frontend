@@ -25,3 +25,21 @@ export function computePeriodEnd(start: Date, billingCycle: string): Date {
   const months = BILLING_CYCLE_MONTHS[billingCycle] ?? 1;
   return addMonths(start, months);
 }
+
+// Mirrors compute_current_billing_period in the Python backend services —
+// returns the [periodStart, periodEnd) window `today` currently falls in,
+// anchored to planStart, without needing the anchor to be re-saved each cycle.
+export function computeCurrentPeriod(planStart: Date | null, billingCycle: string, today: Date = new Date()): { periodStart: Date; periodEnd: Date } {
+  if (!planStart) {
+    const periodStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+    return { periodStart, periodEnd: addMonths(periodStart, 1) };
+  }
+  const months = BILLING_CYCLE_MONTHS[billingCycle] ?? 1;
+  let monthsElapsed = (today.getUTCFullYear() - planStart.getUTCFullYear()) * 12 + (today.getUTCMonth() - planStart.getUTCMonth());
+  if (today.getUTCDate() < planStart.getUTCDate()) monthsElapsed -= 1;
+  monthsElapsed = Math.max(0, monthsElapsed);
+  const cyclesElapsed = Math.floor(monthsElapsed / months);
+  const periodStart = addMonths(planStart, cyclesElapsed * months);
+  const periodEnd = addMonths(planStart, (cyclesElapsed + 1) * months);
+  return { periodStart, periodEnd };
+}

@@ -11,10 +11,14 @@ export async function GET(request: NextRequest) {
     const result = await db.query(
       `SELECT g.quiz_id, g.company_id, g.role, g.experience, g.num_questions, g.quiz_type,
               g.is_publish, g.is_deleted, g.created_at, c.name AS company_name,
-              p.quiz_public_link
+              p.quiz_public_link,
+              COALESCE(a.attempt_count, 0) AS attempt_count
        FROM generated_quizzes g
        LEFT JOIN companies c ON c.company_id = g.company_id
        LEFT JOIN published_quizzes p ON p.quiz_id = g.quiz_id
+       LEFT JOIN (
+         SELECT quiz_id, COUNT(*) AS attempt_count FROM quizz_users GROUP BY quiz_id
+       ) a ON a.quiz_id = g.quiz_id
        WHERE g.is_deleted = false
        ORDER BY g.created_at DESC
        LIMIT 300`

@@ -1,13 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Building2, Users, BarChart3, FileQuestion, ClipboardList, LogOut } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, BarChart3, FileQuestion, ClipboardList, LogOut, Gauge } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard },
   { href: '/admin/companies', label: 'Companies & Billing', icon: Building2 },
+  { href: '/admin/usage', label: 'Usage', icon: Gauge },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/analytics', label: 'Growth Analytics', icon: BarChart3 },
   { href: '/admin/quizzes', label: 'Quizzes', icon: FileQuestion },
@@ -27,8 +29,20 @@ export default function AdminNav() {
   return (
     <aside className="w-64 flex-shrink-0 border-r border-zinc-800 bg-zinc-950 flex flex-col">
       <div className="px-5 py-5 border-b border-zinc-800">
-        <div className="text-sm font-semibold text-white">QuizzViz Admin</div>
-        <div className="text-xs text-zinc-500">Internal control panel</div>
+        <Link href="/admin" className="flex items-center gap-2 group">
+          <div className="relative h-8 w-8 flex-shrink-0">
+            <Image
+              src="/QuizzViz-logo.png"
+              alt="QuizzViz Logo"
+              fill
+              className="object-contain"
+              priority
+              sizes="2rem"
+            />
+          </div>
+          <span className="text-base font-semibold text-white whitespace-nowrap">QuizzViz</span>
+        </Link>
+        <div className="text-xs text-zinc-500 mt-1">Internal admin panel</div>
       </div>
       <nav className="flex-1 py-4 px-3 space-y-1">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
