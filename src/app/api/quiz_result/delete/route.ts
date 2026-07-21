@@ -8,21 +8,25 @@ export async function DELETE(request: Request) {
   const quiz_id = searchParams.get('quiz_id');
   const email = searchParams.get('email');
   const company_id = searchParams.get('company_id');
+  const attempt_id = searchParams.get('attempt_id');
 
-  console.log('Request parameters:', { quiz_id, email, company_id });
+  console.log('Request parameters:', { quiz_id, email, company_id, attempt_id });
 
   try {
     // Validate required parameters
-    if (!quiz_id || !company_id) {
-      const error = { message: 'quiz_id and company_id are required' };
+    if (!company_id || (!attempt_id && !quiz_id)) {
+      const error = { message: 'company_id and either attempt_id or quiz_id are required' };
       console.error('Validation error:', error);
       return NextResponse.json(error, { status: 400 });
     }
 
     let url: string;
-    
-    if (email) {
-      // Delete specific user result
+
+    if (attempt_id) {
+      // Delete one specific attempt row — leaves the candidate's other attempts intact
+      url = `${API_BASE_URL}/result/attempt/${attempt_id}?company_id=${company_id}`;
+    } else if (email) {
+      // Delete specific user result (all attempts for this candidate on this quiz)
       url = `${API_BASE_URL}/result/quiz/${quiz_id}/email/${encodeURIComponent(email)}?company_id=${company_id}`;
     } else {
       // Delete all results for a quiz

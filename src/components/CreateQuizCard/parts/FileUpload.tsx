@@ -21,13 +21,15 @@ interface FileUploadProps {
   onChange: (files: UploadedFile[]) => void;
   maxFiles?: number;
   accept?: string;
+  description?: string;
 }
 
-export default function FileUpload({ 
-  value = [], 
-  onChange, 
+export default function FileUpload({
+  value = [],
+  onChange,
   maxFiles = 1,
-  accept = ".txt,.pdf,.docx,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb,.swift,.kt,.scala,.pl,.hs,.m,.r,.sql,.html,.css,.json,.xml,.yaml,.yml,.pdf,.doc,.docx"
+  accept = ".txt,.pdf,.docx,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb,.swift,.kt,.scala,.pl,.hs,.m,.r,.sql,.html,.css,.json,.xml,.yaml,.yml,.pdf,.doc,.docx",
+  description = "Upload a code file, documentation, or any text file to generate quiz questions from its content."
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -66,7 +68,7 @@ export default function FileUpload({
     if (value.length >= maxFiles) {
       toast({
         title: "Maximum files reached",
-        description: `You can only upload up to ${maxFiles} file.`,
+        description: `You can only upload up to ${maxFiles} file${maxFiles > 1 ? "s" : ""}.`,
         variant: "destructive",
       });
       return;
@@ -272,11 +274,11 @@ const getFileIcon = (fileName: string) => {
       <div className="space-y-2">
         <Label className="text-foreground font-medium flex items-center gap-2">
           <Upload className="h-4 w-4" />
-          Upload File 
+          Upload File{maxFiles > 1 ? "s" : ""}
           <span className="text-red-500 ml-1">*</span>
         </Label>
         <p className="text-sm text-muted-foreground">
-          Upload a code file, documentation, or any text file to generate quiz questions from its content.
+          {description}
         </p>
       </div>
 
@@ -325,10 +327,10 @@ const getFileIcon = (fileName: string) => {
             
             <div className="space-y-3">
               <p className="text-lg font-semibold text-foreground">
-                {isUploading ? "Uploading file..." : dragActive ? "Drop file here!" : "Drag & drop file here"}
+                {isUploading ? "Uploading..." : dragActive ? "Drop files here!" : `Drag & drop file${maxFiles > 1 ? "s" : ""} here`}
               </p>
               <p className="text-sm text-muted-foreground">
-                {isUploading ? "Please wait while we process your file" : "or click to browse your files"}
+                {isUploading ? "Please wait while we process your file(s)" : "or click to browse your files"}
               </p>
             </div>
             
@@ -352,23 +354,23 @@ const getFileIcon = (fileName: string) => {
                 ) : (
                   <>
                     <Upload className="h-4 w-4 mr-2" />
-                    Select File
+                    Select File{maxFiles > 1 ? "s" : ""}
                   </>
                 )}
               </Button>
-              
+
               <input
                 ref={fileInputRef}
                 id="file-input"
                 type="file"
-                multiple={false}
+                multiple={maxFiles > 1}
                 accept={accept}
                 onChange={handleFileInput}
                 className="hidden"
                 disabled={value.length >= maxFiles || isUploading}
               />
             </div>
-            
+
             <div className="space-y-2 text-xs text-muted-foreground">
               <p className="flex items-center justify-center gap-2">
                 <span className="font-medium">Supported formats:</span>
@@ -378,8 +380,8 @@ const getFileIcon = (fileName: string) => {
                 <span className="bg-muted/70 px-2 py-1 rounded">Document files</span>
               </p>
               <p className="flex items-center justify-center gap-4">
-                <span>Max size: <strong>15MB</strong></span>
-                <span>Max file: <strong>1</strong></span>
+                <span>Max size: <strong>15MB each</strong></span>
+                <span>Max files: <strong>{maxFiles}</strong></span>
               </p>
             </div>
           </div>
@@ -391,7 +393,7 @@ const getFileIcon = (fileName: string) => {
         <div className="space-y-3">
           <Label className="text-foreground font-medium flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-500 animate-pulse" />
-            Uploaded File ({value.length})
+            Uploaded File{value.length > 1 ? "s" : ""} ({value.length})
           </Label>
           <div className="space-y-2">
             {value.map((uploadedFile, index) => (
