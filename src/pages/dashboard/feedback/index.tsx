@@ -79,7 +79,9 @@ export default function FeedbackPage() {
         body: JSON.stringify({
           subject,
           message,
-          email_type: 'feedback'
+          email_type: 'feedback',
+          userEmail: user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '',
+          email: user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || ''
         }),
       });
 

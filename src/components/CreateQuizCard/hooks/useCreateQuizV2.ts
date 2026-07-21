@@ -4,6 +4,7 @@ import { Cpu, Code, Sparkles, CheckCircle, BookOpen } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useQuizGeneration } from "@/contexts/QuizGenerationContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { isValidCompanyId } from "@/utils/companyValidation";
 
 interface TopicError {
   error: string;
@@ -190,8 +191,12 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       return;
     }
     
-    // Validate company ID format
-    if (typeof companyId !== 'string' || companyId.length < 10) {
+    // Validate company ID format — short but legitimate company_ids (e.g. a
+    // short company name like "Hash Labs" -> "hash_labs", 9 chars) were being
+    // rejected by an arbitrary "< 10 chars" check; use the same validity rule
+    // the rest of the app uses instead (2-100 chars, contains a letter, not a
+    // reserved word).
+    if (!isValidCompanyId(companyId)) {
       console.error('Invalid company ID detected:', companyId);
       setError("Invalid company ID. Please log out and log back in to refresh your session.");
       return;
