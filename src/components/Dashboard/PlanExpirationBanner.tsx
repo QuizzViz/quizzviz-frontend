@@ -43,24 +43,29 @@ export function PlanExpirationBanner() {
   if (severity === 'expired') {
     message = `Your ${planName} plan expired on ${dateStr}. You can still view your data, but creating, publishing, or editing anything is disabled until you renew.`;
   } else if (daysLeft === 0) {
-    message = `Your ${planName} plan ends today (${dateStr}).`;
+    message = `Your ${planName} plan ends today (${dateStr}). Act now to avoid losing access.`;
   } else if (daysLeft === 1) {
-    message = `Your ${planName} plan ends tomorrow (${dateStr}).`;
+    message = `Your ${planName} plan ends tomorrow (${dateStr}). Act now to avoid losing access.`;
   } else {
-    message = `Your ${planName} plan ends in ${daysLeft} days (${dateStr}).`;
+    message = `Your ${planName} plan ends in ${daysLeft} days (${dateStr}). Renew soon to avoid any interruption.`;
   }
 
   return (
-    <div className={cn('flex items-center justify-between gap-3 border-b px-6 py-3 text-sm', style.wrap)}>
-      <div className="flex items-center gap-2.5">
-        <Icon className={cn('h-4 w-4 flex-shrink-0', style.iconClass)} />
-        <span>{message}</span>
+    <div
+      className={cn(
+        'flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b-2 px-6 py-5 text-base shadow-md',
+        style.wrap
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <Icon className={cn('h-7 w-7 flex-shrink-0', style.iconClass)} />
+        <span className="font-semibold leading-snug">{message}</span>
       </div>
       <Link
-        href="/pricing"
-        className="flex-shrink-0 rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition-colors"
+        href="/contact"
+        className="flex-shrink-0 rounded-md border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors whitespace-nowrap"
       >
-        {severity === 'expired' ? 'Renew Now' : 'Manage Plan'}
+        Contact QuizzViz Sales
       </Link>
     </div>
   );

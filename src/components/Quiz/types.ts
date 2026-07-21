@@ -13,6 +13,7 @@ export interface QuizSummary {
   created_at?: string;
   is_publish: boolean;
   quiz_key: string;
+  quiz_type?: 'technical' | 'non_technical';
 }
 
 export interface QuizQuestion {

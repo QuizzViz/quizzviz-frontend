@@ -129,13 +129,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
     }
 
-    // Calculate question type stats
+    // Calculate question type stats. Non-technical quizzes can have a
+    // 'practical_scenario' type alongside 'theory' — both count toward the
+    // theory percentage since the backend only tracks theory vs. code
+    // analysis. Derive theoryPercentage as the complement of
+    // codeAnalysisPercentage (rather than rounding both independently) so
+    // the two always sum to exactly 100, avoiding rounding-drift failures
+    // like 12.5%/87.5% -> 13 + 88 = 101.
     const totalQuestions = questions.length;
-    const theoryCount = questions.filter((q: any) => q.type === 'theory').length;
     const codeAnalysisCount = questions.filter((q: any) => q.type === 'code_analysis').length;
 
-    const theoryPercentage = Math.round((theoryCount / totalQuestions) * 100);
-    const codeAnalysisPercentage = Math.round((codeAnalysisCount / totalQuestions) * 100);
+    const codeAnalysisPercentage = totalQuestions > 0 ? Math.round((codeAnalysisCount / totalQuestions) * 100) : 0;
+    const theoryPercentage = 100 - codeAnalysisPercentage;
 
     // Use expiration date as-is (already converted to UTC in frontend)
     const formattedExpirationDate = expirationDate

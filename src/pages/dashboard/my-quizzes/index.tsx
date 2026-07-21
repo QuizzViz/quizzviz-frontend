@@ -286,12 +286,7 @@ export default function MyQuizzesPage() {
                                   </div>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Badge className={q.quiz_type === 'non_technical'
-                                  ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
-                                  : "bg-cyan-600/20 text-cyan-300 border border-cyan-500/30"}>
-                                  {q.quiz_type === 'non_technical' ? 'Non-Technical' : 'Technical'}
-                                </Badge>
+                              <div className="flex items-center gap-2 shrink-0">
                                 <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience} yrs</Badge>
                               </div>
                             </div>
@@ -302,6 +297,11 @@ export default function MyQuizzesPage() {
                           <CardContent>
                             <div className="flex flex-col gap-3">
                               <div className="flex flex-wrap gap-2">
+                                <Badge className={q.quiz_type === 'non_technical'
+                                  ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
+                                  : "bg-cyan-600/20 text-cyan-300 border border-cyan-500/30"}>
+                                  {q.quiz_type === 'non_technical' ? 'Non-Technical' : 'Technical'}
+                                </Badge>
                                 <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300 text-xs">
                                   Theory {q.theory_questions_percentage}%
                                 </span>

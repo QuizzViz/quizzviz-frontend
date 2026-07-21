@@ -868,12 +868,12 @@ const topicPerformance = calculateTopicWisePerformance();
       return [];
   }
 
-  // Group questions by their actual topic field
+  // Group questions by their actual topic field. Questions without a valid
+  // topic are bucketed under "General" instead of dropped, so the topic-wise
+  // total always matches the real question count shown in the score summary.
   const questionsByTopic = quizData.quiz.reduce((acc, question, index) => {
-    const topicName = question.topic?.trim();
-    if (!topicName || topicName === 'Unknown Topic' || topicName === '') {
-      return acc; // Skip questions without valid topic names
-    }
+    const trimmed = question.topic?.trim();
+    const topicName = (!trimmed || trimmed === 'Unknown Topic') ? 'General' : trimmed;
     if (!acc[topicName]) {
       acc[topicName] = [];
     }
