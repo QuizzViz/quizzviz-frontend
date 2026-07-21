@@ -119,7 +119,7 @@ export function QuizHeader({
               {quiz.quiz_type === 'non_technical' ? 'Non-Technical' : 'Technical'}
             </Badge>
             <span>• {questionsCount} questions</span>
-            <span>• Theory {quiz.theory_questions_percentage}%</span>
+            <span>• Theory {quiz.quiz_type === 'non_technical' ? 100 : quiz.theory_questions_percentage}%</span>
             {quiz.quiz_type !== 'non_technical' && (
               <span>• Code {quiz.code_analysis_questions_percentage}%</span>
             )}

@@ -290,6 +290,7 @@ export function QuizEditor() {
       ? JSON.parse(currentQuiz?.techStack || currentQuiz?.tech_stack)
       : [],
   experience: currentQuiz?.experience ?? "1-3",
+  quiz_type: (currentQuiz as any)?.quiz_type ?? "technical",
   questions: localQuestions,
   publicLink,
   secretKey: updatedSettings.secretKey,
