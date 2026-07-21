@@ -20,20 +20,25 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState('');
 
-  // Check if user is an invited member by checking sessionStorage FIRST
-  // This must be determined BEFORE calling useCompanies to avoid race conditions
+  // Resolve a known company_id from every source we have. Clerk metadata is
+  // the authoritative, cross-session source for BOTH owners (set on company
+  // creation) and invited members (set on invite acceptance), so it takes
+  // priority over the sessionStorage/localStorage caches, which can be empty
+  // on a fresh session even though the user genuinely belongs to a company.
+  const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
   const sessionStorageCompanyId = typeof window !== 'undefined' ? sessionStorage.getItem('userCompanyId') : null;
   const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') : null;
-  const isInvitedMember = !!sessionStorageCompanyId;
+  const knownCompanyId = metadataCompanyId || sessionStorageCompanyId || localStorageCompanyId || undefined;
 
-  // CRITICAL: For invited members, pass undefined to force sessionStorage logic
-  // For company owners, pass user ID to fetch by owner_id
-  const useCompaniesParam = isInvitedMember ? undefined : user?.id;
-  const { company, loading: isLoadingCompany, error } = useCompanies(useCompaniesParam);
+  // Validate the user against the company via the company-members service
+  // (role/membership check) rather than the owner-only /api/company/check
+  // endpoint. This works uniformly for OWNER, ADMIN, and MEMBER roles.
+  const { userRole, loading: isLoadingRole } = useUserRole(knownCompanyId);
 
-  // For invited members, also fetch their role to validate they're still a member
-  const companyId = isInvitedMember ? (sessionStorageCompanyId || localStorageCompanyId) : company?.company_id;
-  const { userRole, loading: isLoadingRole, error: roleError } = useUserRole(companyId || undefined);
+  // Fallback only: used when we have no company_id from any source, to tell
+  // apart a genuinely new user (needs onboarding) from a member whose
+  // metadata/storage hasn't been populated yet.
+  const { company, loading: isLoadingCompany } = useCompanies(knownCompanyId ? undefined : user?.id);
 
   useEffect(() => {
     // Set the current path on client-side only
@@ -49,39 +54,38 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // Show loading state in the page content instead
-  // Give more time for company data to load, especially for invited members
-  if (!isLoaded || isLoadingCompany) {
+  if (!isLoaded) {
     return <>{children}</>;
   }
 
-  // Check both sessionStorage and localStorage for company_id
-  const hasStorageCompanyId = sessionStorageCompanyId || localStorageCompanyId;
-
-  // CRITICAL: For invited members, validate they are still a valid member before allowing access
-  if (isInvitedMember || hasStorageCompanyId) {
-    
-    // If we have company data, verify the user is still a member
-    // If no company data, allow access (will be validated by API calls)
-    if (company && user?.id) {
-      // Check if current user is the owner (always valid)
-      if (company.owner_id === user.id) {
-        return <>{children}</>;
-      }
-      
-      // For non-owners, we need to validate they are still a member
-      // This will be handled by the role fetching in useCachedDashboardData
-      // If they're not a member anymore, the role fetch will fail and clear their cache
+  // We have a company_id from metadata/storage - gate on membership + role
+  // rather than ownership. useUserRole already handles: member found (any
+  // role) -> access granted; member deleted -> signs the user out; owner
+  // without a member record yet -> auto-provisions the OWNER record.
+  if (knownCompanyId) {
+    if (isLoadingRole) {
       return <>{children}</>;
     }
-    
-    // No company data yet, allow access (validation will happen during data fetch)
+
+    // Role resolved - user is a confirmed member (OWNER/ADMIN/MEMBER).
+    if (userRole) {
+      return <>{children}</>;
+    }
+
+    // Role lookup failed for a reason other than deletion (e.g. transient
+    // service error). Don't block access here - let the page-level data
+    // fetches surface the error instead of misreporting "no company".
+    return <>{children}</>;
+  }
+
+  // No company_id from metadata or storage - only now fall back to the
+  // ownership check to confirm this is truly a brand new user.
+  if (isLoadingCompany) {
     return <>{children}</>;
   }
 
   // Check if user needs to create a company
-  // ONLY show onboarding if: no company data, not invited member, and no storage company_id
-  if (!company && !isInvitedMember && !hasStorageCompanyId) {
+  if (!company) {
     return (
       <div className="min-h-screen bg-background text-white flex items-center justify-center p-4">
         <div className="w-full max-w-md">
@@ -111,11 +115,6 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
-  }
-
-  // For invited members or users with storage: if company data failed to load but storage exists, allow access
-  if (!company && (isInvitedMember || hasStorageCompanyId)) {
-    return <>{children}</>;
   }
 
   // FREE ACCESS - Allow dashboard access for any user with a company
