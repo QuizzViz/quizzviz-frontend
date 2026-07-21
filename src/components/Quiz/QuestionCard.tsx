@@ -9,9 +9,10 @@ interface QuestionCardProps {
   onEdit: () => void;
   onDelete: () => void;
   isPublished?: boolean;
+  disabled?: boolean;
 }
 
-export function QuestionCard({ question, questionNumber, onEdit, onDelete, isPublished = false }: QuestionCardProps) {
+export function QuestionCard({ question, questionNumber, onEdit, onDelete, isPublished = false, disabled = false }: QuestionCardProps) {
   return (
     <Card className="bg-zinc-950 border-white/10">
       <CardHeader>
@@ -27,14 +28,20 @@ export function QuestionCard({ question, questionNumber, onEdit, onDelete, isPub
           </div>
           {!isPublished && (
             <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
-              <Button size="sm" className="pointer-events-auto hover:bg-blue-700" onClick={onEdit}>
+              <Button
+                size="sm"
+                className="pointer-events-auto hover:bg-blue-700 transition-all duration-150 active:scale-95 disabled:active:scale-100"
+                onClick={onEdit}
+                disabled={disabled}
+              >
                 Update
               </Button>
-              <Button 
-                size="sm" 
-                className="pointer-events-auto hover:bg-red-700" 
-                variant="destructive" 
+              <Button
+                size="sm"
+                className="pointer-events-auto hover:bg-red-700 transition-all duration-150 active:scale-95 disabled:active:scale-100"
+                variant="destructive"
                 onClick={onDelete}
+                disabled={disabled}
               >
                 Delete
               </Button>

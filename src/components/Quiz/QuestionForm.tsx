@@ -208,18 +208,23 @@ export function QuestionForm({
           </div>
           
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={onClose}
               disabled={isSubmitting}
+              className="transition-all duration-150 active:scale-95"
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isSubmitting || !form.question || !form.topic || !Object.values(form.options).every(Boolean) || (form.type === 'code_analysis' && !form.code_snippet)}
+              className="transition-all duration-150 active:scale-95 disabled:active:scale-100"
             >
+              {isSubmitting && (
+                <span className="mr-2 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              )}
               {isSubmitting ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>

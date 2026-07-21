@@ -49,6 +49,9 @@ export function QuizEditor() {
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isSavingQuestion, setIsSavingQuestion] = useState(false);
+  const [isDeletingQuestion, setIsDeletingQuestion] = useState(false);
+  const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [publicUrl, setPublicUrl] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -356,34 +359,45 @@ export function QuizEditor() {
       updated[editIndex] = newQuestion;
     }
 
-    setLocalQuestions(updated);
-    setIsModalOpen(false);
-    setEditIndex(null);
-    await persistQuiz(updated);
+    setIsSavingQuestion(true);
+    try {
+      setLocalQuestions(updated);
+      await persistQuiz(updated);
+      setIsModalOpen(false);
+      setEditIndex(null);
+    } finally {
+      setIsSavingQuestion(false);
+    }
   };
 
   // Delete question
   const handleDeleteQuestion = async () => {
     if (questionToDelete === null) return;
     const updated = localQuestions.filter((_, i) => i !== questionToDelete);
-    setLocalQuestions(updated);
-    await persistQuiz(updated);
 
-    setIsDeleteQuestionDialogOpen(false);
-    setQuestionToDelete(null);
+    setIsDeletingQuestion(true);
+    try {
+      setLocalQuestions(updated);
+      await persistQuiz(updated);
 
-    toast({
-      title: "Deleted",
-      description: "Question removed successfully",
-      className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
-    });
+      setIsDeleteQuestionDialogOpen(false);
+      setQuestionToDelete(null);
+
+      toast({
+        title: "Deleted",
+        description: "Question removed successfully",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+      });
+    } finally {
+      setIsDeletingQuestion(false);
+    }
   };
 
   // Delete entire quiz
   const handleDeleteQuiz = async () => {
     if (!currentQuiz || !user || !companyInfo?.id) return;
 
-    setIsPublishing(true);
+    setIsDeletingQuiz(true);
 
     try {
       const token = await getToken();
@@ -433,7 +447,7 @@ export function QuizEditor() {
         variant: "destructive",
       });
     } finally {
-      setIsPublishing(false);
+      setIsDeletingQuiz(false);
       setIsDeleteDialogOpen(false);
     }
   };
@@ -524,6 +538,7 @@ export function QuizEditor() {
         settings={publishSettings}
         onCopyLink={handleCopyLink}
         quizId={quizId || ""}
+        disableActions={isSavingQuestion || isDeletingQuestion || isDeletingQuiz}
       />
 
       <section className="space-y-6">
@@ -541,6 +556,7 @@ export function QuizEditor() {
                   setIsDeleteQuestionDialogOpen(true);
                 }}
                 isPublished={isPublished}
+                disabled={isSavingQuestion || isDeletingQuestion || isDeletingQuiz}
               />
             );
           })
@@ -562,11 +578,13 @@ export function QuizEditor() {
       <QuestionForm
         isOpen={isModalOpen}
         onClose={() => {
+          if (isSavingQuestion) return;
           setIsModalOpen(false);
           setEditIndex(null);
         }}
         onSubmit={handleSaveQuestion}
         initialData={formData}
+        isSubmitting={isSavingQuestion}
         techStack={Array.isArray(currentQuiz?.techStack) ? currentQuiz.techStack : Array.isArray(currentQuiz?.tech_stack) ? currentQuiz.tech_stack : []}
         existingQuestions={localQuestions}
         isNonTechnical={(currentQuiz as any)?.quiz_type === 'non_technical'}
@@ -609,6 +627,8 @@ export function QuizEditor() {
         title="Delete Quiz"
         description="This will permanently delete the quiz and cannot be undone."
         confirmText="Delete Quiz"
+        confirmingText="Deleting Quiz..."
+        isConfirming={isDeletingQuiz}
         variant="destructive"
       />
 
@@ -622,6 +642,8 @@ export function QuizEditor() {
         title="Delete Question"
         description="This action cannot be undone."
         confirmText="Delete Question"
+        confirmingText="Deleting..."
+        isConfirming={isDeletingQuestion}
         variant="destructive"
       />
     </div>
