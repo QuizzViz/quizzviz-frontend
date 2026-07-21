@@ -1,18 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { Code, BookOpen } from "lucide-react";
+import { Code, BookOpen, Briefcase } from "lucide-react";
 
 interface CodeTheorySliderProps {
   codePercentage: number;
   onCodePercentageChange: (value: number) => void;
+  mode?: 'technical' | 'non_technical';
 }
 
-export function CodeTheorySlider({ codePercentage, onCodePercentageChange }: CodeTheorySliderProps) {
+export function CodeTheorySlider({ codePercentage, onCodePercentageChange, mode = 'technical' }: CodeTheorySliderProps) {
   const [isDragging, setIsDragging] = React.useState(false);
   const sliderRef = React.useRef<HTMLDivElement>(null);
   const thumbRef = React.useRef<HTMLDivElement>(null);
   const theoryPercentage = 100 - codePercentage;
+  const isNonTechnical = mode === 'non_technical';
+  const SecondaryIcon = isNonTechnical ? Briefcase : Code;
+  const secondaryLabel = isNonTechnical ? "Practical Scenario" : "Code";
 
   const handleSliderChange = (clientX: number) => {
     if (!sliderRef.current) return;
@@ -56,15 +60,15 @@ export function CodeTheorySlider({ codePercentage, onCodePercentageChange }: Cod
     <div className="w-full">
       <div className="space-y-3">
         <p className="text-md text-muted-foreground text-center mt-5">
-          Drag to choose how many MCQs from Code vs Theory
+          Drag to choose how many MCQs from {secondaryLabel} vs Theory
         </p>
 
         {/* Allocation Display */}
         <div className="flex justify-between items-center mb-2">
           <div className="text-center">
             <div className="flex items-center gap-2 text-white">
-              <Code className="w-4 h-4" />
-              <span className="font-medium">Code</span>
+              <SecondaryIcon className="w-4 h-4" />
+              <span className="font-medium">{secondaryLabel}</span>
             </div>
             <div className="text-xl font-bold text-foreground">{codePercentage}%</div>
           </div>

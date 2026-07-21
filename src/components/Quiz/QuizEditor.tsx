@@ -568,6 +568,7 @@ export function QuizEditor() {
         initialData={formData}
         techStack={Array.isArray(currentQuiz?.techStack) ? currentQuiz.techStack : Array.isArray(currentQuiz?.tech_stack) ? currentQuiz.tech_stack : []}
         existingQuestions={localQuestions}
+        isNonTechnical={(currentQuiz as any)?.quiz_type === 'non_technical'}
       />
 
       <ShareQuizModal

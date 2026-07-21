@@ -50,7 +50,7 @@ interface UseCreateQuizReturn {
   isLoadingCompany: boolean;
   
   // Actions
-  handleGenerate: (techStack: any[], codePercentage?: number, role?: string, uploadedFiles?: any[]) => Promise<void>;
+  handleGenerate: (techStack: any[], codePercentage?: number, role?: string, uploadedFiles?: any[], quizType?: 'technical' | 'non_technical') => Promise<void>;
 }
 
 // Encapsulates all state and behavior for CreateQuiz workflow
@@ -122,7 +122,8 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
     techStack: any[],
     codePercentage: number = 50,
     role?: string,
-    uploadedFiles?: any[]
+    uploadedFiles?: any[],
+    quizType: 'technical' | 'non_technical' = 'technical'
   ): Promise<void> => {
     if (isReasoning || isFetching) return;
 
@@ -136,9 +137,15 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       setError("Experience is required");
       return;
     }
-    
-    // If no files are uploaded, require tech stack
-    if (!uploadedFiles || uploadedFiles.length === 0) {
+
+    if (quizType === 'non_technical' && (!uploadedFiles || uploadedFiles.length === 0)) {
+      setError("Please upload a document to generate a non-technical quiz");
+      return;
+    }
+
+    // Non-technical quizzes are always file-based — no tech stack requirement applies.
+    // If no files are uploaded, require tech stack (technical mode only)
+    if (quizType !== 'non_technical' && (!uploadedFiles || uploadedFiles.length === 0)) {
       if (!techStack || !Array.isArray(techStack) || techStack.length === 0) {
         setError("At least one technology is required in the tech stack when no files are uploaded");
         return;
@@ -223,6 +230,7 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
         formData.append('is_publish', 'false');
         formData.append('is_deleted', 'false');
         formData.append('company_id', companyId);
+        formData.append('quiz_type', quizType);
 
         console.log('Sending file-based quiz generation request:', {
           role,

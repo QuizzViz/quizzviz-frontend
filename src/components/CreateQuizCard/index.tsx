@@ -21,6 +21,7 @@ import { useUserPlan } from "@/hooks/useUserPlan";
 import { RoleSelect } from "./parts/RoleSelect";
 import { TechStackInput } from "./parts/TechStackInput";
 import { TECHNOLOGIES } from "@/constants/technologies";
+import { getRoleType } from "@/constants/roles";
 import { cn } from "@/lib/utils";
 
 interface CreateQuizCardProps {
@@ -48,6 +49,17 @@ export default function CreateQuizCard({
   const [techStack, setTechStack] = useState<TechStackItem[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [inputMode, setInputMode] = useState<InputMode>('tech_stack');
+  const roleType = getRoleType(role);
+  const isNonTechnicalRole = roleType === 'non_technical';
+
+  // Non-technical roles are always document-upload based — lock the mode so
+  // tech-stack input never shows for them.
+  useEffect(() => {
+    if (isNonTechnicalRole && inputMode !== 'file_upload') {
+      setInputMode('file_upload');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNonTechnicalRole]);
 
   const getRoleBasedTechStack = (selectedRole: string): TechStackItem[] => {
     const roleTechMap: { [key: string]: string[] } = {
@@ -224,13 +236,23 @@ export default function CreateQuizCard({
   const handleGenerateClick = (codePct: number) => {
     setError("");
 
+    if (isNonTechnicalRole) {
+      // Non-technical roles are always document-upload based
+      if (!uploadedFiles || uploadedFiles.length === 0) {
+        setError("Please upload a document to generate quiz questions");
+        return;
+      }
+      _handleGenerate([], codePct, role, uploadedFiles, 'non_technical');
+      return;
+    }
+
     if (inputMode === 'file_upload') {
       // File upload mode - check if files are uploaded
       if (!uploadedFiles || uploadedFiles.length === 0) {
         setError("Please upload files to generate quiz questions");
         return;
       }
-      _handleGenerate([], codePct, role, uploadedFiles);
+      _handleGenerate([], codePct, role, uploadedFiles, 'technical');
       return;
     }
 
@@ -267,7 +289,7 @@ export default function CreateQuizCard({
       })
     );
 
-    _handleGenerate(sanitizedTechStack, codePct, role, []);
+    _handleGenerate(sanitizedTechStack, codePct, role, [], 'technical');
   };
 
   const handleUpgradeClick = () => {
@@ -279,6 +301,13 @@ export default function CreateQuizCard({
       router.push("/pricing");
     }
   };
+
+  const isMissingRequiredInput = !role || (
+    isNonTechnicalRole
+      ? uploadedFiles.length === 0
+      : (inputMode === 'tech_stack' && techStack.length === 0) ||
+        (inputMode === 'file_upload' && uploadedFiles.length === 0)
+  );
 
   return (
     <Card className="bg-background border-border">
@@ -311,42 +340,51 @@ export default function CreateQuizCard({
             <RoleSelect value={role} onChange={setRole} />
           </div>
 
-          {/* Input Mode Toggle */}
-          <div className="space-y-4">
-            <InputModeToggle 
-              mode={inputMode} 
-              onModeChange={setInputMode}
-              className="w-full"
-            />
-          </div>
+          {/* Input Mode Toggle — hidden for non-technical roles, which are always document-based */}
+          {!isNonTechnicalRole && (
+            <div className="space-y-4">
+              <InputModeToggle
+                mode={inputMode}
+                onModeChange={setInputMode}
+                className="w-full"
+              />
+            </div>
+          )}
 
           {/* Conditional Content Based on Mode */}
           <div className="space-y-6">
-            <div className={cn(
-              "transition-all duration-500 ease-in-out",
-              inputMode === 'tech_stack' 
-                ? "opacity-100 translate-y-0" 
-                : "opacity-0 -translate-y-4 pointer-events-none absolute"
-            )}>
-              <div className="space-y-2">
-                <TechStackInput
-                  value={techStack}
-                  onChange={setTechStack}
-                  availableTechs={TECHNOLOGIES.map((tech) => ({
-                    value: tech,
-                    label: tech,
-                  }))}
-                />
+            {!isNonTechnicalRole && (
+              <div className={cn(
+                "transition-all duration-500 ease-in-out",
+                inputMode === 'tech_stack'
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 -translate-y-4 pointer-events-none absolute"
+              )}>
+                <div className="space-y-2">
+                  <TechStackInput
+                    value={techStack}
+                    onChange={setTechStack}
+                    availableTechs={TECHNOLOGIES.map((tech) => ({
+                      value: tech,
+                      label: tech,
+                    }))}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className={cn(
               "transition-all duration-500 ease-in-out",
-              inputMode === 'file_upload' 
-                ? "opacity-100 translate-y-0" 
+              isNonTechnicalRole || inputMode === 'file_upload'
+                ? "opacity-100 translate-y-0"
                 : "opacity-0 -translate-y-4 pointer-events-none absolute"
             )}>
               <div className="space-y-2">
+                {isNonTechnicalRole && (
+                  <p className="text-sm text-muted-foreground">
+                    Document upload is required for this role — the quiz will be generated from its content.
+                  </p>
+                )}
                 <FileUpload value={uploadedFiles} onChange={setUploadedFiles} maxFiles={1} />
               </div>
             </div>
@@ -368,6 +406,7 @@ export default function CreateQuizCard({
             <CodeTheorySlider
               codePercentage={codePercentage}
               onCodePercentageChange={setCodePercentage}
+              mode={roleType}
             />
           </div>
         </div>
@@ -385,9 +424,7 @@ export default function CreateQuizCard({
                           : "bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 duration-300 transition-all hover:to-blue-700 text-white"
                       }`}
                       disabled={
-                        !role ||
-                        (inputMode === 'tech_stack' && techStack.length === 0) ||
-                        (inputMode === 'file_upload' && uploadedFiles.length === 0) ||
+                        isMissingRequiredInput ||
                         planLimits.isQuizLimitReached
                       }
                       onClick={() => handleGenerateClick(codePercentage)}
@@ -400,21 +437,19 @@ export default function CreateQuizCard({
                       ) : (
                         <>
                           <Zap className="h-4 w-4 mr-2" />
-                          {!role ||
-                          (inputMode === 'tech_stack' && techStack.length === 0) ||
-                          (inputMode === 'file_upload' && uploadedFiles.length === 0)
-                            ? inputMode === 'tech_stack' 
-                              ? "Role and Tech Stack are required"
-                              : "Role and Files are required"
+                          {isMissingRequiredInput
+                            ? isNonTechnicalRole
+                              ? "Role and Document are required"
+                              : inputMode === 'tech_stack'
+                                ? "Role and Tech Stack are required"
+                                : "Role and Files are required"
                             : "Generate Quiz"}
                         </>
                       )}
                     </Button>
                   </div>
                 </TooltipTrigger>
-                {(!role ||
-                  (inputMode === 'tech_stack' && techStack.length === 0) ||
-                  (inputMode === 'file_upload' && uploadedFiles.length === 0) ||
+                {(isMissingRequiredInput ||
                   planLimits.isQuizLimitReached) && (
                   <TooltipContent className="w-64 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
                     <div className="space-y-2">
@@ -446,9 +481,11 @@ export default function CreateQuizCard({
                                 )} Click to upgrade your plan.`
                               : !role
                               ? "Please select a role before generating."
-                              : inputMode === 'tech_stack'
-                                ? "Please add at least one technology to your tech stack."
-                                : "Please upload files to generate quiz questions."}
+                              : isNonTechnicalRole
+                                ? "Please upload a document to generate quiz questions."
+                                : inputMode === 'tech_stack'
+                                  ? "Please add at least one technology to your tech stack."
+                                  : "Please upload files to generate quiz questions."}
                           </p>
                         </div>
                       </div>

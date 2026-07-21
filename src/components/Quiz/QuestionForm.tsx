@@ -13,16 +13,18 @@ interface QuestionFormProps {
   isSubmitting?: boolean;
   techStack?: Array<{ name: string; weight: number }>;
   existingQuestions?: Array<{ topic?: string }>;
+  isNonTechnical?: boolean;
 }
 
-export function QuestionForm({ 
-  isOpen, 
-  onClose, 
-  onSubmit, 
+export function QuestionForm({
+  isOpen,
+  onClose,
+  onSubmit,
   initialData,
   isSubmitting = false,
   techStack = [],
-  existingQuestions = []
+  existingQuestions = [],
+  isNonTechnical = false
 }: QuestionFormProps) {
   const [form, setForm] = React.useState<QuestionFormData>(initialData);
 
@@ -137,11 +139,15 @@ export function QuestionForm({
                 <select
                   id="questionType"
                   value={form.type}
-                  onChange={(e) => handleFormChange("type", e.target.value as "theory" | "code_analysis")}
+                  onChange={(e) => handleFormChange("type", e.target.value)}
                   className="w-full rounded-md bg-zinc-900 border border-white/10 p-2"
                 >
                   <option value="theory">Theory</option>
-                  <option value="code_analysis">Code Analysis</option>
+                  {isNonTechnical ? (
+                    <option value="practical_scenario">Practical Scenario</option>
+                  ) : (
+                    <option value="code_analysis">Code Analysis</option>
+                  )}
                 </select>
               </div>
               
