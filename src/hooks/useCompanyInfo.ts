@@ -13,6 +13,10 @@ export interface CompanyInfo {
     maxQuestions?: number;
     maxTeamMembers?: number;
   };
+  plan_name?: string;
+  plan_start_date?: string | null;
+  plan_expiry_date?: string | null;
+  billing_cycle?: string;
 }
 
 export function useCompanyInfo() {
@@ -54,6 +58,10 @@ export function useCompanyInfo() {
         maxQuestions?: number;
         maxTeamMembers?: number;
       };
+      plan_name?: string;
+      plan_start_date?: string | null;
+      plan_expiry_date?: string | null;
+      billing_cycle?: string;
     }>;
     // Single company object response
     company_id?: string;
@@ -66,6 +74,10 @@ export function useCompanyInfo() {
       maxQuestions?: number;
       maxTeamMembers?: number;
     };
+    plan_name?: string;
+    plan_start_date?: string | null;
+    plan_expiry_date?: string | null;
+    billing_cycle?: string;
   }>(
     ['companyInfo', user?.id || '', (metadataCompanyId || localStorageCompanyId || '') as string],
     fetchUrl,
@@ -82,36 +94,45 @@ export function useCompanyInfo() {
       // Try to get owner email and custom limits from fetched data
       let ownerEmail = '';
       let customLimits;
+      let planFields: Pick<CompanyInfo, 'plan_name' | 'plan_start_date' | 'plan_expiry_date' | 'billing_cycle'> = {};
       if (companyData) {
         if (Array.isArray(companyData.companies) && companyData.companies.length > 0) {
-          ownerEmail = companyData.companies[0]?.owner_email || '';
-          customLimits = companyData.companies[0]?.custom_limits;
+          const c = companyData.companies[0];
+          ownerEmail = c?.owner_email || '';
+          customLimits = c?.custom_limits;
+          planFields = { plan_name: c?.plan_name, plan_start_date: c?.plan_start_date, plan_expiry_date: c?.plan_expiry_date, billing_cycle: c?.billing_cycle };
         } else {
           ownerEmail = companyData.owner_email || '';
           customLimits = companyData.custom_limits;
+          planFields = { plan_name: companyData.plan_name, plan_start_date: companyData.plan_start_date, plan_expiry_date: companyData.plan_expiry_date, billing_cycle: companyData.billing_cycle };
         }
       }
-      
+
       return {
         id: companyId,
         name: companyName,
         owner_email: ownerEmail,
         created_at: companyData?.created_at,
-        custom_limits: customLimits
+        custom_limits: customLimits,
+        ...planFields
       };
     }
-    
+
     // For company owners, use fetched company data
     if (companyData?.companies?.[0]) {
       const company = companyData.companies[0];
       const retrievedCompanyId = company.company_id || company.id || '';
-      
+
       return {
         id: retrievedCompanyId as string,
         name: company.name as string,
         owner_email: company.owner_email || '',
         created_at: company.created_at,
-        custom_limits: company.custom_limits
+        custom_limits: company.custom_limits,
+        plan_name: company.plan_name,
+        plan_start_date: company.plan_start_date,
+        plan_expiry_date: company.plan_expiry_date,
+        billing_cycle: company.billing_cycle
       };
     }
     

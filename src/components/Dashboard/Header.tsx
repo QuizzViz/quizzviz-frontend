@@ -4,9 +4,10 @@ import { useAuth, useUser } from '@clerk/nextjs';
 import { LogoWithText } from '../LogoWithText';
 import UserAvatarDropdown from '../UserAvatarDropdown';
 import { useCompanyInfo } from '../../hooks/useCompanyInfo';
+import { PlanExpirationBanner } from './PlanExpirationBanner';
 
 export const DashboardHeader: React.FC = () => {
-  const { user, isLoaded } = useUser();  
+  const { user, isLoaded } = useUser();
 
   // Use the same logic as profile page
   const { companyInfo, isLoading } = useCompanyInfo();
@@ -24,14 +25,17 @@ export const DashboardHeader: React.FC = () => {
   const userEmail = user?.emailAddresses?.[0]?.emailAddress ?? '';
 
   return (
-    <header className="px-6 py-4 border-b border-black bg-black flex items-center justify-between">
-      <span> </span>
-      <UserAvatarDropdown 
-        userName={user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || userEmail || 'User'}
-        userEmail={userEmail}
-        companyName={companyInfo?.name}
-        ownerEmail={companyInfo?.owner_email}
-      />
-    </header>
+    <>
+      <header className="px-6 py-4 border-b border-black bg-black flex items-center justify-between">
+        <span> </span>
+        <UserAvatarDropdown
+          userName={user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName || userEmail || 'User'}
+          userEmail={userEmail}
+          companyName={companyInfo?.name}
+          ownerEmail={companyInfo?.owner_email}
+        />
+      </header>
+      <PlanExpirationBanner />
+    </>
   );
 };

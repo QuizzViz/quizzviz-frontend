@@ -21,6 +21,7 @@ const isPublicRoute = createRouteMatcher([
   '/accept_invite',      // Public route for invites
   '/signin',            // Public route - let components handle auth flow
   '/signup',            // Public route - let components handle auth flow
+  '/admin(.*)',         // Internal admin panel — gated by its own env-credential session, not Clerk
 ]);
 
 // Bot detection
