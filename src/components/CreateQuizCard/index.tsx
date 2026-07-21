@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Zap, AlertTriangle } from "lucide-react";
+import { Zap, AlertTriangle, BookOpen } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -237,12 +237,13 @@ export default function CreateQuizCard({
     setError("");
 
     if (isNonTechnicalRole) {
-      // Non-technical roles are always document-upload based
+      // Non-technical roles are always document-upload based and 100% theory —
+      // there is no split slider for this mode, so force 0% regardless of stale slider state.
       if (!uploadedFiles || uploadedFiles.length === 0) {
         setError("Please upload a document to generate quiz questions");
         return;
       }
-      _handleGenerate([], codePct, role, uploadedFiles, 'non_technical');
+      _handleGenerate([], 0, role, uploadedFiles, 'non_technical');
       return;
     }
 
@@ -380,12 +381,16 @@ export default function CreateQuizCard({
                 : "opacity-0 -translate-y-4 pointer-events-none absolute"
             )}>
               <div className="space-y-2">
-                {isNonTechnicalRole && (
-                  <p className="text-sm text-muted-foreground">
-                    Document upload is required for this role — the quiz will be generated from its content.
-                  </p>
-                )}
-                <FileUpload value={uploadedFiles} onChange={setUploadedFiles} maxFiles={1} />
+                <FileUpload
+                  value={uploadedFiles}
+                  onChange={setUploadedFiles}
+                  maxFiles={3}
+                  description={
+                    isNonTechnicalRole
+                      ? "Document upload is required for this role. Upload up to 3 files (e.g. policy docs, guidelines, training material) — the quiz will be generated entirely from their content."
+                      : undefined
+                  }
+                />
               </div>
             </div>
           </div>
@@ -400,14 +405,25 @@ export default function CreateQuizCard({
           />
 
           <div className="space-y-2 pt-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-foreground">Question Distribution</Label>
-            </div>
-            <CodeTheorySlider
-              codePercentage={codePercentage}
-              onCodePercentageChange={setCodePercentage}
-              mode={roleType}
-            />
+            {isNonTechnicalRole ? (
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+                <BookOpen className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                <p className="text-sm text-emerald-300">
+                  This will be a fully theory-based quiz (100% theory) — questions are drawn from the concepts in your uploaded document(s).
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <Label className="text-foreground">Question Distribution</Label>
+                </div>
+                <CodeTheorySlider
+                  codePercentage={codePercentage}
+                  onCodePercentageChange={setCodePercentage}
+                  mode={roleType}
+                />
+              </>
+            )}
           </div>
         </div>
 

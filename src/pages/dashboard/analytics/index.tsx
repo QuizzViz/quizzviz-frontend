@@ -66,6 +66,7 @@ import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import Link from "next/link";
 
 type QuizResult = {
+  id?: number;
   quiz_id: string;
   owner_id: string;
   username: string;
@@ -433,33 +434,33 @@ export default function ResultsDashboard() {
   const handleDeleteSelectedUsers = async () => {
     if (!showDeleteUsersModal.quizId) return;
 
-    const toDelete = Object.entries(selectedUsers)
+    // Selection is now keyed per-attempt (row id), so each selected key deletes exactly
+    // that one attempt — other attempts by the same candidate are left untouched.
+    const selectedKeys = Object.entries(selectedUsers)
       .filter(([, v]) => v)
-      .map(([k]) => {
-        const [username, email] = k.split("|");
-        return { username, email };
-      });
+      .map(([k]) => k);
 
     try {
       setIsDeleting(true);
-      
+
       // Get auth token using Clerk's getToken method
       const token = await getToken();
-      
+
       if (!token) {
         throw new Error("No authentication token available");
       }
-      
+
       const headers = {
         'Authorization': `Bearer ${token}`,
       };
-      
-      const promises = toDelete.map(({ email }) =>
-        fetch(
-          `/api/quiz_result/delete?quiz_id=${showDeleteUsersModal.quizId}&email=${encodeURIComponent(email)}&company_id=${finalCompanyId}`,
-          { method: "DELETE", headers }
-        )
-      );
+
+      const promises = selectedKeys.map((key) => {
+        const attemptId = Number(key);
+        const url = Number.isFinite(attemptId)
+          ? `/api/quiz_result/delete?attempt_id=${attemptId}&company_id=${finalCompanyId}`
+          : `/api/quiz_result/delete?quiz_id=${showDeleteUsersModal.quizId}&email=${encodeURIComponent(key.split("|")[1] || "")}&company_id=${finalCompanyId}`;
+        return fetch(url, { method: "DELETE", headers });
+      });
 
       const responses = await Promise.all(promises);
       const failed = responses.filter((r) => !r.ok);
@@ -848,7 +849,9 @@ export default function ResultsDashboard() {
                                         filteredCandidates
                                           .sort((a, b) => b.result.score - a.result.score)
                                           .map((c) => {
-                                            const key = `${c.username}|${c.user_email}`;
+                                            // Keyed per-attempt (row id) — falls back to a composite
+                                            // key only if an older cached response lacks `id`.
+                                            const key = c.id != null ? String(c.id) : `${c.quiz_id}|${c.user_email}|${c.attempt}`;
                                             return (
                                               <TableRow
                                                 key={key}

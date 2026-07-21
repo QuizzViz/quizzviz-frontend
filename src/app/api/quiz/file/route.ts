@@ -56,9 +56,16 @@ export async function POST(req: NextRequest) {
 
     // Validate required fields
     if (!files || files.length === 0) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Bad Request',
         details: 'At least one file is required'
+      }, { status: 400 });
+    }
+
+    if (files.length > 3) {
+      return NextResponse.json({
+        error: 'Bad Request',
+        details: 'A maximum of 3 files is allowed'
       }, { status: 400 });
     }
 
@@ -86,10 +93,10 @@ export async function POST(req: NextRequest) {
 
     const BACKEND_URL_WITH_PARAMS = `${BACKEND_URL}?${params.toString()}`;
 
-    // ✅ FIX: Send all files in FormData
+    // Send all files in FormData — backend accepts a list under the 'files' field
     const backendFormData = new FormData();
-    files.forEach((file, index) => {
-      backendFormData.append('file', file);  // Backend expects 'file' (singular)
+    files.forEach((file) => {
+      backendFormData.append('files', file);
     });
 
     // Debug: Log FormData contents (should contain all files now)

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback, ReactNode } from "react";
-import { Cpu, Code, Sparkles, CheckCircle } from "lucide-react";
+import { Cpu, Code, Sparkles, CheckCircle, BookOpen } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useQuizGeneration } from "@/contexts/QuizGenerationContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
@@ -70,14 +70,27 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
   // Use the same logic as profile page
   const { companyInfo, isLoading: isLoadingCompany } = useCompanyInfo();
 
-  // typing steps
-  const steps = [
+  // typing steps — text depends on which quiz type is currently being generated,
+  // set at the start of handleGenerate. Non-technical quizzes have no tech stack/role
+  // matching or code-analysis questions, so that language must not appear for them.
+  const [activeQuizType, setActiveQuizType] = useState<'technical' | 'non_technical'>('technical');
+
+  const TECHNICAL_STEPS = [
     " Parsing and understanding the topic semantics...",
     " Balancing code-analysis and theoretical coverage...",
     " Generating question templates & code scaffolds...",
     " Validating difficulty and finalizing the quiz...",
   ];
-  const stepIcons = [Cpu, Code, Sparkles, CheckCircle];
+  const NON_TECHNICAL_STEPS = [
+    " Reading and understanding your uploaded document...",
+    " Identifying key concepts and professional topics...",
+    " Generating theory-based questions from those concepts...",
+    " Validating difficulty and finalizing the quiz...",
+  ];
+  const steps = activeQuizType === 'non_technical' ? NON_TECHNICAL_STEPS : TECHNICAL_STEPS;
+  const stepIcons = activeQuizType === 'non_technical'
+    ? [Cpu, BookOpen, Sparkles, CheckCircle]
+    : [Cpu, Code, Sparkles, CheckCircle];
 
   const [stepIndex, setStepIndex] = useState(0);
   const [typedText, setTypedText] = useState("");
@@ -126,6 +139,8 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
     quizType: 'technical' | 'non_technical' = 'technical'
   ): Promise<void> => {
     if (isReasoning || isFetching) return;
+
+    setActiveQuizType(quizType);
 
     const numQuestions = Number.isFinite(count) ? Math.max(1, count) : 1;
 
@@ -221,7 +236,7 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
       if (uploadedFiles && uploadedFiles.length > 0) {
         // Build FormData - backend will handle file reading
         const formData = new FormData();
-        formData.append('files', uploadedFiles[0].file);
+        uploadedFiles.forEach((uf) => formData.append('files', uf.file));
         formData.append('role', role);
         formData.append('experience', experienceToApi(experience));
         formData.append('num_questions', numQuestions.toString());
@@ -238,8 +253,7 @@ export function useCreateQuizV2(): UseCreateQuizReturn {
           numQuestions,
           theoryQuestionsPercentage: 100 - codePct,
           codeAnalysisQuestionsPercentage: codePct,
-          fileName: uploadedFiles[0].name,
-          fileSize: uploadedFiles[0].size,
+          files: uploadedFiles.map(uf => ({ name: uf.name, size: uf.size })),
         });
         
         response = await fetch('/api/quiz/file', {

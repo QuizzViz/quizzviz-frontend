@@ -47,6 +47,7 @@ interface QuizSummary {
   theory_questions_percentage: number;
   code_analysis_questions_percentage: number;
   quiz: string;
+  quiz_type?: 'technical' | 'non_technical';
   created_at?: string;
   is_publish?: boolean;
   isPublished?: boolean;
@@ -286,6 +287,11 @@ export default function MyQuizzesPage() {
                                 )}
                               </div>
                               <div className="flex items-center gap-2">
+                                <Badge className={q.quiz_type === 'non_technical'
+                                  ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
+                                  : "bg-cyan-600/20 text-cyan-300 border border-cyan-500/30"}>
+                                  {q.quiz_type === 'non_technical' ? 'Non-Technical' : 'Technical'}
+                                </Badge>
                                 <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience} yrs</Badge>
                               </div>
                             </div>
@@ -299,9 +305,11 @@ export default function MyQuizzesPage() {
                                 <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300 text-xs">
                                   Theory {q.theory_questions_percentage}%
                                 </span>
-                                <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-indigo-300 text-xs">
-                                  Code {q.code_analysis_questions_percentage}%
-                                </span>
+                                {q.quiz_type !== 'non_technical' && (
+                                  <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-indigo-300 text-xs">
+                                    Code {q.code_analysis_questions_percentage}%
+                                  </span>
+                                )}
                               </div>
                               
                               <div className="mt-1">
