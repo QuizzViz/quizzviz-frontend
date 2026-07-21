@@ -111,68 +111,47 @@ export default function AcceptInvitePage() {
         className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
       });
 
-      // Set redirecting state and wait for metadata to be fully processed
+      // Instead of blindly waiting a fixed ~6 seconds and hoping the data is
+      // ready, actively poll for it — sessionStorage/localStorage are set
+      // synchronously above, so this typically resolves almost immediately,
+      // and falls back to re-checking Clerk metadata if storage isn't set
+      // yet. Only once we've confirmed the company is actually ready do we
+      // navigate, so the new member never lands on a half-loaded dashboard.
       setIsRedirecting(true);
-      setTimeout(async () => {
-        try {
-          // Wait longer to ensure company data is properly fetched
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          
-          // FIRST PRIORITY: Check sessionStorage - if exists, always redirect to dashboard
-          const sessionStorageCompanyId = sessionStorage.getItem('company_id');
-          const localStorageCompanyId = localStorage.getItem('userCompanyId');
-          
-          // If either sessionStorage or localStorage has company_id, redirect to dashboard
-          if (sessionStorageCompanyId || localStorageCompanyId) {
-            console.log('Company found in storage, redirecting to dashboard');
-            // Remove token only after confirming redirect
-            localStorage.removeItem('invite-token');
-            router.push('/dashboard');
-            return;
-          }
-          
-          // SECONDARY: Only check metadata if no storage exists
-          if (user) {
+
+      const isCompanyReady = async (): Promise<boolean> => {
+        const sessionStorageCompanyId = sessionStorage.getItem('company_id');
+        const localStorageCompanyId = localStorage.getItem('userCompanyId');
+        if (sessionStorageCompanyId || localStorageCompanyId) return true;
+
+        if (user) {
+          try {
             await user.reload();
-            
-            const updatedMetadata = user.unsafeMetadata;
-            
-            if (updatedMetadata?.companyId) {
-              console.log('Metadata confirmed, redirecting to dashboard');
-              // Remove token only after confirming redirect
-              localStorage.removeItem('invite-token');
-              router.push('/dashboard');
-            } else {
-              console.error('No company info found in any storage, redirecting to onboarding');
-              // Remove token even on error to prevent loops
-              localStorage.removeItem('invite-token');
-              router.push('/onboarding');
-            }
-          } else {
-            console.log('No user object, redirecting to onboarding');
-            // Remove token even on error to prevent loops
-            localStorage.removeItem('invite-token');
-            router.push('/onboarding');
-          }
-        } catch (reloadError) {
-          console.error('Error during user reload:', reloadError);
-          // Even on error, check storage first
-          const sessionStorageCompanyId = sessionStorage.getItem('company_id');
-          const localStorageCompanyId = localStorage.getItem('userCompanyId');
-          if (sessionStorageCompanyId || localStorageCompanyId) {
-            console.log('Using storage company_id despite error, redirecting to dashboard');
-            // Remove token only after confirming redirect
-            localStorage.removeItem('invite-token');
-            router.push('/dashboard');
-          } else {
-            console.error('No company info found, redirecting to onboarding');
-            // Remove token even on error to prevent loops
-            localStorage.removeItem('invite-token');
-            router.push('/onboarding');
+            if (user.unsafeMetadata?.companyId) return true;
+          } catch (reloadError) {
+            console.error('Error during user reload:', reloadError);
           }
         }
-      }, 3000); // Increased timeout to ensure company data fetch completes
-      
+        return false;
+      };
+
+      const maxWaitMs = 8000;
+      const pollIntervalMs = 300;
+      const start = Date.now();
+      let ready = await isCompanyReady();
+      while (!ready && Date.now() - start < maxWaitMs) {
+        await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+        ready = await isCompanyReady();
+      }
+
+      localStorage.removeItem('invite-token');
+      if (ready) {
+        router.push('/dashboard');
+      } else {
+        console.error('No company info found after polling, redirecting to onboarding');
+        router.push('/onboarding');
+      }
+
     } catch (error) {
       console.error('Error accepting invite:', error);
       toast({ 
@@ -194,6 +173,33 @@ export default function AcceptInvitePage() {
         </Head>
         <div className="min-h-screen bg-black text-white flex items-center justify-center">
           <LoadingSpinner fullScreen={false} text="Preparing your invitation..." />
+        </div>
+      </>
+    );
+  }
+
+  // Once accepted, hide the invitation card entirely and show a single,
+  // focused loading screen until the workspace is confirmed ready — no
+  // intermediate flash of the accept button or a half-loaded dashboard.
+  if (isRedirecting) {
+    return (
+      <>
+        <Head>
+          <title>Accept Invitation | QuizzViz</title>
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
+        <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+          <div className="w-full max-w-md text-center space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-green-500 to-blue-500 p-[2px] mx-auto">
+              <div className="w-full h-full rounded-2xl bg-slate-900 flex items-center justify-center">
+                <div className="w-7 h-7 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-white">Setting up your workspace</h2>
+              <p className="text-white/60 text-sm">Just a moment while we get everything ready for you...</p>
+            </div>
+          </div>
         </div>
       </>
     );
@@ -236,18 +242,13 @@ export default function AcceptInvitePage() {
 
             <button
               onClick={handleAcceptInvite}
-              disabled={isAccepting || isRedirecting}
+              disabled={isAccepting}
               className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 font-medium py-3 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isAccepting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2 inline-block" />
                   Accepting Invitation...
-                </>
-              ) : isRedirecting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2 inline-block" />
-                  Setting up your dashboard...
                 </>
               ) : (
                 'Accept Invitation'

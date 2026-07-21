@@ -303,7 +303,10 @@ export default function MyQuizzesPage() {
                                   {q.quiz_type === 'non_technical' ? 'Non-Technical' : 'Technical'}
                                 </Badge>
                                 <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300 text-xs">
-                                  Theory {q.theory_questions_percentage}%
+                                  {/* Non-technical quizzes internally split "theory" vs
+                                      "practical_scenario" questions, but neither is code —
+                                      from the company's perspective the whole quiz is theory. */}
+                                  Theory {q.quiz_type === 'non_technical' ? 100 : q.theory_questions_percentage}%
                                 </span>
                                 {q.quiz_type !== 'non_technical' && (
                                   <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-indigo-300 text-xs">

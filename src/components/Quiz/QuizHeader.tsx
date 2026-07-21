@@ -20,18 +20,20 @@ interface QuizHeaderProps {
   settings: PublishSettings;
   onCopyLink: () => void;
   quizId: string;
+  disableActions?: boolean;
 }
 
-export function QuizHeader({ 
-  quiz, 
-  questionsCount, 
-  onAddQuestion, 
-  onPublish, 
+export function QuizHeader({
+  quiz,
+  questionsCount,
+  onAddQuestion,
+  onPublish,
   isPublished,
   onDelete,
   settings,
   onCopyLink,
-  quizId
+  quizId,
+  disableActions = false
 }: QuizHeaderProps) {
   const { user } = useUser();
   const { toast } = useToast();
@@ -119,7 +121,7 @@ export function QuizHeader({
               {quiz.quiz_type === 'non_technical' ? 'Non-Technical' : 'Technical'}
             </Badge>
             <span>• {questionsCount} questions</span>
-            <span>• Theory {quiz.theory_questions_percentage}%</span>
+            <span>• Theory {quiz.quiz_type === 'non_technical' ? 100 : quiz.theory_questions_percentage}%</span>
             {quiz.quiz_type !== 'non_technical' && (
               <span>• Code {quiz.code_analysis_questions_percentage}%</span>
             )}
@@ -127,46 +129,51 @@ export function QuizHeader({
         </div>
         <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
           {!isPublished && (
-            <Button 
-              variant="outline" 
-              className="pointer-events-auto" 
+            <Button
+              variant="outline"
+              className="pointer-events-auto transition-all duration-150 active:scale-95"
               onClick={onAddQuestion}
+              disabled={disableActions}
             >
               Add Question
             </Button>
           )}
           {!roleLoading && canPerformAction(userRole, 'publish_quiz') && (isPublished ? (
-            <Button 
-              className="bg-orange-600 hover:bg-orange-700 text-white pointer-events-auto"
+            <Button
+              className="bg-orange-600 hover:bg-orange-700 text-white pointer-events-auto transition-all duration-150 active:scale-95"
               onClick={() => setIsUnpublishModalOpen(true)}
+              disabled={disableActions}
             >
               <EyeOff className="h-4 w-4 mr-2" />
               Unpublish Quiz
             </Button>
           ) : (
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto"
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto transition-all duration-150 active:scale-95"
               onClick={onPublish}
+              disabled={disableActions}
             >
               Publish Quiz
             </Button>
           ))}
-          
+
           {/* Share Quiz - Only show when quiz is published */}
           {isPublished && (
-            <Button 
-              className="bg-green-600 hover:bg-green-700 text-white pointer-events-auto"
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white pointer-events-auto transition-all duration-150 active:scale-95"
               onClick={handleShareClick}
+              disabled={disableActions}
             >
               <Share2 className="h-4 w-4 mr-2" />
               Share Quiz
             </Button>
           )}
           {!roleLoading && canPerformAction(userRole, 'delete_quiz', { isQuizOwner: quiz.user_id === user?.id }) && (
-            <Button 
-              variant="destructive" 
-              className="pointer-events-auto hover:bg-red-700" 
+            <Button
+              variant="destructive"
+              className="pointer-events-auto hover:bg-red-700 transition-all duration-150 active:scale-95"
               onClick={onDelete}
+              disabled={disableActions}
             >
               Delete Quiz
             </Button>

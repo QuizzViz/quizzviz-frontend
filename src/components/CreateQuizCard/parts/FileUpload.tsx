@@ -28,7 +28,7 @@ export default function FileUpload({
   value = [],
   onChange,
   maxFiles = 1,
-  accept = ".txt,.pdf,.docx,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.go,.rs,.php,.rb,.swift,.kt,.scala,.pl,.hs,.m,.r,.sql,.html,.css,.json,.xml,.yaml,.yml,.pdf,.doc,.docx",
+  accept = "",
   description = "Upload a code file, documentation, or any text file to generate quiz questions from its content."
 }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
@@ -74,75 +74,12 @@ export default function FileUpload({
       return;
     }
 
+    // No client-side extension/MIME allowlist — any coding or non-coding
+    // file is accepted here. The backend is the source of truth: it reads
+    // PDF/DOCX with dedicated parsers and treats anything else as plain
+    // text, only rejecting a file if it's genuinely undecodable (e.g. a
+    // binary/media file), with a clear error message either way.
     const validFiles = files.filter(file => {
-      const isValidType = file.type === 'text/plain' || 
-                        file.type === 'text/markdown' ||
-                        file.type === 'text/html' ||
-                        file.type === 'text/css' ||
-                        file.type === 'application/json' ||
-                        file.type === 'application/xml' ||
-                        file.type === 'application/pdf' ||
-                        file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-                        file.type === 'application/msword' ||
-                        file.type === 'text/x-java-source' ||
-                        file.type === 'text/x-c++src' ||
-                        file.type === 'text/x-csrc' ||
-                        file.type === 'text/x-csharp' ||
-                        file.type === 'text/x-python' ||
-                        file.type === 'text/x-ruby' ||
-                        file.type === 'text/x-go' ||
-                        file.type === 'text/x-rust' ||
-                        file.type === 'text/x-php' ||
-                        file.type === 'text/x-swift' ||
-                        file.type === 'text/x-kotlin' ||
-                        file.type === 'text/x-scala' ||
-                        file.type === 'text/x-perl' ||
-                        file.type === 'text/x-haskell' ||
-                        file.type === 'text/x-matlab' ||
-                        file.type === 'text/x-r' ||
-                        file.type === 'text/x-sql' ||
-                        file.name.endsWith('.js') ||
-                        file.name.endsWith('.ts') ||
-                        file.name.endsWith('.jsx') ||
-                        file.name.endsWith('.tsx') ||
-                        file.name.endsWith('.txt') ||
-                        file.name.endsWith('.md') ||
-                        file.name.endsWith('.py') ||
-                        file.name.endsWith('.java') ||
-                        file.name.endsWith('.cpp') ||
-                        file.name.endsWith('.c') ||
-                        file.name.endsWith('.cs') ||
-                        file.name.endsWith('.go') ||
-                        file.name.endsWith('.rs') ||
-                        file.name.endsWith('.php') ||
-                        file.name.endsWith('.rb') ||
-                        file.name.endsWith('.swift') ||
-                        file.name.endsWith('.kt') ||
-                        file.name.endsWith('.scala') ||
-                        file.name.endsWith('.pl') ||
-                        file.name.endsWith('.hs') ||
-                        file.name.endsWith('.m') ||
-                        file.name.endsWith('.r') ||
-                        file.name.endsWith('.sql') ||
-                        file.name.endsWith('.html') ||
-                        file.name.endsWith('.css') ||
-                        file.name.endsWith('.json') ||
-                        file.name.endsWith('.xml') ||
-                        file.name.endsWith('.yaml') ||
-                        file.name.endsWith('.yml') ||
-                        file.name.endsWith('.pdf') ||
-                        file.name.endsWith('.doc') ||
-                        file.name.endsWith('.docx');
-      
-      if (!isValidType) {
-        toast({
-          title: "Invalid file type",
-          description: `${file.name} is not a supported file type.`,
-          variant: "destructive",
-        });
-        return false;
-      }
-      
       const maxSize = 15 * 1024 * 1024; // 15MB
       if (file.size > maxSize) {
         toast({
@@ -374,10 +311,10 @@ const getFileIcon = (fileName: string) => {
             <div className="space-y-2 text-xs text-muted-foreground">
               <p className="flex items-center justify-center gap-2">
                 <span className="font-medium">Supported formats:</span>
-                <span className="bg-muted/70 px-2 py-1 rounded">Code files</span>
+                <span className="bg-muted/70 px-2 py-1 rounded">Any code file</span>
                 <span className="bg-muted/70 px-2 py-1 rounded">Text files</span>
                 <span className="bg-muted/70 px-2 py-1 rounded">Config files</span>
-                <span className="bg-muted/70 px-2 py-1 rounded">Document files</span>
+                <span className="bg-muted/70 px-2 py-1 rounded">PDF / DOCX</span>
               </p>
               <p className="flex items-center justify-center gap-4">
                 <span>Max size: <strong>15MB each</strong></span>

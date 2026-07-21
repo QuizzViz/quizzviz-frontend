@@ -103,7 +103,8 @@ export async function POST(request: NextRequest) {
       maxAttempts = 1,
       expirationDate,
       isPublic,
-      secretKey = ''
+      secretKey = '',
+      quiz_type = 'technical'
     } = requestData;
 
     // Basic validation
@@ -159,6 +160,7 @@ export async function POST(request: NextRequest) {
       num_questions: totalQuestions,
       theory_questions_percentage: theoryPercentage,
       code_analysis_questions_percentage: codeAnalysisPercentage,
+      quiz_type: quiz_type === 'non_technical' ? 'non_technical' : 'technical',
       quiz: questions,
       quiz_public_link: publicLink,
       quiz_key: secretKey,

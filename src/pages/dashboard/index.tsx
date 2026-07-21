@@ -70,8 +70,11 @@ export default function Dashboard() {
     }
   }, [isLoaded]);
 
-  // Show loading only if Clerk is not loaded yet, use cached role for instant UI
-  if (isLoading || (!isLoaded && !hasCachedRole.current)) {
+  // Show loading until Clerk auth is ready AND, when there's no cached role
+  // yet, until the company/role data has actually loaded — otherwise a
+  // freshly-invited member can land here before their role/company info is
+  // ready and see an incomplete or misleading initial state.
+  if (isLoading || (!isLoaded && !hasCachedRole.current) || (roleLoading && !hasCachedRole.current)) {
     return (
       <div className="min-h-screen bg-black text-white">
         <SignedIn>
