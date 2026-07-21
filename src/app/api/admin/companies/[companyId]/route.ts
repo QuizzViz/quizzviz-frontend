@@ -50,7 +50,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (typeof body.name === 'string') setField('name', body.name);
     if (typeof body.company_size === 'string') setField('company_size', body.company_size);
-    if (typeof body.custom_limits === 'object') setField('custom_limits', body.custom_limits ? JSON.stringify(body.custom_limits) : null);
+    if (typeof body.custom_limits === 'object') {
+      // An object with no defined keys (e.g. every limit input was cleared,
+      // which JSON.stringify collapses to "{}") means "remove the override" —
+      // store real SQL NULL, not the literal string '{}', so it round-trips
+      // as null everywhere else that reads this column (including the
+      // Python Create_Company service, which fails response validation on a
+      // non-null-but-empty custom_limits value).
+      const hasValues = body.custom_limits && Object.keys(body.custom_limits).length > 0;
+      setField('custom_limits', hasValues ? JSON.stringify(body.custom_limits) : null);
+    }
 
     const planNameChanging = typeof body.plan_name === 'string' && body.plan_name !== existing.plan_name;
     const billingCycleProvided = typeof body.billing_cycle === 'string' && ALLOWED_BILLING_CYCLES.has(body.billing_cycle);

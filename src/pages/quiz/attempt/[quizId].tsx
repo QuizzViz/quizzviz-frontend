@@ -219,13 +219,15 @@ const QuizAttemptPage = () => {
       return [];
     }
 
-    // Group questions by their actual topics (only include questions with valid topic names)
+    // Group questions by their actual topics. Questions without a valid topic
+    // name are bucketed under "General" instead of being dropped — silently
+    // skipping them made the topic-wise totals undercount the real question
+    // count (e.g. 7/9 shown) even though the overall score above correctly
+    // used all 9 questions.
     const questionsByTopic = quizData.questions.reduce((acc, question, index) => {
-      const topicName = question.topic?.trim();
-      if (!topicName || topicName === 'Unknown Topic' || topicName === '') {
-        return acc; // Skip questions without valid topic names
-      }
-      
+      const trimmed = question.topic?.trim();
+      const topicName = (!trimmed || trimmed === 'Unknown Topic') ? 'General' : trimmed;
+
       if (!acc[topicName]) {
         acc[topicName] = [];
       }

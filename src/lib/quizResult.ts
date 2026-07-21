@@ -72,11 +72,12 @@ export class QuizResultAPI {
       }
 
       const questionsByTopic = quizData.quiz.reduce((acc: Record<string, QuestionWithAnswer[]>, question: any, index: number) => {
-        const topicName = question.topic?.trim();
-        if (!topicName || topicName === 'Unknown Topic' || topicName === '') {
-          return acc; // Skip questions without valid topic names
-        }
-        
+        // Bucket questions without a valid topic name under "General" instead
+        // of dropping them — otherwise the topic-wise total undercounts the
+        // real question total shown elsewhere on the page.
+        const trimmed = question.topic?.trim();
+        const topicName = (!trimmed || trimmed === 'Unknown Topic') ? 'General' : trimmed;
+
         if (!acc[topicName]) {
           acc[topicName] = [];
         }

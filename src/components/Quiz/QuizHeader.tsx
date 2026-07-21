@@ -113,9 +113,16 @@ export function QuizHeader({
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-white/70">
             <Badge variant="secondary">{quiz.experience} yrs</Badge>
+            <Badge className={quiz.quiz_type === 'non_technical'
+              ? "bg-purple-600/20 text-purple-300 border border-purple-500/30"
+              : "bg-cyan-600/20 text-cyan-300 border border-cyan-500/30"}>
+              {quiz.quiz_type === 'non_technical' ? 'Non-Technical' : 'Technical'}
+            </Badge>
             <span>• {questionsCount} questions</span>
             <span>• Theory {quiz.theory_questions_percentage}%</span>
-            <span>• Code {quiz.code_analysis_questions_percentage}%</span>
+            {quiz.quiz_type !== 'non_technical' && (
+              <span>• Code {quiz.code_analysis_questions_percentage}%</span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
