@@ -20,7 +20,7 @@ import CameraProctoring from '@/components/Proctoring/CameraProctoring';
 
 interface Question {
   id: string | number;
-  type: 'theory' | 'code_analysis';
+  type: 'theory' | 'code_analysis' | 'practical_scenario';
   question: string;
   code_snippet?: string | null;
   options: Record<string, string>;

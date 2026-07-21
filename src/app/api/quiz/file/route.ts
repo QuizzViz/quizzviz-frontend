@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     const codeAnalysisQuestionsPercentage = parseInt(formData.get('code_analysis_questions_percentage') as string) || 50;
     const isPublish = formData.get('is_publish') === 'true';
     const isDeleted = formData.get('is_deleted') === 'true';
+    const quizType = (formData.get('quiz_type') as string) || 'technical';
 
     // Validate required fields
     if (!files || files.length === 0) {
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
       company_id: companyId,
       is_publish: isPublish.toString(),
       is_deleted: isDeleted.toString(),
+      quiz_type: quizType,
     });
 
     const BACKEND_URL_WITH_PARAMS = `${BACKEND_URL}?${params.toString()}`;
