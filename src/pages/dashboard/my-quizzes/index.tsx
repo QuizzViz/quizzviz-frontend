@@ -79,9 +79,10 @@ export default function MyQuizzesPage() {
   const companyName = user?.unsafeMetadata?.companyName as string || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
   
   // Set up automatic expiration checking (every 5 minutes)
-  useQuizExpirationChecker({ 
-    autoCheck: true, 
-    checkInterval: 5 * 60 * 1000 
+  useQuizExpirationChecker({
+    autoCheck: true,
+    checkInterval: 5 * 60 * 1000,
+    companyId: companyId || undefined
   });
   
   // Determine which API endpoint to use

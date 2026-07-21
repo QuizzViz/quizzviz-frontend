@@ -11,12 +11,14 @@ interface ExpirationCheckResult {
   errors?: string[];
 }
 
-export function QuizExpirationChecker({ 
-  autoCheck = false, 
-  checkInterval = 5 * 60 * 1000 // 5 minutes
-}: { 
-  autoCheck?: boolean; 
-  checkInterval?: number; 
+export function QuizExpirationChecker({
+  autoCheck = false,
+  checkInterval = 5 * 60 * 1000, // 5 minutes
+  companyId
+}: {
+  autoCheck?: boolean;
+  checkInterval?: number;
+  companyId?: string;
 }) {
   const { user } = useUser();
   const queryClient = useQueryClient();
@@ -25,10 +27,18 @@ export function QuizExpirationChecker({
 
   const checkExpiration = async () => {
     if (!user) return;
-    
+
     setIsChecking(true);
     try {
-      const response = await fetch('/api/quiz/check-expiration', {
+      // Pass the already-resolved company_id (metadata/localStorage aware,
+      // works for owners and members alike) so the server doesn't have to
+      // fall back to the owner-only /companies?owner_id= lookup, which
+      // fails for non-owner members.
+      const url = companyId
+        ? `/api/quiz/check-expiration?company_id=${encodeURIComponent(companyId)}`
+        : '/api/quiz/check-expiration';
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,7 +92,7 @@ export function QuizExpirationChecker({
     const interval = setInterval(checkExpiration, checkInterval);
 
     return () => clearInterval(interval);
-  }, [autoCheck, checkInterval, user]);
+  }, [autoCheck, checkInterval, user, companyId]);
 
   // Manual trigger button
   const ManualCheckButton = () => (
@@ -104,9 +114,10 @@ export function QuizExpirationChecker({
 }
 
 // Hook for easier usage
-export function useQuizExpirationChecker(options?: { 
-  autoCheck?: boolean; 
-  checkInterval?: number; 
+export function useQuizExpirationChecker(options?: {
+  autoCheck?: boolean;
+  checkInterval?: number;
+  companyId?: string;
 }) {
   return QuizExpirationChecker(options || {});
 }
