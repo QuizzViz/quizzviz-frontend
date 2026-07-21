@@ -9,12 +9,21 @@ export async function GET(request: NextRequest) {
   const search = request.nextUrl.searchParams.get('q')?.trim() || '';
   try {
     const db = getAdminDb();
+    // A user's real plan/billing lives on their company, not on this legacy
+    // per-user plan_name column — join it in so the UI can show the company
+    // (and its actual plan) instead of offering a disconnected per-user editor.
+    const baseQuery = `
+      SELECT up.*, c.name AS company_name, c.plan_name AS company_plan_name,
+             c.plan_expiry_date AS company_plan_expiry_date
+      FROM user_plans up
+      LEFT JOIN companies c ON c.company_id = up.company_id
+    `;
     const result = search
       ? await db.query(
-          `SELECT * FROM user_plans WHERE email ILIKE $1 OR user_id ILIKE $1 OR first_name ILIKE $1 ORDER BY created_at DESC LIMIT 200`,
+          `${baseQuery} WHERE up.email ILIKE $1 OR up.user_id ILIKE $1 OR up.first_name ILIKE $1 ORDER BY up.created_at DESC LIMIT 200`,
           [`%${search}%`]
         )
-      : await db.query(`SELECT * FROM user_plans ORDER BY created_at DESC LIMIT 200`);
+      : await db.query(`${baseQuery} ORDER BY up.created_at DESC LIMIT 200`);
     return NextResponse.json({ users: result.rows });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch users' }, { status: 500 });

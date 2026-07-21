@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Trash2, Save } from 'lucide-react';
+import { computePeriodEnd } from '@/lib/billingCycle';
 
 interface CustomLimits {
   maxQuizzes?: number;
@@ -63,6 +64,51 @@ export default function AdminCompanyDetailPage() {
   const update = (patch: Partial<Company>) => setCompany((prev) => prev ? { ...prev, ...patch } : prev);
   const updateLimits = (patch: Partial<CustomLimits>) =>
     setCompany((prev) => prev ? { ...prev, custom_limits: { ...(prev.custom_limits || {}), ...patch } } : prev);
+
+  // Live, in-browser preview of the same deterministic date math the backend
+  // applies on save: monthly -> +1 month from the start date, quarterly -> +3,
+  // half_yearly -> +6, yearly -> +12 — anchored to the exact start day, not a
+  // calendar-month boundary. Recomputes automatically whenever the plan,
+  // billing cycle, or start date changes; still overridable by hand afterward.
+  const recomputeExpiry = (planStartDate: string | null, billingCycle: string) => {
+    if (!planStartDate) return null;
+    const start = new Date(`${planStartDate}T00:00:00Z`);
+    if (Number.isNaN(start.getTime())) return null;
+    return computePeriodEnd(start, billingCycle).toISOString().slice(0, 10);
+  };
+
+  const handlePlanChange = (planName: string) => {
+    setCompany((prev) => {
+      if (!prev) return prev;
+      if (planName === 'Free') {
+        return { ...prev, plan_name: planName, billing_cycle: 'monthly', plan_expiry_date: null };
+      }
+      const startDate = prev.plan_start_date || new Date().toISOString().slice(0, 10);
+      const cycle = prev.billing_cycle || 'monthly';
+      return {
+        ...prev,
+        plan_name: planName,
+        plan_start_date: startDate,
+        billing_cycle: cycle,
+        plan_expiry_date: recomputeExpiry(startDate, cycle),
+      };
+    });
+  };
+
+  const handleBillingCycleChange = (billingCycle: string) => {
+    setCompany((prev) => {
+      if (!prev || prev.plan_name === 'Free') return prev;
+      return { ...prev, billing_cycle: billingCycle, plan_expiry_date: recomputeExpiry(prev.plan_start_date, billingCycle) };
+    });
+  };
+
+  const handleStartDateChange = (startDate: string) => {
+    setCompany((prev) => {
+      if (!prev) return prev;
+      if (prev.plan_name === 'Free') return { ...prev, plan_start_date: startDate };
+      return { ...prev, plan_start_date: startDate, plan_expiry_date: recomputeExpiry(startDate, prev.billing_cycle || 'monthly') };
+    });
+  };
 
   const handleSave = async () => {
     if (!company) return;
@@ -159,7 +205,7 @@ export default function AdminCompanyDetailPage() {
             <label className="text-sm text-zinc-400">Plan</label>
             <select
               value={company.plan_name}
-              onChange={(e) => update({ plan_name: e.target.value })}
+              onChange={(e) => handlePlanChange(e.target.value)}
               className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-white"
             >
               {PLAN_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -169,7 +215,7 @@ export default function AdminCompanyDetailPage() {
             <label className="text-sm text-zinc-400">Billing cycle</label>
             <select
               value={company.billing_cycle || 'monthly'}
-              onChange={(e) => update({ billing_cycle: e.target.value })}
+              onChange={(e) => handleBillingCycleChange(e.target.value)}
               disabled={company.plan_name === 'Free'}
               className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-white disabled:opacity-50"
             >
@@ -184,7 +230,7 @@ export default function AdminCompanyDetailPage() {
             <input
               type="date"
               value={company.plan_start_date || ''}
-              onChange={(e) => update({ plan_start_date: e.target.value })}
+              onChange={(e) => handleStartDateChange(e.target.value)}
               className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-white"
             />
           </div>
@@ -197,7 +243,9 @@ export default function AdminCompanyDetailPage() {
               disabled={company.plan_name === 'Free'}
               className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-white disabled:opacity-50"
             />
-            <p className="text-xs text-zinc-600">Leave as-is to auto-compute from start date + cycle. Override to set a custom date.</p>
+            <p className="text-xs text-zinc-600">
+              Auto-computed from start date + billing cycle — {company.plan_name === 'Free' ? 'N/A for Free plan' : 'changing plan, cycle, or start date recalculates this automatically'}. You can still override it manually.
+            </p>
           </div>
         </div>
 

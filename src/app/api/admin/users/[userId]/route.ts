@@ -12,7 +12,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const fields: string[] = [];
     const values: any[] = [];
     let i = 1;
-    for (const col of ['plan_name', 'email', 'first_name', 'company_id']) {
+    // plan_name intentionally excluded — a user's real plan lives on their
+    // company (companies.plan_name), managed from the Companies & Billing page.
+    // Editing this flat per-user column directly doesn't affect billing/limits
+    // at all, so it's not exposed here to avoid a misleading "edit".
+    for (const col of ['email', 'first_name', 'company_id']) {
       if (col in body) {
         fields.push(`${col} = $${i}`);
         values.push(body[col]);
