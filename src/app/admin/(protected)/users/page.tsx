@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Search, Plus, Trash2, X, Pencil, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { ConfirmDeleteModal } from '../ConfirmDeleteModal';
 
 interface UserPlan {
   user_id: string;
@@ -27,6 +29,7 @@ function planBadgeClass(plan: string) {
 }
 
 export default function AdminUsersPage() {
+  const { toast } = useToast();
   const [users, setUsers] = useState<UserPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -35,6 +38,8 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [editingCompanyFor, setEditingCompanyFor] = useState<string | null>(null);
   const [companyIdDraft, setCompanyIdDraft] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<UserPlan | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const load = async (q: string) => {
     setIsLoading(true);
@@ -90,10 +95,26 @@ export default function AdminUsersPage() {
     load(search);
   };
 
-  const handleDelete = async (userId: string) => {
-    if (!confirm(`Delete user plan record for ${userId}?`)) return;
-    await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, { method: 'DELETE' });
-    load(search);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(deleteTarget.user_id)}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast({
+          title: 'User deleted',
+          description: `${deleteTarget.first_name || deleteTarget.email || deleteTarget.user_id} was removed.`,
+          className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
+        });
+        setDeleteTarget(null);
+        load(search);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast({ title: 'Delete failed', description: data.error || 'Failed to delete user', variant: 'destructive' });
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -186,7 +207,7 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3 text-zinc-400">{new Date(u.created_at).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => handleDelete(u.user_id)} className="text-zinc-500 hover:text-red-400">
+                    <button onClick={() => setDeleteTarget(u)} className="text-zinc-500 hover:text-red-400">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </td>
@@ -223,6 +244,15 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        title="Delete this user record?"
+        description={<>This permanently removes the plan record for <span className="text-white font-medium">{deleteTarget?.first_name || deleteTarget?.email || deleteTarget?.user_id}</span>. This cannot be undone.</>}
+        isDeleting={isDeleting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

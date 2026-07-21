@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Trash2, Save } from 'lucide-react';
 import { computePeriodEnd } from '@/lib/billingCycle';
+import { useToast } from '@/hooks/use-toast';
+import { ConfirmDeleteModal } from '../../ConfirmDeleteModal';
 
 interface CustomLimits {
   maxQuizzes?: number;
@@ -40,10 +42,12 @@ export default function AdminCompanyDetailPage() {
   const params = useParams();
   const router = useRouter();
   const companyId = params?.companyId as string;
+  const { toast } = useToast();
 
   const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -135,19 +139,35 @@ export default function AdminCompanyDetailPage() {
       }
       setCompany(data.company);
       setMessage({ type: 'success', text: 'Saved successfully.' });
+      toast({
+        title: 'Saved',
+        description: `${data.company.name} was updated successfully.`,
+        className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    const res = await fetch(`/api/admin/companies/${encodeURIComponent(companyId)}`, { method: 'DELETE' });
-    if (res.ok) {
-      router.push('/admin/companies');
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setMessage({ type: 'error', text: data.error || 'Failed to delete' });
-      setShowDeleteConfirm(false);
+    if (!company) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/companies/${encodeURIComponent(companyId)}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast({
+          title: 'Company deleted',
+          description: `${company.name} was permanently removed.`,
+          className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
+        });
+        router.push('/admin/companies');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast({ title: 'Delete failed', description: data.error || 'Failed to delete company', variant: 'destructive' });
+        setShowDeleteConfirm(false);
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -308,18 +328,14 @@ export default function AdminCompanyDetailPage() {
         </div>
       </div>
 
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-sm">
-            <h3 className="text-lg font-semibold text-red-400 mb-2">Delete this company?</h3>
-            <p className="text-sm text-zinc-400 mb-5">This permanently removes {company.name} from the database. This cannot be undone.</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 text-sm rounded-lg border border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancel</button>
-              <button onClick={handleDelete} className="px-4 py-2 text-sm rounded-lg bg-red-600 hover:bg-red-700 text-white">Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteModal
+        isOpen={showDeleteConfirm}
+        title="Delete this company?"
+        description={<>This permanently removes <span className="text-white font-medium">{company.name}</span> and all of its billing data from the database. This cannot be undone.</>}
+        isDeleting={isDeleting}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
