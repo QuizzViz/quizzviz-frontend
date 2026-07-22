@@ -9,20 +9,20 @@ import { LoadingSpinner } from '@/components/ui/loading';
 export default function InvitePage() {
   const router = useRouter();
   const params = useParams();
-  const { user, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoaded || !params.token) return;
 
     const token = Array.isArray(params.token) ? params.token[0] : params.token;
-    
+
     // Store invite token in localStorage immediately
     localStorage.setItem('invite-token', token);
-    
+
     // Add a small delay to ensure localStorage is set
     setTimeout(() => {
-      if (!user) {
+      if (!isSignedIn) {
         // No user signed in, redirect to signup
         router.push('/signup');
       } else {
@@ -31,7 +31,7 @@ export default function InvitePage() {
       }
       setIsLoading(false);
     }, 100);
-  }, [isLoaded, user, router, params.token]);
+  }, [isLoaded, isSignedIn, router, params.token]);
 
   if (!isLoaded || isLoading) {
     return (

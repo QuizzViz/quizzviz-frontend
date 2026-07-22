@@ -10,7 +10,7 @@ import { storeCompanyId } from '@/hooks/useCompanies';
 
 export default function AcceptInvitePage() {
   const router = useRouter();
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const { getToken } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
@@ -23,7 +23,7 @@ export default function AcceptInvitePage() {
     if (!isLoaded) return;
 
     // Check if user is signed in
-    if (!user) {
+    if (!isSignedIn) {
       // Redirect to signup page
       router.push('/signup');
       return;
@@ -38,7 +38,7 @@ export default function AcceptInvitePage() {
     }
 
     setIsLoading(false);
-  }, [isLoaded, user, router]);
+  }, [isLoaded, isSignedIn, router]);
 
   const handleAcceptInvite = async () => {
     const inviteToken = localStorage.getItem('invite-token');
@@ -144,13 +144,19 @@ export default function AcceptInvitePage() {
         ready = await isCompanyReady();
       }
 
-      localStorage.removeItem('invite-token');
-      if (ready) {
-        router.push('/dashboard');
-      } else {
-        console.error('No company info found after polling, redirecting to onboarding');
-        router.push('/onboarding');
+      if (!ready) {
+        // The poll is only used to time the loading screen — the invite was
+        // already confirmed accepted above (the API call succeeded and
+        // returned a company_id, which we've already written to
+        // storage/metadata), so there is a real company either way. Falling
+        // back to onboarding here would be wrong: it would ask a member who
+        // just joined a team to "create a company" instead of just giving
+        // the dashboard a moment to pick up what's already been set.
+        console.warn('Company readiness check timed out; proceeding to dashboard anyway.');
       }
+
+      localStorage.removeItem('invite-token');
+      router.push('/dashboard');
 
     } catch (error) {
       console.error('Error accepting invite:', error);
