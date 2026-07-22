@@ -31,34 +31,24 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (user) {
-      // Check if there's an auth intent from OAuth flow
-      const authIntent = typeof window !== 'undefined' ? sessionStorage.getItem('authIntent') : null;
-      
-      if (authIntent === 'signin') {
-        // User was trying to sign in but was already authenticated - redirect to dashboard
-        const hasCompany = user?.unsafeMetadata?.companyId || 
-                         (typeof window !== 'undefined' && localStorage.getItem('userCompanyId'));
-        
-        if (hasCompany) {
-          router.push("/dashboard");
-        } else {
-          router.push("/onboarding");
-        }
+      // A pending invite always takes priority: a signed-in user who ends up
+      // here with an unaccepted invite must continue on to accept it, not
+      // get silently bounced to dashboard/onboarding with the invite never
+      // consumed.
+      const inviteToken = typeof window !== 'undefined' ? localStorage.getItem('invite-token') : null;
+      if (inviteToken) {
+        setIsRedirecting(true);
+        router.push('/accept_invite');
         return;
       }
-      
-      // For regular signin page access, show the "already signed in" UI
-      // This handles cases where user manually navigates to signin while logged in
-    }
-  }, [user, router]);
 
-  useEffect(() => {
-    if (user) {
       setIsRedirecting(true);
-      // Check if user has company metadata, otherwise redirect to onboarding
-      const hasCompany = user?.unsafeMetadata?.companyId || 
+      // Any signed-in user landing on /signin (whether via the OAuth
+      // authIntent flow or by manually navigating here) belongs on
+      // dashboard/onboarding, not this form.
+      const hasCompany = user?.unsafeMetadata?.companyId ||
                        (typeof window !== 'undefined' && localStorage.getItem('userCompanyId'));
-      
+
       if (hasCompany) {
         router.push("/dashboard");
       } else {
