@@ -25,6 +25,10 @@ export interface LimitStatus {
   isQuizLimitReached: boolean;
   isCandidateLimitReached: boolean;
   isTeamMemberLimitReached: boolean;
+  // True while the real plan hasn't loaded yet — every "reached" flag above
+  // is computed against a Free-plan default in the meantime, so callers
+  // should treat those as not-yet-meaningful until this flips to false.
+  isLoading: boolean;
 }
 
 export function usePlanLimits(currentUsage?: CurrentUsage, customLimits?: {
@@ -35,8 +39,8 @@ export function usePlanLimits(currentUsage?: CurrentUsage, customLimits?: {
 }): LimitStatus {
   const { user } = useUser();
   const { companyInfo } = useCompanyInfo();
-  const { data: userPlanData } = useUserPlan();
-  
+  const { data: userPlanData, isLoading: isPlanLoading } = useUserPlan();
+
   const plan = userPlanData?.plan_name || 'Free';
   const planLimits = getPlanLimits(plan, customLimits);
   
@@ -72,7 +76,8 @@ export function usePlanLimits(currentUsage?: CurrentUsage, customLimits?: {
     teamMembersRemaining,
     isQuizLimitReached,
     isCandidateLimitReached,
-    isTeamMemberLimitReached
+    isTeamMemberLimitReached,
+    isLoading: isPlanLoading
   };
 }
 
