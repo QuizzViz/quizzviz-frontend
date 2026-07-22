@@ -87,13 +87,19 @@ export async function GET(request: NextRequest) {
           data: JSON.stringify(responseData, null, 2)
         });
         
-        // If member not found (404), check if user was deleted vs missing member record
+        // If member not found (404), check if user was deleted vs missing member record.
+        // IMPORTANT: this is only ever true if the backend explicitly says so —
+        // it must NOT be inferred from "member not found + not the owner", since
+        // that's also exactly what a freshly re-invited member looks like right
+        // after accepting (or any transient lookup race). Treating that as proof
+        // of deletion forces a sign-out that repeats on every dashboard visit,
+        // trapping a legitimately active member in a sign-out loop.
         if (response.status === 404) {
           // Check if this is a deleted member by looking at the response message
-          const isDeletedMember = responseData.message?.toLowerCase().includes('deleted') || 
+          const isDeletedMember = responseData.message?.toLowerCase().includes('deleted') ||
                                  responseData.error?.toLowerCase().includes('deleted') ||
                                  responseData.status === 'DELETED';
-          
+
           if (isDeletedMember) {
             console.log('Member has been deleted from the company');
             return NextResponse.json(
@@ -135,15 +141,18 @@ export async function GET(request: NextRequest) {
               if (isOwner) {
                 console.log('User is confirmed as company owner, will create OWNER record');
               } else {
-                console.log('User is not the company owner and member record not found - user was likely deleted');
-                // For non-owners who don't have a member record, they were likely deleted
+                console.log('User is not the company owner and no member record was found — passing through as a plain 404 (not treated as a deletion)');
+                // Do NOT assume this means the user was removed — that can't be
+                // distinguished from "not a member (yet)" purely from a missing
+                // row, and wrongly forcing a sign-out here traps re-invited or
+                // in-flight members in a loop. Let the caller treat this as an
+                // ordinary "no role for this company" result.
                 return NextResponse.json(
-                  { 
-                    error: 'Member has been deleted',
-                    deleted: true,
-                    message: 'You have been removed from this company'
+                  {
+                    error: 'Member not found in this company',
+                    message: responseData.detail || 'No membership record found for this user in this company'
                   },
-                  { status: 410 }
+                  { status: 404 }
                 );
               }
             } else {

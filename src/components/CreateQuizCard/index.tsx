@@ -171,6 +171,11 @@ export default function CreateQuizCard({
     teamMembers: 0,
   };
   const planLimits = usePlanLimits(currentUsage);
+  // planLimits defaults to the Free plan's low cap while the real plan is
+  // still loading, so treat "limit reached" as unknown (false) until then —
+  // otherwise the primary Generate Quiz button could get disabled based on
+  // a placeholder plan the company isn't even on.
+  const quizLimitReached = !planLimits.isLoading && planLimits.isQuizLimitReached;
   const queryClient = useQueryClient();
   const router = useRouter();
   const { toast } = useToast();
@@ -315,7 +320,11 @@ export default function CreateQuizCard({
       <CardContent className="p-8 space-y-6">
         <QuizHeader />
 
-        {planLimits.isQuizLimitReached && (
+        {/* Don't show this until the real plan has loaded — planLimits
+            defaults to the Free plan's low cap while useUserPlan() is still
+            fetching, which could falsely flag "limit reached" against an
+            already-loaded usage count for a company on a higher plan. */}
+        {quizLimitReached && (
           <div className="p-4 bg-yellow-900/20 border border-yellow-700 rounded-lg text-yellow-200">
             <div className="flex items-start">
               <AlertTriangle className="h-5 w-5 mt-0.5 mr-2 flex-shrink-0" />
@@ -435,17 +444,17 @@ export default function CreateQuizCard({
                   <div>
                     <Button
                       className={`transition-all duration-300 px-5 py-2 rounded-lg shadow-md flex items-center ${
-                        planLimits.isQuizLimitReached
+                        quizLimitReached
                           ? "bg-yellow-600 hover:bg-yellow-700 text-white"
                           : "bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 duration-300 transition-all hover:to-blue-700 text-white"
                       }`}
                       disabled={
                         isMissingRequiredInput ||
-                        planLimits.isQuizLimitReached
+                        quizLimitReached
                       }
                       onClick={() => handleGenerateClick(codePercentage)}
                     >
-                      {planLimits.isQuizLimitReached ? (
+                      {quizLimitReached ? (
                         <>
                           <AlertTriangle className="h-4 w-4 mr-2" />
                           {getUpgradeCTA(plan as any).text}
@@ -466,7 +475,7 @@ export default function CreateQuizCard({
                   </div>
                 </TooltipTrigger>
                 {(isMissingRequiredInput ||
-                  planLimits.isQuizLimitReached) && (
+                  quizLimitReached) && (
                   <TooltipContent className="w-64 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
                     <div className="space-y-2">
                       <div className="flex items-start">
@@ -485,12 +494,12 @@ export default function CreateQuizCard({
                         </div>
                         <div className="ml-3">
                           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {planLimits.isQuizLimitReached
+                            {quizLimitReached
                               ? "Quiz Limit Reached"
                               : "Missing Information"}
                           </p>
                           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {planLimits.isQuizLimitReached
+                            {quizLimitReached
                               ? `${getLimitMessage(
                                   "quiz",
                                   plan as any
