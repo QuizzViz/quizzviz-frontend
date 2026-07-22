@@ -368,7 +368,7 @@ export default function TeamsPage() {
     totalCandidates: 0,
     teamMembers: members.length,
   };
-  const planLimits = usePlanLimits(currentUsage);
+  const planLimits = usePlanLimits(currentUsage, company?.custom_limits);
 
   useEffect(() => {
     if (cachedMembers) {

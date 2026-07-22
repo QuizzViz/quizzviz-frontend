@@ -18,6 +18,7 @@ import { useQuizUsage } from "@/hooks/useQuizUsage";
 import { usePlanLimits, getLimitMessage, getUpgradeCTA } from "@/hooks/usePlanLimits";
 import { useUser } from "@clerk/nextjs";
 import { useUserPlan } from "@/hooks/useUserPlan";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { RoleSelect } from "./parts/RoleSelect";
 import { TechStackInput } from "./parts/TechStackInput";
 import { TECHNOLOGIES } from "@/constants/technologies";
@@ -226,13 +227,14 @@ export default function CreateQuizCard({
 
   const quizUsage = useQuizUsage();
   const { data: userPlanData } = useUserPlan();
+  const { companyInfo } = useCompanyInfo();
   const plan = userPlanData?.plan_name || "Free";
   const currentUsage = {
     quizzesThisMonth: quizUsage?.data?.current_month?.quiz_count || 0,
     totalCandidates: 0,
     teamMembers: 0,
   };
-  const planLimits = usePlanLimits(currentUsage);
+  const planLimits = usePlanLimits(currentUsage, companyInfo?.custom_limits);
   // planLimits defaults to the Free plan's low cap while the real plan is
   // still loading, so treat "limit reached" as unknown (false) until then —
   // otherwise the primary Generate Quiz button could get disabled based on
