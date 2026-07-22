@@ -9,5 +9,15 @@ export const TECHNOLOGIES = [
     "Compiler", "Interpreter", "Operating System", "Linux", "Unix", "Bash", "Shell", "Command Line", "API",
     "System Design", "Networking", "Database", "OOP", "DSA",
     "Node.js", "Maven", "GCC", "Make", "GDB", "CMake", "Cargo", "Ruby on Rails", "Laravel", "Xcode",
-    "Redux", "Vuex", "Postman", "Vite", "Docker Compose", "Authentication", "Entity Framework", "Debugging", "Android"
+    "Redux", "Vuex", "Postman", "Vite", "Docker Compose", "Authentication", "Entity Framework", "Debugging", "Android",
+    "Flutter", "Dart", "React Native", "ASP.NET",
+    "Machine Learning", "Deep Learning", "TensorFlow", "PyTorch", "Pandas", "NumPy",
+    "Generative AI", "LangChain", "Apache Spark", "Airflow",
+    "Power BI", "Tableau", "Excel",
+    "Selenium", "Test Automation", "Manual Testing", "JIRA",
+    "Cybersecurity", "Penetration Testing",
+    "Embedded Systems", "Microcontroller",
+    "Blockchain", "Solidity",
+    "Unity", "Unreal Engine",
+    "Salesforce", "Microsoft Dynamics 365", "SAP"
 ].sort();

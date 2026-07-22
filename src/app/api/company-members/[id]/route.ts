@@ -1,4 +1,4 @@
-import { getAuth } from '@clerk/nextjs/server';
+import { clerkClient, getAuth } from '@clerk/nextjs/server';
 import { NextResponse, NextRequest } from 'next/server';
 
 const COMPANY_MEMBERS_URL = process.env.NEXT_PUBLIC_COMPANY_MEMBERS_SERVICE_URL;
@@ -149,8 +149,29 @@ export async function DELETE(
       );
     }
 
+    // Fetch the member record before deleting it, purely so we can clear the
+    // removed user's Clerk metadata afterward (their unsafeMetadata.companyId
+    // otherwise keeps pointing at this company forever, since deleting the
+    // row here can't reach into their browser session or Clerk profile).
+    let removedUserId: string | null = null;
+    try {
+      const memberResponse = await fetch(`${COMPANY_MEMBERS_URL}/member/${id}`, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      });
+      if (memberResponse.ok) {
+        const memberData = await memberResponse.json().catch(() => ({}));
+        removedUserId = memberData?.user_id || null;
+      }
+    } catch (lookupError) {
+      console.warn('Could not look up member before delete (non-blocking):', lookupError);
+    }
+
     console.log('Making DELETE request to:', `${COMPANY_MEMBERS_URL}/member/${id}`);
-    
+
     let response;
     try {
       response = await fetch(`${COMPANY_MEMBERS_URL}/member/${id}`, {
@@ -168,7 +189,7 @@ export async function DELETE(
         console.error('Failed to parse response:', jsonError);
         responseData = {};
       }
-      
+
       if (!response.ok) {
         console.error('Backend error response:', {
           status: response.status,
@@ -177,7 +198,7 @@ export async function DELETE(
         });
 
         return NextResponse.json(
-          { 
+          {
             error: responseData.message || `Failed to delete company member: ${response.statusText}`,
             details: responseData.details || responseData,
             status: response.status
@@ -187,6 +208,24 @@ export async function DELETE(
       }
 
       console.log('Company member deleted successfully');
+
+      // Best-effort: clear the removed user's stale company association so
+      // they stop looking like a member of this company the moment their
+      // Clerk session next refreshes, instead of relying solely on their
+      // browser eventually hitting a 404 role lookup on its own.
+      if (removedUserId) {
+        try {
+          const clerk = await clerkClient();
+          const removedUser = await clerk.users.getUser(removedUserId);
+          const { companyId: _companyId, companyName: _companyName, ...restMetadata } = (removedUser.unsafeMetadata || {}) as Record<string, unknown>;
+          await clerk.users.updateUserMetadata(removedUserId, {
+            unsafeMetadata: restMetadata
+          });
+        } catch (metadataError) {
+          console.warn('Could not clear removed member Clerk metadata (non-blocking):', metadataError);
+        }
+      }
+
       return NextResponse.json({ message: 'Member deleted successfully' });
       
     } catch (error) {
