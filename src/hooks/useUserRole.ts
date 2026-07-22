@@ -102,8 +102,17 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
     },
     dependencies: [user?.id, companyId],
     cacheKey,
-    ttl: 10 * 60 * 1000, // 10 minutes cache for role data
-    usePersistentCache: true // Enable localStorage caching for role data
+    // This gates dashboard access, so it must never serve a stale "you're
+    // still an active member" result after a real membership change. A
+    // persisted (localStorage) cache defeated that: on a hard refresh,
+    // useCachedData would immediately hand back the pre-removal cached role
+    // — its 2s-later background refresh only logs a warning on failure and
+    // never updates state, so a kicked-out member's stale cache entry could
+    // keep granting access indefinitely. Disabled persistence and shortened
+    // the TTL so every fresh mount (hard refresh, new tab) always re-checks
+    // against the server instead of trusting old data.
+    ttl: 30 * 1000, // 30 seconds
+    usePersistentCache: false
   });
 
   // Store company_id in sessionStorage for member users when role is fetched

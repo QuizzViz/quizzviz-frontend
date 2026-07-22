@@ -86,8 +86,13 @@ export async function POST(request) {
       });
       
       return NextResponse.json(
-        { 
-          error: responseData.message || `Failed to send invitation: ${response.statusText}`,
+        {
+          // FastAPI's HTTPException responses are shaped { "detail": "..." },
+          // not { "message": "..." } — read that first so specific backend
+          // errors (e.g. "This email is already a member of this company")
+          // actually reach the user instead of falling through to a generic
+          // message.
+          error: responseData.detail || responseData.message || `Failed to send invitation: ${response.statusText}`,
           details: responseData.details || responseData,
           status: response.status
         },
