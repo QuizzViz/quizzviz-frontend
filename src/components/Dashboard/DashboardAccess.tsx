@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Loader2, Zap, Lock, ArrowRight, Building2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useCompanies } from '@/hooks/useCompanies';
 import { useUserRole } from '@/hooks/useUserRole';
 
@@ -19,6 +19,8 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [currentPath, setCurrentPath] = useState('');
+  const [isLeavingRemovedCompany, setIsLeavingRemovedCompany] = useState(false);
+  const hasHandledRemoval = useRef(false);
 
   // Resolve a known company_id from every source we have. Clerk metadata is
   // the authoritative, cross-session source for BOTH owners (set on company
@@ -33,7 +35,7 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
   // Validate the user against the company via the company-members service
   // (role/membership check) rather than the owner-only /api/company/check
   // endpoint. This works uniformly for OWNER, ADMIN, and MEMBER roles.
-  const { userRole, loading: isLoadingRole } = useUserRole(knownCompanyId);
+  const { userRole, loading: isLoadingRole, errorStatus: roleErrorStatus } = useUserRole(knownCompanyId);
 
   // Fallback only: used when we have no company_id from any source, to tell
   // apart a genuinely new user (needs onboarding) from a member whose
@@ -47,6 +49,41 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // A definitive 404 (not a transient error — see the status check below) for
+  // a companyId we ourselves resolved from metadata/storage means this user
+  // no longer has a membership row for that company, i.e. they were removed.
+  // Clear the stale association and send them to onboarding to create their
+  // own company, instead of leaving them with indefinite access to a
+  // dashboard they no longer belong to.
+  useEffect(() => {
+    if (hasHandledRemoval.current) return;
+    if (!knownCompanyId || isLoadingRole || userRole || roleErrorStatus !== 404) return;
+
+    hasHandledRemoval.current = true;
+    setIsLeavingRemovedCompany(true);
+
+    const cleanupAndRedirect = async () => {
+      try {
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('userCompanyId');
+          sessionStorage.removeItem('company_id');
+          localStorage.removeItem('userCompanyId');
+          localStorage.removeItem('userCompanyName');
+        }
+        if (user) {
+          const { companyId: _companyId, companyName: _companyName, ...rest } = (user.unsafeMetadata || {}) as Record<string, unknown>;
+          await user.update({ unsafeMetadata: rest });
+        }
+      } catch (err) {
+        console.error('Error cleaning up removed-member company data:', err);
+      } finally {
+        router.push('/onboarding');
+      }
+    };
+
+    cleanupAndRedirect();
+  }, [knownCompanyId, isLoadingRole, userRole, roleErrorStatus, user, router]);
+
   const isPricingPage = currentPath === '/pricing';
 
   // Skip all checks for pricing page
@@ -58,10 +95,20 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  if (isLeavingRemovedCompany) {
+    return (
+      <div className="min-h-screen bg-background text-white flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+      </div>
+    );
+  }
+
   // We have a company_id from metadata/storage - gate on membership + role
   // rather than ownership. useUserRole already handles: member found (any
-  // role) -> access granted; member deleted -> signs the user out; owner
-  // without a member record yet -> auto-provisions the OWNER record.
+  // role) -> access granted; owner without a member record yet ->
+  // auto-provisions the OWNER record; a confirmed 404 (no membership row) ->
+  // handled by the effect above, which clears the stale association and
+  // redirects to onboarding.
   if (knownCompanyId) {
     if (isLoadingRole) {
       return <>{children}</>;
@@ -72,9 +119,10 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
       return <>{children}</>;
     }
 
-    // Role lookup failed for a reason other than deletion (e.g. transient
-    // service error). Don't block access here - let the page-level data
-    // fetches surface the error instead of misreporting "no company".
+    // Role lookup failed for a reason other than a confirmed 404 (e.g.
+    // transient service error, 500/503). Don't block access here - let the
+    // page-level data fetches surface the error instead of misreporting "no
+    // company". A definitive 404 is handled by the effect above.
     return <>{children}</>;
   }
 

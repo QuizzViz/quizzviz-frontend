@@ -1,6 +1,6 @@
 import { useUser, useAuth } from '@clerk/nextjs';
 import { useCachedData } from './useCachedData';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 export interface UserRole {
@@ -22,6 +22,11 @@ interface UseUserRoleReturn {
   userRole: UserRole | null;
   loading: boolean;
   error: string | null;
+  // HTTP status of the last failed role fetch, when available. A 404 here
+  // is a definitive "no membership record for this user in this company" —
+  // unlike a generic error/undefined status, which could be a transient
+  // network/service failure and should NOT be treated as proof of removal.
+  errorStatus: number | null;
   refresh: () => void;
   clearCache: () => void;
 }
@@ -30,6 +35,10 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
   const { user } = useUser();
   const { getToken, signOut } = useAuth();
   const router = useRouter();
+  // useCachedData only preserves the error message string, not the thrown
+  // Error object, so track the HTTP status out-of-band via a ref set inside
+  // the fetcher below.
+  const errorStatusRef = useRef<number | null>(null);
 
   // Create cache key based on user and company
   const cacheKey = `userRole_${user?.id || 'anonymous'}_${companyId || 'no-company'}`;
@@ -60,6 +69,7 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        errorStatusRef.current = response.status;
 
         // Check if member has been deleted
         if (response.status === 410 || errorData.deleted) {
@@ -85,6 +95,7 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
         throw new Error(errorData.error || 'Failed to fetch user role');
       }
 
+      errorStatusRef.current = null;
       const data: UserRole = await response.json();
 
       return data;
@@ -116,12 +127,13 @@ export function useUserRole(companyId?: string): UseUserRoleReturn {
   // Handle MEMBER_DELETED error specially - don't show it as an error to the user
   const displayError = error === 'MEMBER_DELETED' ? null : error;
 
-  return { 
-    userRole, 
-    loading, 
-    error: displayError, 
-    refresh, 
-    clearCache 
+  return {
+    userRole,
+    loading,
+    error: displayError,
+    errorStatus: loading ? null : errorStatusRef.current,
+    refresh,
+    clearCache
   };
 }
 
