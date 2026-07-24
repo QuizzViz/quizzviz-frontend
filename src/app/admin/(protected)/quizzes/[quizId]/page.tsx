@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Users, Trophy, TrendingUp, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, TrendingUp, ExternalLink, Pencil } from 'lucide-react';
+import { QuizForm } from '../QuizForm';
 
 interface Option {
   A: string; B: string; C: string; D: string;
@@ -64,25 +65,26 @@ export default function AdminQuizDetailPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
-  useEffect(() => {
+  const load = async () => {
     if (!quizId) return;
-    (async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch(`/api/admin/quizzes/${encodeURIComponent(quizId)}`);
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || 'Failed to load quiz');
-          return;
-        }
-        setQuiz(data.quiz);
-        setStats(data.stats);
-      } finally {
-        setIsLoading(false);
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/admin/quizzes/${encodeURIComponent(quizId)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to load quiz');
+        return;
       }
-    })();
-  }, [quizId]);
+      setQuiz(data.quiz);
+      setStats(data.stats);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, [quizId]);
 
   if (isLoading) return <div className="p-8 text-zinc-500">Loading...</div>;
   if (error || !quiz) {
@@ -95,6 +97,37 @@ export default function AdminQuizDetailPage() {
   }
 
   const questions = Array.isArray(quiz.quiz) ? quiz.quiz : [];
+
+  if (isEditing) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <Link href="/admin/quizzes" className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white mb-6">
+          <ArrowLeft className="h-4 w-4" /> Back to quizzes
+        </Link>
+        <h1 className="text-2xl font-semibold text-white mb-1">Edit quiz</h1>
+        <p className="text-sm text-zinc-500 mb-6">{quiz.quiz_id}</p>
+        <QuizForm
+          mode="edit"
+          initialData={{
+            quiz_id: quiz.quiz_id,
+            company_id: quiz.company_id,
+            company_name: quiz.company_name,
+            role: quiz.role,
+            experience: quiz.experience,
+            quiz_type: quiz.quiz_type,
+            theory_questions_percentage: quiz.theory_questions_percentage,
+            code_analysis_questions_percentage: quiz.code_analysis_questions_percentage,
+            quiz: questions,
+          }}
+          onCancel={() => setIsEditing(false)}
+          onSaved={async () => {
+            setIsEditing(false);
+            await load();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -118,6 +151,12 @@ export default function AdminQuizDetailPage() {
           ) : (
             <span className="text-xs rounded-full px-2.5 py-1 bg-zinc-500/15 text-zinc-400 border border-zinc-500/30">Draft</span>
           )}
+          <button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border border-zinc-700 text-zinc-300 hover:bg-zinc-900"
+          >
+            <Pencil className="h-3 w-3" /> Edit
+          </button>
         </div>
       </div>
 

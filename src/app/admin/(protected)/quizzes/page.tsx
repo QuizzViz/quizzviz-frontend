@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Trash2, Users, ChevronRight } from 'lucide-react';
+import { Trash2, Users, ChevronRight, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDeleteModal } from '../ConfirmDeleteModal';
+
+type StatusFilter = 'all' | 'draft' | 'published';
 
 interface QuizRow {
   quiz_id: string;
@@ -26,6 +28,7 @@ export default function AdminQuizzesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<QuizRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const load = async () => {
     setIsLoading(true);
@@ -39,6 +42,18 @@ export default function AdminQuizzesPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const counts = useMemo(() => ({
+    all: quizzes.length,
+    draft: quizzes.filter((q) => !q.quiz_public_link).length,
+    published: quizzes.filter((q) => !!q.quiz_public_link).length,
+  }), [quizzes]);
+
+  const visibleQuizzes = useMemo(() => {
+    if (statusFilter === 'draft') return quizzes.filter((q) => !q.quiz_public_link);
+    if (statusFilter === 'published') return quizzes.filter((q) => !!q.quiz_public_link);
+    return quizzes;
+  }, [quizzes, statusFilter]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -62,10 +77,40 @@ export default function AdminQuizzesPage() {
     }
   };
 
+  const tabs: { key: StatusFilter; label: string }[] = [
+    { key: 'all', label: `All (${counts.all})` },
+    { key: 'draft', label: `Generated / Draft (${counts.draft})` },
+    { key: 'published', label: `Published (${counts.published})` },
+  ];
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-semibold text-white mb-1">Quizzes</h1>
-      <p className="text-sm text-zinc-500 mb-6">{quizzes.length} quizzes shown (most recent 300) — click a row to view its questions</p>
+      <div className="flex items-start justify-between mb-1">
+        <h1 className="text-2xl font-semibold text-white">Quizzes</h1>
+        <Link
+          href="/admin/quizzes/new"
+          className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white text-sm font-medium px-4 py-2"
+        >
+          <Plus className="h-4 w-4" /> New Quiz
+        </Link>
+      </div>
+      <p className="text-sm text-zinc-500 mb-5">{visibleQuizzes.length} of {quizzes.length} quizzes shown (most recent 300) — click a row to view its questions</p>
+
+      <div className="flex items-center gap-1.5 mb-5 border border-zinc-800 rounded-lg p-1 w-fit bg-zinc-950">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setStatusFilter(tab.key)}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              statusFilter === tab.key
+                ? 'bg-gradient-to-r from-green-600/20 to-blue-600/20 text-white border border-green-500/30'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       <div className="border border-zinc-800 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
@@ -85,9 +130,9 @@ export default function AdminQuizzesPage() {
           <tbody className="divide-y divide-zinc-900">
             {isLoading ? (
               <tr><td colSpan={9} className="px-4 py-8 text-center text-zinc-500">Loading...</td></tr>
-            ) : quizzes.length === 0 ? (
+            ) : visibleQuizzes.length === 0 ? (
               <tr><td colSpan={9} className="px-4 py-8 text-center text-zinc-500">No quizzes found</td></tr>
-            ) : quizzes.map((q) => (
+            ) : visibleQuizzes.map((q) => (
               <tr key={q.quiz_id} className="hover:bg-zinc-900/60 relative">
                 <td className="px-4 py-3 text-white">
                   <Link href={`/admin/quizzes/${encodeURIComponent(q.quiz_id)}`} className="absolute inset-0 z-10" aria-label={`View ${q.role} quiz`} />
