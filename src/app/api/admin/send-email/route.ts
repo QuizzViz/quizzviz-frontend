@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminSession';
 
 const SUPPORT_SENDER_EMAIL = 'support@quizzviz.com';
+// The mail microservice validates email_type against a fixed enum. 'contact',
+// 'feedback', and 'report_bug' are the only values proven to work elsewhere
+// in this app (src/app/api/send_email/route.ts, dashboard feedback/report-bug
+// forms) — 'admin_notice' isn't in that enum and gets rejected with a 422.
+const EMAIL_TYPE = 'contact';
 
 export async function POST(request: NextRequest) {
   if (!requireAdminSession(request)) {
@@ -29,14 +34,15 @@ export async function POST(request: NextRequest) {
         recipient_email: recipient_email.trim(),
         subject: subject.trim().substring(0, 200),
         message: message.trim().substring(0, 10000),
-        email_type: 'admin_notice',
+        email_type: EMAIL_TYPE,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      const upstreamMessage = errorData.message || errorData.error || JSON.stringify(errorData);
       return NextResponse.json(
-        { error: errorData.message || `Failed to send email. Status: ${response.status}` },
+        { error: `Mail service rejected the request (${response.status}): ${upstreamMessage}` },
         { status: 502 }
       );
     }

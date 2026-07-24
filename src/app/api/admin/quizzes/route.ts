@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const result = await db.query(
       `SELECT g.quiz_id, g.company_id, g.role, g.experience, g.num_questions, g.quiz_type,
               g.is_publish, g.is_deleted, g.created_at, c.name AS company_name,
+              c.owner_email AS company_owner_email,
               p.quiz_public_link,
               COALESCE(a.attempt_count, 0) AS attempt_count
        FROM generated_quizzes g

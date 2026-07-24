@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { QuizForm } from '../QuizForm';
+import { invalidateAdminData } from '../../useAdminData';
 
 export default function NewQuizPage() {
   const router = useRouter();
@@ -18,7 +19,11 @@ export default function NewQuizPage() {
 
       <QuizForm
         mode="create"
-        onSaved={(quizId) => router.push(`/admin/quizzes/${encodeURIComponent(quizId)}`)}
+        onSaved={(quizId) => {
+          invalidateAdminData('admin-quizzes');
+          invalidateAdminData('admin-overview');
+          router.push(`/admin/quizzes/${encodeURIComponent(quizId)}`);
+        }}
       />
     </div>
   );

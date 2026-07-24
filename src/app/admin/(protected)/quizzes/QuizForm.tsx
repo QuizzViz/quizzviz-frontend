@@ -85,8 +85,6 @@ export function QuizForm({
   const [role, setRole] = useState(initialData?.role || '');
   const [experience, setExperience] = useState(initialData?.experience || '');
   const [quizType, setQuizType] = useState(initialData?.quiz_type || 'technical');
-  const [theoryPct, setTheoryPct] = useState(initialData?.theory_questions_percentage ?? 70);
-  const [codePct, setCodePct] = useState(initialData?.code_analysis_questions_percentage ?? 30);
   const [questions, setQuestions] = useState<QuestionDraft[]>(toDrafts(initialData?.quiz));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +126,22 @@ export function QuizForm({
   const addQuestion = () => setQuestions((prev) => [...prev, emptyQuestion()]);
   const removeQuestion = (key: string) => setQuestions((prev) => (prev.length > 1 ? prev.filter((q) => q.key !== key) : prev));
 
-  const isNonTechnical = quizType === 'non_technical';
+  // Percentages are derived live from the actual question types instead of
+  // being separately typed-in numbers — that's what previously let a quiz's
+  // stored "Theory %" drift out of sync with what the questions actually were.
+  const composition = useMemo(() => {
+    const total = questions.length || 1;
+    const counts = { theory: 0, code_analysis: 0, practical_scenario: 0 } as Record<QuestionType, number>;
+    questions.forEach((q) => { counts[q.type] += 1; });
+    const theoryPct = Math.round((counts.theory / total) * 100);
+    return {
+      theoryPct,
+      nonTheoryPct: 100 - theoryPct,
+      breakdown: (Object.entries(counts) as [QuestionType, number][])
+        .filter(([, count]) => count > 0)
+        .map(([type, count]) => ({ type, pct: Math.round((count / total) * 100) })),
+    };
+  }, [questions]);
 
   const validate = (): string | null => {
     if (!companyId.trim()) return 'Pick a company.';
@@ -159,8 +172,8 @@ export function QuizForm({
         role: role.trim(),
         experience: experience.trim(),
         quiz_type: quizType,
-        theory_questions_percentage: Number(theoryPct) || 0,
-        code_analysis_questions_percentage: isNonTechnical ? 0 : Number(codePct) || 0,
+        theory_questions_percentage: composition.theoryPct,
+        code_analysis_questions_percentage: composition.nonTheoryPct,
         questions: questions.map((q) => ({
           type: q.type,
           question: q.question.trim(),
@@ -273,30 +286,16 @@ export function QuizForm({
               <option value="non_technical">Non-Technical</option>
             </select>
           </div>
-          <div>
-            <label className="text-xs text-zinc-500 mb-1 block">Theory %</label>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              value={theoryPct}
-              onChange={(e) => setTheoryPct(Number(e.target.value))}
-              className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/40"
-            />
-          </div>
-          {!isNonTechnical && (
-            <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Code analysis %</label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={codePct}
-                onChange={(e) => setCodePct(Number(e.target.value))}
-                className="w-full rounded-lg bg-zinc-900 border border-zinc-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/40"
-              />
+          <div className="col-span-2">
+            <label className="text-xs text-zinc-500 mb-1 block">Composition (auto-computed from questions below)</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {composition.breakdown.map(({ type, pct }) => (
+                <span key={type} className={`text-xs rounded-full px-2.5 py-1 border ${typeBadgeClass[type]}`}>
+                  {type === 'theory' ? 'Theory' : type === 'code_analysis' ? 'Code Analysis' : 'Practical Scenario'} {pct}%
+                </span>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       </div>
 

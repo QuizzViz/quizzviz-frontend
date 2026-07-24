@@ -1,25 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Building2, FileQuestion, Send, ClipboardCheck, ArrowRight } from 'lucide-react';
+import { Building2, FileQuestion, Send, ClipboardCheck, ArrowRight, RefreshCw } from 'lucide-react';
+import { useAdminData } from './useAdminData';
+import { AdminPageLoading, AdminErrorState } from './AdminPageLoading';
+
+interface OverviewPayload {
+  totals: any;
+  recentCompanies: any[];
+}
 
 export default function AdminOverviewPage() {
-  const [totals, setTotals] = useState<any>(null);
-  const [recentCompanies, setRecentCompanies] = useState<any[]>([]);
+  const { data, isLoading, isRefreshing, error, refresh } = useAdminData<OverviewPayload>('admin-overview', async () => {
+    const [analyticsRes, companiesRes] = await Promise.all([
+      fetch('/api/admin/analytics'),
+      fetch('/api/admin/companies'),
+    ]);
+    if (!analyticsRes.ok || !companiesRes.ok) {
+      throw new Error('Failed to load overview data');
+    }
+    const analytics = await analyticsRes.json();
+    const companies = await companiesRes.json();
+    return { totals: analytics.totals, recentCompanies: (companies.companies || []).slice(0, 8) };
+  });
 
-  useEffect(() => {
-    (async () => {
-      const [analyticsRes, companiesRes] = await Promise.all([
-        fetch('/api/admin/analytics'),
-        fetch('/api/admin/companies'),
-      ]);
-      const analytics = await analyticsRes.json();
-      const companies = await companiesRes.json();
-      setTotals(analytics.totals);
-      setRecentCompanies((companies.companies || []).slice(0, 8));
-    })();
-  }, []);
+  const totals = data?.totals;
+  const recentCompanies = data?.recentCompanies || [];
 
   const cards = [
     { label: 'Companies', value: totals?.total_companies, icon: Building2, href: '/admin/companies' },
@@ -28,9 +34,30 @@ export default function AdminOverviewPage() {
     { label: 'Quiz attempts', value: totals?.total_attempts, icon: ClipboardCheck, href: '/admin/results' },
   ];
 
+  if (isLoading) {
+    return <AdminPageLoading text="Loading overview..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 max-w-2xl mx-auto">
+        <AdminErrorState message={error} onRetry={refresh} />
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-semibold text-white mb-1">Overview</h1>
+      <div className="flex items-start justify-between mb-1">
+        <h1 className="text-2xl font-semibold text-white">Overview</h1>
+        <button
+          onClick={refresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
+        </button>
+      </div>
       <p className="text-sm text-zinc-500 mb-8">Welcome to the QuizzViz internal admin panel.</p>
 
       <div className="grid grid-cols-4 gap-4 mb-8">

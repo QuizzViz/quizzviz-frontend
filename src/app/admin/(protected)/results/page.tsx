@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import { Trash2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDeleteModal } from '../ConfirmDeleteModal';
+import { useAdminData } from '../useAdminData';
+import { AdminPageLoading, AdminErrorState } from '../AdminPageLoading';
 
 interface ResultRow {
   id: number;
@@ -20,23 +22,18 @@ interface ResultRow {
 
 export default function AdminResultsPage() {
   const { toast } = useToast();
-  const [results, setResults] = useState<ResultRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading, isRefreshing, error, refresh } = useAdminData<ResultRow[]>('admin-results', async () => {
+    const res = await fetch('/api/admin/results');
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Failed to load attempts (${res.status})`);
+    }
+    const json = await res.json();
+    return json.results || [];
+  });
+  const results = data || [];
   const [deleteTarget, setDeleteTarget] = useState<ResultRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const load = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/admin/results');
-      const data = await res.json();
-      setResults(data.results || []);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => { load(); }, []);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -50,7 +47,7 @@ export default function AdminResultsPage() {
           className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
         });
         setDeleteTarget(null);
-        load();
+        refresh();
       } else {
         const data = await res.json().catch(() => ({}));
         toast({ title: 'Delete failed', description: data.error || 'Failed to delete attempt', variant: 'destructive' });
@@ -62,8 +59,19 @@ export default function AdminResultsPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-semibold text-white mb-1">Attempts / Results</h1>
+      <div className="flex items-start justify-between mb-1">
+        <h1 className="text-2xl font-semibold text-white">Attempts / Results</h1>
+        <button
+          onClick={refresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
+        </button>
+      </div>
       <p className="text-sm text-zinc-500 mb-6">{results.length} attempts shown (most recent 300) — click a row for the full breakdown</p>
+
+      {error && <div className="mb-5"><AdminErrorState message={error} onRetry={refresh} /></div>}
 
       <div className="border border-zinc-800 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
@@ -79,7 +87,7 @@ export default function AdminResultsPage() {
           </thead>
           <tbody className="divide-y divide-zinc-900">
             {isLoading ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">Loading...</td></tr>
+              <tr><td colSpan={6} className="p-0"><AdminPageLoading /></td></tr>
             ) : results.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">No attempts found</td></tr>
             ) : results.map((r) => (
