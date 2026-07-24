@@ -7,6 +7,8 @@ import { ArrowLeft, Trash2, Save } from 'lucide-react';
 import { computePeriodEnd } from '@/lib/billingCycle';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDeleteModal } from '../../ConfirmDeleteModal';
+import { useAdminData, invalidateAdminData } from '../../useAdminData';
+import { AdminPageLoading, AdminErrorState } from '../../AdminPageLoading';
 
 interface CustomLimits {
   maxQuizzes?: number;
@@ -44,26 +46,25 @@ export default function AdminCompanyDetailPage() {
   const companyId = params?.companyId as string;
   const { toast } = useToast();
 
+  const cacheKey = `admin-company-${companyId || 'unknown'}`;
+  const { data: fetchedCompany, isLoading, error: loadError, refresh, setData: setCachedCompany } = useAdminData<Company>(cacheKey, async () => {
+    if (!companyId) throw new Error('Missing company id');
+    const res = await fetch(`/api/admin/companies/${encodeURIComponent(companyId)}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Failed to load company (${res.status})`);
+    }
+    const json = await res.json();
+    return json.company;
+  });
+
   const [company, setCompany] = useState<Company | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const load = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/admin/companies/${encodeURIComponent(companyId)}`);
-      const data = await res.json();
-      if (res.ok) setCompany(data.company);
-      else setMessage({ type: 'error', text: data.error || 'Failed to load company' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => { if (companyId) load(); }, [companyId]);
+  useEffect(() => { if (fetchedCompany) setCompany(fetchedCompany); }, [fetchedCompany]);
 
   const update = (patch: Partial<Company>) => setCompany((prev) => prev ? { ...prev, ...patch } : prev);
   const updateLimits = (patch: Partial<CustomLimits>) =>
@@ -138,6 +139,9 @@ export default function AdminCompanyDetailPage() {
         return;
       }
       setCompany(data.company);
+      setCachedCompany(data.company);
+      invalidateAdminData('admin-companies');
+      invalidateAdminData('admin-overview');
       setMessage({ type: 'success', text: 'Saved successfully.' });
       toast({
         title: 'Saved',
@@ -155,6 +159,9 @@ export default function AdminCompanyDetailPage() {
     try {
       const res = await fetch(`/api/admin/companies/${encodeURIComponent(companyId)}`, { method: 'DELETE' });
       if (res.ok) {
+        invalidateAdminData(cacheKey);
+        invalidateAdminData('admin-companies');
+        invalidateAdminData('admin-overview');
         toast({
           title: 'Company deleted',
           description: `${company.name} was permanently removed.`,
@@ -172,14 +179,18 @@ export default function AdminCompanyDetailPage() {
   };
 
   if (isLoading) {
-    return <div className="p-8 text-zinc-500">Loading...</div>;
+    return <AdminPageLoading text="Loading company..." />;
   }
 
   if (!company) {
     return (
-      <div className="p-8">
-        <p className="text-red-400">{message?.text || 'Company not found.'}</p>
-        <Link href="/admin/companies" className="text-green-400 text-sm mt-2 inline-block">Back to companies</Link>
+      <div className="p-8 max-w-2xl mx-auto">
+        {loadError ? (
+          <AdminErrorState message={loadError} onRetry={refresh} />
+        ) : (
+          <p className="text-red-400">{message?.text || 'Company not found.'}</p>
+        )}
+        <Link href="/admin/companies" className="text-green-400 text-sm mt-3 inline-block">Back to companies</Link>
       </div>
     );
   }

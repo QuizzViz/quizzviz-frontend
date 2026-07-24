@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Trophy, CheckCircle2, XCircle } from 'lucide-react';
+import { useAdminData } from '../../useAdminData';
+import { AdminPageLoading, AdminErrorState } from '../../AdminPageLoading';
 
 interface Option { A: string; B: string; C: string; D: string; }
 
@@ -45,41 +46,34 @@ interface QuizInfo {
   quiz: QuizQuestion[];
 }
 
+interface AttemptPayload {
+  attempt: Attempt;
+  quiz: QuizInfo | null;
+  highest_score: number | null;
+}
+
 export default function AdminAttemptDetailPage() {
   const params = useParams();
   const id = params?.id as string;
-  const [attempt, setAttempt] = useState<Attempt | null>(null);
-  const [quiz, setQuiz] = useState<QuizInfo | null>(null);
-  const [highestScore, setHighestScore] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!id) return;
-    (async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch(`/api/admin/results/${encodeURIComponent(id)}`);
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || 'Failed to load attempt');
-          return;
-        }
-        setAttempt(data.attempt);
-        setQuiz(data.quiz);
-        setHighestScore(data.highest_score);
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [id]);
+  const { data, isLoading, error, refresh } = useAdminData<AttemptPayload>(`admin-result-${id || 'unknown'}`, async () => {
+    if (!id) throw new Error('Missing attempt id');
+    const res = await fetch(`/api/admin/results/${encodeURIComponent(id)}`);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to load attempt');
+    return { attempt: json.attempt, quiz: json.quiz, highest_score: json.highest_score };
+  });
 
-  if (isLoading) return <div className="p-8 text-zinc-500">Loading...</div>;
+  const attempt = data?.attempt;
+  const quiz = data?.quiz;
+  const highestScore = data?.highest_score ?? null;
+
+  if (isLoading) return <AdminPageLoading text="Loading attempt..." />;
   if (error || !attempt) {
     return (
-      <div className="p-8">
-        <p className="text-red-400">{error || 'Attempt not found.'}</p>
-        <Link href="/admin/results" className="text-green-400 text-sm mt-2 inline-block">Back to attempts</Link>
+      <div className="p-8 max-w-2xl mx-auto">
+        {error ? <AdminErrorState message={error} onRetry={refresh} /> : <p className="text-red-400">Attempt not found.</p>}
+        <Link href="/admin/results" className="text-green-400 text-sm mt-3 inline-block">Back to attempts</Link>
       </div>
     );
   }
