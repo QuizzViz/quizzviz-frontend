@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Building2, FileQuestion, Send, ClipboardCheck, ArrowRight, RefreshCw } from 'lucide-react';
+import { Building2, FileQuestion, Send, ClipboardCheck, ArrowRight } from 'lucide-react';
 import { useAdminData } from './useAdminData';
 import { AdminPageLoading, AdminErrorState } from './AdminPageLoading';
+import { AdminRefreshButton } from './AdminRefreshButton';
 
 interface OverviewPayload {
   totals: any;
@@ -11,7 +12,7 @@ interface OverviewPayload {
 }
 
 export default function AdminOverviewPage() {
-  const { data, isLoading, isRefreshing, error, refresh } = useAdminData<OverviewPayload>('admin-overview', async () => {
+  const { data, isLoading, isRefreshing, error, refresh, lastUpdated } = useAdminData<OverviewPayload>('admin-overview', async () => {
     const [analyticsRes, companiesRes] = await Promise.all([
       fetch('/api/admin/analytics'),
       fetch('/api/admin/companies'),
@@ -50,13 +51,7 @@ export default function AdminOverviewPage() {
     <div className="p-8 max-w-6xl mx-auto">
       <div className="flex items-start justify-between mb-1">
         <h1 className="text-2xl font-semibold text-white">Overview</h1>
-        <button
-          onClick={refresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
-        </button>
+        <AdminRefreshButton onClick={refresh} isRefreshing={isRefreshing} lastUpdated={lastUpdated} />
       </div>
       <p className="text-sm text-zinc-500 mb-8">Welcome to the QuizzViz internal admin panel.</p>
 

@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Gauge, RefreshCw } from 'lucide-react';
+import { Gauge } from 'lucide-react';
 import { useAdminData } from '../useAdminData';
 import { AdminPageLoading, AdminErrorState } from '../AdminPageLoading';
+import { AdminRefreshButton } from '../AdminRefreshButton';
 
 interface UsageRow {
   company_id: string;
@@ -46,7 +47,7 @@ function UsageBar({ used, limit, pct }: { used: number; limit: number; pct: numb
 }
 
 export default function AdminUsagePage() {
-  const { data, isLoading, isRefreshing, error, refresh } = useAdminData<UsageRow[]>('admin-usage', async () => {
+  const { data, isLoading, isRefreshing, error, refresh, lastUpdated } = useAdminData<UsageRow[]>('admin-usage', async () => {
     const res = await fetch('/api/admin/usage');
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -64,13 +65,7 @@ export default function AdminUsagePage() {
           <Gauge className="h-5 w-5 text-green-400" />
           <h1 className="text-2xl font-semibold text-white">Usage</h1>
         </div>
-        <button
-          onClick={refresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
-        </button>
+        <AdminRefreshButton onClick={refresh} isRefreshing={isRefreshing} lastUpdated={lastUpdated} />
       </div>
       <p className="text-sm text-zinc-500 mb-6">
         How much of each company&apos;s current billing period quota has been used — anchored to their actual subscription

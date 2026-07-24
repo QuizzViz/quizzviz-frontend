@@ -43,6 +43,14 @@ const clearStoredCache = (cacheKey: string) => {
   }
 };
 
+// Module-level (not per-component-instance) so the cache survives a
+// component unmounting and remounting — e.g. navigating away from a page
+// and back — instead of being thrown away every time. A per-instance
+// useRef only helps with re-renders of the *same* mounted instance, which
+// is why pages depending on this (via useUserRole) used to show a full
+// loading spinner on every single revisit even when nothing had changed.
+const globalCache = new Map<string, CacheEntry<any>>();
+
 export function useCachedData<T>({
   fetcher,
   dependencies,
@@ -54,19 +62,16 @@ export function useCachedData<T>({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Use ref to persist cache across re-renders
-  const cacheRef = useRef<Map<string, CacheEntry<T>>>(new Map());
-
   useEffect(() => {
     const now = Date.now();
-    let cached = cacheRef.current.get(cacheKey);
+    let cached = globalCache.get(cacheKey) as CacheEntry<T> | undefined;
 
     // Check localStorage cache first if persistent caching is enabled
     if (usePersistentCache && !cached) {
       const storedCache = getStoredCache<T>(cacheKey);
       if (storedCache) {
         cached = storedCache;
-        cacheRef.current.set(cacheKey, storedCache);
+        globalCache.set(cacheKey, storedCache);
       }
     }
 
@@ -89,7 +94,7 @@ export function useCachedData<T>({
               timestamp: Date.now(),
               dependencies: dependencies
             };
-            cacheRef.current.set(cacheKey, newEntry);
+            globalCache.set(cacheKey, newEntry);
             if (usePersistentCache) {
               setStoredCache(cacheKey, newEntry);
             }
@@ -114,7 +119,7 @@ export function useCachedData<T>({
           timestamp: now,
           dependencies: [...dependencies] // Store current dependencies
         };
-        cacheRef.current.set(cacheKey, newEntry);
+        globalCache.set(cacheKey, newEntry);
         if (usePersistentCache) {
           setStoredCache(cacheKey, newEntry);
         }
@@ -131,7 +136,7 @@ export function useCachedData<T>({
 
   // Function to manually clear cache
   const clearCache = () => {
-    cacheRef.current.delete(cacheKey);
+    globalCache.delete(cacheKey);
     if (usePersistentCache) {
       clearStoredCache(cacheKey);
     }
@@ -139,7 +144,7 @@ export function useCachedData<T>({
 
   // Function to force refresh
   const refresh = () => {
-    cacheRef.current.delete(cacheKey);
+    globalCache.delete(cacheKey);
     if (usePersistentCache) {
       clearStoredCache(cacheKey);
     }
@@ -152,7 +157,7 @@ export function useCachedData<T>({
           timestamp: now,
           dependencies: [...dependencies]
         };
-        cacheRef.current.set(cacheKey, newEntry);
+        globalCache.set(cacheKey, newEntry);
         if (usePersistentCache) {
           setStoredCache(cacheKey, newEntry);
         }

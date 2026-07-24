@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, ChevronRight, RefreshCw } from 'lucide-react';
+import { Search, ChevronRight } from 'lucide-react';
 import { useAdminData } from '../useAdminData';
 import { AdminPageLoading, AdminErrorState } from '../AdminPageLoading';
+import { AdminRefreshButton } from '../AdminRefreshButton';
+import { AdminPagination, ADMIN_PAGE_SIZE } from '../AdminPagination';
 
 interface Company {
   company_id: string;
@@ -38,7 +40,7 @@ function expiryStatus(expiry: string | null): { label: string; className: string
 }
 
 export default function AdminCompaniesPage() {
-  const { data, isLoading, isRefreshing, error, refresh } = useAdminData<Company[]>('admin-companies', async () => {
+  const { data, isLoading, isRefreshing, error, refresh, lastUpdated } = useAdminData<Company[]>('admin-companies', async () => {
     const res = await fetch('/api/admin/companies');
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -51,8 +53,10 @@ export default function AdminCompaniesPage() {
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Company[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
+    setPage(1);
     if (!search) { setSearchResults(null); return; }
     setIsSearching(true);
     const t = setTimeout(async () => {
@@ -68,6 +72,11 @@ export default function AdminCompaniesPage() {
   }, [search]);
 
   const companies = searchResults ?? data ?? [];
+  const pageCount = Math.max(1, Math.ceil(companies.length / ADMIN_PAGE_SIZE));
+  const pagedCompanies = useMemo(
+    () => companies.slice((page - 1) * ADMIN_PAGE_SIZE, page * ADMIN_PAGE_SIZE),
+    [companies, page]
+  );
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -76,13 +85,7 @@ export default function AdminCompaniesPage() {
           <h1 className="text-2xl font-semibold text-white">Companies & Billing</h1>
           <p className="text-sm text-zinc-500 mt-1">{companies.length} companies shown</p>
         </div>
-        <button
-          onClick={refresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
-        </button>
+        <AdminRefreshButton onClick={refresh} isRefreshing={isRefreshing} lastUpdated={lastUpdated} />
       </div>
 
       {error && <div className="mb-5"><AdminErrorState message={error} onRetry={refresh} /></div>}
@@ -114,7 +117,7 @@ export default function AdminCompaniesPage() {
               <tr><td colSpan={6} className="p-0"><AdminPageLoading /></td></tr>
             ) : companies.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">No companies found</td></tr>
-            ) : companies.map((c) => {
+            ) : pagedCompanies.map((c) => {
               const status = expiryStatus(c.plan_expiry_date);
               return (
                 <tr key={c.company_id} className="hover:bg-zinc-900/60">
@@ -144,6 +147,7 @@ export default function AdminCompaniesPage() {
           </tbody>
         </table>
       </div>
+      <AdminPagination page={page} pageCount={pageCount} onPageChange={setPage} />
     </div>
   );
 }

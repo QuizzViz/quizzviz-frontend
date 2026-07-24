@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCachedFetch } from "@/hooks/useCachedFetch";
 import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import Head from "next/head";
 import Link from "next/link";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { MoreVertical, Trash2, RefreshCw, Loader2 } from "lucide-react";
 import { useUserPlanContext } from "@/contexts/UserPlanContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { canPerformAction } from "@/utils/rolePermissions";
@@ -58,8 +58,10 @@ export default function MyQuizzesPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
+  const [quizzes, setQuizzes] = useState<QuizSummary[] | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshingQuizzes, setIsRefreshingQuizzes] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quizToDelete, setQuizToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -180,9 +182,21 @@ export default function MyQuizzesPage() {
   useEffect(() => {
     if (quizzesData) {
       setQuizzes(quizzesData);
+      setLastUpdated(new Date());
     }
     setFetchError(quizzesError ? quizzesError.message : null);
   }, [quizzesData, quizzesError]);
+
+  const handleRefreshQuizzes = useCallback(async () => {
+    if (!companyInfo?.id) return;
+    try {
+      setIsRefreshingQuizzes(true);
+      await queryClient.invalidateQueries({ queryKey: ['quizzes', companyInfo.id] });
+      setLastUpdated(new Date());
+    } finally {
+      setIsRefreshingQuizzes(false);
+    }
+  }, [queryClient, companyInfo?.id]);
 
   const handleDeleteQuiz = async (quizId: string) => {
     if (!quizId) return;
@@ -247,9 +261,35 @@ export default function MyQuizzesPage() {
             <div className="flex-1 flex flex-col">
               <DashboardHeader />
               <main className="flex-1 p-6">
-                <div className="mb-6">
-                  <h1 className="text-2xl font-semibold">My Quizzes</h1>
-                  <p className="text-white/70">Browse your generated quizzes and open any to view full details.</p>
+                <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+                  <div>
+                    <h1 className="text-2xl font-semibold">My Quizzes</h1>
+                    <p className="text-white/70">Browse your generated quizzes and open any to view full details.</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {lastUpdated && (
+                      <div className="text-sm text-gray-400">
+                        Last updated: {lastUpdated.toLocaleString()}
+                      </div>
+                    )}
+                    <Button
+                      onClick={handleRefreshQuizzes}
+                      className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl"
+                      disabled={isRefreshingQuizzes}
+                    >
+                      {isRefreshingQuizzes ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Refreshing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4" />
+                          <span>Refresh</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 {fetchError ? (
                   <div className="border border-red-500/40 text-red-300 rounded-lg p-4">
