@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend,
@@ -9,6 +8,7 @@ import {
 import { TrendingUp, TrendingDown, Building2, FileQuestion, Send, ClipboardCheck } from 'lucide-react';
 import { useAdminData } from '../useAdminData';
 import { AdminPageLoading, AdminErrorState } from '../AdminPageLoading';
+import { AdminRefreshButton } from '../AdminRefreshButton';
 
 interface MonthlyPoint {
   year: number;
@@ -57,7 +57,7 @@ interface AnalyticsPayload {
 }
 
 export default function AdminAnalyticsPage() {
-  const { data, isLoading, isRefreshing, error, refresh } = useAdminData<AnalyticsPayload>('admin-analytics', async () => {
+  const { data, isLoading, isRefreshing, error, refresh, lastUpdated } = useAdminData<AnalyticsPayload>('admin-analytics', async () => {
     const res = await fetch('/api/admin/analytics');
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -122,13 +122,7 @@ export default function AdminAnalyticsPage() {
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex items-start justify-between mb-1">
         <h1 className="text-2xl font-semibold text-white">Growth Analytics</h1>
-        <button
-          onClick={refresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
-        </button>
+        <AdminRefreshButton onClick={refresh} isRefreshing={isRefreshing} lastUpdated={lastUpdated} />
       </div>
       <p className="text-sm text-zinc-500 mb-6">QuizzViz platform growth — quiz generation, publishing, and attempts over time.</p>
 

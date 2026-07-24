@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Trash2, RefreshCw } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDeleteModal } from '../ConfirmDeleteModal';
 import { useAdminData } from '../useAdminData';
 import { AdminPageLoading, AdminErrorState } from '../AdminPageLoading';
+import { AdminRefreshButton } from '../AdminRefreshButton';
+import { AdminPagination, ADMIN_PAGE_SIZE } from '../AdminPagination';
 
 interface ResultRow {
   id: number;
@@ -22,7 +24,7 @@ interface ResultRow {
 
 export default function AdminResultsPage() {
   const { toast } = useToast();
-  const { data, isLoading, isRefreshing, error, refresh } = useAdminData<ResultRow[]>('admin-results', async () => {
+  const { data, isLoading, isRefreshing, error, refresh, lastUpdated } = useAdminData<ResultRow[]>('admin-results', async () => {
     const res = await fetch('/api/admin/results');
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -34,6 +36,12 @@ export default function AdminResultsPage() {
   const results = data || [];
   const [deleteTarget, setDeleteTarget] = useState<ResultRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil(results.length / ADMIN_PAGE_SIZE));
+  const pagedResults = useMemo(
+    () => results.slice((page - 1) * ADMIN_PAGE_SIZE, page * ADMIN_PAGE_SIZE),
+    [results, page]
+  );
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -61,13 +69,7 @@ export default function AdminResultsPage() {
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex items-start justify-between mb-1">
         <h1 className="text-2xl font-semibold text-white">Attempts / Results</h1>
-        <button
-          onClick={refresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
-        </button>
+        <AdminRefreshButton onClick={refresh} isRefreshing={isRefreshing} lastUpdated={lastUpdated} />
       </div>
       <p className="text-sm text-zinc-500 mb-6">{results.length} attempts shown (most recent 300) — click a row for the full breakdown</p>
 
@@ -90,7 +92,7 @@ export default function AdminResultsPage() {
               <tr><td colSpan={6} className="p-0"><AdminPageLoading /></td></tr>
             ) : results.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">No attempts found</td></tr>
-            ) : results.map((r) => (
+            ) : pagedResults.map((r) => (
               <tr key={r.id} className="hover:bg-zinc-900/60 relative">
                 <td className="px-4 py-3">
                   <Link href={`/admin/results/${r.id}`} className="absolute inset-0 z-10" aria-label={`View ${r.username}'s attempt`} />
@@ -111,6 +113,7 @@ export default function AdminResultsPage() {
           </tbody>
         </table>
       </div>
+      <AdminPagination page={page} pageCount={pageCount} onPageChange={setPage} />
 
       <ConfirmDeleteModal
         isOpen={!!deleteTarget}

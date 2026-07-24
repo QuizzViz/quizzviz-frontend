@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Trash2, Users, Plus, Search, RefreshCw } from 'lucide-react';
+import { Trash2, Users, Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDeleteModal } from '../ConfirmDeleteModal';
 import { useAdminData, invalidateAdminData } from '../useAdminData';
 import { AdminPageLoading, AdminErrorState } from '../AdminPageLoading';
+import { AdminRefreshButton } from '../AdminRefreshButton';
+import { AdminPagination, ADMIN_PAGE_SIZE } from '../AdminPagination';
 
 type StatusFilter = 'all' | 'draft' | 'published';
 
@@ -27,7 +29,7 @@ interface QuizRow {
 
 export default function AdminQuizzesPage() {
   const { toast } = useToast();
-  const { data, isLoading, isRefreshing, error, refresh } = useAdminData<QuizRow[]>('admin-quizzes', async () => {
+  const { data, isLoading, isRefreshing, error, refresh, lastUpdated } = useAdminData<QuizRow[]>('admin-quizzes', async () => {
     const res = await fetch('/api/admin/quizzes');
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -42,6 +44,9 @@ export default function AdminQuizzesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [statusFilter, search]);
 
   const counts = useMemo(() => ({
     all: quizzes.length,
@@ -65,6 +70,12 @@ export default function AdminQuizzesPage() {
     }
     return rows;
   }, [quizzes, statusFilter, search]);
+
+  const pageCount = Math.max(1, Math.ceil(visibleQuizzes.length / ADMIN_PAGE_SIZE));
+  const pagedQuizzes = useMemo(
+    () => visibleQuizzes.slice((page - 1) * ADMIN_PAGE_SIZE, page * ADMIN_PAGE_SIZE),
+    [visibleQuizzes, page]
+  );
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -100,13 +111,7 @@ export default function AdminQuizzesPage() {
       <div className="flex items-start justify-between mb-1">
         <h1 className="text-2xl font-semibold text-white">Quizzes</h1>
         <div className="flex items-center gap-2">
-          <button
-            onClick={refresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 rounded-lg px-3 py-2 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh
-          </button>
+          <AdminRefreshButton onClick={refresh} isRefreshing={isRefreshing} lastUpdated={lastUpdated} />
           <Link
             href="/admin/quizzes/new"
             className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white text-sm font-medium px-4 py-2"
@@ -146,18 +151,18 @@ export default function AdminQuizzesPage() {
         </div>
       </div>
 
-      <div className="border border-zinc-800 rounded-xl overflow-hidden">
+      <div className="border border-zinc-800 rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-zinc-900 text-zinc-400">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Role</th>
-              <th className="text-left px-4 py-3 font-medium">Company</th>
-              <th className="text-left px-4 py-3 font-medium">Type</th>
-              <th className="text-left px-4 py-3 font-medium">Experience</th>
-              <th className="text-left px-4 py-3 font-medium">Questions</th>
-              <th className="text-left px-4 py-3 font-medium">Attempts</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
-              <th className="text-left px-4 py-3 font-medium">Created</th>
+              <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Role</th>
+              <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Company</th>
+              <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Type</th>
+              <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Experience</th>
+              <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Questions</th>
+              <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Attempts</th>
+              <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Status</th>
+              <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Created</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -166,37 +171,37 @@ export default function AdminQuizzesPage() {
               <tr><td colSpan={9} className="p-0"><AdminPageLoading /></td></tr>
             ) : visibleQuizzes.length === 0 ? (
               <tr><td colSpan={9} className="px-4 py-8 text-center text-zinc-500">No quizzes found</td></tr>
-            ) : visibleQuizzes.map((q) => (
+            ) : pagedQuizzes.map((q) => (
               <tr key={q.quiz_id} className="hover:bg-zinc-900/60 relative">
-                <td className="px-4 py-3 text-white">
+                <td className="px-4 py-3 text-white whitespace-nowrap max-w-[200px] truncate">
                   <Link href={`/admin/quizzes/${encodeURIComponent(q.quiz_id)}`} className="absolute inset-0 z-10" aria-label={`View ${q.role} quiz`} />
-                  <span className="relative">{q.role}</span>
+                  <span className="relative" title={q.role}>{q.role}</span>
                 </td>
-                <td className="px-4 py-3 text-zinc-400">
-                  <div>{q.company_name || q.company_id}</div>
-                  {q.company_owner_email && <div className="text-xs text-zinc-600">{q.company_owner_email}</div>}
+                <td className="px-4 py-3 text-zinc-400 whitespace-nowrap max-w-[220px]">
+                  <div className="truncate" title={q.company_name || q.company_id}>{q.company_name || q.company_id}</div>
+                  {q.company_owner_email && <div className="text-xs text-zinc-600 truncate" title={q.company_owner_email}>{q.company_owner_email}</div>}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 whitespace-nowrap">
                   <span className={`text-xs rounded-full px-2 py-0.5 border ${q.quiz_type === 'non_technical' ? 'bg-purple-500/15 text-purple-300 border-purple-500/30' : 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'}`}>
                     {q.quiz_type === 'non_technical' ? 'Non-Technical' : 'Technical'}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-zinc-400">{q.experience}</td>
-                <td className="px-4 py-3 text-zinc-400">{q.num_questions}</td>
-                <td className="px-4 py-3 text-zinc-400">
+                <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">{q.experience}</td>
+                <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">{q.num_questions}</td>
+                <td className="px-4 py-3 text-zinc-400 whitespace-nowrap">
                   <span className="inline-flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" /> {q.attempt_count}
                   </span>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 whitespace-nowrap">
                   {q.quiz_public_link ? (
                     <span className="text-xs rounded-full px-2 py-0.5 bg-green-500/15 text-green-300 border border-green-500/30">Published</span>
                   ) : (
                     <span className="text-xs rounded-full px-2 py-0.5 bg-zinc-500/15 text-zinc-400 border border-zinc-500/30">Draft</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-zinc-500">{new Date(q.created_at).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-right relative z-20">
+                <td className="px-4 py-3 text-zinc-500 whitespace-nowrap">{new Date(q.created_at).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-right relative z-20 whitespace-nowrap">
                   <button onClick={() => setDeleteTarget(q)} className="text-zinc-500 hover:text-red-400">
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -206,6 +211,7 @@ export default function AdminQuizzesPage() {
           </tbody>
         </table>
       </div>
+      <AdminPagination page={page} pageCount={pageCount} onPageChange={setPage} />
 
       <ConfirmDeleteModal
         isOpen={!!deleteTarget}

@@ -20,7 +20,7 @@ interface QuizQuestion {
 
 interface UserAnswer {
   question_id: string;
-  answer: string;
+  user_answer: string;
   is_correct: boolean;
 }
 
@@ -128,7 +128,7 @@ export default function AdminAttemptDetailPage() {
       <div className="space-y-4">
         {questions.map((q, idx) => {
           const ans = answersByQuestionId.get(String(q.id));
-          const userAnswer = ans?.answer;
+          const userAnswer = ans?.user_answer;
           const isCorrect = ans?.is_correct ?? (userAnswer === q.correct_answer);
           return (
             <div key={q.id ?? idx} className="bg-zinc-950 border border-zinc-800 rounded-xl p-5">
