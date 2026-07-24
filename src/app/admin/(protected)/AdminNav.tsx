@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Building2, Users, BarChart3, FileQuestion, ClipboardList, LogOut, Gauge } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, BarChart3, FileQuestion, ClipboardList, LogOut, Gauge, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: '/admin/analytics', label: 'Growth Analytics', icon: BarChart3 },
   { href: '/admin/quizzes', label: 'Quizzes', icon: FileQuestion },
   { href: '/admin/results', label: 'Attempts / Results', icon: ClipboardList },
+  { href: '/admin/email', label: 'Email Customers', icon: Mail },
 ];
 
 export default function AdminNav() {
@@ -29,18 +30,18 @@ export default function AdminNav() {
   return (
     <aside className="w-64 flex-shrink-0 border-r border-zinc-800 bg-zinc-950 flex flex-col">
       <div className="px-5 py-5 border-b border-zinc-800">
-        <Link href="/admin" className="flex items-center gap-2 group">
-          <div className="relative h-8 w-8 flex-shrink-0">
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="relative h-10 w-10 flex-shrink-0">
             <Image
               src="/QuizzViz-logo.png"
               alt="QuizzViz Logo"
               fill
               className="object-contain"
               priority
-              sizes="2rem"
+              sizes="2.5rem"
             />
           </div>
-          <span className="text-base font-semibold text-white whitespace-nowrap">QuizzViz</span>
+          <span className="text-xl font-semibold text-white whitespace-nowrap">QuizzViz</span>
         </Link>
         <div className="text-xs text-zinc-500 mt-1">Internal admin panel</div>
       </div>

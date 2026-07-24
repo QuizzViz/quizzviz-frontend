@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminSession';
 import { getAdminDb } from '@/lib/adminDb';
+import { validateQuizPayload, buildQuizContent } from '@/lib/adminQuizValidation';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ quizId: string }> }) {
   if (!requireAdminSession(request)) {
@@ -57,5 +58,49 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Failed to fetch quiz' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ quizId: string }> }) {
+  if (!requireAdminSession(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const { quizId } = await params;
+
+  try {
+    const body = await request.json();
+    const validationError = validateQuizPayload(body);
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 });
+    }
+
+    const quizContent = buildQuizContent(body.questions);
+    const db = getAdminDb();
+    const result = await db.query(
+      `UPDATE generated_quizzes
+       SET company_id = $1, role = $2, experience = $3, quiz_type = $4,
+           theory_questions_percentage = $5, code_analysis_questions_percentage = $6,
+           num_questions = $7, quiz = $8
+       WHERE quiz_id = $9 AND is_deleted = false`,
+      [
+        body.company_id,
+        body.role,
+        body.experience,
+        body.quiz_type,
+        Number(body.theory_questions_percentage) || 0,
+        Number(body.code_analysis_questions_percentage) || 0,
+        quizContent.length,
+        JSON.stringify(quizContent),
+        quizId,
+      ]
+    );
+
+    if (result.rowCount === 0) {
+      return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, quiz_id: quizId });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Failed to save quiz' }, { status: 500 });
   }
 }
