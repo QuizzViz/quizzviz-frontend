@@ -268,6 +268,139 @@ const matchesAttempt = (attempt: number, attemptKey: AttemptFilterKey) => {
   return attempt === Number(attemptKey);
 };
 
+// Candidate Details table with the selection checkbox rendered as its own
+// column OUTSIDE the bordered data table (a separate mini "table" of just
+// checkboxes) instead of as the data table's first column — avoids the
+// empty/unlabeled header cell that column used to need, and keeps every
+// data column's header lined up exactly with its own values. The two stay
+// vertically in sync via a scroll-position mirror between their scroll
+// containers, since they're each independently scrollable.
+function CandidateDetailsTable({
+  candidates,
+  selectedUsers,
+  toggleUserSelection,
+  companyId,
+  hasActiveFilter,
+}: {
+  candidates: QuizResult[];
+  selectedUsers: Record<string, boolean>;
+  toggleUserSelection: (key: string) => void;
+  companyId: string;
+  hasActiveFilter: boolean;
+}) {
+  const checkboxScrollRef = useRef<HTMLDivElement>(null);
+  const dataScrollRef = useRef<HTMLDivElement>(null);
+  const isSyncingRef = useRef(false);
+
+  const syncScroll = (from: "checkbox" | "data") => (e: React.UIEvent<HTMLDivElement>) => {
+    if (isSyncingRef.current) {
+      isSyncingRef.current = false;
+      return;
+    }
+    const target = from === "checkbox" ? dataScrollRef.current : checkboxScrollRef.current;
+    if (target) {
+      isSyncingRef.current = true;
+      target.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
+
+  const rowKey = (c: QuizResult) => (c.id != null ? String(c.id) : `${c.quiz_id}|${c.user_email}|${c.attempt}`);
+  const sorted = [...candidates].sort((a, b) => b.result.score - a.result.score);
+
+  return (
+    <div className="flex items-start gap-2">
+      {/* Checkbox gutter — outside the data table's own border/box */}
+      <div
+        ref={checkboxScrollRef}
+        onScroll={syncScroll("checkbox")}
+        className="shrink-0 max-h-[420px] overflow-y-auto overflow-x-hidden"
+      >
+        <table className="text-sm">
+          <thead className="sticky top-0 bg-zinc-900 z-10">
+            <tr><th className="h-12 w-10" /></tr>
+          </thead>
+          <tbody>
+            {sorted.map((c) => (
+              <tr key={rowKey(c)} className="border-b border-transparent">
+                <td className="p-4 align-middle">
+                  <input
+                    type="checkbox"
+                    checked={!!selectedUsers[rowKey(c)]}
+                    onChange={() => toggleUserSelection(rowKey(c))}
+                    className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Data table — Username/Email/Score/Attempt/Date only */}
+      <div
+        ref={dataScrollRef}
+        onScroll={syncScroll("data")}
+        className="flex-1 border border-zinc-800 rounded-xl overflow-hidden max-h-[420px] overflow-y-auto"
+      >
+        <Table>
+          <TableHeader className="sticky top-0 bg-zinc-900 z-10">
+            <TableRow>
+              <TableHead>Username</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead>Score</TableHead>
+              <TableHead>Attempt</TableHead>
+              <TableHead className="hidden sm:table-cell">Date</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-12 text-gray-500">
+                  {hasActiveFilter ? "No candidates match your filters" : "No results yet for this quiz"}
+                </TableCell>
+              </TableRow>
+            ) : (
+              sorted.map((c) => {
+                const key = rowKey(c);
+                return (
+                  <TableRow key={key} className="hover:bg-zinc-900/60 cursor-pointer relative">
+                    <Link
+                      href={`/${companyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 z-20"
+                      aria-label={`View ${c.username}'s analytics`}
+                    />
+                    <TableCell className="font-medium relative z-10">{c.username}</TableCell>
+                    <TableCell className="hidden md:table-cell truncate max-w-xs relative z-10">{c.user_email}</TableCell>
+                    <TableCell className="relative z-10">
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                          c.result.score >= 90
+                            ? "bg-green-600 text-white"
+                            : c.result.score >= 70
+                            ? "bg-cyan-600 text-white"
+                            : c.result.score >= 50
+                            ? "bg-yellow-500 text-black"
+                            : "bg-red-600 text-white"
+                        }`}
+                      >
+                        {c.result.score.toFixed(1)}%
+                      </span>
+                    </TableCell>
+                    <TableCell className="relative z-10">{c.attempt}</TableCell>
+                    <TableCell className="hidden sm:table-cell relative z-10">{formatDate(c.created_at)}</TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 // Helper component for disabled buttons with permission tooltip
 const DisabledButtonWithTooltip = ({ 
   children, 
@@ -1008,80 +1141,13 @@ export default function ResultsDashboard() {
                                   </div>
                                 </div>
 
-                                <div className="border border-zinc-800 rounded-xl overflow-hidden max-h-[420px] overflow-y-auto">
-                                  <Table>
-                                    <TableHeader className="sticky top-0 bg-zinc-900 z-10">
-                                      <TableRow>
-                                        <TableHead className="w-10" />
-                                        <TableHead>Username</TableHead>
-                                        <TableHead className="hidden md:table-cell">Email</TableHead>
-                                        <TableHead>Score</TableHead>
-                                        <TableHead>Attempt</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Date</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {filteredCandidates.length === 0 ? (
-                                        <TableRow>
-                                          <TableCell colSpan={6} className="text-center py-12 text-gray-500 relative z-10">
-                                            {hasActiveFilter
-                                              ? "No candidates match your filters"
-                                              : "No results yet for this quiz"}
-                                          </TableCell>
-                                        </TableRow>
-                                      ) : (
-                                        filteredCandidates
-                                          .sort((a, b) => b.result.score - a.result.score)
-                                          .map((c) => {
-                                            // Keyed per-attempt (row id) — falls back to a composite
-                                            // key only if an older cached response lacks `id`.
-                                            const key = c.id != null ? String(c.id) : `${c.quiz_id}|${c.user_email}|${c.attempt}`;
-                                            return (
-                                              <TableRow
-                                                key={key}
-                                                className="hover:bg-zinc-900/60 cursor-pointer relative"
-                                              >
-                                                <Link href={`/${finalCompanyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer" className="absolute inset-0 z-20" aria-label={`View ${c.username}'s analytics`}/>
-                                                <TableCell className="relative z-30">
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={!!selectedUsers[key]}
-                                                    onChange={() => toggleUserSelection(key)}
-                                                    className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800 relative z-40"
-                                                  />
-                                                </TableCell>
-                                                <TableCell className="font-medium relative z-10">{c.username}</TableCell>
-                                                <TableCell className="hidden md:table-cell truncate max-w-xs relative z-10">
-                                                  {c.user_email}
-                                                </TableCell>
-                                                <TableCell>
-                                                  <span
-                                                    className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                                                      c.result.score >= 90
-                                                        ? "bg-green-600 text-white"
-                                                        : c.result.score >= 70
-                                                        ? "bg-cyan-600 text-white"
-                                                        : c.result.score >= 50
-                                                        ? "bg-yellow-500 text-black"
-                                                        : "bg-red-600 text-white"
-                                                    }`}
-                                                  >
-                                                    {c.result.score.toFixed(1)}%
-                                                  </span>
-                                                </TableCell>
-                                                <TableCell className="relative z-10">{c.attempt}</TableCell>
-                                                <TableCell className="hidden sm:table-cell relative z-10">
-                                                  {formatDate(c.created_at)}
-                                                </TableCell>
-                                              </TableRow>
-                                            );
-                                          })
-                                      )}
-                                    </TableBody>
-                                  </Table>
-                                </div>
+                                <CandidateDetailsTable
+                                  candidates={filteredCandidates}
+                                  selectedUsers={selectedUsers}
+                                  toggleUserSelection={toggleUserSelection}
+                                  companyId={finalCompanyId}
+                                  hasActiveFilter={hasActiveFilter}
+                                />
                               </div>
                             </CardContent>
                           </Card>

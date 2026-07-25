@@ -7,13 +7,9 @@ import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import Head from "next/head";
 import Link from "next/link";
-import { MoreVertical, Trash2, RefreshCw, Loader2, Settings, RotateCw } from "lucide-react";
+import { MoreVertical, Trash2, RefreshCw, Loader2, RotateCw } from "lucide-react";
 import { useUserPlanContext } from "@/contexts/UserPlanContext";
-import { useUserRole } from "@/hooks/useUserRole";
-import { canPerformAction } from "@/utils/rolePermissions";
 import { isQuizExpired } from "@/utils/timezoneUtils";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
@@ -36,14 +32,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { useQuizExpirationChecker } from "@/components/QuizExpirationChecker";
@@ -89,12 +77,6 @@ export default function MyQuizzesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quizToDelete, setQuizToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [editSettingsQuiz, setEditSettingsQuiz] = useState<QuizSummary | null>(null);
-  const [editMaxAttempts, setEditMaxAttempts] = useState('1');
-  const [editExpiration, setEditExpiration] = useState('');
-  const [editQuizKey, setEditQuizKey] = useState('');
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [settingsError, setSettingsError] = useState<string | null>(null);
   const [companyInfo, setCompanyInfo] = useState<{id: string; name: string; owner_email?: string; } | null>(null);
   const queryClient = useQueryClient();
   
@@ -107,8 +89,6 @@ export default function MyQuizzesPage() {
   const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') as string | null : null;
   const companyId = metadataCompanyId || localStorageCompanyId || '';
   
-  // Now get user role after companyId is defined
-  const { userRole, loading: roleLoading } = useUserRole(companyId);
   const companyName = user?.unsafeMetadata?.companyName as string || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
   
   // Set up automatic expiration checking (every 5 minutes)
@@ -279,59 +259,6 @@ export default function MyQuizzesPage() {
     }
   };
 
-  // Matches the format PublishModal already uses for its expirationDate field
-  const toDateTimeLocalValue = (iso: string | null | undefined) => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return '';
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  };
-
-  const openEditSettings = (q: QuizSummary) => {
-    setSettingsError(null);
-    setEditSettingsQuiz(q);
-    setEditMaxAttempts(String(q.max_attempts ?? 1));
-    setEditExpiration(toDateTimeLocalValue(q.quiz_expiration_time));
-    setEditQuizKey(q.quiz_key || '');
-  };
-
-  const handleSaveSettings = async () => {
-    if (!editSettingsQuiz || !companyInfo?.id) return;
-    const maxAttemptsNum = Number(editMaxAttempts);
-    if (!Number.isFinite(maxAttemptsNum) || maxAttemptsNum < 1) {
-      setSettingsError('Max attempts must be a whole number of 1 or more.');
-      return;
-    }
-    if (!editQuizKey.trim()) {
-      setSettingsError('Quiz key cannot be empty.');
-      return;
-    }
-    try {
-      setIsSavingSettings(true);
-      setSettingsError(null);
-      const response = await fetch(`/api/publish/${encodeURIComponent(companyInfo.id)}/${encodeURIComponent(editSettingsQuiz.quiz_id)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          max_attempts: Math.floor(maxAttemptsNum),
-          quiz_expiration_time: editExpiration ? new Date(editExpiration).toISOString() : null,
-          quiz_key: editQuizKey.trim(),
-        }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.details || errorData.error || 'Failed to save settings');
-      }
-      await queryClient.invalidateQueries({ queryKey: ['publishedQuizzes', companyInfo.id] });
-      setEditSettingsQuiz(null);
-    } catch (error) {
-      setSettingsError(error instanceof Error ? error.message : 'Failed to save settings');
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
   // Show loading state within the page content
   if (isLoading || !isLoaded || isPlanLoading) {
     return (
@@ -415,7 +342,6 @@ export default function MyQuizzesPage() {
                     {mergedQuizzes.map((q) => {
                       const isPublished = Boolean(q.is_publish || q.isPublished);
                       const isExpired = isPublished && Boolean(q.quiz_expiration_time) && isQuizExpired(q.quiz_expiration_time as string);
-                      const canEditSettings = canPerformAction(userRole, 'edit_publish_settings');
                       return (
                       <Link
                         key={q.quiz_id}
@@ -441,20 +367,6 @@ export default function MyQuizzesPage() {
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
                                 <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience} yrs</Badge>
-                                {isPublished && !isExpired && canEditSettings && (
-                                  <button
-                                    type="button"
-                                    title="Edit publish settings"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      openEditSettings(q);
-                                    }}
-                                    className="relative z-10 p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                                  >
-                                    <Settings className="h-4 w-4" />
-                                  </button>
-                                )}
                               </div>
                             </div>
                             <CardDescription className="text-white/70">
@@ -557,72 +469,6 @@ export default function MyQuizzesPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
-        {/* Edit Publish Settings Dialog */}
-        <Dialog open={!!editSettingsQuiz} onOpenChange={(open) => !open && setEditSettingsQuiz(null)}>
-          <DialogContent className="bg-[#161c2a] border border-white/10 text-white">
-            <DialogHeader>
-              <DialogTitle className="text-white">Edit Quiz Settings</DialogTitle>
-              <DialogDescription className="text-white/70">
-                {editSettingsQuiz?.role} — change how this published quiz behaves for candidates.
-              </DialogDescription>
-            </DialogHeader>
-            {settingsError && (
-              <div className="border border-red-500/40 text-red-300 rounded-lg p-3 text-sm">
-                {settingsError}
-              </div>
-            )}
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="editMaxAttempts" className="text-white/80">Max Attempts</Label>
-                <Input
-                  id="editMaxAttempts"
-                  type="number"
-                  min={1}
-                  value={editMaxAttempts}
-                  onChange={(e) => setEditMaxAttempts(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="editExpiration" className="text-white/80">Expiration Date</Label>
-                <Input
-                  id="editExpiration"
-                  type="datetime-local"
-                  value={editExpiration}
-                  onChange={(e) => setEditExpiration(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white [&::-webkit-calendar-picker-indicator]:invert"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="editQuizKey" className="text-white/80">Quiz Key</Label>
-                <Input
-                  id="editQuizKey"
-                  value={editQuizKey}
-                  onChange={(e) => setEditQuizKey(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setEditSettingsQuiz(null)}
-                disabled={isSavingSettings}
-                className="bg-white/10 text-white hover:bg-white/20 border-white/10"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveSettings}
-                disabled={isSavingSettings}
-                className="bg-gradient-to-r from-green-500 to-blue-500 hover:brightness-110"
-              >
-                {isSavingSettings ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </DashboardAccess>
   );

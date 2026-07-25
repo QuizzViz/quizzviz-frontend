@@ -1,9 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { QuizSummary, PublishSettings } from "./types";
-import { Share2, EyeOff } from "lucide-react";
+import { Share2, EyeOff, Pencil } from "lucide-react";
 import { useState } from "react";
 import { ShareQuizModal } from "./ShareQuizModal";
+import { EditQuizDetailsModal } from "./EditQuizDetailsModal";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useUser } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +39,7 @@ export function QuizHeader({
   const { user } = useUser();
   const { toast } = useToast();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const { companyInfo, isLoading: isCompanyLoading } = useCompanyInfo();
@@ -168,6 +170,17 @@ export function QuizHeader({
               Share Quiz
             </Button>
           )}
+          {isPublished && !roleLoading && canPerformAction(userRole, 'edit_publish_settings') && (
+            <Button
+              variant="outline"
+              className="border-blue-500/40 text-blue-300 hover:bg-blue-500/10 hover:text-blue-200 pointer-events-auto transition-all duration-150 active:scale-95"
+              onClick={() => setIsEditDetailsModalOpen(true)}
+              disabled={disableActions}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Details
+            </Button>
+          )}
           {!roleLoading && canPerformAction(userRole, 'delete_quiz', { isQuizOwner: quiz.user_id === user?.id }) && (
             <Button
               variant="destructive"
@@ -199,6 +212,19 @@ export function QuizHeader({
         variant="destructive"
         isConfirming={isUnpublishing}
       />
+
+      {/* Edit Quiz Details Modal - secret key, expiration, max attempts */}
+      {isEditDetailsModalOpen && (
+        <EditQuizDetailsModal
+          isOpen={isEditDetailsModalOpen}
+          onClose={() => setIsEditDetailsModalOpen(false)}
+          quizId={quizId}
+          companyId={companyInfo?.id}
+          initialSecretKey={settings?.secretKey || ''}
+          initialMaxAttempts={settings?.maxAttempts || 1}
+          initialExpirationDate={settings?.expirationDate || ''}
+        />
+      )}
     </header>
   );
 }
