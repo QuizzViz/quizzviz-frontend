@@ -268,13 +268,15 @@ const matchesAttempt = (attempt: number, attemptKey: AttemptFilterKey) => {
   return attempt === Number(attemptKey);
 };
 
-// Candidate Details table. The selection checkbox is the table's own first
-// column (not a second table synced by scroll position — two independently
-// scrolling tables can never be guaranteed to stay pixel-aligned row-for-row,
-// which is exactly what caused the checkbox to drift away from its row).
-// The checkbox column is styled to blend into the page background rather
-// than the header's zinc-900 fill, so it still reads as sitting outside the
-// bordered card while remaining, structurally, one single aligned table.
+// Candidate Details table. The checkbox sits in its own gutter to the left,
+// outside the data table's bordered card — but both the gutter and the card
+// live inside ONE shared scroll container instead of two independently
+// scrolling elements kept in sync by JS. A single shared scroll container
+// means they move in lockstep by construction (there is nothing to
+// desync); the previous two-scrollers-synced-by-scrollTop approach could
+// never guarantee that. Both use the exact same TableRow/TableCell
+// primitives so per-row heights match pixel-for-pixel between the gutter
+// and the card.
 function CandidateDetailsTable({
   candidates,
   selectedUsers,
@@ -292,38 +294,21 @@ function CandidateDetailsTable({
   const sorted = [...candidates].sort((a, b) => b.result.score - a.result.score);
 
   return (
-    <div className="border border-zinc-800 rounded-xl overflow-hidden max-h-[420px] overflow-y-auto">
-      <Table>
-        <TableHeader className="sticky top-0 bg-zinc-900 z-10">
-          <TableRow>
-            <TableHead className="w-12 bg-transparent" />
-            <TableHead>Username</TableHead>
-            <TableHead className="hidden md:table-cell">Email</TableHead>
-            <TableHead>Score</TableHead>
-            <TableHead>Attempt</TableHead>
-            <TableHead className="hidden sm:table-cell">Date</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sorted.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center py-12 text-gray-500">
-                {hasActiveFilter ? "No candidates match your filters" : "No results yet for this quiz"}
-              </TableCell>
+    <div className="flex items-start gap-3 max-h-[420px] overflow-y-auto rounded-xl">
+      {/* Checkbox gutter — outside the data table's own border/box */}
+      {sorted.length > 0 && (
+        <table className="shrink-0 text-sm border-separate border-spacing-0">
+          <TableHeader className="sticky top-0 bg-zinc-950 z-10">
+            <TableRow className="hover:bg-transparent border-b-0">
+              <TableHead className="w-10 bg-transparent border-b-0" />
             </TableRow>
-          ) : (
-            sorted.map((c) => {
+          </TableHeader>
+          <TableBody>
+            {sorted.map((c) => {
               const key = rowKey(c);
               return (
-                <TableRow key={key} className="hover:bg-zinc-900/60 cursor-pointer relative">
-                  <Link
-                    href={`/${companyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="absolute inset-0 z-20"
-                    aria-label={`View ${c.username}'s analytics`}
-                  />
-                  <TableCell className="relative z-30 bg-transparent" onClick={(e) => e.preventDefault()}>
+                <TableRow key={key} className="hover:bg-transparent border-b-0">
+                  <TableCell className="bg-transparent">
                     <input
                       type="checkbox"
                       checked={!!selectedUsers[key]}
@@ -331,31 +316,70 @@ function CandidateDetailsTable({
                       className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800 cursor-pointer"
                     />
                   </TableCell>
-                  <TableCell className="font-medium relative z-10">{c.username}</TableCell>
-                  <TableCell className="hidden md:table-cell truncate max-w-xs relative z-10">{c.user_email}</TableCell>
-                  <TableCell className="relative z-10">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                        c.result.score >= 90
-                          ? "bg-green-600 text-white"
-                          : c.result.score >= 70
-                          ? "bg-cyan-600 text-white"
-                          : c.result.score >= 50
-                          ? "bg-yellow-500 text-black"
-                          : "bg-red-600 text-white"
-                      }`}
-                    >
-                      {c.result.score.toFixed(1)}%
-                    </span>
-                  </TableCell>
-                  <TableCell className="relative z-10">{c.attempt}</TableCell>
-                  <TableCell className="hidden sm:table-cell relative z-10">{formatDate(c.created_at)}</TableCell>
                 </TableRow>
               );
-            })
-          )}
-        </TableBody>
-      </Table>
+            })}
+          </TableBody>
+        </table>
+      )}
+
+      {/* Data table — Username/Email/Score/Attempt/Date only */}
+      <div className="flex-1 border border-zinc-800 rounded-xl overflow-hidden">
+        <table className="w-full text-sm border-separate border-spacing-0">
+          <TableHeader className="sticky top-0 bg-zinc-900 z-10">
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Username</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
+              <TableHead>Score</TableHead>
+              <TableHead>Attempt</TableHead>
+              <TableHead className="hidden sm:table-cell">Date</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={5} className="text-center py-12 text-gray-500">
+                  {hasActiveFilter ? "No candidates match your filters" : "No results yet for this quiz"}
+                </TableCell>
+              </TableRow>
+            ) : (
+              sorted.map((c) => {
+                const key = rowKey(c);
+                return (
+                  <TableRow key={key} className="hover:bg-zinc-900/60 cursor-pointer relative">
+                    <Link
+                      href={`/${companyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 z-20"
+                      aria-label={`View ${c.username}'s analytics`}
+                    />
+                    <TableCell className="font-medium relative z-10">{c.username}</TableCell>
+                    <TableCell className="hidden md:table-cell truncate max-w-xs relative z-10">{c.user_email}</TableCell>
+                    <TableCell className="relative z-10">
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                          c.result.score >= 90
+                            ? "bg-green-600 text-white"
+                            : c.result.score >= 70
+                            ? "bg-cyan-600 text-white"
+                            : c.result.score >= 50
+                            ? "bg-yellow-500 text-black"
+                            : "bg-red-600 text-white"
+                        }`}
+                      >
+                        {c.result.score.toFixed(1)}%
+                      </span>
+                    </TableCell>
+                    <TableCell className="relative z-10">{c.attempt}</TableCell>
+                    <TableCell className="hidden sm:table-cell relative z-10">{formatDate(c.created_at)}</TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </table>
+      </div>
     </div>
   );
 }
