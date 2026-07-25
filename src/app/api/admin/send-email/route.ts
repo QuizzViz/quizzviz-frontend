@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/adminSession';
 
-const SUPPORT_SENDER_EMAIL = 'support@quizzviz.com';
-// The mail microservice validates email_type against a fixed enum. 'contact',
-// 'feedback', and 'report_bug' are the only values proven to work elsewhere
-// in this app (src/app/api/send_email/route.ts, dashboard feedback/report-bug
-// forms) — 'admin_notice' isn't in that enum and gets rejected with a 422.
-const EMAIL_TYPE = 'contact';
-
 export async function POST(request: NextRequest) {
   if (!requireAdminSession(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -26,15 +19,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SEND_EMAILS_SERVICE_URL}/send-email`, {
+    // /send-admin-message is a dedicated endpoint on the mail service for
+    // outbound admin-to-customer messages — plain QuizzViz-branded email
+    // (logo + wordmark, message, footer). It's distinct from /send-email,
+    // which is for inbound contact/feedback/bug-report notifications TO the
+    // QuizzViz team and renders a "New Contact Message" / From-To-Date
+    // wrapper that isn't appropriate for a message going the other direction.
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SEND_EMAILS_SERVICE_URL}/send-admin-message`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({
-        sender_email: SUPPORT_SENDER_EMAIL,
         recipient_email: recipient_email.trim(),
         subject: subject.trim().substring(0, 200),
         message: message.trim().substring(0, 10000),
-        email_type: EMAIL_TYPE,
       }),
     });
 
