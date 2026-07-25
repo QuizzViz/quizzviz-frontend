@@ -4,12 +4,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Building2, BarChart3, FileQuestion, ClipboardList, LogOut, Gauge, Mail } from 'lucide-react';
+import { LayoutDashboard, Building2, BarChart3, FileQuestion, ClipboardList, LogOut, Gauge, Mail, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard },
   { href: '/admin/companies', label: 'Companies & Billing', icon: Building2 },
+  { href: '/admin/teams', label: 'Teams', icon: Users },
   { href: '/admin/usage', label: 'Usage', icon: Gauge },
   { href: '/admin/analytics', label: 'Growth Analytics', icon: BarChart3 },
   { href: '/admin/quizzes', label: 'Quizzes', icon: FileQuestion },
