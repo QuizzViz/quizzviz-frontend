@@ -65,7 +65,6 @@ import {
 } from "@/components/ui/table";
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
-import Link from "next/link";
 
 type QuizResult = {
   id?: number;
@@ -346,17 +345,22 @@ function CandidateDetailsTable({
               sorted.map((c) => {
                 const key = rowKey(c);
                 return (
-                  <TableRow key={key} className="hover:bg-zinc-900/60 cursor-pointer relative">
-                    <Link
-                      href={`/${companyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="absolute inset-0 z-20"
-                      aria-label={`View ${c.username}'s analytics`}
-                    />
-                    <TableCell className="font-medium relative z-10">{c.username}</TableCell>
-                    <TableCell className="hidden md:table-cell truncate max-w-xs relative z-10">{c.user_email}</TableCell>
-                    <TableCell className="relative z-10">
+                  <TableRow
+                    key={key}
+                    onClick={() =>
+                      window.open(
+                        `/${companyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`,
+                        "_blank",
+                        "noopener,noreferrer"
+                      )
+                    }
+                    role="link"
+                    aria-label={`View ${c.username}'s analytics`}
+                    className="hover:bg-zinc-900/60 cursor-pointer"
+                  >
+                    <TableCell className="font-medium">{c.username}</TableCell>
+                    <TableCell className="hidden md:table-cell truncate max-w-xs">{c.user_email}</TableCell>
+                    <TableCell>
                       <span
                         className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
                           c.result.score >= 90
@@ -371,8 +375,8 @@ function CandidateDetailsTable({
                         {c.result.score.toFixed(1)}%
                       </span>
                     </TableCell>
-                    <TableCell className="relative z-10">{c.attempt}</TableCell>
-                    <TableCell className="hidden sm:table-cell relative z-10">{formatDate(c.created_at)}</TableCell>
+                    <TableCell>{c.attempt}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{formatDate(c.created_at)}</TableCell>
                   </TableRow>
                 );
               })
