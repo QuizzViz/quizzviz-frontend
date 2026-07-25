@@ -108,9 +108,21 @@ const formatDate = (dateString: string) =>
     day: "numeric",
   });
 
+// The quiz-taking form's "Full Name" field is plain text with no format
+// enforcement — a candidate can (and sometimes does) type their email
+// address into it. When that happens, showing the raw duplicate in the
+// Username column reads like a data/column-mapping bug even though it's
+// exactly what was submitted, so display a clear placeholder instead
+// (here and in the exports, which pull from the same field).
+const looksLikeEmail = (value: string) => /\S+@\S+\.\S+/.test(value.trim());
+const getDisplayName = (c: QuizResult) => {
+  const name = c.username?.trim();
+  return name && !looksLikeEmail(name) ? name : null;
+};
+
 const prepareExportData = (data: QuizResult[]) =>
   data.map((q) => ({
-    Username: q.username,
+    Username: getDisplayName(q) ?? "Name not provided",
     Email: q.user_email,
     Score: q.result.score,
     "Total Questions": q.result.total_questions ?? q.total_questions ?? 0,
@@ -755,7 +767,7 @@ export default function ResultsDashboard() {
                                                     key={i}
                                                     className="flex justify-between text-sm bg-zinc-800/60 p-2 rounded"
                                                   >
-                                                    <span className="truncate max-w-[140px]">{c.username}</span>
+                                                    <span className="truncate max-w-[140px]">{getDisplayName(c) ?? "Name not provided"}</span>
                                                     <span className="font-bold text-purple-300">
                                                       {c.result.score.toFixed(1)}%
                                                     </span>
@@ -985,7 +997,7 @@ export default function ResultsDashboard() {
                                               >
                                                 <Link href={`/${finalCompanyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`}
                                                 target="_blank"
-                                                rel="noopener noreferrer" className="absolute inset-0 z-20" aria-label={`View ${c.username}'s analytics`}/>
+                                                rel="noopener noreferrer" className="absolute inset-0 z-20" aria-label={`View ${getDisplayName(c) ?? c.user_email}'s analytics`}/>
                                                 <TableCell className="relative z-30">
                                                   <input
                                                     type="checkbox"
@@ -994,7 +1006,9 @@ export default function ResultsDashboard() {
                                                     className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800 relative z-40"
                                                   />
                                                 </TableCell>
-                                                <TableCell className="font-medium relative z-10">{c.username}</TableCell>
+                                                <TableCell className="font-medium relative z-10">
+                                                  {getDisplayName(c) ?? <span className="italic text-zinc-500">Name not provided</span>}
+                                                </TableCell>
                                                 <TableCell className="hidden md:table-cell truncate max-w-xs relative z-10">
                                                   {c.user_email}
                                                 </TableCell>

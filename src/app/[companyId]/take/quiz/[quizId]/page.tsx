@@ -67,6 +67,12 @@ type FormData = {
   quizKey: string;
 };
 
+// Guards against candidates typing their email into the "Full Name" field
+// (a plain text input with no format enforcement) — without this, analytics
+// ends up with the same email duplicated in both the Username and Email
+// columns, which reads as a data bug even though it's just what was typed.
+const EMAIL_LIKE_PATTERN = /\S+@\S+\.\S+/;
+
 function CameraPermissionModal({ onGranted, onDismiss }: { 
   onGranted: () => void; 
   onDismiss: () => void; 
@@ -335,6 +341,7 @@ export default function QuizPage({ params }: PageProps) {
   const [quizStarted, setQuizStarted] = useState<boolean>(false);
   const [verifying, setVerifying] = useState<boolean>(false);
   const [verificationError, setVerificationError] = useState<string>('');
+  const [nameError, setNameError] = useState<string>('');
   const [warnings, setWarnings] = useState<number>(0);
   const [showWarning, setShowWarning] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -412,6 +419,7 @@ export default function QuizPage({ params }: PageProps) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'name' && nameError) setNameError('');
   };
 
   const checkUserAttempts = useCallback(async (showToast = true): Promise<boolean> => {
@@ -997,6 +1005,11 @@ const topicPerformance = calculateTopicWisePerformance();
     });
     return;
   }
+  if (EMAIL_LIKE_PATTERN.test(formData.name.trim())) {
+    setNameError('That looks like an email address — please enter your full name instead.');
+    return;
+  }
+  setNameError('');
   await verifyQuizKey();
 };
 
@@ -1355,8 +1368,15 @@ const beginQuiz = useCallback(async () => {
                   <Input
                     id="name" name="name" value={formData.name} onChange={handleInputChange}
                     placeholder="Enter your Full Name" required
-                    className="h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                    className={`h-12 bg-white/5 border-white/10 text-white placeholder-gray-400/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 ${nameError ? 'border-red-500/50' : ''}`}
                   />
+                  {nameError && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mt-2">
+                      <p className="text-sm text-red-400 flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4" /> {nameError}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
