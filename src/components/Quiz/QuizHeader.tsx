@@ -172,8 +172,7 @@ export function QuizHeader({
           )}
           {isPublished && !roleLoading && canPerformAction(userRole, 'edit_publish_settings') && (
             <Button
-              variant="outline"
-              className="border-blue-500/40 text-blue-300 hover:bg-blue-500/10 hover:text-blue-200 pointer-events-auto transition-all duration-150 active:scale-95"
+              className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto transition-all duration-150 active:scale-95"
               onClick={() => setIsEditDetailsModalOpen(true)}
               disabled={disableActions}
             >

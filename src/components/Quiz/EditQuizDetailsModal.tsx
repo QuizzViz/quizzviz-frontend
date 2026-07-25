@@ -59,6 +59,11 @@ export function EditQuizDetailsModal({
     }
   }, [isOpen, initialSecretKey, initialMaxAttempts, initialExpirationDate]);
 
+  const hasChanges =
+    secretKey.trim() !== (initialSecretKey || "").trim() ||
+    Number(maxAttempts) !== Number(initialMaxAttempts || 1) ||
+    expirationDate !== toDateTimeLocalValue(initialExpirationDate);
+
   const handleSave = async () => {
     if (!companyId) {
       setError("Missing company information. Please refresh and try again.");
@@ -192,8 +197,8 @@ export function EditQuizDetailsModal({
           <Button
             type="button"
             onClick={handleSave}
-            disabled={isSaving}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            disabled={isSaving || !hasChanges}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <>
