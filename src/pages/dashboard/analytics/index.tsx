@@ -268,13 +268,15 @@ const matchesAttempt = (attempt: number, attemptKey: AttemptFilterKey) => {
   return attempt === Number(attemptKey);
 };
 
-// Candidate Details table with the selection checkbox rendered as its own
-// column OUTSIDE the bordered data table (a separate mini "table" of just
-// checkboxes) instead of as the data table's first column — avoids the
-// empty/unlabeled header cell that column used to need, and keeps every
-// data column's header lined up exactly with its own values. The two stay
-// vertically in sync via a scroll-position mirror between their scroll
-// containers, since they're each independently scrollable.
+// Candidate Details table. The checkbox sits in its own gutter to the left,
+// outside the data table's bordered card — but both the gutter and the card
+// live inside ONE shared scroll container instead of two independently
+// scrolling elements kept in sync by JS. A single shared scroll container
+// means they move in lockstep by construction (there is nothing to
+// desync); the previous two-scrollers-synced-by-scrollTop approach could
+// never guarantee that. Both use the exact same TableRow/TableCell
+// primitives so per-row heights match pixel-for-pixel between the gutter
+// and the card.
 function CandidateDetailsTable({
   candidates,
   selectedUsers,
@@ -288,63 +290,44 @@ function CandidateDetailsTable({
   companyId: string;
   hasActiveFilter: boolean;
 }) {
-  const checkboxScrollRef = useRef<HTMLDivElement>(null);
-  const dataScrollRef = useRef<HTMLDivElement>(null);
-  const isSyncingRef = useRef(false);
-
-  const syncScroll = (from: "checkbox" | "data") => (e: React.UIEvent<HTMLDivElement>) => {
-    if (isSyncingRef.current) {
-      isSyncingRef.current = false;
-      return;
-    }
-    const target = from === "checkbox" ? dataScrollRef.current : checkboxScrollRef.current;
-    if (target) {
-      isSyncingRef.current = true;
-      target.scrollTop = e.currentTarget.scrollTop;
-    }
-  };
-
   const rowKey = (c: QuizResult) => (c.id != null ? String(c.id) : `${c.quiz_id}|${c.user_email}|${c.attempt}`);
   const sorted = [...candidates].sort((a, b) => b.result.score - a.result.score);
 
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-3 max-h-[420px] overflow-y-auto rounded-xl">
       {/* Checkbox gutter — outside the data table's own border/box */}
-      <div
-        ref={checkboxScrollRef}
-        onScroll={syncScroll("checkbox")}
-        className="shrink-0 max-h-[420px] overflow-y-auto overflow-x-hidden"
-      >
-        <table className="text-sm">
-          <thead className="sticky top-0 bg-zinc-900 z-10">
-            <tr><th className="h-12 w-10" /></tr>
-          </thead>
-          <tbody>
-            {sorted.map((c) => (
-              <tr key={rowKey(c)} className="border-b border-transparent">
-                <td className="p-4 align-middle">
-                  <input
-                    type="checkbox"
-                    checked={!!selectedUsers[rowKey(c)]}
-                    onChange={() => toggleUserSelection(rowKey(c))}
-                    className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800"
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
+      {sorted.length > 0 && (
+        <table className="shrink-0 text-sm border-separate border-spacing-0">
+          <TableHeader className="sticky top-0 bg-zinc-950 z-10">
+            <TableRow className="hover:bg-transparent border-b-0">
+              <TableHead className="w-10 bg-transparent border-b-0" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((c) => {
+              const key = rowKey(c);
+              return (
+                <TableRow key={key} className="hover:bg-transparent border-b-0">
+                  <TableCell className="bg-transparent">
+                    <input
+                      type="checkbox"
+                      checked={!!selectedUsers[key]}
+                      onChange={() => toggleUserSelection(key)}
+                      className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800 cursor-pointer"
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
         </table>
-      </div>
+      )}
 
       {/* Data table — Username/Email/Score/Attempt/Date only */}
-      <div
-        ref={dataScrollRef}
-        onScroll={syncScroll("data")}
-        className="flex-1 border border-zinc-800 rounded-xl overflow-hidden max-h-[420px] overflow-y-auto"
-      >
-        <Table>
+      <div className="flex-1 border border-zinc-800 rounded-xl overflow-hidden">
+        <table className="w-full text-sm border-separate border-spacing-0">
           <TableHeader className="sticky top-0 bg-zinc-900 z-10">
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               <TableHead>Username</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead>Score</TableHead>
@@ -354,7 +337,7 @@ function CandidateDetailsTable({
           </TableHeader>
           <TableBody>
             {sorted.length === 0 ? (
-              <TableRow>
+              <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={5} className="text-center py-12 text-gray-500">
                   {hasActiveFilter ? "No candidates match your filters" : "No results yet for this quiz"}
                 </TableCell>
@@ -395,7 +378,7 @@ function CandidateDetailsTable({
               })
             )}
           </TableBody>
-        </Table>
+        </table>
       </div>
     </div>
   );
