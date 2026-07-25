@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Trash2, Users, Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -39,14 +40,19 @@ export default function AdminQuizzesPage() {
     return json.quizzes || [];
   });
   const quizzes = data || [];
+  const router = useRouter();
 
   const [deleteTarget, setDeleteTarget] = useState<QuizRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { setPage(1); }, [statusFilter, search]);
+  useEffect(() => { setPage(1); setSelected({}); }, [statusFilter, search]);
 
   const counts = useMemo(() => ({
     all: quizzes.length,
@@ -76,6 +82,67 @@ export default function AdminQuizzesPage() {
     () => visibleQuizzes.slice((page - 1) * ADMIN_PAGE_SIZE, page * ADMIN_PAGE_SIZE),
     [visibleQuizzes, page]
   );
+
+  // Selection is tracked against the current filter (visibleQuizzes), not just
+  // the current page — "select all" + a search for one company/owner email is
+  // how deleting every quiz belonging to one person at once is meant to work,
+  // even if their quizzes span more than one page.
+  const selectedIds = useMemo(() => Object.keys(selected).filter((id) => selected[id]), [selected]);
+  const selectedCount = selectedIds.length;
+  const allFilteredSelected = visibleQuizzes.length > 0 && visibleQuizzes.every((q) => selected[q.quiz_id]);
+  const someFilteredSelected = visibleQuizzes.some((q) => selected[q.quiz_id]);
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someFilteredSelected && !allFilteredSelected;
+    }
+  }, [someFilteredSelected, allFilteredSelected]);
+
+  const toggleSelectOne = (quizId: string) => {
+    setSelected((prev) => ({ ...prev, [quizId]: !prev[quizId] }));
+  };
+
+  const toggleSelectAllFiltered = () => {
+    if (allFilteredSelected) {
+      setSelected((prev) => {
+        const next = { ...prev };
+        visibleQuizzes.forEach((q) => { delete next[q.quiz_id]; });
+        return next;
+      });
+    } else {
+      setSelected((prev) => {
+        const next = { ...prev };
+        visibleQuizzes.forEach((q) => { next[q.quiz_id] = true; });
+        return next;
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const params = new URLSearchParams();
+      selectedIds.forEach((id) => params.append('quiz_id', id));
+      const res = await fetch(`/api/admin/quizzes?${params.toString()}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast({
+          title: `${selectedIds.length} quiz${selectedIds.length === 1 ? '' : 'zes'} deleted`,
+          description: 'Removed from generated and published quizzes.',
+          className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
+        });
+        selectedIds.forEach((id) => invalidateAdminData(`admin-quiz-${id}`));
+        setSelected({});
+        setIsBulkDeleteOpen(false);
+        refresh();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast({ title: 'Delete failed', description: data.error || 'Failed to delete quizzes', variant: 'destructive' });
+      }
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -149,12 +216,31 @@ export default function AdminQuizzesPage() {
             className="w-full rounded-lg bg-zinc-900 border border-zinc-800 pl-9 pr-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-green-500/40"
           />
         </div>
+        {selectedCount > 0 && (
+          <button
+            onClick={() => setIsBulkDeleteOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-red-600/15 border border-red-500/40 text-red-300 hover:bg-red-600/25 text-sm font-medium px-3 py-2 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" /> Delete ({selectedCount})
+          </button>
+        )}
       </div>
 
       <div className="border border-zinc-800 rounded-xl overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-zinc-900 text-zinc-400">
             <tr>
+              <th className="px-4 py-3 w-10">
+                <input
+                  ref={selectAllRef}
+                  type="checkbox"
+                  checked={allFilteredSelected}
+                  onChange={toggleSelectAllFiltered}
+                  disabled={visibleQuizzes.length === 0}
+                  className="rounded border-zinc-600 text-green-500 focus:ring-green-500 bg-zinc-800 cursor-pointer"
+                  aria-label="Select all quizzes matching the current filter"
+                />
+              </th>
               <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Role</th>
               <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Company</th>
               <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Type</th>
@@ -168,15 +254,25 @@ export default function AdminQuizzesPage() {
           </thead>
           <tbody className="divide-y divide-zinc-900">
             {isLoading ? (
-              <tr><td colSpan={9} className="p-0"><AdminPageLoading /></td></tr>
+              <tr><td colSpan={10} className="p-0"><AdminPageLoading /></td></tr>
             ) : visibleQuizzes.length === 0 ? (
-              <tr><td colSpan={9} className="px-4 py-8 text-center text-zinc-500">No quizzes found</td></tr>
+              <tr><td colSpan={10} className="px-4 py-8 text-center text-zinc-500">No quizzes found</td></tr>
             ) : pagedQuizzes.map((q) => (
-              <tr key={q.quiz_id} className="hover:bg-zinc-900/60 relative">
-                <td className="px-4 py-3 text-white whitespace-nowrap max-w-[200px] truncate">
-                  <Link href={`/admin/quizzes/${encodeURIComponent(q.quiz_id)}`} className="absolute inset-0 z-10" aria-label={`View ${q.role} quiz`} />
-                  <span className="relative" title={q.role}>{q.role}</span>
+              <tr
+                key={q.quiz_id}
+                onClick={() => router.push(`/admin/quizzes/${encodeURIComponent(q.quiz_id)}`)}
+                className="hover:bg-zinc-900/60 cursor-pointer"
+              >
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={!!selected[q.quiz_id]}
+                    onChange={() => toggleSelectOne(q.quiz_id)}
+                    className="rounded border-zinc-600 text-green-500 focus:ring-green-500 bg-zinc-800 cursor-pointer"
+                    aria-label={`Select ${q.role} quiz`}
+                  />
                 </td>
+                <td className="px-4 py-3 text-white whitespace-nowrap max-w-[200px] truncate" title={q.role}>{q.role}</td>
                 <td className="px-4 py-3 text-zinc-400 whitespace-nowrap max-w-[220px]">
                   <div className="truncate" title={q.company_name || q.company_id}>{q.company_name || q.company_id}</div>
                   {q.company_owner_email && <div className="text-xs text-zinc-600 truncate" title={q.company_owner_email}>{q.company_owner_email}</div>}
@@ -201,7 +297,7 @@ export default function AdminQuizzesPage() {
                   )}
                 </td>
                 <td className="px-4 py-3 text-zinc-500 whitespace-nowrap">{new Date(q.created_at).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-right relative z-20 whitespace-nowrap">
+                <td className="px-4 py-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                   <button onClick={() => setDeleteTarget(q)} className="text-zinc-500 hover:text-red-400">
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -220,6 +316,16 @@ export default function AdminQuizzesPage() {
         isDeleting={isDeleting}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={isBulkDeleteOpen}
+        title={`Delete ${selectedCount} quiz${selectedCount === 1 ? '' : 'zes'}?`}
+        description={<>This removes <span className="text-white font-medium">{selectedCount}</span> quiz{selectedCount === 1 ? '' : 'zes'} from generated and published quizzes. This cannot be undone.</>}
+        isDeleting={isBulkDeleting}
+        onCancel={() => setIsBulkDeleteOpen(false)}
+        onConfirm={handleBulkDelete}
+        confirmLabel={`Delete ${selectedCount}`}
       />
     </div>
   );
