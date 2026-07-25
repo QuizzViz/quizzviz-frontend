@@ -182,13 +182,13 @@ export function QuizEditor() {
   useEffect(() => {
     if (!publishedQuiz) return;
 
-    if (publishedQuiz.quiz_key) {
-      setPublishSettings((prev) => ({
-        ...prev,
-        secretKey: publishedQuiz.quiz_key,
-        isSecretKeyRequired: !!publishedQuiz.quiz_key,
-      }));
-    }
+    setPublishSettings((prev) => ({
+      ...prev,
+      secretKey: publishedQuiz.quiz_key || prev.secretKey,
+      isSecretKeyRequired: !!publishedQuiz.quiz_key,
+      maxAttempts: publishedQuiz.max_attempts ?? prev.maxAttempts,
+      expirationDate: publishedQuiz.quiz_expiration_time || prev.expirationDate,
+    }));
   }, [publishedQuiz]);
 
   // Pagination calculations
