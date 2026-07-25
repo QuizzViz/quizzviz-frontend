@@ -1,9 +1,10 @@
-import { AuthenticateWithRedirectCallback, useUser } from "@clerk/nextjs";
+import { AuthenticateWithRedirectCallback, useUser, useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 export default function SSOCallback() {
   const { isSignedIn, user, isLoaded } = useUser();
+  const { signIn } = useSignIn();
   const router = useRouter();
   const [callbackComplete, setCallbackComplete] = useState(false);
 
@@ -13,9 +14,24 @@ export default function SSOCallback() {
 
     // HANDLE FAILED OAUTH HERE - Before main logic
     if (!isSignedIn) {
-      const authIntent = sessionStorage.getItem("authIntent");
+      // Clerk's own signIn resource is authoritative for *why* the callback
+      // didn't produce a session — when the Google account has no matching
+      // Clerk user, firstFactorVerification comes back "transferable" with
+      // error code external_account_not_found. That's far more reliable
+      // than sessionStorage.authIntent, which has to survive a full-page
+      // round trip to Google's domain and back and can end up empty/stale
+      // by the time we're back here (that's exactly what was happening:
+      // the "signin" intent was getting lost, so this always fell through
+      // to the plain `/signin` branch below instead of `/signup`).
+      const noAccountFound =
+        signIn?.firstFactorVerification?.status === "transferable" ||
+        signIn?.firstFactorVerification?.error?.code === "external_account_not_found";
 
-      if (authIntent === "signin") {
+      const authIntent = sessionStorage.getItem("authIntent");
+      sessionStorage.removeItem("authIntent");
+      sessionStorage.removeItem("oauthStartTime");
+
+      if (noAccountFound || authIntent === "signin") {
         router.push("/signup?message=No account found. Please sign up with Google.");
       } else if (authIntent === "signup") {
         router.push("/signin?message=Account already exists. Please sign in with Google.");
