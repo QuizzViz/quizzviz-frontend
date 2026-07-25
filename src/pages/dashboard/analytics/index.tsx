@@ -8,9 +8,9 @@ import Head from "next/head";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Download,
-  RefreshCcw,
   Users,
   Trophy,
   CheckCircle,
@@ -22,6 +22,8 @@ import {
   AlertTriangle,
   Loader2,
   RefreshCw,
+  Search,
+  SlidersHorizontal,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { toast } from "@/hooks/use-toast";
@@ -212,6 +214,43 @@ const getScoreBins = (results: QuizResult[]): ScoreBin[] => {
   return distribution;
 };
 
+type ScoreBandKey = "all" | "90-100" | "70-89" | "50-69" | "below-50";
+type AttemptFilterKey = "all" | "1" | "2" | "3+";
+
+interface QuizFilterState {
+  search: string;
+  scoreBand: ScoreBandKey;
+  attempt: AttemptFilterKey;
+}
+
+const DEFAULT_FILTER: QuizFilterState = { search: "", scoreBand: "all", attempt: "all" };
+
+const SCORE_BANDS: {
+  key: ScoreBandKey;
+  label: string;
+  min: number;
+  max: number;
+  activeClass: string;
+}[] = [
+  { key: "all", label: "All Scores", min: 0, max: 100, activeClass: "bg-zinc-700 text-white border-zinc-600" },
+  { key: "90-100", label: "90–100%", min: 90, max: 100, activeClass: "bg-green-600 text-white border-green-500" },
+  { key: "70-89", label: "70–89%", min: 70, max: 89, activeClass: "bg-cyan-600 text-white border-cyan-500" },
+  { key: "50-69", label: "50–69%", min: 50, max: 69, activeClass: "bg-yellow-500 text-black border-yellow-400" },
+  { key: "below-50", label: "Below 50%", min: 0, max: 49.999, activeClass: "bg-red-600 text-white border-red-500" },
+];
+
+const matchesScoreBand = (score: number, bandKey: ScoreBandKey) => {
+  if (bandKey === "all") return true;
+  const band = SCORE_BANDS.find((b) => b.key === bandKey)!;
+  return score >= band.min && score <= band.max;
+};
+
+const matchesAttempt = (attempt: number, attemptKey: AttemptFilterKey) => {
+  if (attemptKey === "all") return true;
+  if (attemptKey === "3+") return attempt >= 3;
+  return attempt === Number(attemptKey);
+};
+
 // Helper component for disabled buttons with permission tooltip
 const DisabledButtonWithTooltip = ({ 
   children, 
@@ -242,7 +281,18 @@ export default function ResultsDashboard() {
   const { user } = useUser();
   const { getToken } = useAuth();
 
-  const [selectedScores, setSelectedScores] = useState<Record<string, number | null>>({});
+  const [filters, setFilters] = useState<Record<string, QuizFilterState>>({});
+  const getFilter = useCallback((quizId: string) => filters[quizId] ?? DEFAULT_FILTER, [filters]);
+  const updateFilter = useCallback((quizId: string, patch: Partial<QuizFilterState>) => {
+    setFilters((prev) => ({ ...prev, [quizId]: { ...(prev[quizId] ?? DEFAULT_FILTER), ...patch } }));
+  }, []);
+  const clearFilter = useCallback((quizId: string) => {
+    setFilters((prev) => {
+      const next = { ...prev };
+      delete next[quizId];
+      return next;
+    });
+  }, []);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUsers, setSelectedUsers] = useState<Record<string, boolean>>({});
@@ -566,15 +616,21 @@ export default function ResultsDashboard() {
                   ) : (
                     <>
                       {paginatedQuizzes.map((quiz) => {
-                        const selectedStart = selectedScores[quiz.quiz_id] ?? null;
-                        const selectedBin =
-                          selectedStart !== null
-                            ? quiz.scoreDistribution.find(
-                                (d) => Number(d.name.split("-")[0]) === selectedStart
-                              )
-                            : null;
-
-                        const filteredCandidates = selectedBin ? selectedBin.candidates : quiz.details;
+                        const filter = getFilter(quiz.quiz_id);
+                        const filteredCandidates = quiz.details.filter((c) => {
+                          const q = filter.search.trim().toLowerCase();
+                          const matchesSearch =
+                            !q ||
+                            c.username.toLowerCase().includes(q) ||
+                            c.user_email.toLowerCase().includes(q);
+                          return (
+                            matchesSearch &&
+                            matchesScoreBand(c.result.score, filter.scoreBand) &&
+                            matchesAttempt(c.attempt, filter.attempt)
+                          );
+                        });
+                        const hasActiveFilter =
+                          filter.search.trim() !== "" || filter.scoreBand !== "all" || filter.attempt !== "all";
 
                         const highestScore = Math.max(...quiz.details.map((d) => d.result.score), 0);
                         const topScorer = quiz.details.find((d) => d.result.score === highestScore);
@@ -585,6 +641,7 @@ export default function ResultsDashboard() {
 
                         const totalAttempts = quiz.details.length;
                         const uniqueCandidates = new Set(quiz.details.map((d) => d.user_email)).size;
+                        const maxAttempt = Math.max(...quiz.details.map((d) => d.attempt), 1);
 
                         return (
                           <Card
@@ -723,57 +780,126 @@ export default function ResultsDashboard() {
                                       dataKey="count"
                                       radius={[6, 6, 0, 0]}
                                       maxBarSize={50}
-                                      onClick={(data: any) => {
-                                        if (!data?.count) return;
-                                        const start = Number(data.name.split("-")[0]);
-                                        setSelectedScores((prev) => ({
-                                          ...prev,
-                                          [quiz.quiz_id]: prev[quiz.quiz_id] === start ? null : start,
-                                        }));
-                                      }}
                                     >
                                       {quiz.scoreDistribution.map((entry, i) => {
                                         const start = Number(entry.name.split("-")[0]);
-                                        const isSelected = selectedScores[quiz.quiz_id] === start;
+                                        const end = start === 0 ? 10 : start + 9;
+                                        const activeBand = SCORE_BANDS.find((b) => b.key === filter.scoreBand)!;
+                                        const inActiveBand =
+                                          filter.scoreBand !== "all" && start <= activeBand.max && end >= activeBand.min;
                                         const hasData = entry.count > 0;
 
                                         return (
                                           <Cell
                                             key={`cell-${i}`}
-                                            fill={hasData ? (isSelected ? "#10B981" : "#8B5CF6") : "#27272a"}
-                                            style={{
-                                              cursor: hasData ? "pointer" : "default",
-                                              transition: "all 0.2s ease",
-                                            }}
+                                            fill={hasData ? (inActiveBand ? "#10B981" : "#8B5CF6") : "#27272a"}
+                                            style={{ transition: "all 0.2s ease" }}
                                           />
                                         );
                                       })}
                                     </Bar>
                                   </BarChart>
                                 </ResponsiveContainer>
-
-                                {selectedStart !== null && (
-                                  <div className="mt-4 text-center">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        setSelectedScores((prev) => ({ ...prev, [quiz.quiz_id]: null }))
-                                      }
-                                      className="gap-2 border-purple-500/50 text-purple-300 hover:text-purple-200"
-                                    >
-                                      <RefreshCcw className="h-4 w-4" />
-                                      Clear {selectedStart}–{selectedStart + 9}% Filter
-                                    </Button>
-                                  </div>
-                                )}
                               </div>
 
                               <div className="space-y-4">
+                                {/* Search + filter bar */}
+                                <motion.div
+                                  initial={{ opacity: 0, y: 8 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ duration: 0.3 }}
+                                  className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 space-y-3"
+                                >
+                                  <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                                    <input
+                                      value={filter.search}
+                                      onChange={(e) => updateFilter(quiz.quiz_id, { search: e.target.value })}
+                                      placeholder="Search by name or email..."
+                                      className="w-full rounded-lg bg-zinc-950 border border-zinc-800 pl-9 pr-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                                    />
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-xs text-zinc-500 flex items-center gap-1 mr-1">
+                                      <SlidersHorizontal className="h-3 w-3" /> Score
+                                    </span>
+                                    {SCORE_BANDS.map((band) => (
+                                      <button
+                                        key={band.key}
+                                        onClick={() =>
+                                          updateFilter(quiz.quiz_id, {
+                                            scoreBand: filter.scoreBand === band.key ? "all" : band.key,
+                                          })
+                                        }
+                                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${
+                                          filter.scoreBand === band.key
+                                            ? `${band.activeClass} scale-105 shadow-md`
+                                            : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-white"
+                                        }`}
+                                      >
+                                        {band.label}
+                                      </button>
+                                    ))}
+                                  </div>
+
+                                  {maxAttempt > 1 && (
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="text-xs text-zinc-500 mr-1">Attempt</span>
+                                      {(
+                                        [
+                                          { key: "all" as const, label: "All" },
+                                          { key: "1" as const, label: "1st" },
+                                          { key: "2" as const, label: "2nd" },
+                                          ...(maxAttempt > 2 ? [{ key: "3+" as const, label: "3rd+" }] : []),
+                                        ]
+                                      ).map((opt) => (
+                                        <button
+                                          key={opt.key}
+                                          onClick={() =>
+                                            updateFilter(quiz.quiz_id, {
+                                              attempt: filter.attempt === opt.key ? "all" : opt.key,
+                                            })
+                                          }
+                                          className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${
+                                            filter.attempt === opt.key
+                                              ? "bg-purple-600 text-white border-purple-500 scale-105 shadow-md"
+                                              : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-white"
+                                          }`}
+                                        >
+                                          {opt.label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  <AnimatePresence>
+                                    {hasActiveFilter && (
+                                      <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: "auto" }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="flex items-center justify-between pt-3 border-t border-zinc-800/60 overflow-hidden"
+                                      >
+                                        <span className="text-xs text-purple-300">
+                                          Showing {filteredCandidates.length} of {quiz.details.length} candidates
+                                        </span>
+                                        <button
+                                          onClick={() => clearFilter(quiz.quiz_id)}
+                                          className="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition-colors"
+                                        >
+                                          <X className="h-3 w-3" /> Clear filters
+                                        </button>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </motion.div>
+
                                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                                   <h2 className="text-xl font-semibold border-l-4 border-purple-500 pl-3">
                                     Candidate Details
-                                    {selectedStart !== null && (
+                                    {hasActiveFilter && (
                                       <span className="ml-2 text-sm text-purple-400">(Filtered)</span>
                                     )}
                                   </h2>
@@ -840,8 +966,8 @@ export default function ResultsDashboard() {
                                       {filteredCandidates.length === 0 ? (
                                         <TableRow>
                                           <TableCell colSpan={6} className="text-center py-12 text-gray-500 relative z-10">
-                                            {selectedStart !== null
-                                              ? "No candidates in selected score range"
+                                            {hasActiveFilter
+                                              ? "No candidates match your filters"
                                               : "No results yet for this quiz"}
                                           </TableCell>
                                         </TableRow>
