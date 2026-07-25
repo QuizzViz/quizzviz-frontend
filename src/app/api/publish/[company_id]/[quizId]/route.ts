@@ -28,6 +28,92 @@ export async function DELETE(
   return handlePublishRequest(request, resolvedParams, 'DELETE');
 }
 
+// PUT - Update settings on an already-published quiz (max_attempts,
+// quiz_expiration_time, quiz_key) without unpublishing it
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ quizId: string; company_id: string }> }
+) {
+  const resolvedParams = await params;
+  return handleUpdatePublishedQuiz(request, resolvedParams);
+}
+
+async function handleUpdatePublishedQuiz(
+  request: NextRequest,
+  params: { quizId: string; company_id: string }
+) {
+  try {
+    const { quizId, company_id } = params;
+
+    if (!quizId || !company_id) {
+      return NextResponse.json(
+        { error: 'Quiz ID and Company ID are required' },
+        { status: 400 }
+      );
+    }
+
+    const { userId: authUserId, getToken } = getAuth(request);
+
+    if (!authUserId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = await getToken();
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized - No token' }, { status: 401 });
+    }
+
+    const requestData = await request.json().catch(() => ({}));
+    // Only forward the settings this route is meant for — never let a caller
+    // sneak in quiz content/role changes through this endpoint.
+    const { max_attempts, quiz_expiration_time, quiz_key } = requestData;
+    const updateBody: Record<string, unknown> = {};
+    if (max_attempts !== undefined) updateBody.max_attempts = max_attempts;
+    if (quiz_expiration_time !== undefined) updateBody.quiz_expiration_time = quiz_expiration_time;
+    if (quiz_key !== undefined) updateBody.quiz_key = quiz_key;
+
+    const publishServiceUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${company_id}/quiz/${quizId}`;
+
+    const headers = new Headers();
+    headers.append('accept', 'application/json');
+    headers.append('Authorization', `Bearer ${token}`);
+    headers.append('Content-Type', 'application/json');
+    headers.append('x-company-id', company_id);
+    headers.append('x-user-id', authUserId);
+
+    const response = await fetch(publishServiceUrl, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(updateBody),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      let errorDetails;
+      try {
+        const errorData = await response.json();
+        errorDetails = errorData.detail || errorData.message || 'Unknown error';
+      } catch {
+        errorDetails = await response.text().catch(() => 'Unknown error');
+      }
+      return NextResponse.json(
+        { error: 'Failed to update published quiz', details: errorDetails },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json().catch(() => ({}));
+
+    return NextResponse.json({ success: true, message: 'Quiz settings updated successfully', data });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: 'Internal server error', details: process.env.NODE_ENV === 'development' ? error.message : undefined },
+      { status: 500 }
+    );
+  }
+}
+
 // Handle GET request to fetch published quiz
 async function handleGetPublishedQuiz(
   request: NextRequest,
