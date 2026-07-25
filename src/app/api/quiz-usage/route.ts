@@ -73,12 +73,38 @@ export async function GET(request: Request) {
   // Create a NextRequest object from the incoming request
   const nextRequest = new NextRequest(request);
   try {
+    // Every signed-in caller — owner or invited member — has a session
+    // cookie; extract it unconditionally so the backend always receives a
+    // real Authorization header, regardless of how company_id was resolved
+    // below. (Previously this was only ever set on the "owner" branch,
+    // meaning invited members' requests reached the backend with no auth at
+    // all — harmless while that endpoint had no auth check, but would break
+    // them the moment one was added.)
+    const cookieHeader = nextRequest.cookies.toString();
+    const cookies = Object.fromEntries(
+      cookieHeader.split(';').map(c => {
+        const [key, ...vals] = c.trim().split('=');
+        return [key, vals.join('=')];
+      })
+    );
+    const sessionToken = cookies.__session || '';
+
+    if (!sessionToken) {
+      return NextResponse.json(
+        {
+          error: 'Unauthorized',
+          details: 'No authentication token provided in cookies'
+        },
+        { status: 401 }
+      );
+    }
+
     // First check if company_id is provided in query params (for invited members)
     const { searchParams } = new URL(request.url);
     const queryCompanyId = searchParams.get('company_id');
-    
+
     let companyId: string;
-    
+
     if (queryCompanyId) {
       // Invited member - use company_id from query params
       companyId = queryCompanyId;
@@ -87,33 +113,12 @@ export async function GET(request: Request) {
       // Company owner - use authentication
       const auth = getAuth(nextRequest);
       const { userId } = auth;
-      
+
       if (!userId) {
         return NextResponse.json(
-          { 
+          {
             error: 'Unauthorized',
             details: 'No user ID found in session'
-          },
-          { status: 401 }
-        );
-      }
-
-      // Get the session token from cookies
-      const cookieHeader = nextRequest.cookies.toString();
-      const cookies = Object.fromEntries(
-        cookieHeader.split(';').map(c => {
-          const [key, ...vals] = c.trim().split('=');
-          return [key, vals.join('=')];
-        })
-      );
-      
-      const sessionToken = cookies.__session || '';
-      
-      if (!sessionToken) {
-        return NextResponse.json(
-          { 
-            error: 'Unauthorized',
-            details: 'No authentication token provided in cookies'
           },
           { status: 401 }
         );
@@ -122,20 +127,7 @@ export async function GET(request: Request) {
       // Get company ID for the user
       companyId = await getCompanyId(userId, sessionToken, request);
     }
-    
-    // Get session token only if needed (for company owners)
-    let sessionToken = '';
-    if (!queryCompanyId) {
-      const cookieHeader = nextRequest.cookies.toString();
-      const cookies = Object.fromEntries(
-        cookieHeader.split(';').map(c => {
-          const [key, ...vals] = c.trim().split('=');
-          return [key, vals.join('=')];
-        })
-      );
-      sessionToken = cookies.__session || '';
-    }
-    
+
     // Log the request for debugging
     console.log('Sending request to quiz usage backend:', {
       url: `${BACKEND_BASE_URL}/user/${companyId}/quizzes/usage`,
@@ -147,13 +139,9 @@ export async function GET(request: Request) {
     // Make request to backend
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${sessionToken}`,
     };
-    
-    // Add auth header only for company owners
-    if (sessionToken) {
-      headers['Authorization'] = `Bearer ${sessionToken}`;
-    }
-    
+
     const response = await fetch(
       `${BACKEND_BASE_URL}/user/${companyId}/quizzes/usage`,
       {
