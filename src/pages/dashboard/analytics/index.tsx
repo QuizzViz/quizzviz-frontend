@@ -99,6 +99,7 @@ type QuizAnalytics = {
   details: QuizResult[];
   scoreDistribution: ScoreBin[];
   created_at: string; // earliest attempt for sorting
+  max_attempts?: number;
 };
 
 const formatDate = (dateString: string) =>
@@ -108,21 +109,9 @@ const formatDate = (dateString: string) =>
     day: "numeric",
   });
 
-// The quiz-taking form's "Full Name" field is plain text with no format
-// enforcement — a candidate can (and sometimes does) type their email
-// address into it. When that happens, showing the raw duplicate in the
-// Username column reads like a data/column-mapping bug even though it's
-// exactly what was submitted, so display a clear placeholder instead
-// (here and in the exports, which pull from the same field).
-const looksLikeEmail = (value: string) => /\S+@\S+\.\S+/.test(value.trim());
-const getDisplayName = (c: QuizResult) => {
-  const name = c.username?.trim();
-  return name && !looksLikeEmail(name) ? name : null;
-};
-
 const prepareExportData = (data: QuizResult[]) =>
   data.map((q) => ({
-    Username: getDisplayName(q) ?? "Name not provided",
+    Username: q.username,
     Email: q.user_email,
     Score: q.result.score,
     "Total Questions": q.result.total_questions ?? q.total_questions ?? 0,
@@ -228,14 +217,15 @@ const getScoreBins = (results: QuizResult[]): ScoreBin[] => {
 
 type ScoreBandKey = "all" | "90-100" | "70-89" | "50-69" | "below-50";
 type AttemptFilterKey = "all" | "1" | "2" | "3+";
+type ScoreRange = { min: number; max: number } | null;
 
 interface QuizFilterState {
   search: string;
-  scoreBand: ScoreBandKey;
+  scoreRange: ScoreRange;
   attempt: AttemptFilterKey;
 }
 
-const DEFAULT_FILTER: QuizFilterState = { search: "", scoreBand: "all", attempt: "all" };
+const DEFAULT_FILTER: QuizFilterState = { search: "", scoreRange: null, attempt: "all" };
 
 const SCORE_BANDS: {
   key: ScoreBandKey;
@@ -251,10 +241,25 @@ const SCORE_BANDS: {
   { key: "below-50", label: "Below 50%", min: 0, max: 49.999, activeClass: "bg-red-600 text-white border-red-500" },
 ];
 
-const matchesScoreBand = (score: number, bandKey: ScoreBandKey) => {
-  if (bandKey === "all") return true;
-  const band = SCORE_BANDS.find((b) => b.key === bandKey)!;
-  return score >= band.min && score <= band.max;
+const rangesEqual = (a: ScoreRange, b: ScoreRange) => {
+  if (a === null && b === null) return true;
+  if (!a || !b) return false;
+  return a.min === b.min && a.max === b.max;
+};
+
+const matchesScoreRange = (score: number, range: ScoreRange) => {
+  if (!range) return true;
+  return score >= range.min && score <= range.max;
+};
+
+// A range that doesn't exactly match one of the 4 quick-pick bands — e.g. one
+// set by clicking a chart bar — gets its own "Score: X–Y%" chip since no pill
+// would otherwise show as active for it.
+const customRangeLabel = (range: ScoreRange) => {
+  if (!range) return null;
+  const isPreset = SCORE_BANDS.some((b) => b.key !== "all" && b.min === range.min && b.max === range.max);
+  if (isPreset) return null;
+  return `Score: ${range.min}–${Math.min(range.max, 100)}%`;
 };
 
 const matchesAttempt = (attempt: number, attemptKey: AttemptFilterKey) => {
@@ -350,6 +355,21 @@ export default function ResultsDashboard() {
     { enabled: Boolean(finalCompanyId) }
   );
 
+  // max_attempts lives in the publish service, not the results/attempts data
+  // above — fetch it once for the whole company and look it up by quiz_id.
+  const { data: publishedQuizzesData } = useCachedFetch<{ success: boolean; quizzes: { quiz_id: string; max_attempts?: number }[] }>(
+    ['publishedQuizzes', finalCompanyId as string],
+    finalCompanyId ? `/api/publish/company/${encodeURIComponent(finalCompanyId)}` : '',
+    { enabled: Boolean(finalCompanyId) }
+  );
+  const maxAttemptsByQuizId = useMemo(() => {
+    const map = new Map<string, number>();
+    (publishedQuizzesData?.quizzes || []).forEach((p) => {
+      if (p.max_attempts != null) map.set(p.quiz_id, p.max_attempts);
+    });
+    return map;
+  }, [publishedQuizzesData]);
+
   useEffect(() => {
     if (quizResults) {
       setLastUpdated(new Date());
@@ -432,10 +452,11 @@ export default function ResultsDashboard() {
           details: sorted,
           scoreDistribution: getScoreBins(sorted),
           created_at: sorted[0]?.created_at || new Date().toISOString(),
+          max_attempts: maxAttemptsByQuizId.get(quiz_id),
         };
       })
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [quizData]);
+  }, [quizData, maxAttemptsByQuizId]);
 
   const totalPages = Math.ceil(analyticsPerQuiz.length / quizzesPerPage);
 
@@ -637,12 +658,12 @@ export default function ResultsDashboard() {
                             c.user_email.toLowerCase().includes(q);
                           return (
                             matchesSearch &&
-                            matchesScoreBand(c.result.score, filter.scoreBand) &&
+                            matchesScoreRange(c.result.score, filter.scoreRange) &&
                             matchesAttempt(c.attempt, filter.attempt)
                           );
                         });
                         const hasActiveFilter =
-                          filter.search.trim() !== "" || filter.scoreBand !== "all" || filter.attempt !== "all";
+                          filter.search.trim() !== "" || filter.scoreRange !== null || filter.attempt !== "all";
 
                         const highestScore = Math.max(...quiz.details.map((d) => d.result.score), 0);
                         const topScorer = quiz.details.find((d) => d.result.score === highestScore);
@@ -666,6 +687,11 @@ export default function ResultsDashboard() {
                                   <CardTitle className="text-2xl md:text-3xl font-bold">
                                     {quiz.role} Quiz
                                   </CardTitle>
+                                  {quiz.max_attempts != null && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 border border-amber-500/20">
+                                      Max attempts allowed: {quiz.max_attempts}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
 
@@ -767,7 +793,7 @@ export default function ResultsDashboard() {
                                                     key={i}
                                                     className="flex justify-between text-sm bg-zinc-800/60 p-2 rounded"
                                                   >
-                                                    <span className="truncate max-w-[140px]">{getDisplayName(c) ?? "Name not provided"}</span>
+                                                    <span className="truncate max-w-[140px]">{c.username}</span>
                                                     <span className="font-bold text-purple-300">
                                                       {c.result.score.toFixed(1)}%
                                                     </span>
@@ -792,20 +818,28 @@ export default function ResultsDashboard() {
                                       dataKey="count"
                                       radius={[6, 6, 0, 0]}
                                       maxBarSize={50}
+                                      onClick={(data: any) => {
+                                        if (!data?.count) return;
+                                        const start = Number(data.name.split("-")[0]);
+                                        const end = start === 0 ? 10 : start + 9;
+                                        const clickedRange = { min: start, max: end };
+                                        updateFilter(quiz.quiz_id, {
+                                          scoreRange: rangesEqual(filter.scoreRange, clickedRange) ? null : clickedRange,
+                                        });
+                                      }}
                                     >
                                       {quiz.scoreDistribution.map((entry, i) => {
                                         const start = Number(entry.name.split("-")[0]);
                                         const end = start === 0 ? 10 : start + 9;
-                                        const activeBand = SCORE_BANDS.find((b) => b.key === filter.scoreBand)!;
-                                        const inActiveBand =
-                                          filter.scoreBand !== "all" && start <= activeBand.max && end >= activeBand.min;
+                                        const inActiveRange =
+                                          !!filter.scoreRange && start <= filter.scoreRange.max && end >= filter.scoreRange.min;
                                         const hasData = entry.count > 0;
 
                                         return (
                                           <Cell
                                             key={`cell-${i}`}
-                                            fill={hasData ? (inActiveBand ? "#10B981" : "#8B5CF6") : "#27272a"}
-                                            style={{ transition: "all 0.2s ease" }}
+                                            fill={hasData ? (inActiveRange ? "#10B981" : "#8B5CF6") : "#27272a"}
+                                            style={{ cursor: hasData ? "pointer" : "default", transition: "all 0.2s ease" }}
                                           />
                                         );
                                       })}
@@ -836,23 +870,25 @@ export default function ResultsDashboard() {
                                     <span className="text-xs text-zinc-500 flex items-center gap-1 mr-1">
                                       <SlidersHorizontal className="h-3 w-3" /> Score
                                     </span>
-                                    {SCORE_BANDS.map((band) => (
-                                      <button
-                                        key={band.key}
-                                        onClick={() =>
-                                          updateFilter(quiz.quiz_id, {
-                                            scoreBand: filter.scoreBand === band.key ? "all" : band.key,
-                                          })
-                                        }
-                                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${
-                                          filter.scoreBand === band.key
-                                            ? `${band.activeClass} scale-105 shadow-md`
-                                            : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-white"
-                                        }`}
-                                      >
-                                        {band.label}
-                                      </button>
-                                    ))}
+                                    {SCORE_BANDS.map((band) => {
+                                      const bandRange: ScoreRange = band.key === "all" ? null : { min: band.min, max: band.max };
+                                      const isActive = rangesEqual(filter.scoreRange, bandRange);
+                                      return (
+                                        <button
+                                          key={band.key}
+                                          onClick={() =>
+                                            updateFilter(quiz.quiz_id, { scoreRange: isActive ? null : bandRange })
+                                          }
+                                          className={`px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${
+                                            isActive
+                                              ? `${band.activeClass} scale-105 shadow-md`
+                                              : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-600 hover:text-white"
+                                          }`}
+                                        >
+                                          {band.label}
+                                        </button>
+                                      );
+                                    })}
                                   </div>
 
                                   {maxAttempt > 1 && (
@@ -892,11 +928,21 @@ export default function ResultsDashboard() {
                                         animate={{ opacity: 1, height: "auto" }}
                                         exit={{ opacity: 0, height: 0 }}
                                         transition={{ duration: 0.2 }}
-                                        className="flex items-center justify-between pt-3 border-t border-zinc-800/60 overflow-hidden"
+                                        className="flex items-center justify-between pt-3 border-t border-zinc-800/60 overflow-hidden flex-wrap gap-2"
                                       >
-                                        <span className="text-xs text-purple-300">
-                                          Showing {filteredCandidates.length} of {quiz.details.length} candidates
-                                        </span>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="text-xs text-purple-300">
+                                            Showing {filteredCandidates.length} of {quiz.details.length} candidates
+                                          </span>
+                                          {customRangeLabel(filter.scoreRange) && (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 text-xs">
+                                              {customRangeLabel(filter.scoreRange)}
+                                              <button onClick={() => updateFilter(quiz.quiz_id, { scoreRange: null })} className="hover:text-white">
+                                                <X className="h-3 w-3" />
+                                              </button>
+                                            </span>
+                                          )}
+                                        </div>
                                         <button
                                           onClick={() => clearFilter(quiz.quiz_id)}
                                           className="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition-colors"
@@ -997,7 +1043,7 @@ export default function ResultsDashboard() {
                                               >
                                                 <Link href={`/${finalCompanyId}/analytics/candidate/${encodeURIComponent(c.user_email)}`}
                                                 target="_blank"
-                                                rel="noopener noreferrer" className="absolute inset-0 z-20" aria-label={`View ${getDisplayName(c) ?? c.user_email}'s analytics`}/>
+                                                rel="noopener noreferrer" className="absolute inset-0 z-20" aria-label={`View ${c.username}'s analytics`}/>
                                                 <TableCell className="relative z-30">
                                                   <input
                                                     type="checkbox"
@@ -1006,9 +1052,7 @@ export default function ResultsDashboard() {
                                                     className="rounded border-zinc-600 text-purple-500 focus:ring-purple-500 bg-zinc-800 relative z-40"
                                                   />
                                                 </TableCell>
-                                                <TableCell className="font-medium relative z-10">
-                                                  {getDisplayName(c) ?? <span className="italic text-zinc-500">Name not provided</span>}
-                                                </TableCell>
+                                                <TableCell className="font-medium relative z-10">{c.username}</TableCell>
                                                 <TableCell className="hidden md:table-cell truncate max-w-xs relative z-10">
                                                   {c.user_email}
                                                 </TableCell>

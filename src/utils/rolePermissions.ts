@@ -1,10 +1,11 @@
 import { UserRole } from '@/hooks/useUserRole';
 
-export type Permission = 
+export type Permission =
   | 'generate_quiz'
   | 'update_quiz'
   | 'publish_quiz'
   | 'delete_quiz'
+  | 'edit_publish_settings'
   | 'view_analytics'
   | 'delete_analytics_all'
   | 'delete_analytics_specific'
@@ -33,6 +34,7 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     update_quiz: true,
     publish_quiz: true,
     delete_quiz: true,
+    edit_publish_settings: true,
     view_analytics: true,
     delete_analytics_all: true,
     delete_analytics_specific: true,
@@ -45,6 +47,7 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     update_quiz: true,
     publish_quiz: true,
     delete_quiz: true,
+    edit_publish_settings: true,
     view_analytics: true,
     delete_analytics_all: false,
     delete_analytics_specific: true, // Admin can delete specific records
@@ -57,6 +60,7 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     update_quiz: true, // Limited (will need additional logic for limited access)
     publish_quiz: false,
     delete_quiz: false,
+    edit_publish_settings: false,
     view_analytics: true,
     delete_analytics_all: false,
     delete_analytics_specific: false,
@@ -158,6 +162,7 @@ export const getPermissionDescription = (permission: Permission): string => {
     update_quiz: 'Update Quiz',
     publish_quiz: 'Publish / Unpublish Quiz',
     delete_quiz: 'Delete Quiz',
+    edit_publish_settings: 'Edit Published Quiz Settings',
     view_analytics: 'View Analytics',
     delete_analytics_all: 'Delete All Analytics',
     delete_analytics_specific: 'Delete Specific Record',
