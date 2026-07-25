@@ -67,10 +67,10 @@ const fetchUserPlan = async (userId: string | null | undefined, getToken: () => 
 };
 
 export const useUserPlan = () => {
-  const { user } = useUser();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
-  
+
   const fetchPlan = async () => {
     if (!user?.id) throw new Error('No user ID');
     const token = await getToken();
@@ -86,6 +86,14 @@ export const useUserPlan = () => {
     retry: 1,
   });
 
+  // React Query reports isLoading: false for a query that's still
+  // enabled: false (e.g. before Clerk has resolved the signed-in user),
+  // since it has never started fetching — that's a "not loading" signal,
+  // not "we know the real plan". Treat "Clerk hasn't loaded" or "we have
+  // a user id but no plan data yet" as loading too, so callers never
+  // mistake this brief window for a resolved Free plan.
+  const isLoading = !isUserLoaded || (!!user?.id && !query.isFetched && !query.data);
+
   // Function to invalidate user plan cache
   const invalidateUserPlan = () => {
     queryClient.invalidateQueries({ queryKey: ['userPlan', user?.id] });
@@ -93,6 +101,7 @@ export const useUserPlan = () => {
 
   return {
     ...query,
+    isLoading,
     invalidateUserPlan,
     refetch: query.refetch,
   };
