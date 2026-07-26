@@ -29,11 +29,44 @@ export default function SSOCallback() {
     sessionStorage.removeItem("oauthStartTime");
     sessionStorage.removeItem("signupAttemptTime");
 
-    const noAccountFound = () =>
-      clerk.client?.signIn?.firstFactorVerification?.error?.code === "external_account_not_found";
+    // Log the raw state every time, not just on a hunch it's needed —
+    // this is the only way to get a real captured object out of Clerk's
+    // client runtime (@clerk/clerk-js is loaded from Clerk's CDN, not
+    // present in node_modules, so it can't be inspected statically).
+    console.log("[sso-callback] signIn.firstFactorVerification:", clerk.client?.signIn?.firstFactorVerification);
+    console.log("[sso-callback] signUp.verifications.externalAccount:", clerk.client?.signUp?.verifications?.externalAccount);
 
-    const accountAlreadyExists = () =>
-      clerk.client?.signUp?.verifications?.externalAccount?.error?.code === "external_account_exists";
+    // ClerkAPIError.code (per @clerk/types) is the only documented, stable
+    // field for a value like "external_account_not_found" — there is no
+    // `reason` field on the client-side error type (that's Clerk dashboard/
+    // webhook terminology for the same underlying code). Check every place
+    // that code can plausibly surface: on the resource's verification
+    // error, on its errors array (some Clerk versions attach ClerkAPIError[]
+    // directly to the resource), and via the status field as a secondary
+    // signal, before ever falling back to message text.
+    const errorCodesOf = (resource: any): string[] => {
+      const codes: string[] = [];
+      if (resource?.error?.code) codes.push(resource.error.code);
+      if (Array.isArray(resource?.errors)) {
+        for (const e of resource.errors) if (e?.code) codes.push(e.code);
+      }
+      return codes;
+    };
+
+    const noAccountFound = () => {
+      const v = clerk.client?.signIn?.firstFactorVerification;
+      const codes = errorCodesOf(v);
+      return (
+        codes.includes("external_account_not_found") ||
+        v?.status === "failed" && codes.some((c) => c.includes("not_found"))
+      );
+    };
+
+    const accountAlreadyExists = () => {
+      const v = clerk.client?.signUp?.verifications?.externalAccount;
+      const codes = errorCodesOf(v);
+      return codes.includes("external_account_exists") || codes.includes("identifier_already_signed_in");
+    };
 
     const decideDestination = (fallback: string) => {
       if (authIntent !== "signup" && noAccountFound()) {
@@ -70,12 +103,30 @@ export default function SSOCallback() {
         }
       )
       .catch((err: any) => {
-        const code = err?.errors?.[0]?.code;
-        console.error("OAuth callback failed:", err);
-        if (code === "external_account_not_found") {
+        // This is the actual captured error object — check the browser
+        // console on the next repro and paste this back if the redirect is
+        // still wrong; it's the ground truth no amount of static reading of
+        // @clerk/types can substitute for.
+        console.error("[sso-callback] handleRedirectCallback rejected:", err);
+        console.error("[sso-callback] err.errors:", err?.errors);
+
+        const codes: string[] = [];
+        if (err?.code) codes.push(err.code);
+        if (Array.isArray(err?.errors)) {
+          for (const e of err.errors) if (e?.code) codes.push(e.code);
+        }
+        const message = (
+          err?.message || err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || ""
+        ).toString().toLowerCase();
+
+        if (codes.includes("external_account_not_found")) {
           router.push("/signup?message=" + encodeURIComponent("No account found. Please sign up with Google."));
-        } else if (code === "external_account_exists" || code === "identifier_already_signed_in") {
+        } else if (codes.includes("external_account_exists") || codes.includes("identifier_already_signed_in")) {
           router.push("/signin?message=" + encodeURIComponent("Account already exists. Please sign in with Google."));
+        } else if (authIntent !== "signup" && message.includes("not found")) {
+          // No stable code came through at all — fall back to the message
+          // text rather than silently landing on /signin with no signal.
+          router.push("/signup?message=" + encodeURIComponent("No account found. Please sign up with Google."));
         } else {
           router.push("/signin");
         }
