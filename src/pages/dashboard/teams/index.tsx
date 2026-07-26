@@ -592,7 +592,12 @@ export default function TeamsPage() {
       const token = await getToken();
       const validation = validateCompanyData({
         company_id: company?.company_id,
-        company_name: (user?.unsafeMetadata?.companyName as string) || company?.name || "Your Company",
+        // Live company.name (from useCachedDashboardData's actual fetch) must win
+        // over the cached Clerk-metadata companyName — that cache is only ever
+        // written once at company creation/invite-acceptance and never
+        // invalidated on a rename, so preferring it here would carry a stale
+        // name into every new invite sent after the company was renamed.
+        company_name: company?.name || (user?.unsafeMetadata?.companyName as string) || "Your Company",
         name: inviteForm.name,
         invited_email: inviteForm.email,
         role: inviteForm.role,
@@ -612,7 +617,12 @@ export default function TeamsPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           company_id: company?.company_id,
-          company_name: (user?.unsafeMetadata?.companyName as string) || company?.name || "Your Company",
+          // Live company.name (from useCachedDashboardData's actual fetch) must win
+        // over the cached Clerk-metadata companyName — that cache is only ever
+        // written once at company creation/invite-acceptance and never
+        // invalidated on a rename, so preferring it here would carry a stale
+        // name into every new invite sent after the company was renamed.
+        company_name: company?.name || (user?.unsafeMetadata?.companyName as string) || "Your Company",
           name: inviteForm.name,
           invited_email: inviteForm.email,
           role: inviteForm.role,

@@ -91,18 +91,28 @@ export function useCompanyInfo() {
       const companyId = (metadataCompanyId || localStorageCompanyId || '') as string;
       const companyName = (user?.unsafeMetadata?.companyName || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company') as string;
       
-      // Try to get owner email and custom limits from fetched data
+      // Try to get owner email, live name, and custom limits from fetched data.
+      // The live name (from the actual /api/company/{id} fetch this hook just
+      // made) MUST win over the cached Clerk-metadata/localStorage companyName
+      // above — that cache is only ever written once at company creation or
+      // invite acceptance and nothing invalidates it on a rename, so trusting
+      // it here silently showed a stale name in the header/avatar forever
+      // after a company was renamed. Only fall back to the stale value while
+      // the live fetch hasn't returned anything yet.
       let ownerEmail = '';
+      let liveName: string | undefined;
       let customLimits;
       let planFields: Pick<CompanyInfo, 'plan_name' | 'plan_start_date' | 'plan_expiry_date' | 'billing_cycle'> = {};
       if (companyData) {
         if (Array.isArray(companyData.companies) && companyData.companies.length > 0) {
           const c = companyData.companies[0];
           ownerEmail = c?.owner_email || '';
+          liveName = c?.name;
           customLimits = c?.custom_limits;
           planFields = { plan_name: c?.plan_name, plan_start_date: c?.plan_start_date, plan_expiry_date: c?.plan_expiry_date, billing_cycle: c?.billing_cycle };
         } else {
           ownerEmail = companyData.owner_email || '';
+          liveName = companyData.name;
           customLimits = companyData.custom_limits;
           planFields = { plan_name: companyData.plan_name, plan_start_date: companyData.plan_start_date, plan_expiry_date: companyData.plan_expiry_date, billing_cycle: companyData.billing_cycle };
         }
@@ -110,7 +120,7 @@ export function useCompanyInfo() {
 
       return {
         id: companyId,
-        name: companyName,
+        name: liveName || companyName,
         owner_email: ownerEmail,
         created_at: companyData?.created_at,
         custom_limits: customLimits,

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useCachedDashboardData } from "@/hooks/useCachedData";
-import { refreshUserRole } from "@/hooks/useUserRole";
+import { useUserRole, refreshUserRole } from "@/hooks/useUserRole";
 import { canPerformAction } from "@/utils/rolePermissions";
 import { companySizes } from "@/utils/companyConstants";
 
@@ -93,11 +93,21 @@ export default function ProfilePage() {
 
   const {
     company,
-    userRole,
     members,
     loading: dataLoading,
     refreshAll,
   } = useCachedDashboardData(user?.id || "", companyId, async () => (await getToken()) || "");
+
+  // Owner-only actions live on this page (edit settings, transfer ownership),
+  // so the role check backing them must never act on stale data — unlike
+  // useCachedDashboardData's userRole (5-minute TTL, persisted to
+  // localStorage across page loads), useUserRole is deliberately short-TTL
+  // and non-persistent for exactly this reason (see its own comments): a
+  // role that changed moments ago (e.g. this same company transferring
+  // ownership in another tab) must be reflected immediately, not up to 5
+  // minutes later, or a demoted Owner could still see — and click — a
+  // button for an action the backend will correctly reject with a 403.
+  const { userRole, loading: roleLoading } = useUserRole(companyId);
 
   const companyInfo = company as CompanyRecord | null;
   const resolvedCompanyId = companyInfo?.company_id || companyInfo?.id || companyId;
@@ -133,6 +143,23 @@ export default function ProfilePage() {
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
         throw new Error(err.error || "Failed to update company settings");
+      }
+
+      // Keep this browser's own cached copy in sync immediately — the same
+      // Clerk unsafeMetadata.companyName that onboarding/invite-acceptance
+      // set once and nothing since has ever updated. Other components now
+      // prefer a live company fetch over this cache (see useCompanyInfo.ts),
+      // but this closes the gap for anything that still reads it as a
+      // fallback, and updates it here rather than waiting on the next
+      // onboarding/invite event that will never come again for this user.
+      if (user) {
+        try {
+          await user.update({
+            unsafeMetadata: { ...user.unsafeMetadata, companyName: editName.trim() },
+          });
+        } catch {
+          // Non-critical — the live-fetch fallback still shows the right name.
+        }
       }
 
       toast({
@@ -286,9 +313,9 @@ export default function ProfilePage() {
                         {new Date(companyInfo?.created_at || Date.now()).toLocaleDateString()}
                       </span>
                     </div>
-                    <div className="flex justify-between border-b border-white/[0.08] pb-2">
-                      <span className="text-white/50">Owner Email:</span>
-                      <span className="truncate max-w-[220px]">{companyInfo?.owner_email}</span>
+                    <div className="flex justify-between items-start gap-3 border-b border-white/[0.08] pb-2">
+                      <span className="text-white/50 flex-shrink-0">Owner Email:</span>
+                      <span className="text-right break-all">{companyInfo?.owner_email}</span>
                     </div>
                     <div className="flex justify-between pb-2">
                       <span className="text-white/50">Company Size:</span>
