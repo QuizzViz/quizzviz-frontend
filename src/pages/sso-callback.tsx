@@ -1,64 +1,77 @@
-import { AuthenticateWithRedirectCallback, useUser, useSignIn } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export default function SSOCallback() {
-  const { isSignedIn, user, isLoaded } = useUser();
-  const { signIn } = useSignIn();
+  const clerk = useClerk();
+  const { isLoaded: isUserLoaded } = useUser();
   const router = useRouter();
-  const [callbackComplete, setCallbackComplete] = useState(false);
+  const hasRun = useRef(false);
 
   useEffect(() => {
-    // Wait until Clerk is loaded AND redirect callback has finished
-    if (!isLoaded || !callbackComplete) return;
+    // Wait for Clerk itself to finish loading, and only ever run this once.
+    // (Previously this drove off <AuthenticateWithRedirectCallback>'s
+    // afterSignInUrl/afterSignUpUrl/onAuthenticateWithRedirectCallback
+    // props — none of which exist on this Clerk SDK version, so they were
+    // silently ignored, the completion callback never fired, and our
+    // custom redirect logic below never ran at all. What was actually
+    // happening was Clerk's own built-in fallback: with no working custom
+    // handling, a failed callback falls back to the app's globally
+    // configured signInUrl ("/signin" in _app.tsx) regardless of why it
+    // failed. Calling clerk.handleRedirectCallback() directly is the
+    // documented way to intercept this and decide the destination
+    // ourselves.)
+    if (!isUserLoaded || hasRun.current) return;
+    hasRun.current = true;
 
-    // HANDLE FAILED OAUTH HERE - Before main logic
-    if (!isSignedIn) {
-      // Clerk's own signIn resource is authoritative for *why* the callback
-      // didn't produce a session — when the Google account has no matching
-      // Clerk user, firstFactorVerification comes back "transferable" with
-      // error code external_account_not_found. That's far more reliable
-      // than sessionStorage.authIntent, which has to survive a full-page
-      // round trip to Google's domain and back and can end up empty/stale
-      // by the time we're back here (that's exactly what was happening:
-      // the "signin" intent was getting lost, so this always fell through
-      // to the plain `/signin` branch below instead of `/signup`).
-      const noAccountFound =
-        signIn?.firstFactorVerification?.status === "transferable" ||
-        signIn?.firstFactorVerification?.error?.code === "external_account_not_found";
+    const authIntent = sessionStorage.getItem("authIntent");
+    sessionStorage.removeItem("authIntent");
+    sessionStorage.removeItem("oauthStartTime");
+    sessionStorage.removeItem("signupAttemptTime");
 
-      const authIntent = sessionStorage.getItem("authIntent");
-      sessionStorage.removeItem("authIntent");
-      sessionStorage.removeItem("oauthStartTime");
+    const noAccountFound = () =>
+      clerk.client?.signIn?.firstFactorVerification?.status === "transferable" ||
+      clerk.client?.signIn?.firstFactorVerification?.error?.code === "external_account_not_found";
 
-      if (noAccountFound || authIntent === "signin") {
-        router.push("/signup?message=No account found. Please sign up with Google.");
-      } else if (authIntent === "signup") {
-        router.push("/signin?message=Account already exists. Please sign in with Google.");
-      } else {
-        router.push("/signin");
+    const accountAlreadyExists = () =>
+      clerk.client?.signUp?.verifications?.externalAccount?.status === "transferable" ||
+      clerk.client?.signUp?.verifications?.externalAccount?.error?.code === "external_account_exists";
+
+    const decideDestination = (fallback: string) => {
+      if (authIntent !== "signup" && noAccountFound()) {
+        return "/signup?message=" + encodeURIComponent("No account found. Please sign up with Google.");
       }
-
-      return;
-    }
-
-    if (isSignedIn && user) {
-      const authIntent = sessionStorage.getItem('authIntent');
-
-      // Clear after reading
-      sessionStorage.removeItem('authIntent');
-      sessionStorage.removeItem('signupAttemptTime');
-
-      if (authIntent === 'signup') {
-        router.push("/onboarding");
-      } else if (authIntent === 'signin') {
-        router.push("/dashboard");
-      } else {
-        // No intent set — default to onboarding
-        router.push("/onboarding");
+      if (authIntent === "signup" && accountAlreadyExists()) {
+        return "/signin?message=" + encodeURIComponent("Account already exists. Please sign in with Google.");
       }
-    }
-  }, [isSignedIn, user, isLoaded, callbackComplete, router]);
+      if (fallback === "/dashboard" || fallback === "/onboarding") {
+        return fallback;
+      }
+      return authIntent === "signup" ? "/onboarding" : "/dashboard";
+    };
+
+    clerk
+      .handleRedirectCallback(
+        {
+          signInFallbackRedirectUrl: "/dashboard",
+          signUpFallbackRedirectUrl: "/onboarding",
+        },
+        async (to: string) => {
+          await router.push(decideDestination(to));
+        }
+      )
+      .catch((err: any) => {
+        const code = err?.errors?.[0]?.code;
+        console.error("OAuth callback failed:", err);
+        if (code === "external_account_not_found") {
+          router.push("/signup?message=" + encodeURIComponent("No account found. Please sign up with Google."));
+        } else if (code === "external_account_exists" || code === "identifier_already_signed_in") {
+          router.push("/signin?message=" + encodeURIComponent("Account already exists. Please sign in with Google."));
+        } else {
+          router.push("/signin");
+        }
+      });
+  }, [isUserLoaded, clerk, router]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
@@ -73,15 +86,6 @@ export default function SSOCallback() {
         </div>
         <h1 className="mt-4 text-xl font-medium text-gray-100 sm:text-2xl">Redirecting...</h1>
         <p className="mt-2 text-gray-100">Please wait while we log you in.</p>
-      </div>
-
-      <div className="invisible">
-        <AuthenticateWithRedirectCallback
-          afterSignInUrl="/sso-callback"
-          afterSignUpUrl="/sso-callback"
-          // @ts-ignore
-          onAuthenticateWithRedirectCallback={() => setCallbackComplete(true)}
-        />
       </div>
     </div>
   );
