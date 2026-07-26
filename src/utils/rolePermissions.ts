@@ -11,7 +11,9 @@ export type Permission =
   | 'delete_analytics_specific'
   | 'invite_members'
   | 'manage_roles'
-  | 'delete_company';
+  | 'delete_company'
+  | 'update_company_settings'
+  | 'transfer_ownership';
 
 export type Role = 'OWNER' | 'ADMIN' | 'MEMBER';
 
@@ -41,6 +43,8 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     invite_members: true,
     manage_roles: true,
     delete_company: true,
+    update_company_settings: true,
+    transfer_ownership: true,
   },
   ADMIN: {
     generate_quiz: true,
@@ -54,6 +58,8 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     invite_members: true,
     manage_roles: false,
     delete_company: false,
+    update_company_settings: false,
+    transfer_ownership: false,
   },
   MEMBER: {
     generate_quiz: true,
@@ -67,6 +73,8 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     invite_members: false,
     manage_roles: false,
     delete_company: false,
+    update_company_settings: false,
+    transfer_ownership: false,
   },
 };
 
@@ -90,6 +98,7 @@ export const canPerformAction = (
   permission: Permission,
   additionalContext?: {
     isQuizOwner?: boolean;
+    isPublished?: boolean;
   }
 ): boolean => {
   if (!userRole) return false;
@@ -97,6 +106,14 @@ export const canPerformAction = (
   // Special case for member limited update quiz
   if (permission === 'update_quiz' && userRole.role === 'MEMBER') {
     return additionalContext?.isQuizOwner || false;
+  }
+
+  // A Member may delete a quiz only while it's still unpublished AND they're
+  // the one who generated it — the boundary that matters is publish state,
+  // not identity. Once published, deletion reverts to Owner/Admin-only, same
+  // as publishing itself (mirrors the backend check in quiz_generation).
+  if (permission === 'delete_quiz' && userRole.role === 'MEMBER') {
+    return Boolean(additionalContext?.isQuizOwner) && !additionalContext?.isPublished;
   }
 
   return hasPermission(userRole.role, permission);
@@ -125,6 +142,7 @@ export const hasAnyPermission = (
   permissions: Permission[],
   additionalContext?: {
     isQuizOwner?: boolean;
+    isPublished?: boolean;
     isAdminOptionalDelete?: boolean;
   }
 ): boolean => {
@@ -143,6 +161,7 @@ export const hasAllPermissions = (
   permissions: Permission[],
   additionalContext?: {
     isQuizOwner?: boolean;
+    isPublished?: boolean;
     isAdminOptionalDelete?: boolean;
   }
 ): boolean => {
@@ -169,6 +188,8 @@ export const getPermissionDescription = (permission: Permission): string => {
     invite_members: 'Invite Members',
     manage_roles: 'Manage Roles',
     delete_company: 'Delete Company',
+    update_company_settings: 'Edit Company Settings',
+    transfer_ownership: 'Transfer Ownership',
   };
   
   return descriptions[permission] || permission;
