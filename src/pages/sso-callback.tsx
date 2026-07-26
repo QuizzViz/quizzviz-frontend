@@ -14,13 +14,9 @@ export default function SSOCallback() {
     // afterSignInUrl/afterSignUpUrl/onAuthenticateWithRedirectCallback
     // props — none of which exist on this Clerk SDK version, so they were
     // silently ignored, the completion callback never fired, and our
-    // custom redirect logic below never ran at all. What was actually
-    // happening was Clerk's own built-in fallback: with no working custom
-    // handling, a failed callback falls back to the app's globally
-    // configured signInUrl ("/signin" in _app.tsx) regardless of why it
-    // failed. Calling clerk.handleRedirectCallback() directly is the
-    // documented way to intercept this and decide the destination
-    // ourselves.)
+    // custom redirect logic below never ran at all. Calling
+    // clerk.handleRedirectCallback() directly is the documented way to
+    // intercept this and decide the destination ourselves.)
     if (!isUserLoaded || hasRun.current) return;
     hasRun.current = true;
 
@@ -29,84 +25,66 @@ export default function SSOCallback() {
     sessionStorage.removeItem("oauthStartTime");
     sessionStorage.removeItem("signupAttemptTime");
 
-    // Log the raw state every time, not just on a hunch it's needed —
-    // this is the only way to get a real captured object out of Clerk's
-    // client runtime (@clerk/clerk-js is loaded from Clerk's CDN, not
-    // present in node_modules, so it can't be inspected statically).
-    console.log("[sso-callback] signIn.firstFactorVerification:", clerk.client?.signIn?.firstFactorVerification);
-    console.log("[sso-callback] signUp.verifications.externalAccount:", clerk.client?.signUp?.verifications?.externalAccount);
+    const signInStatus = clerk.client?.signIn?.firstFactorVerification?.status;
+    const externalAccount = clerk.client?.signUp?.verifications?.externalAccount;
+    const externalAccountStatus = externalAccount?.status;
+    const externalAccountErrorCode = externalAccount?.error?.code;
 
-    // ClerkAPIError.code (per @clerk/types) is the only documented, stable
-    // field for a value like "external_account_not_found" — there is no
-    // `reason` field on the client-side error type (that's Clerk dashboard/
-    // webhook terminology for the same underlying code). Check every place
-    // that code can plausibly surface: on the resource's verification
-    // error, on its errors array (some Clerk versions attach ClerkAPIError[]
-    // directly to the resource), and via the status field as a secondary
-    // signal, before ever falling back to message text.
-    const errorCodesOf = (resource: any): string[] => {
-      const codes: string[] = [];
-      if (resource?.error?.code) codes.push(resource.error.code);
-      if (Array.isArray(resource?.errors)) {
-        for (const e of resource.errors) if (e?.code) codes.push(e.code);
-      }
-      return codes;
-    };
+    console.log("[sso-callback] signIn.firstFactorVerification.status:", signInStatus);
+    console.log("[sso-callback] signUp.externalAccount.status/errorCode:", externalAccountStatus, externalAccountErrorCode);
 
-    const noAccountFound = () => {
-      const v = clerk.client?.signIn?.firstFactorVerification;
-      const codes = errorCodesOf(v);
-      return (
-        codes.includes("external_account_not_found") ||
-        v?.status === "failed" && codes.some((c) => c.includes("not_found"))
-      );
-    };
+    // THE ACTUAL BUG: verified directly against @clerk/clerk-js@5.99.0's source
+    // (the version this app's @clerk/nextjs^6.33.3 / @clerk/clerk-react@5.51.0
+    // resolves to — same release timestamp). clerk.handleRedirectCallback()
+    // makes this exact internal decision on a "transferable" sign-in:
+    //
+    //   const userNeedsToBeCreated = si.firstFactorVerificationStatus === 'transferable';
+    //   if (userNeedsToBeCreated) {
+    //     if (params.transferable === false) {
+    //       return navigateToSignIn();               // <- Clerk's OWN navigation, not ours
+    //     }
+    //     const res = await signUp.create({ transfer: true, ... });  // <- silent auto-signup
+    //   }
+    //
+    // Passing transferable:false (the previous fix) does NOT make the promise
+    // fail cleanly into our own success/catch handlers below — it makes Clerk
+    // call navigateToSignIn() itself, which goes to the app's configured
+    // signInUrl ("/signin"), bypassing all of our custom logic entirely. That
+    // is exactly the reported symptom: "sign-in doesn't redirect to sign-up."
+    // The default (transferable:true) is just as wrong the other way — it
+    // silently completes the signup (sign_up.external_account.connected in
+    // the Clerk dashboard logs, even though the user only ever clicked
+    // "Sign in"). Neither of handleRedirectCallback's two built-in behaviors
+    // is what we want, so we must detect "transferable" ourselves BEFORE
+    // calling handleRedirectCallback, and skip calling it entirely for this
+    // case — this status is already populated on the client as soon as the
+    // browser lands back here from Google, independent of that call.
+    if (authIntent !== "signup" && signInStatus === "transferable") {
+      router.push("/signup?message=" + encodeURIComponent("No account found. Please sign up with Google."));
+      return;
+    }
+    if (authIntent === "signup" && externalAccountStatus === "transferable" && externalAccountErrorCode === "external_account_exists") {
+      router.push("/signin?message=" + encodeURIComponent("Account already exists. Please sign in with Google."));
+      return;
+    }
 
-    const accountAlreadyExists = () => {
-      const v = clerk.client?.signUp?.verifications?.externalAccount;
-      const codes = errorCodesOf(v);
-      return codes.includes("external_account_exists") || codes.includes("identifier_already_signed_in");
-    };
-
-    const decideDestination = (fallback: string) => {
-      if (authIntent !== "signup" && noAccountFound()) {
-        return "/signup?message=" + encodeURIComponent("No account found. Please sign up with Google.");
-      }
-      if (authIntent === "signup" && accountAlreadyExists()) {
-        return "/signin?message=" + encodeURIComponent("Account already exists. Please sign in with Google.");
-      }
-      if (fallback === "/dashboard" || fallback === "/onboarding") {
-        return fallback;
-      }
-      return authIntent === "signup" ? "/onboarding" : "/dashboard";
-    };
-
+    // Neither transfer scenario applies — normal success/failure path.
     clerk
       .handleRedirectCallback(
         {
-          // Clerk's default (transferable: true) auto-transfers a failed
-          // sign-in into a brand-new, incomplete sign-up behind the scenes
-          // ("prevents opaque sign ups" is literally the opposite of what
-          // we want here) — that's what the Clerk dashboard logs showed:
-          // oauth_callback.failed (reason external_account_not_found)
-          // followed immediately by sign_up.external_account.connected,
-          // even though the user only ever tried to sign IN. With transfer
-          // off, a sign-in with no matching account just fails cleanly, so
-          // our own noAccountFound()/catch logic below can actually decide
-          // to send the user to /signup instead of Clerk silently doing it.
-          transferable: false,
           signInFallbackRedirectUrl: "/dashboard",
           signUpFallbackRedirectUrl: "/onboarding",
         },
         async (to: string) => {
-          await router.push(decideDestination(to));
+          await router.push(to === "/dashboard" || to === "/onboarding" ? to : authIntent === "signup" ? "/onboarding" : "/dashboard");
         }
       )
       .catch((err: any) => {
-        // This is the actual captured error object — check the browser
-        // console on the next repro and paste this back if the redirect is
-        // still wrong; it's the ground truth no amount of static reading of
-        // @clerk/types can substitute for.
+        // Genuinely unexpected failure (not the transferable case, which is
+        // handled above before this call even runs). Check the browser
+        // console on the next repro and paste this back if something is
+        // still wrong — it's the ground truth no amount of static reading
+        // of @clerk/types can substitute for.
         console.error("[sso-callback] handleRedirectCallback rejected:", err);
         console.error("[sso-callback] err.errors:", err?.errors);
 
@@ -124,8 +102,6 @@ export default function SSOCallback() {
         } else if (codes.includes("external_account_exists") || codes.includes("identifier_already_signed_in")) {
           router.push("/signin?message=" + encodeURIComponent("Account already exists. Please sign in with Google."));
         } else if (authIntent !== "signup" && message.includes("not found")) {
-          // No stable code came through at all — fall back to the message
-          // text rather than silently landing on /signin with no signal.
           router.push("/signup?message=" + encodeURIComponent("No account found. Please sign up with Google."));
         } else {
           router.push("/signin");
