@@ -1,10 +1,11 @@
 import { useCallback, useState, FormEvent } from "react";
-import { useSignIn, useClerk, useUser } from "@clerk/nextjs";
+import { useSignIn, useSignUp, useClerk, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/router";
 
 // Consolidates all state and actions for the custom Sign In flow
 export function useSignInController() {
   const { signIn, isLoaded } = useSignIn();
+  const { signUp } = useSignUp();
   const { setActive, signOut } = useClerk();
   const { user } = useUser();
   const router = useRouter();
@@ -19,7 +20,7 @@ export function useSignInController() {
 
   const handleOAuth = useCallback(
     async (provider: "oauth_google") => {
-      if (!isLoaded || !signIn) return;
+      if (!isLoaded || !signIn || !signUp) return;
       if (user) {
         setError("You are already signed in. Use 'Switch account' to continue with another account.");
         return;
@@ -32,13 +33,13 @@ export function useSignInController() {
         await signIn.authenticateWithRedirect({
           strategy: provider,
           redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/sso-callback",
+          redirectUrlComplete: "/dashboard",
         });
       } catch (err: any) {
         // Handle different error structures for OAuth
         let msg = "";
         let errorCode = "";
-        
+
         // Check for nested error structure (OAuth verification errors)
         if (err?.response?.sign_in?.first_factor_verification?.error) {
           const oauthError = err.response.sign_in.first_factor_verification.error;
@@ -54,7 +55,7 @@ export function useSignInController() {
           msg = (err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "").toString();
           errorCode = err?.errors?.[0]?.code || "";
         }
-        
+
         // Debug logging for OAuth errors
         console.log("OAuth SignIn Error - Full Analysis:", {
           message: msg,
@@ -65,25 +66,45 @@ export function useSignInController() {
           firstFactorError: err?.response?.data?.sign_in?.first_factor_verification?.error,
           messageLower: msg.toLowerCase()
         });
-        
+
         // Check if OAuth error indicates account doesn't exist
-        if (msg.toLowerCase().includes("not found") || 
-            msg.toLowerCase().includes("doesn't exist") || 
-            msg.toLowerCase().includes("no account found") ||
-            msg.toLowerCase().includes("identifier not found") ||
-            msg.toLowerCase().includes("invalid external account") ||
-            msg.toLowerCase().includes("external account not found") ||
-            errorCode === "external_account_not_found") {
-          // Redirect to sign up page for OAuth
-          console.log("OAuth Account Not Found - Redirecting to signup...");
-          router.push(`/signup?message=No account found. Please sign up with Google.`);
+        const isAccountNotFound =
+          errorCode === "external_account_not_found" ||
+          msg.toLowerCase().includes("not found") ||
+          msg.toLowerCase().includes("doesn't exist") ||
+          msg.toLowerCase().includes("no account found") ||
+          msg.toLowerCase().includes("identifier not found") ||
+          msg.toLowerCase().includes("invalid external account") ||
+          msg.toLowerCase().includes("external account not found");
+
+        if (isAccountNotFound) {
+          // Mirror useSignUpController's working pattern for the reverse
+          // case: instead of just navigating to /signup and losing the
+          // Google consent the user already granted, re-attempt the same
+          // OAuth strategy through signUp — Clerk will create the account
+          // using the identity Google already verified. Only fall back to
+          // a plain redirect if that retry itself fails.
+          console.log("OAuth Account Not Found - Retrying as sign up...");
+          sessionStorage.setItem('authIntent', 'signup');
+          sessionStorage.setItem('signupAttemptTime', Date.now().toString());
+          try {
+            await signUp.authenticateWithRedirect({
+              strategy: provider,
+              redirectUrl: "/sso-callback",
+              redirectUrlComplete: "/onboarding",
+            });
+          } catch (signUpErr: any) {
+            console.error("OAuth retry as sign up failed:", signUpErr);
+            router.push(`/signup?message=${encodeURIComponent("No account found. Please sign up with Google.")}`);
+            setOauthLoading(null);
+          }
         } else {
           setError(msg || "Failed to continue with provider. Check provider configuration in Clerk.");
+          setOauthLoading(null);
         }
-        setOauthLoading(null);
       }
     },
-    [isLoaded, signIn, user, router]
+    [isLoaded, signIn, signUp, user, router]
   );
 
   const onSubmit = async (e: FormEvent) => {
