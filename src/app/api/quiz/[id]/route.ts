@@ -180,7 +180,7 @@ export async function DELETE(
     // Delete associated analytics/quiz results
     try {
       const analyticsUrl = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}/result/quiz/${quizId}?company_id=${companyId}`;
-      
+
       const analyticsResponse = await fetch(analyticsUrl, {
         method: 'DELETE',
         headers: {
@@ -200,7 +200,40 @@ export async function DELETE(
       // Don't fail the entire operation if analytics deletion fails
     }
 
-    return new NextResponse(null, { status: 204 });
+    // Deleting a quiz must clean up the WHOLE thing, not just the internal
+    // generated_quizzes record — if the quiz was published, its
+    // published_quizzes row (and public link) was previously left behind
+    // entirely untouched, so the public link kept working after "deleting"
+    // the quiz. Centralized here (rather than duplicated per-caller
+    // client-side) so every delete entry point gets the same full cleanup.
+    let publishCleanup: 'ok' | 'not_published' | 'failed' = 'not_published';
+    try {
+      const publishUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${companyId}/quiz/${encodeURIComponent(quizId)}`;
+
+      const publishResponse = await fetch(publishUrl, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'x-company-id': companyId
+        }
+      });
+
+      if (publishResponse.ok) {
+        publishCleanup = 'ok';
+        console.log('Published quiz record removed for quiz:', quizId);
+      } else if (publishResponse.status === 404) {
+        publishCleanup = 'not_published';
+      } else {
+        publishCleanup = 'failed';
+        console.error('Failed to remove published quiz record for:', quizId, 'Status:', publishResponse.status);
+      }
+    } catch (publishError) {
+      publishCleanup = 'failed';
+      console.error('Error removing published quiz record for:', quizId, publishError);
+    }
+
+    return NextResponse.json({ success: true, publishCleanup }, { status: 200 });
   } catch (error: any) {
     console.error('Error in DELETE /api/quiz/[id]:', error);
     return handleApiError(error);

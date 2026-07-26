@@ -11,7 +11,9 @@ export type Permission =
   | 'delete_analytics_specific'
   | 'invite_members'
   | 'manage_roles'
-  | 'delete_company';
+  | 'delete_company'
+  | 'update_company_settings'
+  | 'transfer_ownership';
 
 export type Role = 'OWNER' | 'ADMIN' | 'MEMBER';
 
@@ -41,6 +43,8 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     invite_members: true,
     manage_roles: true,
     delete_company: true,
+    update_company_settings: true,
+    transfer_ownership: true,
   },
   ADMIN: {
     generate_quiz: true,
@@ -54,6 +58,8 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     invite_members: true,
     manage_roles: false,
     delete_company: false,
+    update_company_settings: false,
+    transfer_ownership: false,
   },
   MEMBER: {
     generate_quiz: true,
@@ -67,6 +73,8 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     invite_members: false,
     manage_roles: false,
     delete_company: false,
+    update_company_settings: false,
+    transfer_ownership: false,
   },
 };
 
@@ -169,6 +177,8 @@ export const getPermissionDescription = (permission: Permission): string => {
     invite_members: 'Invite Members',
     manage_roles: 'Manage Roles',
     delete_company: 'Delete Company',
+    update_company_settings: 'Edit Company Settings',
+    transfer_ownership: 'Transfer Ownership',
   };
   
   return descriptions[permission] || permission;

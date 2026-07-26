@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { generateCompanyId, validateCompanyData } from '@/utils/companyValidation';
+import { companySizes } from '@/utils/companyConstants';
 import {
   Select,
   SelectContent,
@@ -18,11 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-const companySizes = [
-  '1-10', '11-30', '31-50', '51-100',
-  '101-200', '201-500', '501-1000', '1000+'
-];
 
 export default function OnboardingPage() {
   const router = useRouter();

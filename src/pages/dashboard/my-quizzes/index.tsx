@@ -35,6 +35,9 @@ import {
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { useQuizExpirationChecker } from "@/components/QuizExpirationChecker";
+import { useUserRole } from "@/hooks/useUserRole";
+import { canPerformAction } from "@/utils/rolePermissions";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuizSummary {
   quiz_id: string;
@@ -79,15 +82,18 @@ export default function MyQuizzesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<{id: string; name: string; owner_email?: string; } | null>(null);
   const queryClient = useQueryClient();
-  
+  const { toast } = useToast();
+
   const { plan, isLoading: isPlanLoading } = useUserPlanContext();
-  
+
   const isEnterprisePlan = plan === 'Enterprise';
 
   // Use the same approach as teams page - metadata first, then localStorage fallback
   const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
   const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') as string | null : null;
   const companyId = metadataCompanyId || localStorageCompanyId || '';
+
+  const { userRole } = useUserRole(companyId);
   
   const companyName = user?.unsafeMetadata?.companyName as string || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
   
@@ -235,25 +241,48 @@ export default function MyQuizzesPage() {
   }, [queryClient, companyInfo?.id]);
 
   const handleDeleteQuiz = async (quizId: string) => {
-    if (!quizId) return;
-    
+    if (!quizId || !companyInfo?.id) return;
+
     try {
       setIsDeleting(true);
-      const response = await fetch(`/api/quiz/${quizId}`, {
+      // companyId is required by the backend proxy (getAuthAndCompanyId) — this
+      // call previously omitted it entirely, so it always 400'd if triggered.
+      const response = await fetch(`/api/quiz/${quizId}?companyId=${encodeURIComponent(companyInfo.id)}`, {
         method: 'DELETE',
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to delete quiz');
       }
-      
+
+      const data = await response.json().catch(() => ({}));
+
       await queryClient.invalidateQueries({ queryKey: ['quizzes', companyInfo?.id] });
       setDeleteDialogOpen(false);
       setQuizToDelete(null);
 
+      if (data?.publishCleanup === 'failed') {
+        toast({
+          title: 'Quiz deleted',
+          description: 'The quiz was removed, but its public link could not be revoked — please try again or contact support.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Quiz deleted',
+          description: 'The quiz and its published data (if any) have been removed.',
+          className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
+        });
+      }
+
     } catch (error) {
       setFetchError(error instanceof Error ? error.message : 'Failed to delete quiz');
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete quiz',
+        variant: 'destructive',
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -367,6 +396,41 @@ export default function MyQuizzesPage() {
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
                                 <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience} yrs</Badge>
+                                {canPerformAction(userRole, 'delete_quiz', { isQuizOwner: q.user_id === user?.id }) && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        className="h-7 w-7 flex items-center justify-center rounded-md text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                                        aria-label="Quiz actions"
+                                      >
+                                        <MoreVertical className="h-4 w-4" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                      align="end"
+                                      className="bg-[#161c2a] border-white/10 text-white"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                    >
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setQuizToDelete(q.quiz_id);
+                                          setDeleteDialogOpen(true);
+                                        }}
+                                        className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
                               </div>
                             </div>
                             <CardDescription className="text-white/70">
