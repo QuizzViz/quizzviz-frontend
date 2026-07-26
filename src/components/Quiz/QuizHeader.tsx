@@ -180,7 +180,7 @@ export function QuizHeader({
               Edit Details
             </Button>
           )}
-          {!roleLoading && canPerformAction(userRole, 'delete_quiz', { isQuizOwner: quiz.user_id === user?.id }) && (
+          {!roleLoading && canPerformAction(userRole, 'delete_quiz', { isQuizOwner: quiz.user_id === user?.id, isPublished }) && (
             <Button
               variant="destructive"
               className="pointer-events-auto hover:bg-red-700 transition-all duration-150 active:scale-95"

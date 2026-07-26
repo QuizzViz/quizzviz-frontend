@@ -98,6 +98,7 @@ export const canPerformAction = (
   permission: Permission,
   additionalContext?: {
     isQuizOwner?: boolean;
+    isPublished?: boolean;
   }
 ): boolean => {
   if (!userRole) return false;
@@ -105,6 +106,14 @@ export const canPerformAction = (
   // Special case for member limited update quiz
   if (permission === 'update_quiz' && userRole.role === 'MEMBER') {
     return additionalContext?.isQuizOwner || false;
+  }
+
+  // A Member may delete a quiz only while it's still unpublished AND they're
+  // the one who generated it — the boundary that matters is publish state,
+  // not identity. Once published, deletion reverts to Owner/Admin-only, same
+  // as publishing itself (mirrors the backend check in quiz_generation).
+  if (permission === 'delete_quiz' && userRole.role === 'MEMBER') {
+    return Boolean(additionalContext?.isQuizOwner) && !additionalContext?.isPublished;
   }
 
   return hasPermission(userRole.role, permission);
@@ -133,6 +142,7 @@ export const hasAnyPermission = (
   permissions: Permission[],
   additionalContext?: {
     isQuizOwner?: boolean;
+    isPublished?: boolean;
     isAdminOptionalDelete?: boolean;
   }
 ): boolean => {
@@ -151,6 +161,7 @@ export const hasAllPermissions = (
   permissions: Permission[],
   additionalContext?: {
     isQuizOwner?: boolean;
+    isPublished?: boolean;
     isAdminOptionalDelete?: boolean;
   }
 ): boolean => {

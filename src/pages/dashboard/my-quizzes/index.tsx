@@ -396,7 +396,7 @@ export default function MyQuizzesPage() {
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
                                 <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience} yrs</Badge>
-                                {canPerformAction(userRole, 'delete_quiz', { isQuizOwner: q.user_id === user?.id }) && (
+                                {canPerformAction(userRole, 'delete_quiz', { isQuizOwner: q.user_id === user?.id, isPublished }) && (
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <button
