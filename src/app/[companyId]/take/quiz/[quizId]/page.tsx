@@ -416,6 +416,30 @@ export default function QuizPage({ params }: PageProps) {
     fetchInitialQuizData();
   }, [companyId, quizId]);
 
+  // Best-effort live company name for display — company_id is an immutable
+  // slug generated once at creation, so formatCompanyIdToName(companyId)
+  // (used as the fallback below) can never reflect a rename made afterward
+  // via the dashboard's Edit Company Settings. This fetch is purely
+  // cosmetic: if it fails or hasn't resolved yet, the page falls back to
+  // the slug-derived name exactly as before, so a candidate's assessment
+  // is never blocked by it.
+  const [liveCompanyName, setLiveCompanyName] = useState<string | null>(null);
+  useEffect(() => {
+    if (!companyId) return;
+    let cancelled = false;
+    fetch(`${process.env.NEXT_PUBLIC_CREATE_COMPANY_SERVICE_URL}/company/${encodeURIComponent(companyId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.name) setLiveCompanyName(data.name);
+      })
+      .catch(() => {
+        // Non-critical — falls back to formatCompanyIdToName(companyId).
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [companyId]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -1290,7 +1314,7 @@ const beginQuiz = useCallback(async () => {
                       <div className="flex-1">
                         <p className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Organization</p>
                         <p className="text-white font-semibold text-lg">
-                          {formatCompanyIdToName(quizData?.company_id || companyId)}
+                          {liveCompanyName || formatCompanyIdToName(quizData?.company_id || companyId)}
                         </p>
                       </div>
                     </div>
@@ -1352,7 +1376,7 @@ const beginQuiz = useCallback(async () => {
         <>
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent mb-2">
-              Welcome to {formatCompanyIdToName(companyId)} Quiz
+              Welcome to {liveCompanyName || formatCompanyIdToName(companyId)} Quiz
             </h1>
             <p className="text-gray-400">Enter your details to begin the assessment</p>
           </div>

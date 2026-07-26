@@ -46,16 +46,42 @@ export default function DashboardSidebar({
     (user?.unsafeMetadata?.companyId as string | undefined) ||
     (typeof window !== "undefined" ? sessionStorage.getItem("userCompanyId") || localStorage.getItem("userCompanyId") : null) ||
     "";
-  const { userRole } = useUserRole(companyId);
+  const { userRole, loading: roleLoading } = useUserRole(companyId);
   const canSeePendingCount = userRole?.role === "OWNER" || userRole?.role === "ADMIN";
+
+  // This sidebar remounts fresh on every dashboard page navigation (each page
+  // renders its own <DashboardSideBar />, there's no shared persistent
+  // layout), which resets pendingPublishCount to null every time — and
+  // useUserRole's role also starts null for a moment after every remount
+  // until its own effect resolves. Seed from the last known value in
+  // sessionStorage so a fresh mount shows it immediately instead of
+  // blanking the badge and popping it back in a beat later.
+  useEffect(() => {
+    if (typeof window === "undefined" || !companyId) return;
+    const stored = sessionStorage.getItem(`pendingPublishCount_${companyId}`);
+    if (stored !== null) {
+      const parsed = parseInt(stored, 10);
+      if (!Number.isNaN(parsed)) setPendingPublishCount(parsed);
+    }
+  }, [companyId]);
 
   // Only Owner/Admin can act on unpublished quizzes, so only they see this —
   // it's a live count, refetched whenever the sidebar mounts (every page nav).
   useEffect(() => {
-    if (!canSeePendingCount || !companyId) {
+    // Role hasn't resolved yet (fresh mount, or a background revalidation in
+    // flight) — keep showing whatever we last knew rather than hiding it;
+    // only a DEFINITIVE "you're not Owner/Admin" should clear the badge.
+    if (roleLoading) return;
+
+    if (!canSeePendingCount) {
       setPendingPublishCount(null);
+      if (typeof window !== "undefined" && companyId) {
+        sessionStorage.removeItem(`pendingPublishCount_${companyId}`);
+      }
       return;
     }
+    if (!companyId) return;
+
     let cancelled = false;
     (async () => {
       try {
@@ -67,15 +93,18 @@ export default function DashboardSidebar({
         const data = await res.json();
         if (!cancelled && typeof data?.pending_count === "number") {
           setPendingPublishCount(data.pending_count);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(`pendingPublishCount_${companyId}`, String(data.pending_count));
+          }
         }
       } catch {
-        // Non-critical — the badge just won't show if this fails.
+        // Non-critical — keep showing the last known count if this fails.
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [canSeePendingCount, companyId, getToken]);
+  }, [roleLoading, canSeePendingCount, companyId, getToken]);
 
   useEffect(() => {
     const handleScroll = () => {
