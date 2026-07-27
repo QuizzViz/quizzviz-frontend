@@ -530,6 +530,16 @@ export default function TeamsPage() {
   const [isSavingRole, setIsSavingRole] = useState(false);
   const [originalRole, setOriginalRole] = useState<"OWNER" | "ADMIN" | "MEMBER" | null>(null);
 
+  // Assigning "Owner" to someone else isn't a normal role edit — a company
+  // only ever has one Owner, so this must go through the real
+  // transfer-ownership flow (which demotes the current Owner to Admin and
+  // updates companies.owner_id), not the plain role PUT below. That plain
+  // PUT would otherwise happily set a second row's role to 'OWNER' without
+  // touching companies.owner_id at all, leaving two members both showing
+  // "Owner" while the backend still only recognizes the original one.
+  const [pendingOwnerTransfer, setPendingOwnerTransfer] = useState<CompanyMember | null>(null);
+  const [isTransferringOwnership, setIsTransferringOwnership] = useState(false);
+
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [isDeletingMember, setIsDeletingMember] = useState(false);
 
@@ -666,6 +676,15 @@ export default function TeamsPage() {
       return;
     }
 
+    // Assigning Owner to someone who isn't already the Owner needs its own
+    // confirmation + the real transfer-ownership call, not the plain role
+    // PUT below — hand off to that flow instead of saving here.
+    if (editingMember.role === "OWNER" && originalRole !== "OWNER") {
+      setIsEditRoleOpen(false);
+      setPendingOwnerTransfer(editingMember);
+      return;
+    }
+
     setIsSavingRole(true);
     try {
       const token = await getToken();
@@ -706,6 +725,64 @@ export default function TeamsPage() {
     } finally {
       setIsSavingRole(false);
       setIsEditRoleOpen(false);
+      setOriginalRole(null);
+    }
+  };
+
+  const cancelOwnerTransfer = () => {
+    setPendingOwnerTransfer(null);
+    setEditingMember(null);
+    setOriginalRole(null);
+  };
+
+  const handleConfirmOwnerTransfer = async () => {
+    if (!pendingOwnerTransfer || !company?.company_id || !user) return;
+
+    setIsTransferringOwnership(true);
+    try {
+      const token = await getToken();
+      const response = await fetch(
+        `/api/company/${encodeURIComponent(company.company_id)}/transfer-ownership`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            new_owner_user_id: pendingOwnerTransfer.user_id,
+            old_owner_name: user.fullName || user.primaryEmailAddress?.emailAddress || "Previous owner",
+            old_owner_email: user.primaryEmailAddress?.emailAddress || "",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to transfer ownership");
+      }
+
+      toast({
+        title: "Ownership Transferred",
+        description: `${pendingOwnerTransfer.name} is now the Owner. You're now an Admin.`,
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+      });
+
+      if (user?.id && company?.company_id) {
+        const tokenForRefresh = await getToken();
+        if (tokenForRefresh) {
+          await refreshUserRole(user.id, company.company_id, async () => tokenForRefresh);
+        }
+      }
+
+      refreshMembersAndRole();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to transfer ownership",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTransferringOwnership(false);
+      setPendingOwnerTransfer(null);
+      setEditingMember(null);
       setOriginalRole(null);
     }
   };
@@ -1109,6 +1186,54 @@ export default function TeamsPage() {
                   </div>
                 </form>
               )}
+            </DialogContent>
+          </Dialog>
+
+          {/* ── Ownership Transfer Confirmation Dialog ────────────────────────── */}
+          <Dialog
+            open={!!pendingOwnerTransfer}
+            onOpenChange={(open) => {
+              if (!open && !isTransferringOwnership) cancelOwnerTransfer();
+            }}
+          >
+            <DialogContent className="bg-[#161c2a] border border-white/10 text-white rounded-[20px] shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-sm">
+              <div className="flex flex-col items-center text-center pt-2 pb-1">
+                <div className="w-[52px] h-[52px] rounded-[14px] bg-amber-500/[0.12] border border-amber-500/[0.22] flex items-center justify-center mb-[18px]">
+                  <FiStar className="w-[22px] h-[22px] text-amber-400" />
+                </div>
+                <h3 className="text-[17px] font-bold text-[#f0f4ff] mb-[8px]">Transfer ownership?</h3>
+                <p className="text-[13px] text-white/45 leading-[1.55] mb-[24px]">
+                  A company can only have one Owner. Making{" "}
+                  <span className="text-white/75 font-semibold">
+                    {pendingOwnerTransfer?.name ?? pendingOwnerTransfer?.invited_email ?? "this member"}
+                  </span>{" "}
+                  the Owner will demote you to Admin. This can be undone later by transferring
+                  ownership back.
+                </p>
+                <div className="flex w-full gap-[10px]">
+                  <Button
+                    onClick={cancelOwnerTransfer}
+                    disabled={isTransferringOwnership}
+                    className="flex-1 bg-white/[0.05] border border-white/[0.12] text-white/70 hover:bg-white/[0.09] rounded-[11px] h-[42px]"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmOwnerTransfer}
+                    disabled={isTransferringOwnership}
+                    className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:brightness-110 rounded-[11px] h-[42px] font-semibold"
+                  >
+                    {isTransferringOwnership ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        Transferring...
+                      </>
+                    ) : (
+                      "Yes, transfer"
+                    )}
+                  </Button>
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
 
