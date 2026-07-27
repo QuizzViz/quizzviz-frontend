@@ -4,12 +4,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FC, useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Zap, X, Code, BookOpen, Search } from "lucide-react";
+import { Zap, X, Code, BookOpen, Search, Sparkles, ShieldCheck, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
+import { InputModeToggle, type InputMode } from "@/components/CreateQuizCard/parts/InputModeToggle";
+import FileUpload from "@/components/CreateQuizCard/parts/FileUpload";
 
 const ROLES = [
   "Python Developer",
@@ -112,6 +114,8 @@ const HeroSection: FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [techSearch, setTechSearch] = useState('');
   const [showTechDropdown, setShowTechDropdown] = useState(false);
+  const [inputMode, setInputMode] = useState<InputMode>('file_upload');
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
 
   // Role-based tech stack mapping
   const getRoleBasedTechStack = (selectedRole: string) => {
@@ -270,9 +274,15 @@ const HeroSection: FC = () => {
   const totalWeight = techStack.reduce((sum, t) => sum + t.weight, 0);
 
   const headline = {
-    main: "Stop Interviewing Devs who can't code",
-    sub: "Send a quiz. Only interview devs who pass."
+    main: "Turn Any Document Into a Secure Assessment with AI",
+    sub: "Upload your documents, let AI create role-specific assessments, then securely evaluate candidates and make better hiring decisions with actionable insights."
   };
+
+  const trustPills = [
+    { icon: Sparkles, label: "AI-generated questions" },
+    { icon: ShieldCheck, label: "Secure evaluation" },
+    { icon: BarChart3, label: "Actionable insights" },
+  ];
 
   return (
     <section id="hero" className="relative overflow-hidden pt-8 sm:pt-10 md:pt-16 lg:pt-20 pb-6 min-h-[80vh] scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
@@ -283,12 +293,28 @@ const HeroSection: FC = () => {
         <div className="flex flex-col items-center justify-center min-h-[calc(80vh-6rem)] py-6">
           
           <div className="text-center mb-10 max-w-4xl">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-4 leading-tight">
-              {headline.main}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-5 leading-tight">
+              Turn Any Document Into a{" "}
+              <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+                Secure Assessment
+              </span>{" "}
+              with AI
             </h1>
-            <p className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto">
               {headline.sub}
             </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+              {trustPills.map(({ icon: Icon, label }) => (
+                <span
+                  key={label}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm text-gray-200"
+                >
+                  <Icon className="w-3.5 h-3.5 text-blue-400" />
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
 
           <div className="w-full max-w-5xl">
@@ -296,11 +322,11 @@ const HeroSection: FC = () => {
               <CardHeader className="pb-3 border-b border-white/10">
                 <CardTitle className="text-xl font-bold text-center">
                   <span className="bg-gradient-to-r from-teal-300 via-blue-400 to-blue-500 bg-clip-text text-transparent">
-                    Create a Technical Assessment
+                    Build Your Assessment
                   </span>
                 </CardTitle>
                 <CardDescription className="text-gray-300 text-center text-sm">
-                  Design secure coding tests to identify top technical talent
+                  Upload a document or pick a tech stack — AI builds the assessment either way
                 </CardDescription>
               </CardHeader>
               
@@ -319,8 +345,22 @@ const HeroSection: FC = () => {
                       popoverClassName="bg-gray-900 border border-white/10"
                     />
                   </div>
-                  
+
+                  {/* Content Source: document upload or tech stack */}
+                  <InputModeToggle mode={inputMode} onModeChange={setInputMode} />
+
+                  {/* Upload Document */}
+                  {inputMode === 'file_upload' && (
+                    <FileUpload
+                      value={uploadedFiles}
+                      onChange={setUploadedFiles}
+                      maxFiles={3}
+                      description="Upload a job description, spec, or reference doc — AI will generate role-specific questions straight from its content."
+                    />
+                  )}
+
                   {/* Tech Stack */}
+                  {inputMode === 'tech_stack' && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-white font-medium text-sm">Tech Stack</Label>
@@ -328,7 +368,7 @@ const HeroSection: FC = () => {
                         {techStack.length}/{TECHNOLOGIES.length} technologies
                       </span>
                     </div>
-                    
+
                     {/* Search Input */}
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -418,7 +458,8 @@ const HeroSection: FC = () => {
                       </>
                     )}
                   </div>
-                  
+                  )}
+
                   {/* Experience and Count */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -519,7 +560,11 @@ const HeroSection: FC = () => {
                   <Button
                     className="w-full h-12 text-base font-bold bg-gradient-to-r from-green-500 to-blue-500 hover:brightness-110 text-white transition-all duration-300 shadow-md hover:shadow-xl rounded-lg"
                     onClick={handleGenerate}
-                    disabled={!role || techStack.length === 0 || isGenerating}
+                    disabled={
+                      !role ||
+                      (inputMode === 'tech_stack' ? techStack.length === 0 : uploadedFiles.length === 0) ||
+                      isGenerating
+                    }
                   >
                     {isGenerating ? (
                       <span className="flex items-center gap-2">

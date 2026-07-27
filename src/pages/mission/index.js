@@ -30,7 +30,7 @@ export default function OurMission() {
                 Smarter <span className="text-teal-400">Technical</span> Hiring
               </h1>
               <p className="text-xl text-gray-400 leading-relaxed">
-                We help companies find the right technical talent through skill-based assessments
+                We help companies find the right technical talent through AI-generated, skill-based assessments — built from any tech stack, or straight from your own documents
               </p>
             </div>
           </div>
@@ -39,7 +39,7 @@ export default function OurMission() {
             <div className="bg-gray-900/50 rounded-2xl p-8 space-y-6 border border-gray-800/50">
               <h3 className="text-2xl font-semibold text-teal-400">Our Approach</h3>
               <p className="text-gray-300 leading-relaxed">
-                Traditional hiring often focuses too much on resumes and not enough on actual skills. We believe in assessing technical abilities first, before the interview stage.
+                Traditional hiring often focuses too much on resumes and not enough on actual skills. We believe in assessing technical abilities first, before the interview stage — whether that means generating a quiz from a tech stack or turning your own documents into a role-specific assessment with AI.
               </p>
               
               <div className="space-y-4 mt-6">
@@ -91,8 +91,8 @@ export default function OurMission() {
                     <span className="text-teal-400 text-sm font-medium">1</span>
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-100">Select & Generate</h4>
-                    <p className="text-gray-400 text-sm mt-1">Choose your tech stack and experience level, then generate your quiz with one click.</p>
+                    <h4 className="font-medium text-gray-100">Select or Upload</h4>
+                    <p className="text-gray-400 text-sm mt-1">Choose your tech stack and experience level — or upload a document — then let AI generate your quiz with one click.</p>
                   </div>
                 </div>
 
@@ -122,7 +122,7 @@ export default function OurMission() {
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-100">Analyze & Hire</h4>
-                    <p className="text-gray-400 text-sm mt-1">Review detailed candidate results, compare scores, and invite top performers for interviews.</p>
+                    <p className="text-gray-400 text-sm mt-1">Review detailed candidate results, compare scores, and make better hiring decisions with actionable insights.</p>
                   </div>
                 </div>
               </div>
