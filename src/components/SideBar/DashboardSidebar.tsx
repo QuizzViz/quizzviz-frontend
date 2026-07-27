@@ -296,7 +296,7 @@ export default function DashboardSidebar({
                         <item.Icon className={`${isMobile ? navIconSizeClass : "w-5 h-5"}`} />
                         {showPendingBadge && !isOpen && !isMobile && (
                           <span
-                            className="absolute -top-1.5 -right-1.5 h-2.5 w-2.5 rounded-full bg-amber-400 border border-black"
+                            className="absolute -top-1.5 -right-1.5 h-2.5 w-2.5 rounded-full bg-blue-400 border border-black"
                             aria-hidden="true"
                           />
                         )}
@@ -313,7 +313,7 @@ export default function DashboardSidebar({
                         {item.name}
                         {showPendingBadge && (isOpen || isMobile) && (
                           <span
-                            className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-black text-[11px] font-bold leading-none"
+                            className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] font-bold leading-none"
                             title={`${pendingPublishCount} quiz${pendingPublishCount === 1 ? "" : "zes"} awaiting publish`}
                           >
                             {pendingPublishCount}
