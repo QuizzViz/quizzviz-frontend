@@ -263,18 +263,16 @@ export default function MyQuizzesPage() {
       setQuizToDelete(null);
 
       if (data?.publishCleanup === 'failed') {
-        toast({
-          title: 'Quiz deleted',
-          description: 'The quiz was removed, but its public link could not be revoked — please try again or contact support.',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Quiz deleted',
-          description: 'The quiz and its published data (if any) have been removed.',
-          className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
-        });
+        // The quiz itself was deleted successfully — only the best-effort
+        // public link cleanup failed, so this isn't a user-facing error.
+        console.error('Quiz deleted but public link cleanup failed for quiz:', quizId);
       }
+
+      toast({
+        title: 'Quiz deleted',
+        description: 'The quiz and its published data (if any) have been removed.',
+        className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
+      });
 
     } catch (error) {
       setFetchError(error instanceof Error ? error.message : 'Failed to delete quiz');

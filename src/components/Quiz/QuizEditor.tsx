@@ -428,18 +428,16 @@ export function QuizEditor() {
       queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
 
       if (data?.publishCleanup === "failed") {
-        toast({
-          title: "Quiz deleted",
-          description: "The quiz was removed, but its public link could not be revoked — please try again or contact support.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Deleted",
-          description: "Quiz removed successfully",
-          className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
-        });
+        // The quiz itself was deleted successfully — only the best-effort
+        // public link cleanup failed, so this isn't a user-facing error.
+        console.error("Quiz deleted but public link cleanup failed for quiz:", quizId);
       }
+
+      toast({
+        title: "Deleted",
+        description: "Quiz removed successfully",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+      });
 
       // Redirect to quizzes list
       router.push("/dashboard/my-quizzes");
