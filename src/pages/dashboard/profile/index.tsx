@@ -169,6 +169,10 @@ export default function ProfilePage() {
       });
       setIsEditOpen(false);
       await refreshAll();
+      // Revalidate this tab's server-rendered data so the new name is
+      // reflected immediately everywhere on the page, not just the bits
+      // this component happens to manage its own state for.
+      router.refresh();
     } catch (error) {
       toast({
         title: "Error",
@@ -232,6 +236,11 @@ export default function ProfilePage() {
         await refreshUserRole(user.id, resolvedCompanyId, getToken);
       }
       await refreshAll();
+      // Revalidate this tab's server-rendered data now that the role has
+      // actually changed — without this, anything server-rendered on this
+      // page keeps reflecting the pre-transfer Owner/Admin split until the
+      // next full navigation.
+      router.refresh();
     } catch (error) {
       toast({
         title: "Error",
@@ -337,7 +346,7 @@ export default function ProfilePage() {
                       {canTransfer && (
                         <Button
                           onClick={openTransferDialog}
-                          className="flex-1 bg-gradient-to-r from-amber-500/90 to-orange-500/90 text-white hover:brightness-110 rounded-[11px] h-[42px]"
+                          className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl rounded-[11px] h-[42px]"
                         >
                           <FiRepeat className="w-4 h-4 mr-2" />
                           Transfer Ownership

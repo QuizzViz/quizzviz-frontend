@@ -111,7 +111,7 @@ export function QuizHeader({
   return (
     <header className="space-y-2">
       <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold text-white">
             {quiz.role} Quiz
           </h1>
@@ -129,7 +129,7 @@ export function QuizHeader({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
+        <div className="flex items-center gap-2 flex-wrap flex-shrink-0 relative z-10 pointer-events-auto">
           {!isPublished && (
             <Button
               variant="outline"
