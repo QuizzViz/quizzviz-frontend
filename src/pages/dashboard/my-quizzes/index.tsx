@@ -256,25 +256,15 @@ export default function MyQuizzesPage() {
         throw new Error(errorData.error || 'Failed to delete quiz');
       }
 
-      const data = await response.json().catch(() => ({}));
-
       await queryClient.invalidateQueries({ queryKey: ['quizzes', companyInfo?.id] });
       setDeleteDialogOpen(false);
       setQuizToDelete(null);
 
-      if (data?.publishCleanup === 'failed') {
-        toast({
-          title: 'Quiz deleted',
-          description: 'The quiz was removed, but its public link could not be revoked — please try again or contact support.',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Quiz deleted',
-          description: 'The quiz and its published data (if any) have been removed.',
-          className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
-        });
-      }
+      toast({
+        title: 'Quiz deleted',
+        description: 'The quiz has been removed.',
+        className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
+      });
 
     } catch (error) {
       setFetchError(error instanceof Error ? error.message : 'Failed to delete quiz');

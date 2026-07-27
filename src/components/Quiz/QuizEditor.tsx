@@ -418,28 +418,14 @@ export function QuizEditor() {
 
       if (!res.ok) throw new Error("Failed to delete quiz");
 
-      // The shared DELETE /api/quiz/[id] proxy now handles publish cleanup
-      // itself (removing the published_quizzes record/public link if the quiz
-      // was published), so this no longer needs to orchestrate that call
-      // client-side — every delete entry point gets the same behavior for free.
-      const data = await res.json().catch(() => ({}));
-
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
 
-      if (data?.publishCleanup === "failed") {
-        toast({
-          title: "Quiz deleted",
-          description: "The quiz was removed, but its public link could not be revoked — please try again or contact support.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Deleted",
-          description: "Quiz removed successfully",
-          className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
-        });
-      }
+      toast({
+        title: "Deleted",
+        description: "Quiz removed successfully",
+        className: "border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30",
+      });
 
       // Redirect to quizzes list
       router.push("/dashboard/my-quizzes");
