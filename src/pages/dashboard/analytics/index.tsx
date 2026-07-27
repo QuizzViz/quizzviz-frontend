@@ -490,6 +490,22 @@ export default function ResultsDashboard() {
     return map;
   }, [publishedQuizzesData]);
 
+  // Needed so a Member can delete analytics data for quizzes they personally
+  // generated, mirroring the isQuizOwner check already used for delete_quiz
+  // on the My Quizzes page — quiz_result data alone has no creator field.
+  const { data: companyQuizzesData } = useCachedFetch<{ quiz_id: string; user_id?: string }[]>(
+    ['companyQuizzes', finalCompanyId as string],
+    finalCompanyId ? `/api/quizzes?companyId=${encodeURIComponent(finalCompanyId)}` : '',
+    { enabled: Boolean(finalCompanyId) }
+  );
+  const creatorByQuizId = useMemo(() => {
+    const map = new Map<string, string>();
+    (Array.isArray(companyQuizzesData) ? companyQuizzesData : []).forEach((q) => {
+      if (q.user_id) map.set(q.quiz_id, q.user_id);
+    });
+    return map;
+  }, [companyQuizzesData]);
+
   useEffect(() => {
     if (quizResults) {
       setLastUpdated(new Date());
@@ -815,7 +831,9 @@ export default function ResultsDashboard() {
                                 </div>
                               </div>
 
-                              {effectiveRole && canPerformAction(effectiveRole, 'delete_analytics_all') ? (
+                              {effectiveRole && canPerformAction(effectiveRole, 'delete_analytics_all', {
+                                isQuizOwner: creatorByQuizId.get(quiz.quiz_id) === user?.id,
+                              }) ? (
                                 <Button
                                   variant="destructive"
                                   onClick={() =>
