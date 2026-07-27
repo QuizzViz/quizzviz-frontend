@@ -144,11 +144,56 @@ export async function DELETE(
     const auth = await getAuthAndCompanyId(request);
     if ('error' in auth) return auth.error;
 
-    const { companyId, token } = auth;
+    const { userId, companyId, token } = auth;
     const { id: quizId } = await context.params;
 
     if (!quizId) {
       return NextResponse.json({ error: 'Quiz ID is required' }, { status: 400 });
+    }
+
+    // A Member may only delete a quiz they generated themselves, and only
+    // while it's still unpublished — once published, deletion is Owner/Admin
+    // only, even for the Member who created it. The client already hides the
+    // option in this case (rolePermissions.ts), but that's not enough on its
+    // own since this endpoint can be called directly, so enforce it here too.
+    // If the role or quiz lookup itself fails, fall through to the delete
+    // rather than blocking it — this check should only ever narrow access
+    // for confirmed Members, never break Owner/Admin deletes on a transient
+    // lookup error.
+    try {
+      const roleUrl = `${process.env.NEXT_PUBLIC_COMPANY_MEMBERS_SERVICE_URL}/member/role?user_id=${encodeURIComponent(userId)}&company_id=${encodeURIComponent(companyId)}`;
+      const roleResponse = await fetch(roleUrl, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }
+      });
+
+      if (roleResponse.ok) {
+        const roleData = await roleResponse.json().catch(() => ({}));
+
+        if (roleData?.role === 'MEMBER') {
+          const quizResponse = await fetch(
+            `${BACKEND_BASE_URL}/user/${companyId}/quizz/${encodeURIComponent(quizId)}`,
+            {
+              headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+              cache: 'no-store'
+            }
+          );
+
+          if (quizResponse.ok) {
+            const quiz = await quizResponse.json().catch(() => ({}));
+            const isOwner = quiz?.user_id === userId;
+            const isPublished = Boolean(quiz?.is_publish);
+
+            if (!isOwner || isPublished) {
+              return NextResponse.json(
+                { error: 'Members can only delete their own unpublished quizzes' },
+                { status: 403 }
+              );
+            }
+          }
+        }
+      }
+    } catch (permissionError) {
+      console.error('Error checking delete permission for quiz:', quizId, permissionError);
     }
 
     console.log('Deleting quiz:', { companyId, quizId });
@@ -177,63 +222,7 @@ export async function DELETE(
 
     console.log('Quiz deleted successfully:', quizId);
 
-    // Delete associated analytics/quiz results
-    try {
-      const analyticsUrl = `${process.env.NEXT_PUBLIC_QUIZZ_RESULT_SERVICE_URL}/result/quiz/${quizId}?company_id=${companyId}`;
-
-      const analyticsResponse = await fetch(analyticsUrl, {
-        method: 'DELETE',
-        headers: {
-          'accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (analyticsResponse.ok) {
-        console.log('Analytics deleted successfully for quiz:', quizId);
-      } else {
-        console.error('Failed to delete analytics for quiz:', quizId, 'Status:', analyticsResponse.status);
-        // Don't fail the entire operation if analytics deletion fails
-      }
-    } catch (analyticsError) {
-      console.error('Error deleting analytics for quiz:', quizId, analyticsError);
-      // Don't fail the entire operation if analytics deletion fails
-    }
-
-    // Deleting a quiz must clean up the WHOLE thing, not just the internal
-    // generated_quizzes record — if the quiz was published, its
-    // published_quizzes row (and public link) was previously left behind
-    // entirely untouched, so the public link kept working after "deleting"
-    // the quiz. Centralized here (rather than duplicated per-caller
-    // client-side) so every delete entry point gets the same full cleanup.
-    let publishCleanup: 'ok' | 'not_published' | 'failed' = 'not_published';
-    try {
-      const publishUrl = `${process.env.NEXT_PUBLIC_PUBLISH_QUIZZ_SERVICE_URL}/publish/user/${companyId}/quiz/${encodeURIComponent(quizId)}`;
-
-      const publishResponse = await fetch(publishUrl, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'x-company-id': companyId
-        }
-      });
-
-      if (publishResponse.ok) {
-        publishCleanup = 'ok';
-        console.log('Published quiz record removed for quiz:', quizId);
-      } else if (publishResponse.status === 404) {
-        publishCleanup = 'not_published';
-      } else {
-        publishCleanup = 'failed';
-        console.error('Failed to remove published quiz record for:', quizId, 'Status:', publishResponse.status);
-      }
-    } catch (publishError) {
-      publishCleanup = 'failed';
-      console.error('Error removing published quiz record for:', quizId, publishError);
-    }
-
-    return NextResponse.json({ success: true, publishCleanup }, { status: 200 });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {
     console.error('Error in DELETE /api/quiz/[id]:', error);
     return handleApiError(error);

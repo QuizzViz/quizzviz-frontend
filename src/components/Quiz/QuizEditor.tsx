@@ -418,20 +418,8 @@ export function QuizEditor() {
 
       if (!res.ok) throw new Error("Failed to delete quiz");
 
-      // The shared DELETE /api/quiz/[id] proxy now handles publish cleanup
-      // itself (removing the published_quizzes record/public link if the quiz
-      // was published), so this no longer needs to orchestrate that call
-      // client-side — every delete entry point gets the same behavior for free.
-      const data = await res.json().catch(() => ({}));
-
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });
-
-      if (data?.publishCleanup === "failed") {
-        // The quiz itself was deleted successfully — only the best-effort
-        // public link cleanup failed, so this isn't a user-facing error.
-        console.error("Quiz deleted but public link cleanup failed for quiz:", quizId);
-      }
 
       toast({
         title: "Deleted",

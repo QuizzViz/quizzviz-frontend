@@ -256,21 +256,13 @@ export default function MyQuizzesPage() {
         throw new Error(errorData.error || 'Failed to delete quiz');
       }
 
-      const data = await response.json().catch(() => ({}));
-
       await queryClient.invalidateQueries({ queryKey: ['quizzes', companyInfo?.id] });
       setDeleteDialogOpen(false);
       setQuizToDelete(null);
 
-      if (data?.publishCleanup === 'failed') {
-        // The quiz itself was deleted successfully — only the best-effort
-        // public link cleanup failed, so this isn't a user-facing error.
-        console.error('Quiz deleted but public link cleanup failed for quiz:', quizId);
-      }
-
       toast({
         title: 'Quiz deleted',
-        description: 'The quiz and its published data (if any) have been removed.',
+        description: 'The quiz has been removed.',
         className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
       });
 
