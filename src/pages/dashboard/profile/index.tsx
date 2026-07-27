@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useCallback, type FormEvent } from "react";
+import { useState, useCallback, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useAuth, SignedIn, SignedOut } from "@clerk/nextjs";
 import Head from "next/head";
 import { FiStar, FiShield, FiUser, FiEdit2, FiRepeat, FiCheck, FiUsers } from "react-icons/fi";
-import { Building2 } from "lucide-react";
+import { Building2, RefreshCw, Loader2 } from "lucide-react";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
@@ -97,6 +97,24 @@ export default function ProfilePage() {
     loading: dataLoading,
     refreshAll,
   } = useCachedDashboardData(user?.id || "", companyId, async () => (await getToken()) || "");
+
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (company) setLastUpdated(new Date());
+  }, [company]);
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      setIsRefreshing(true);
+      await refreshAll();
+      setLastUpdated(new Date());
+      router.refresh();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refreshAll, router]);
 
   // Owner-only actions live on this page (edit settings, transfer ownership),
   // so the role check backing them must never act on stale data — unlike
@@ -295,7 +313,33 @@ export default function ProfilePage() {
               <DashboardHeader />
 
               <main className="flex-1 p-6 space-y-6">
-                <h1 className="text-2xl font-semibold">Profile</h1>
+                <div className="flex justify-between items-center mb-6">
+                  <h1 className="text-2xl font-semibold">Profile</h1>
+                  <div className="flex items-center gap-4">
+                    {lastUpdated && (
+                      <div className="text-sm text-gray-400">
+                        Last updated: {lastUpdated.toLocaleString()}
+                      </div>
+                    )}
+                    <Button
+                      onClick={handleRefresh}
+                      className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl"
+                      disabled={isRefreshing}
+                    >
+                      {isRefreshing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Refreshing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4" />
+                          <span>Refresh</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
 
                 {/* Company card */}
                 <div className="bg-[#0f1421] border border-white/[0.07] rounded-[20px] p-6 max-w-lg mx-auto flex flex-col items-center space-y-5 shadow-[0_20px_48px_rgba(0,0,0,0.35)]">
