@@ -53,7 +53,7 @@ const PERMISSION_MATRIX: PermissionMatrix = {
     delete_quiz: true,
     edit_publish_settings: true,
     view_analytics: true,
-    delete_analytics_all: false,
+    delete_analytics_all: true,
     delete_analytics_specific: true, // Admin can delete specific records
     invite_members: true,
     manage_roles: false,
@@ -114,6 +114,14 @@ export const canPerformAction = (
   // as publishing itself (mirrors the backend check in quiz_generation).
   if (permission === 'delete_quiz' && userRole.role === 'MEMBER') {
     return Boolean(additionalContext?.isQuizOwner) && !additionalContext?.isPublished;
+  }
+
+  // A Member may clear analytics/attempt data for a quiz they personally
+  // generated, regardless of publish state — this only removes result
+  // history, it doesn't touch the quiz record or its publish status, so it
+  // doesn't need the same unpublished-only restriction as delete_quiz.
+  if (permission === 'delete_analytics_all' && userRole.role === 'MEMBER') {
+    return Boolean(additionalContext?.isQuizOwner);
   }
 
   return hasPermission(userRole.role, permission);

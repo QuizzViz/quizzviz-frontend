@@ -132,12 +132,14 @@ function MemberCard({
   onDelete,
   userRole,
   dataLoading,
+  isSelf,
 }: {
   member: CompanyMember;
   onEditRole: (m: CompanyMember) => void;
   onDelete: (id: string, name: string) => void;
   userRole: UserRole | null;
   dataLoading: boolean;
+  isSelf: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -177,7 +179,11 @@ function MemberCard({
           </div>
 
           <div className="relative flex-shrink-0" ref={menuRef}>
-            {!dataLoading && canPerformAction(userRole, "manage_roles") && (
+            {/* An Owner can't change their own role directly — that only
+                happens as a side effect of making someone else the Owner
+                (see the transfer-ownership confirmation flow), so their own
+                card gets no actions menu at all. */}
+            {!dataLoading && !(isSelf && member.role === "OWNER") && canPerformAction(userRole, "manage_roles") && (
               <button
                 onClick={() => setMenuOpen((o) => !o)}
                 className={`h-[28px] w-[28px] rounded-[8px] border flex flex-col items-center justify-center gap-[2.5px] transition-all duration-100 ${
@@ -1061,6 +1067,7 @@ export default function TeamsPage() {
                           onDelete={promptDeleteMember}
                           userRole={userRole}
                           dataLoading={dataLoading}
+                          isSelf={member.user_id === user?.id}
                         />
                       ))}
                     </div>
