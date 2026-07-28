@@ -30,7 +30,7 @@ const FeaturesSection: FC = () => {
     {
       icon: Zap,
       title: "Enterprise-Grade Assessments",
-      description: "Turn your own documents, or your company's tech stack, into customized coding tests tailored to each role. Our AI-powered platform generates relevant challenges in minutes, saving your hiring team countless hours.",
+      description: "Turn your own documents, or your company's tech stack, into customized assessments tailored to any role, technical or non-technical. Our AI-powered platform generates relevant questions in minutes, saving your hiring team countless hours.",
       gradient: "from-green-500/80 to-blue-500/80",
       ring: "ring-green-500/30"
     },
@@ -67,7 +67,7 @@ const FeaturesSection: FC = () => {
               </span>
             </h2>
             <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Designed exclusively for companies to identify top technical talent efficiently and securely. Scale your hiring without compromising on quality or security.
+              Designed exclusively for companies to identify top talent for any role, efficiently and securely. Scale your hiring without compromising on quality or security.
             </p>
           </div>
         </div>

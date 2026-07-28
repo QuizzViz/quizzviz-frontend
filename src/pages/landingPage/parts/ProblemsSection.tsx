@@ -40,7 +40,7 @@ const ProblemsSection: FC = () => {
               </span>
             </h2>
             <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed opacity-90">
-              Our AI-powered platform helps you identify top technical talent efficiently with automated coding assessments, proctored evaluations, and detailed analytics to make data-driven hiring decisions.
+              Our AI-powered platform helps you identify top talent for any role, generating assessments from your documents or a tech stack, with proctored evaluations and detailed analytics to make data-driven hiring decisions.
             </p>
           </div>
         </div>

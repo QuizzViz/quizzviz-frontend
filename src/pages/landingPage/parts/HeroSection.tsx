@@ -13,7 +13,7 @@ const trustPills = [
 
 const pipelineSteps = [
   { icon: FileText, title: "Upload a Document", description: "Or generate from a tech stack instead." },
-  { icon: Sparkles, title: "AI Builds the Assessment", description: "Role-specific questions, ready in seconds." },
+  { icon: Sparkles, title: "AI Builds the Assessment", description: "Role-specific questions, ready in minutes." },
   { icon: ShieldCheck, title: "Evaluate Securely", description: "A protected link and key for every candidate." },
   { icon: BarChart3, title: "Decide with Confidence", description: "Compare candidates with actionable insights." },
 ];
