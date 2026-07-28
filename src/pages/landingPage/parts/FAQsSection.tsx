@@ -41,7 +41,7 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">What is QuizzViz ?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            QuizzViz is a pre-screening technical assessment platform that helps companies efficiently evaluate candidates through coding quizzes. By automatically filtering out unqualified candidates, it saves valuable interview time by ensuring only the most competent candidates progress to the interview stage. It's designed specifically for hiring teams to assess technical skills quickly and effectively.
+            QuizzViz is a pre-screening technical assessment platform that turns your own documents, or a tech stack, into AI-generated coding quizzes. By automatically filtering out unqualified candidates, it saves valuable interview time by ensuring only the most competent candidates progress to the interview stage. It's designed specifically for hiring teams to assess technical skills quickly and effectively.
           </AccordionContent>
         </AccordionItem>
         

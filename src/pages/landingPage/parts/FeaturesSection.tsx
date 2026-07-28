@@ -30,7 +30,7 @@ const FeaturesSection: FC = () => {
     {
       icon: Zap,
       title: "Enterprise-Grade Assessments",
-      description: "Create customized coding tests tailored to your company's tech stack and role requirements. Our AI-powered platform generates relevant challenges in minutes, saving your hiring team countless hours.",
+      description: "Turn your own documents, or your company's tech stack, into customized coding tests tailored to each role. Our AI-powered platform generates relevant challenges in minutes, saving your hiring team countless hours.",
       gradient: "from-green-500/80 to-blue-500/80",
       ring: "ring-green-500/30"
     },

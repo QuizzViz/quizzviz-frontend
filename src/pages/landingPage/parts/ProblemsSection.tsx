@@ -16,7 +16,7 @@ const CardContent: FC<{ className?: string, children: React.ReactNode }> = ({ cl
 
 const ProblemsSection: FC = () => {
   const content = {
-    speed: "Generate technical assessments in minutes that test real-world coding skills through scenario-based questions. Screen candidates faster and more effectively than ever before.",
+    speed: "Turn a document into a role-specific assessment in minutes, or generate one from a tech stack. Screen candidates faster and more effectively than ever before.",
     accuracy: "Ensure fair and accurate evaluations with our proctored assessments. Advanced monitoring and auto-detection of suspicious activities maintain the integrity of your hiring process.",
     efficiency: "Streamline your hiring with powerful analytics. Compare candidates side-by-side, view detailed performance metrics, and make data-driven hiring decisions with confidence."
   };
