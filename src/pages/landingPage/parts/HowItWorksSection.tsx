@@ -26,7 +26,7 @@ const HowItWorksSection: FC = () => {
     {
       number: "1",
       title: "Create Assessment",
-      description: "Select coding topics relevant to the role, choose difficulty level, and set the number of questions to match your job requirements.",
+      description: "Upload a document, or select a tech stack, then choose difficulty level and set the number of questions to match your job requirements.",
       gradient: "from-green-500/80 to-blue-500/80",
       ring: "ring-green-500/30"
     },
