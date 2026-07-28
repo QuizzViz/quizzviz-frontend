@@ -18,7 +18,7 @@ export default function OurMission() {
     <>
       <Head>
         <title>Mission | QuizzViz</title>
-        <meta name="description" content="A better way to assess technical skills" />
+        <meta name="description" content="A better way to assess candidate skills, technical or non-technical" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       
@@ -30,7 +30,7 @@ export default function OurMission() {
                 Smarter <span className="text-teal-400">Hiring</span>
               </h1>
               <p className="text-xl text-gray-400 leading-relaxed">
-                We help companies find the right technical talent through AI-generated, skill-based assessments built from your own documents, or from any tech stack
+                We help companies find the right talent, technical or non-technical, through AI-generated, skill-based assessments built from your own documents, or from any tech stack
               </p>
             </div>
           </div>
@@ -39,7 +39,7 @@ export default function OurMission() {
             <div className="bg-gray-900/50 rounded-2xl p-8 space-y-6 border border-gray-800/50">
               <h3 className="text-2xl font-semibold text-teal-400">Our Approach</h3>
               <p className="text-gray-300 leading-relaxed">
-                Traditional hiring often focuses too much on resumes and not enough on actual skills. We believe in assessing technical abilities first, before the interview stage, whether that means turning your own documents into a role-specific assessment with AI or generating a quiz from a tech stack.
+                Traditional hiring often focuses too much on resumes and not enough on actual skills. We believe in assessing candidate abilities first, before the interview stage, whether the role is technical or non-technical. Turn your own documents into a role-specific assessment with AI, or generate one from a tech stack for technical roles, whichever fits best.
               </p>
               
               <div className="space-y-4 mt-6">
@@ -51,7 +51,7 @@ export default function OurMission() {
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-100">Skills First</h4>
-                    <p className="text-gray-400 text-sm">Assess technical abilities before scheduling interviews</p>
+                    <p className="text-gray-400 text-sm">Assess candidate abilities before scheduling interviews</p>
                   </div>
                 </div>
                 
@@ -63,7 +63,7 @@ export default function OurMission() {
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-100">Save Time</h4>
-                    <p className="text-gray-400 text-sm">Focus on qualified candidates who meet your technical bar</p>
+                    <p className="text-gray-400 text-sm">Focus on qualified candidates who meet the bar for the role</p>
                   </div>
                 </div>
                 

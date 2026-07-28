@@ -64,7 +64,7 @@ const HowItWorksSection: FC = () => {
               </span>
             </h2>
             <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Three simple steps to find and hire the best technical talent efficiently and effectively.
+              Three simple steps to find and hire the best talent for any role, efficiently and effectively.
             </p>
           </div>
         </div>
