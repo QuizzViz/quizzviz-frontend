@@ -36,8 +36,8 @@ const FeaturesSection: FC = () => {
     },
     {
       icon: CheckCircle,
-      title: "Secure & Simple Access",
-      description: "Easily control who takes your quizzes. Share a secure link and secret key with candidates - that's all they need to start their assessment.",
+      title: "Proctored & Simple Access",
+      description: "Easily control who takes your quizzes. Share a proctored link and secret key with candidates - that's all they need to start their assessment.",
       gradient: "from-blue-500/80 to-purple-500/80",
       ring: "ring-blue-500/30"
     },

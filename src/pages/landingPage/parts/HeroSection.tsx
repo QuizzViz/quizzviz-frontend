@@ -300,7 +300,7 @@ const HeroSection: FC = () => {
                   </span>
                 </CardTitle>
                 <CardDescription className="text-gray-300 text-center text-sm">
-                  Design secure coding tests to identify top technical talent
+                  Design proctored coding tests to identify top technical talent
                 </CardDescription>
               </CardHeader>
               
