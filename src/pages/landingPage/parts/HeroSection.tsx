@@ -35,9 +35,8 @@ const HeroSection: FC = () => {
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-5 leading-tight">
               Turn Any Document Into a{" "}
               <span className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
-                Secure Assessment
-              </span>{" "}
-              with AI
+                Proctored AI Assessment
+              </span>
             </h1>
             <p className="text-lg sm:text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto">
               Upload your documents, let AI create role-specific assessments, then securely evaluate candidates and make better hiring decisions with actionable insights.
