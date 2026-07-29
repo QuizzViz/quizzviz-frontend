@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Users, Trophy, TrendingUp, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, TrendingUp, ExternalLink, Pencil } from 'lucide-react';
+import { QuizForm } from '../QuizForm';
+import { useAdminData, invalidateAdminData } from '../../useAdminData';
+import { AdminPageLoading, AdminErrorState } from '../../AdminPageLoading';
 
 interface Option {
   A: string; B: string; C: string; D: string;
@@ -57,44 +60,96 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: string; 
   );
 }
 
+interface QuizDetailPayload {
+  quiz: QuizDetail;
+  stats: Stats;
+}
+
+// The DB only tracks two percentage columns (theory/code_analysis) but
+// questions actually come in three types (theory/code_analysis/practical_scenario).
+// Trusting the stored columns can lie about what's actually in the quiz (e.g. a
+// since-fixed generation bug could leave a stale split on older quizzes), so the
+// badges are computed live from the real question type counts instead.
+function computeTypeBreakdown(questions: QuizQuestion[]) {
+  if (questions.length === 0) return [];
+  const counts: Record<string, number> = {};
+  for (const q of questions) {
+    const type = q.type === 'code_analysis' || q.type === 'practical_scenario' ? q.type : 'theory';
+    counts[type] = (counts[type] || 0) + 1;
+  }
+  const labels: Record<string, { label: string; className: string }> = {
+    theory: { label: 'Theory', className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' },
+    code_analysis: { label: 'Code Analysis', className: 'border-indigo-500/30 bg-indigo-500/10 text-indigo-300' },
+    practical_scenario: { label: 'Practical Scenario', className: 'border-purple-500/30 bg-purple-500/10 text-purple-300' },
+  };
+  return Object.entries(counts)
+    .filter(([, count]) => count > 0)
+    .map(([type, count]) => ({
+      ...labels[type],
+      pct: Math.round((count / questions.length) * 100),
+    }));
+}
+
 export default function AdminQuizDetailPage() {
   const params = useParams();
   const quizId = params?.quizId as string;
-  const [quiz, setQuiz] = useState<QuizDetail | null>(null);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const cacheKey = `admin-quiz-${quizId || 'unknown'}`;
+  const [isEditing, setIsEditing] = useState(false);
 
-  useEffect(() => {
-    if (!quizId) return;
-    (async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch(`/api/admin/quizzes/${encodeURIComponent(quizId)}`);
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.error || 'Failed to load quiz');
-          return;
-        }
-        setQuiz(data.quiz);
-        setStats(data.stats);
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [quizId]);
+  const { data, isLoading, error, refresh } = useAdminData<QuizDetailPayload>(cacheKey, async () => {
+    if (!quizId) throw new Error('Missing quiz id');
+    const res = await fetch(`/api/admin/quizzes/${encodeURIComponent(quizId)}`);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to load quiz');
+    return { quiz: json.quiz, stats: json.stats };
+  });
 
-  if (isLoading) return <div className="p-8 text-zinc-500">Loading...</div>;
+  const quiz = data?.quiz;
+  const stats = data?.stats;
+  const questions = useMemo(() => (quiz && Array.isArray(quiz.quiz) ? quiz.quiz : []), [quiz]);
+  const typeBreakdown = useMemo(() => computeTypeBreakdown(questions), [questions]);
+
+  if (isLoading) return <AdminPageLoading text="Loading quiz..." />;
   if (error || !quiz) {
     return (
-      <div className="p-8">
-        <p className="text-red-400">{error || 'Quiz not found.'}</p>
-        <Link href="/admin/quizzes" className="text-green-400 text-sm mt-2 inline-block">Back to quizzes</Link>
+      <div className="p-8 max-w-2xl mx-auto">
+        {error ? <AdminErrorState message={error} onRetry={refresh} /> : <p className="text-red-400">Quiz not found.</p>}
+        <Link href="/admin/quizzes" className="text-green-400 text-sm mt-3 inline-block">Back to quizzes</Link>
       </div>
     );
   }
 
-  const questions = Array.isArray(quiz.quiz) ? quiz.quiz : [];
+  if (isEditing) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <Link href="/admin/quizzes" className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white mb-6">
+          <ArrowLeft className="h-4 w-4" /> Back to quizzes
+        </Link>
+        <h1 className="text-2xl font-semibold text-white mb-1">Edit quiz</h1>
+        <p className="text-sm text-zinc-500 mb-6">{quiz.quiz_id}</p>
+        <QuizForm
+          mode="edit"
+          initialData={{
+            quiz_id: quiz.quiz_id,
+            company_id: quiz.company_id,
+            company_name: quiz.company_name,
+            role: quiz.role,
+            experience: quiz.experience,
+            quiz_type: quiz.quiz_type,
+            theory_questions_percentage: quiz.theory_questions_percentage,
+            code_analysis_questions_percentage: quiz.code_analysis_questions_percentage,
+            quiz: questions,
+          }}
+          onCancel={() => setIsEditing(false)}
+          onSaved={async () => {
+            setIsEditing(false);
+            invalidateAdminData('admin-quizzes');
+            await refresh();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -118,6 +173,12 @@ export default function AdminQuizDetailPage() {
           ) : (
             <span className="text-xs rounded-full px-2.5 py-1 bg-zinc-500/15 text-zinc-400 border border-zinc-500/30">Draft</span>
           )}
+          <button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1 border border-zinc-700 text-zinc-300 hover:bg-zinc-900"
+          >
+            <Pencil className="h-3 w-3" /> Edit
+          </button>
         </div>
       </div>
 
@@ -149,16 +210,13 @@ export default function AdminQuizDetailPage() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 mb-4">
-        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300 text-xs">
-          Theory {quiz.theory_questions_percentage}%
-        </span>
-        {quiz.quiz_type !== 'non_technical' && (
-          <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-indigo-300 text-xs">
-            Code {quiz.code_analysis_questions_percentage}%
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {typeBreakdown.map((t) => (
+          <span key={t.label} className={`rounded-full border px-3 py-1 text-xs ${t.className}`}>
+            {t.label} {t.pct}%
           </span>
-        )}
-        <span className="text-xs text-zinc-500">{questions.length} questions</span>
+        ))}
+        <span className="text-xs text-zinc-500">{questions.length} questions · computed from actual question types</span>
       </div>
 
       <div className="space-y-4">

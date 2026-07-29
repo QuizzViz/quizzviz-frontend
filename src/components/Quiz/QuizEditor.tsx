@@ -182,13 +182,13 @@ export function QuizEditor() {
   useEffect(() => {
     if (!publishedQuiz) return;
 
-    if (publishedQuiz.quiz_key) {
-      setPublishSettings((prev) => ({
-        ...prev,
-        secretKey: publishedQuiz.quiz_key,
-        isSecretKeyRequired: !!publishedQuiz.quiz_key,
-      }));
-    }
+    setPublishSettings((prev) => ({
+      ...prev,
+      secretKey: publishedQuiz.quiz_key || prev.secretKey,
+      isSecretKeyRequired: !!publishedQuiz.quiz_key,
+      maxAttempts: publishedQuiz.max_attempts ?? prev.maxAttempts,
+      expirationDate: publishedQuiz.quiz_expiration_time || prev.expirationDate,
+    }));
   }, [publishedQuiz]);
 
   // Pagination calculations
@@ -417,17 +417,6 @@ export function QuizEditor() {
       );
 
       if (!res.ok) throw new Error("Failed to delete quiz");
-
-      // If quiz is published, clean up from publish service
-      if (isPublished) {
-        await fetch(
-          `/api/publish/${companyInfo?.id}/${currentQuiz.quiz_id}`,
-          {
-            method: "DELETE",
-            credentials: "include",
-          }
-        ).catch((e) => console.warn("Publish cleanup failed:", e));
-      }
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["quizzes", companyInfo?.id] });

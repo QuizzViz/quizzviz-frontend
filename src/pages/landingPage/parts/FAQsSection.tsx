@@ -41,20 +41,43 @@ const FAQsSection: FC = () => (
             <h3 className="text-xl font-semibold text-foreground tracking-tight">What is QuizzViz ?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            QuizzViz is a pre-screening technical assessment platform that helps companies efficiently evaluate candidates through coding quizzes. By automatically filtering out unqualified candidates, it saves valuable interview time by ensuring only the most competent candidates progress to the interview stage. It's designed specifically for hiring teams to assess technical skills quickly and effectively.
+            QuizzViz is a pre-screening assessment platform that turns your own documents, or a tech stack, into AI-generated quizzes for any role, technical or non-technical. By automatically filtering out unqualified candidates, it saves valuable interview time by ensuring only the most competent candidates progress to the interview stage. It's designed specifically for hiring teams to assess candidate skills quickly and effectively.
           </AccordionContent>
         </AccordionItem>
-        
+
         <AccordionItem value="item-2" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+          <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
+            <h3 className="text-xl font-semibold text-foreground tracking-tight">How does document-based quiz generation work?</h3>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
+            Upload a document relevant to the role, such as a job description, training manual, policy document, or technical specification, and QuizzViz's AI reads its content and drafts role-specific questions directly from it. Set the experience level and number of questions, review and adjust anything you'd like, then publish and share the assessment exactly like any other quiz.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-3" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+          <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
+            <h3 className="text-xl font-semibold text-foreground tracking-tight">Can I generate a quiz for any role, not just technical ones?</h3>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
+            Yes. QuizzViz isn't limited to coding roles. Upload a document for any position, including Sales, Marketing, HR, Finance, or Operations, and the AI generates a quiz tailored to it. For technical roles, a tech stack works just as well as a document, whichever fits the role best.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-4" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
             <h3 className="text-xl font-semibold text-foreground tracking-tight">How does proctoring work?</h3>
           </AccordionTrigger>
           <AccordionContent className="px-6 py-4 text-sm text-muted-foreground leading-relaxed opacity-90">
-            Our proctoring system automatically terminates the quiz if the candidate switches tabs or windows during the assessment. This ensures test integrity by preventing candidates from looking up answers.
+            Every assessment runs in full-screen with the candidate's camera active throughout, and QuizzViz responds differently depending on what it detects:
+            <ul className="list-disc pl-5 mt-2 space-y-1">
+              <li>Attention and presence: if the candidate looks left, right, or down, their face is no longer detected, or a mobile phone appears in frame, a 20-second warning appears. If it isn't corrected in time, the quiz terminates automatically.</li>
+              <li>Tab or window switching: leaving the quiz tab or window ends the assessment immediately, with no warning period.</li>
+              <li>Exiting full-screen: minimizing or leaving full-screen prompts the candidate to continue or end the quiz. Choosing to continue restores full-screen mode automatically; choosing to end submits the attempt.</li>
+            </ul>
           </AccordionContent>
         </AccordionItem>
-        
-        <AccordionItem value="item-3" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+
+        <AccordionItem value="item-5" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
             <h3 className="text-xl font-semibold text-foreground tracking-tight">How do I share a quiz with candidates?</h3>
           </AccordionTrigger>
@@ -62,8 +85,8 @@ const FAQsSection: FC = () => (
             Simply generate a shareable link and a secret key for your quiz. Share both with candidates, who can then access and attempt the assessment.
           </AccordionContent>
         </AccordionItem>
-        
-        <AccordionItem value="item-4" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
+
+        <AccordionItem value="item-6" className="rounded-2xl border-0 bg-white/5 backdrop-blur-xl border-white/10">
           <AccordionTrigger className="px-6 py-4 text-left hover:no-underline focus:no-underline">
             <h3 className="text-xl font-semibold text-foreground tracking-tight">What analytics are available?</h3>
           </AccordionTrigger>

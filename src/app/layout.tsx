@@ -20,11 +20,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "QuizzViz – Skip Resumes And Interview The Best Devs",
+    default: "QuizzViz – Turn Any Document Into a Secure Assessment with AI",
     template: "%s | QuizzViz",
   },
   description:
-    "QuizzViz helps companies create high-quality, real-world coding quizzes in minutes. Fast, reliable, and built for professionals.",
+    "QuizzViz turns your documents, or a tech stack, into AI-generated hiring assessments for any role, technical or non-technical. Secure, reliable, and built for enterprise hiring teams.",
   applicationName: "QuizzViz",
   generator: "Next.js",
   keywords: [
@@ -57,9 +57,10 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "QuizzViz – Skip Resumes And Interview The Best Devs  "   ,     
+    title: "QuizzViz – Turn Any Document Into a Secure Assessment with AI",
     description:
-"QuizzViz helps companies skip resumes and interview the best devs",    url: siteUrl,
+      "QuizzViz turns your documents, or a tech stack, into AI-generated hiring assessments for any role, technical or non-technical.",
+    url: siteUrl,
     siteName: "QuizzViz",
     images: [
       {
@@ -74,9 +75,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "QuizzViz – Skip Resumes And Interview The Best Devs",
+    title: "QuizzViz – Turn Any Document Into a Secure Assessment with AI",
     description:
-"QuizzViz helps companies skip resumes and interview the best devs",    images: [`${siteUrl}/QuizzViz-logo.png`],
+      "QuizzViz turns your documents, or a tech stack, into AI-generated hiring assessments for any role, technical or non-technical.",
+    images: [`${siteUrl}/QuizzViz-logo.png`],
     creator: "@QuizzViz",
     site: "@QuizzViz",
   },
@@ -113,7 +115,7 @@ export const metadata: Metadata = {
         logo: `${siteUrl}/QuizzViz-logo.png`,
         image: `${siteUrl}/QuizzViz-logo.png`,
         description:
-          "QuizzViz helps companies skip resumes and interview the best devs",
+          "QuizzViz turns documents, or a tech stack, into AI-generated hiring assessments for any role, technical or non-technical.",
         sameAs: [
           "https://www.linkedin.com/company/quizzviz",
           "https://x.com/QuizzViz",

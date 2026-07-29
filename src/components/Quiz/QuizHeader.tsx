@@ -1,9 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { QuizSummary, PublishSettings } from "./types";
-import { Share2, EyeOff } from "lucide-react";
+import { Share2, EyeOff, Pencil } from "lucide-react";
 import { useState } from "react";
 import { ShareQuizModal } from "./ShareQuizModal";
+import { EditQuizDetailsModal } from "./EditQuizDetailsModal";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useUser } from "@clerk/nextjs";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +39,7 @@ export function QuizHeader({
   const { user } = useUser();
   const { toast } = useToast();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
   const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const { companyInfo, isLoading: isCompanyLoading } = useCompanyInfo();
@@ -109,7 +111,7 @@ export function QuizHeader({
   return (
     <header className="space-y-2">
       <div className="flex items-start justify-between gap-4 flex-col sm:flex-row">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold text-white">
             {quiz.role} Quiz
           </h1>
@@ -127,7 +129,7 @@ export function QuizHeader({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap relative z-10 pointer-events-auto">
+        <div className="flex items-center gap-2 flex-wrap flex-shrink-0 relative z-10 pointer-events-auto">
           {!isPublished && (
             <Button
               variant="outline"
@@ -168,7 +170,17 @@ export function QuizHeader({
               Share Quiz
             </Button>
           )}
-          {!roleLoading && canPerformAction(userRole, 'delete_quiz', { isQuizOwner: quiz.user_id === user?.id }) && (
+          {isPublished && !roleLoading && canPerformAction(userRole, 'edit_publish_settings') && (
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white pointer-events-auto transition-all duration-150 active:scale-95"
+              onClick={() => setIsEditDetailsModalOpen(true)}
+              disabled={disableActions}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Details
+            </Button>
+          )}
+          {!roleLoading && canPerformAction(userRole, 'delete_quiz', { isQuizOwner: quiz.user_id === user?.id, isPublished }) && (
             <Button
               variant="destructive"
               className="pointer-events-auto hover:bg-red-700 transition-all duration-150 active:scale-95"
@@ -199,6 +211,19 @@ export function QuizHeader({
         variant="destructive"
         isConfirming={isUnpublishing}
       />
+
+      {/* Edit Quiz Details Modal - secret key, expiration, max attempts */}
+      {isEditDetailsModalOpen && (
+        <EditQuizDetailsModal
+          isOpen={isEditDetailsModalOpen}
+          onClose={() => setIsEditDetailsModalOpen(false)}
+          quizId={quizId}
+          companyId={companyInfo?.id}
+          initialSecretKey={settings?.secretKey || ''}
+          initialMaxAttempts={settings?.maxAttempts || 1}
+          initialExpirationDate={settings?.expirationDate || ''}
+        />
+      )}
     </header>
   );
 }

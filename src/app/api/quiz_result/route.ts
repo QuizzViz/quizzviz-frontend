@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     if (missingFields.length > 0) {
       return NextResponse.json(
-        { 
+        {
           detail: `Missing required fields: ${missingFields.join(', ')}`,
           received_data: {
             quiz_id: !!quiz_id,
@@ -157,6 +157,19 @@ export async function POST(request: NextRequest) {
             has_attempt: attempt !== undefined
           }
         },
+        { status: 400 }
+      );
+    }
+
+    // Defense-in-depth against the same issue the take-quiz form's client-side
+    // check guards against: a plain text "Full Name" field with no format
+    // enforcement lets a candidate type their email address as their name,
+    // which then shows up duplicated in both the Username and Email columns
+    // on the analytics page. Reject it server-side too in case that client
+    // check is ever bypassed (a direct API call, an older cached client, etc).
+    if (/\S+@\S+\.\S+/.test(String(username).trim())) {
+      return NextResponse.json(
+        { detail: 'username looks like an email address — please provide a full name instead' },
         { status: 400 }
       );
     }

@@ -21,6 +21,11 @@ const isPublicRoute = createRouteMatcher([
   '/accept_invite',      // Public route for invites
   '/signin',            // Public route - let components handle auth flow
   '/signup',            // Public route - let components handle auth flow
+  '/sso-callback',      // Public route - OAuth callback page. A sign-in attempt with no
+                         // matching account never gets a session (there's nothing to sign
+                         // into), so without this, middleware's own !userId check redirected
+                         // to /signin server-side before this page's client-side redirect
+                         // logic ever ran — no client-side fix here could ever have worked.
   '/admin(.*)',         // Internal admin panel — gated by its own env-credential session, not Clerk
 ]);
 

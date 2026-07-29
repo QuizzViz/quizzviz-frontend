@@ -16,7 +16,7 @@ const CardContent: FC<{ className?: string, children: React.ReactNode }> = ({ cl
 
 const ProblemsSection: FC = () => {
   const content = {
-    speed: "Generate technical assessments in minutes that test real-world coding skills through scenario-based questions. Screen candidates faster and more effectively than ever before.",
+    speed: "Turn a document into a role-specific assessment in minutes, or generate one from a tech stack. Screen candidates faster and more effectively than ever before.",
     accuracy: "Ensure fair and accurate evaluations with our proctored assessments. Advanced monitoring and auto-detection of suspicious activities maintain the integrity of your hiring process.",
     efficiency: "Streamline your hiring with powerful analytics. Compare candidates side-by-side, view detailed performance metrics, and make data-driven hiring decisions with confidence."
   };
@@ -40,7 +40,7 @@ const ProblemsSection: FC = () => {
               </span>
             </h2>
             <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed opacity-90">
-              Our AI-powered platform helps you identify top technical talent efficiently with automated coding assessments, proctored evaluations, and detailed analytics to make data-driven hiring decisions.
+              Our AI-powered platform helps you identify top talent for any role, generating assessments from your documents or a tech stack, with proctored evaluations and detailed analytics to make data-driven hiring decisions.
             </p>
           </div>
         </div>

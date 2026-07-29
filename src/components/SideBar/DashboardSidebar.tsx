@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useUser, useAuth } from "@clerk/nextjs";
 import {
   FiMenu,
   FiChevronLeft,
@@ -17,6 +18,7 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { LogoWithText } from "../LogoWithText";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type DashboardSidebarProps = {
   mobileWidthClass?: string;
@@ -36,6 +38,73 @@ export default function DashboardSidebar({
   const [isOpen, setIsOpen] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [pendingPublishCount, setPendingPublishCount] = useState<number | null>(null);
+
+  const { user } = useUser();
+  const { getToken } = useAuth();
+  const companyId =
+    (user?.unsafeMetadata?.companyId as string | undefined) ||
+    (typeof window !== "undefined" ? sessionStorage.getItem("userCompanyId") || localStorage.getItem("userCompanyId") : null) ||
+    "";
+  const { userRole, loading: roleLoading } = useUserRole(companyId);
+  const canSeePendingCount = userRole?.role === "OWNER" || userRole?.role === "ADMIN";
+
+  // This sidebar remounts fresh on every dashboard page navigation (each page
+  // renders its own <DashboardSideBar />, there's no shared persistent
+  // layout), which resets pendingPublishCount to null every time — and
+  // useUserRole's role also starts null for a moment after every remount
+  // until its own effect resolves. Seed from the last known value in
+  // sessionStorage so a fresh mount shows it immediately instead of
+  // blanking the badge and popping it back in a beat later.
+  useEffect(() => {
+    if (typeof window === "undefined" || !companyId) return;
+    const stored = sessionStorage.getItem(`pendingPublishCount_${companyId}`);
+    if (stored !== null) {
+      const parsed = parseInt(stored, 10);
+      if (!Number.isNaN(parsed)) setPendingPublishCount(parsed);
+    }
+  }, [companyId]);
+
+  // Only Owner/Admin can act on unpublished quizzes, so only they see this —
+  // it's a live count, refetched whenever the sidebar mounts (every page nav).
+  useEffect(() => {
+    // Role hasn't resolved yet (fresh mount, or a background revalidation in
+    // flight) — keep showing whatever we last knew rather than hiding it;
+    // only a DEFINITIVE "you're not Owner/Admin" should clear the badge.
+    if (roleLoading) return;
+
+    if (!canSeePendingCount) {
+      setPendingPublishCount(null);
+      if (typeof window !== "undefined" && companyId) {
+        sessionStorage.removeItem(`pendingPublishCount_${companyId}`);
+      }
+      return;
+    }
+    if (!companyId) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`/api/quiz/pending-publish-count?companyId=${encodeURIComponent(companyId)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && typeof data?.pending_count === "number") {
+          setPendingPublishCount(data.pending_count);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(`pendingPublishCount_${companyId}`, String(data.pending_count));
+          }
+        }
+      } catch {
+        // Non-critical — keep showing the last known count if this fails.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [roleLoading, canSeePendingCount, companyId, getToken]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -212,7 +281,9 @@ export default function DashboardSidebar({
           <div className="flex-1 overflow-y-auto overflow-x-hidden pt-1">
             <nav className="py-4 px-2">
               <ul className="space-y-1 overflow-hidden">
-                {menuItems.map((item) => (
+                {menuItems.map((item) => {
+                  const showPendingBadge = item.name === "My Quizzes" && Boolean(pendingPublishCount && pendingPublishCount > 0);
+                  return (
                   <li key={item.name}>
                     <Link
                       href={item.href}
@@ -221,11 +292,17 @@ export default function DashboardSidebar({
                         (isOpen || isMobile) ? "px-3" : "justify-center"
                       } hover:bg-white/10 group relative text-white active:bg-white/20 transform hover:scale-[1.02] active:scale-[0.98] will-change-transform`}
                     >
-                      <span className="text-white">
+                      <span className="relative text-white">
                         <item.Icon className={`${isMobile ? navIconSizeClass : "w-5 h-5"}`} />
+                        {showPendingBadge && !isOpen && !isMobile && (
+                          <span
+                            className="absolute -top-1.5 -right-1.5 h-2.5 w-2.5 rounded-full bg-blue-400 border border-black"
+                            aria-hidden="true"
+                          />
+                        )}
                       </span>
-                      <span 
-                        className={`ml-3 font-medium text-white ${isMobile ? navTextSizeClass : "text-sm"} transition-opacity duration-300 ${
+                      <span
+                        className={`ml-3 font-medium text-white flex items-center gap-2 ${isMobile ? navTextSizeClass : "text-sm"} transition-opacity duration-300 ${
                           (isOpen || isMobile) ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'
                         }`}
                         style={{
@@ -234,15 +311,25 @@ export default function DashboardSidebar({
                         }}
                       >
                         {item.name}
+                        {showPendingBadge && (isOpen || isMobile) && (
+                          <span
+                            className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] font-bold leading-none"
+                            title={`${pendingPublishCount} quiz${pendingPublishCount === 1 ? "" : "zes"} awaiting publish`}
+                          >
+                            {pendingPublishCount}
+                          </span>
+                        )}
                       </span>
                       {!isOpen && !isMobile && (
                         <span className="absolute left-full ml-2 px-2 py-1 bg-white text-black text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out transform -translate-x-1 group-hover:translate-x-0 pointer-events-none">
                           {item.name}
+                          {showPendingBadge && ` (${pendingPublishCount} pending)`}
                         </span>
                       )}
                     </Link>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </nav>
           </div>

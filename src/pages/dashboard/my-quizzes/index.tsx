@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCachedFetch } from "@/hooks/useCachedFetch";
 import { useRouter } from "next/router";
 import { SignedIn, SignedOut, useUser } from "@clerk/nextjs";
 import Head from "next/head";
 import Link from "next/link";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { MoreVertical, Trash2, RefreshCw, Loader2, RotateCw } from "lucide-react";
 import { useUserPlanContext } from "@/contexts/UserPlanContext";
-import { useUserRole } from "@/hooks/useUserRole";
-import { canPerformAction } from "@/utils/rolePermissions";
+import { isQuizExpired } from "@/utils/timezoneUtils";
 
 import DashboardSideBar from "@/components/SideBar/DashboardSidebar";
 import { DashboardHeader } from "@/components/Dashboard/Header";
@@ -36,6 +35,9 @@ import {
 import { DashboardAccess } from "@/components/Dashboard/DashboardAccess";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { useQuizExpirationChecker } from "@/components/QuizExpirationChecker";
+import { useUserRole } from "@/hooks/useUserRole";
+import { canPerformAction } from "@/utils/rolePermissions";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuizSummary {
   quiz_id: string;
@@ -52,31 +54,47 @@ interface QuizSummary {
   is_publish?: boolean;
   isPublished?: boolean;
   public_link?: string;
+  // Merged in from /api/publish/company/[companyId] — only present for
+  // published quizzes, since that data lives entirely in the publish
+  // service, not the quiz-generation service this page otherwise fetches from.
+  max_attempts?: number;
+  quiz_expiration_time?: string | null;
+  quiz_key?: string | null;
+}
+
+interface PublishedQuizInfo {
+  quiz_id: string;
+  max_attempts?: number;
+  quiz_expiration_time?: string | null;
+  quiz_key?: string | null;
 }
 
 export default function MyQuizzesPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
+  const [quizzes, setQuizzes] = useState<QuizSummary[] | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshingQuizzes, setIsRefreshingQuizzes] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quizToDelete, setQuizToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [companyInfo, setCompanyInfo] = useState<{id: string; name: string; owner_email?: string; } | null>(null);
   const queryClient = useQueryClient();
-  
+  const { toast } = useToast();
+
   const { plan, isLoading: isPlanLoading } = useUserPlanContext();
-  
+
   const isEnterprisePlan = plan === 'Enterprise';
 
   // Use the same approach as teams page - metadata first, then localStorage fallback
   const metadataCompanyId = user?.unsafeMetadata?.companyId as string | undefined;
   const localStorageCompanyId = typeof window !== 'undefined' ? localStorage.getItem('userCompanyId') as string | null : null;
   const companyId = metadataCompanyId || localStorageCompanyId || '';
+
+  const { userRole } = useUserRole(companyId);
   
-  // Now get user role after companyId is defined
-  const { userRole, loading: roleLoading } = useUserRole(companyId);
   const companyName = user?.unsafeMetadata?.companyName as string || (typeof window !== 'undefined' ? localStorage.getItem('userCompanyName') : null) || 'Company';
   
   // Set up automatic expiration checking (every 5 minutes)
@@ -180,30 +198,81 @@ export default function MyQuizzesPage() {
   useEffect(() => {
     if (quizzesData) {
       setQuizzes(quizzesData);
+      setLastUpdated(new Date());
     }
     setFetchError(quizzesError ? quizzesError.message : null);
   }, [quizzesData, quizzesError]);
 
+  // max_attempts/expiration/quiz_key live entirely in the publish service, not
+  // the quiz-generation service `quizzesData` above comes from — fetch them
+  // separately (one call for the whole company) and merge onto each quiz.
+  const publishedQuizzesUrl = companyInfo?.id ? `/api/publish/company/${encodeURIComponent(companyInfo.id)}` : '';
+  const { data: publishedQuizzesData } = useCachedFetch<{ success: boolean; quizzes: PublishedQuizInfo[] }>(
+    ['publishedQuizzes', companyInfo?.id || ''],
+    publishedQuizzesUrl,
+    { enabled: Boolean(companyInfo?.id) }
+  );
+
+  const publishedByQuizId = useMemo(() => {
+    const map = new Map<string, PublishedQuizInfo>();
+    (publishedQuizzesData?.quizzes || []).forEach((p) => map.set(p.quiz_id, p));
+    return map;
+  }, [publishedQuizzesData]);
+
+  const mergedQuizzes = useMemo(() => {
+    if (!quizzes) return null;
+    return quizzes.map((q) => {
+      const pub = publishedByQuizId.get(q.quiz_id);
+      return pub
+        ? { ...q, max_attempts: pub.max_attempts, quiz_expiration_time: pub.quiz_expiration_time, quiz_key: pub.quiz_key }
+        : q;
+    });
+  }, [quizzes, publishedByQuizId]);
+
+  const handleRefreshQuizzes = useCallback(async () => {
+    if (!companyInfo?.id) return;
+    try {
+      setIsRefreshingQuizzes(true);
+      await queryClient.invalidateQueries({ queryKey: ['quizzes', companyInfo.id] });
+      setLastUpdated(new Date());
+    } finally {
+      setIsRefreshingQuizzes(false);
+    }
+  }, [queryClient, companyInfo?.id]);
+
   const handleDeleteQuiz = async (quizId: string) => {
-    if (!quizId) return;
-    
+    if (!quizId || !companyInfo?.id) return;
+
     try {
       setIsDeleting(true);
-      const response = await fetch(`/api/quiz/${quizId}`, {
+      // companyId is required by the backend proxy (getAuthAndCompanyId) — this
+      // call previously omitted it entirely, so it always 400'd if triggered.
+      const response = await fetch(`/api/quiz/${quizId}?companyId=${encodeURIComponent(companyInfo.id)}`, {
         method: 'DELETE',
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to delete quiz');
       }
-      
+
       await queryClient.invalidateQueries({ queryKey: ['quizzes', companyInfo?.id] });
       setDeleteDialogOpen(false);
       setQuizToDelete(null);
-      
+
+      toast({
+        title: 'Quiz deleted',
+        description: 'The quiz has been removed.',
+        className: 'border-green-600/60 bg-green-700 text-green-100 shadow-lg shadow-green-600/30',
+      });
+
     } catch (error) {
       setFetchError(error instanceof Error ? error.message : 'Failed to delete quiz');
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete quiz',
+        variant: 'destructive',
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -247,9 +316,35 @@ export default function MyQuizzesPage() {
             <div className="flex-1 flex flex-col">
               <DashboardHeader />
               <main className="flex-1 p-6">
-                <div className="mb-6">
-                  <h1 className="text-2xl font-semibold">My Quizzes</h1>
-                  <p className="text-white/70">Browse your generated quizzes and open any to view full details.</p>
+                <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+                  <div>
+                    <h1 className="text-2xl font-semibold">My Quizzes</h1>
+                    <p className="text-white/70">Browse your generated quizzes and open any to view full details.</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {lastUpdated && (
+                      <div className="text-sm text-gray-400">
+                        Last updated: {lastUpdated.toLocaleString()}
+                      </div>
+                    )}
+                    <Button
+                      onClick={handleRefreshQuizzes}
+                      className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 text-white hover:brightness-110 transition-all duration-300 shadow-md hover:shadow-xl"
+                      disabled={isRefreshingQuizzes}
+                    >
+                      {isRefreshingQuizzes ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Refreshing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4" />
+                          <span>Refresh</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 {fetchError ? (
                   <div className="border border-red-500/40 text-red-300 rounded-lg p-4">
@@ -259,11 +354,14 @@ export default function MyQuizzesPage() {
                   <div className="flex items-center justify-center py-10">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
-                ) : !quizzes || quizzes.length === 0 ? (
+                ) : !mergedQuizzes || mergedQuizzes.length === 0 ? (
                   <div className="border border-white/10 rounded-lg p-6">No quizzes to show yet.</div>
                 ) : (
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {quizzes.map((q) => (
+                    {mergedQuizzes.map((q) => {
+                      const isPublished = Boolean(q.is_publish || q.isPublished);
+                      const isExpired = isPublished && Boolean(q.quiz_expiration_time) && isQuizExpired(q.quiz_expiration_time as string);
+                      return (
                       <Link
                         key={q.quiz_id}
                         href={`/quiz/${q.quiz_id}`}
@@ -274,7 +372,7 @@ export default function MyQuizzesPage() {
                           <CardHeader>
                             <div className="flex items-center justify-between">
                               <div className="relative group">
-                                <CardTitle 
+                                <CardTitle
                                   className="text-xl font-semibold text-white truncate max-w-[200px]"
                                   title={q.role}
                                 >
@@ -288,6 +386,41 @@ export default function MyQuizzesPage() {
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
                                 <Badge className="bg-blue-600/20 text-blue-300 border border-blue-500/30">{q.experience} yrs</Badge>
+                                {canPerformAction(userRole, 'delete_quiz', { isQuizOwner: q.user_id === user?.id, isPublished }) && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                        className="h-7 w-7 flex items-center justify-center rounded-md text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                                        aria-label="Quiz actions"
+                                      >
+                                        <MoreVertical className="h-4 w-4" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                      align="end"
+                                      className="bg-[#161c2a] border-white/10 text-white"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                      }}
+                                    >
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setQuizToDelete(q.quiz_id);
+                                          setDeleteDialogOpen(true);
+                                        }}
+                                        className="text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
                               </div>
                             </div>
                             <CardDescription className="text-white/70">
@@ -314,9 +447,16 @@ export default function MyQuizzesPage() {
                                   </span>
                                 )}
                               </div>
-                              
-                              <div className="mt-1">
-                                {q.is_publish || q.isPublished ? (
+
+                              <div className="flex flex-wrap items-center gap-2 mt-1">
+                                {isExpired ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-400 border border-red-500/20">
+                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                                    </svg>
+                                    Expired
+                                  </span>
+                                ) : isPublished ? (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-400 border border-green-500/20">
                                     <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -331,12 +471,19 @@ export default function MyQuizzesPage() {
                                     Not Published
                                   </span>
                                 )}
+                                {isPublished && !isExpired && q.max_attempts != null && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-300 border border-amber-500/20">
+                                    <RotateCw className="h-3 w-3" />
+                                    Max Attempts: {q.max_attempts}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </CardContent>
                         </Card>
                       </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </main>

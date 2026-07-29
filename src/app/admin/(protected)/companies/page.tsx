@@ -1,8 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Search, ChevronRight } from 'lucide-react';
+import { useAdminData } from '../useAdminData';
+import { AdminPageLoading, AdminErrorState } from '../AdminPageLoading';
+import { AdminRefreshButton } from '../AdminRefreshButton';
+import { AdminPagination, ADMIN_PAGE_SIZE } from '../AdminPagination';
 
 interface Company {
   company_id: string;
@@ -36,28 +40,43 @@ function expiryStatus(expiry: string | null): { label: string; className: string
 }
 
 export default function AdminCompaniesPage() {
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [search, setSearch] = useState('');
-
-  const load = async (q: string) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/admin/companies${q ? `?q=${encodeURIComponent(q)}` : ''}`);
-      const data = await res.json();
-      setCompanies(data.companies || []);
-    } finally {
-      setIsLoading(false);
+  const { data, isLoading, isRefreshing, error, refresh, lastUpdated } = useAdminData<Company[]>('admin-companies', async () => {
+    const res = await fetch('/api/admin/companies');
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Failed to load companies (${res.status})`);
     }
-  };
+    const json = await res.json();
+    return json.companies || [];
+  });
 
-  useEffect(() => { load(''); }, []);
+  const [search, setSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<Company[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    const t = setTimeout(() => load(search), 350);
+    setPage(1);
+    if (!search) { setSearchResults(null); return; }
+    setIsSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/admin/companies?q=${encodeURIComponent(search)}`);
+        const json = await res.json();
+        setSearchResults(json.companies || []);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 350);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  const companies = searchResults ?? data ?? [];
+  const pageCount = Math.max(1, Math.ceil(companies.length / ADMIN_PAGE_SIZE));
+  const pagedCompanies = useMemo(
+    () => companies.slice((page - 1) * ADMIN_PAGE_SIZE, page * ADMIN_PAGE_SIZE),
+    [companies, page]
+  );
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -66,7 +85,10 @@ export default function AdminCompaniesPage() {
           <h1 className="text-2xl font-semibold text-white">Companies & Billing</h1>
           <p className="text-sm text-zinc-500 mt-1">{companies.length} companies shown</p>
         </div>
+        <AdminRefreshButton onClick={refresh} isRefreshing={isRefreshing} lastUpdated={lastUpdated} />
       </div>
+
+      {error && <div className="mb-5"><AdminErrorState message={error} onRetry={refresh} /></div>}
 
       <div className="relative mb-5 max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
@@ -91,11 +113,11 @@ export default function AdminCompaniesPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-900">
-            {isLoading ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">Loading...</td></tr>
+            {isLoading || isSearching ? (
+              <tr><td colSpan={6} className="p-0"><AdminPageLoading /></td></tr>
             ) : companies.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">No companies found</td></tr>
-            ) : companies.map((c) => {
+            ) : pagedCompanies.map((c) => {
               const status = expiryStatus(c.plan_expiry_date);
               return (
                 <tr key={c.company_id} className="hover:bg-zinc-900/60">
@@ -125,6 +147,7 @@ export default function AdminCompaniesPage() {
           </tbody>
         </table>
       </div>
+      <AdminPagination page={page} pageCount={pageCount} onPageChange={setPage} />
     </div>
   );
 }

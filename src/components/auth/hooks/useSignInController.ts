@@ -1,10 +1,11 @@
 import { useCallback, useState, FormEvent } from "react";
-import { useSignIn, useClerk, useUser } from "@clerk/nextjs";
+import { useSignIn, useSignUp, useClerk, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/router";
 
 // Consolidates all state and actions for the custom Sign In flow
 export function useSignInController() {
   const { signIn, isLoaded } = useSignIn();
+  const { signUp } = useSignUp();
   const { setActive, signOut } = useClerk();
   const { user } = useUser();
   const router = useRouter();
@@ -19,7 +20,7 @@ export function useSignInController() {
 
   const handleOAuth = useCallback(
     async (provider: "oauth_google") => {
-      if (!isLoaded || !signIn) return;
+      if (!isLoaded || !signIn || !signUp) return;
       if (user) {
         setError("You are already signed in. Use 'Switch account' to continue with another account.");
         return;
@@ -32,58 +33,25 @@ export function useSignInController() {
         await signIn.authenticateWithRedirect({
           strategy: provider,
           redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/sso-callback",
+          redirectUrlComplete: "/dashboard",
         });
       } catch (err: any) {
-        // Handle different error structures for OAuth
-        let msg = "";
-        let errorCode = "";
-        
-        // Check for nested error structure (OAuth verification errors)
-        if (err?.response?.sign_in?.first_factor_verification?.error) {
-          const oauthError = err.response.sign_in.first_factor_verification.error;
-          msg = oauthError.long_message || oauthError.message || "";
-          errorCode = oauthError.code || "";
-        } else if (err?.response?.sign_in?.first_factor_verification?.error) {
-          // Alternative path for error structure
-          const oauthError = err.response.sign_in.first_factor_verification.error;
-          msg = oauthError.long_message || oauthError.message || "";
-          errorCode = oauthError.code || "";
-        } else {
-          // Fallback to standard error structure
-          msg = (err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "").toString();
-          errorCode = err?.errors?.[0]?.code || "";
-        }
-        
-        // Debug logging for OAuth errors
-        console.log("OAuth SignIn Error - Full Analysis:", {
-          message: msg,
-          code: errorCode,
-          fullError: err,
-          response: err?.response,
-          signInData: err?.response?.data?.sign_in,
-          firstFactorError: err?.response?.data?.sign_in?.first_factor_verification?.error,
-          messageLower: msg.toLowerCase()
-        });
-        
-        // Check if OAuth error indicates account doesn't exist
-        if (msg.toLowerCase().includes("not found") || 
-            msg.toLowerCase().includes("doesn't exist") || 
-            msg.toLowerCase().includes("no account found") ||
-            msg.toLowerCase().includes("identifier not found") ||
-            msg.toLowerCase().includes("invalid external account") ||
-            msg.toLowerCase().includes("external account not found") ||
-            errorCode === "external_account_not_found") {
-          // Redirect to sign up page for OAuth
-          console.log("OAuth Account Not Found - Redirecting to signup...");
-          router.push(`/signup?message=No account found. Please sign up with Google.`);
-        } else {
-          setError(msg || "Failed to continue with provider. Check provider configuration in Clerk.");
-        }
+        // signIn.authenticateWithRedirect() navigates the whole browser tab to
+        // Google — verified directly against this project's resolved
+        // @clerk/clerk-js@5.99.0 source: once that navigation happens, this
+        // promise never resolves or rejects again in this tab. This catch can
+        // therefore only fire for a PRE-redirect problem (bad OAuth strategy
+        // config, network error before the redirect starts) — NOT for "no
+        // account exists," which can only be determined after Google redirects
+        // back. That determination, and the redirect to /signup for it, is
+        // handled entirely in sso-callback.tsx.
+        const msg = (err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || "").toString();
+        console.error("OAuth SignIn pre-redirect error:", { message: msg, code: err?.errors?.[0]?.code, fullError: err });
+        setError(msg || "Failed to continue with provider. Check provider configuration in Clerk.");
         setOauthLoading(null);
       }
     },
-    [isLoaded, signIn, user, router]
+    [isLoaded, signIn, signUp, user, router]
   );
 
   const onSubmit = async (e: FormEvent) => {

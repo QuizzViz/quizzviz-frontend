@@ -6,6 +6,9 @@ import {
   CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Building2, FileQuestion, Send, ClipboardCheck } from 'lucide-react';
+import { useAdminData } from '../useAdminData';
+import { AdminPageLoading, AdminErrorState } from '../AdminPageLoading';
+import { AdminRefreshButton } from '../AdminRefreshButton';
 
 interface MonthlyPoint {
   year: number;
@@ -47,31 +50,36 @@ function StatCard({ label, value, icon: Icon, deltaPct }: { label: string; value
   );
 }
 
+interface AnalyticsPayload {
+  monthly: MonthlyPoint[];
+  yearly: YearlyPoint[];
+  totals: any;
+}
+
 export default function AdminAnalyticsPage() {
-  const [monthly, setMonthly] = useState<MonthlyPoint[]>([]);
-  const [yearly, setYearly] = useState<YearlyPoint[]>([]);
-  const [totals, setTotals] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading, isRefreshing, error, refresh, lastUpdated } = useAdminData<AnalyticsPayload>('admin-analytics', async () => {
+    const res = await fetch('/api/admin/analytics');
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Failed to load analytics (${res.status})`);
+    }
+    const json = await res.json();
+    return { monthly: json.monthly || [], yearly: json.yearly || [], totals: json.totals || null };
+  });
+
+  const monthly = data?.monthly || [];
+  const yearly = data?.yearly || [];
+  const totals = data?.totals || null;
+
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [compareWithPreviousYear, setCompareWithPreviousYear] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch('/api/admin/analytics');
-        const data = await res.json();
-        setMonthly(data.monthly || []);
-        setYearly(data.yearly || []);
-        setTotals(data.totals || null);
-        if (data.yearly?.length) {
-          setSelectedYear(data.yearly[data.yearly.length - 1].year);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, []);
+    if (selectedYear === null && yearly.length) {
+      setSelectedYear(yearly[yearly.length - 1].year);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [yearly]);
 
   const availableYears = useMemo(() => yearly.map((y) => y.year), [yearly]);
 
@@ -99,12 +107,23 @@ export default function AdminAnalyticsPage() {
   }, [monthly]);
 
   if (isLoading) {
-    return <div className="p-8 text-zinc-500">Loading analytics...</div>;
+    return <AdminPageLoading text="Loading analytics..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 max-w-2xl mx-auto">
+        <AdminErrorState message={error} onRetry={refresh} />
+      </div>
+    );
   }
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-semibold text-white mb-1">Growth Analytics</h1>
+      <div className="flex items-start justify-between mb-1">
+        <h1 className="text-2xl font-semibold text-white">Growth Analytics</h1>
+        <AdminRefreshButton onClick={refresh} isRefreshing={isRefreshing} lastUpdated={lastUpdated} />
+      </div>
       <p className="text-sm text-zinc-500 mb-6">QuizzViz platform growth — quiz generation, publishing, and attempts over time.</p>
 
       <div className="grid grid-cols-4 gap-4 mb-8">

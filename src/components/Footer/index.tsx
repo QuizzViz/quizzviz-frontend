@@ -18,7 +18,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground max-w-sm">
-              We empower teams to streamline their technical hiring process
+              We empower teams to streamline hiring for any role, technical or non-technical
             </p>
           </div>
 

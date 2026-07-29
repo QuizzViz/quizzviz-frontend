@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/ui/loading";
 import { Zap, AlertTriangle, BookOpen } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -226,8 +227,8 @@ export default function CreateQuizCard({
   const { user, isLoaded: isUserLoaded } = useUser();
 
   const quizUsage = useQuizUsage();
-  const { data: userPlanData } = useUserPlan();
-  const { companyInfo } = useCompanyInfo();
+  const { data: userPlanData, isLoading: isPlanDataLoading } = useUserPlan();
+  const { companyInfo, isLoading: isCompanyInfoLoading } = useCompanyInfo();
   const plan = userPlanData?.plan_name || "Free";
   const currentUsage = {
     quizzesThisMonth: quizUsage?.data?.current_month?.quiz_count || 0,
@@ -240,6 +241,11 @@ export default function CreateQuizCard({
   // otherwise the primary Generate Quiz button could get disabled based on
   // a placeholder plan the company isn't even on.
   const quizLimitReached = !planLimits.isLoading && planLimits.isQuizLimitReached;
+  // A freshly invited member landing on the dashboard shouldn't see any part
+  // of this card — including a correctly-computed limit banner — until we
+  // actually know their company and plan; showing the form first and having
+  // the banner pop in (or out) afterward reads as broken either way.
+  const isReadyToRender = isUserLoaded && !isCompanyInfoLoading && !isPlanDataLoading;
   const queryClient = useQueryClient();
   const router = useRouter();
   const { toast } = useToast();
@@ -378,6 +384,16 @@ export default function CreateQuizCard({
       : (inputMode === 'tech_stack' && techStack.length === 0) ||
         (inputMode === 'file_upload' && uploadedFiles.length === 0)
   );
+
+  if (!isReadyToRender) {
+    return (
+      <Card className="bg-background border-border">
+        <CardContent className="p-8">
+          <LoadingSpinner text="Loading your workspace..." />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-background border-border">

@@ -23,6 +23,10 @@ export function getAdminDb(): Pool {
       connectionString,
       ssl: { rejectUnauthorized: false },
       max: 5,
+      // Without this, an unresponsive/cold connection just hangs indefinitely
+      // (pg's default is to wait forever) instead of failing fast — the admin
+      // UI would rather show a clear, retryable error in ~10s than spin silently.
+      connectionTimeoutMillis: 10000,
     });
   }
   return pool;

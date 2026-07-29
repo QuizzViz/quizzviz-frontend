@@ -20,7 +20,7 @@ const CTASection: FC = () => {
             Ready to Transform Your <span className="gradient-text font-medium">Hiring Process?</span>
           </h2>
           <p className="text-lg lg:text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed opacity-90">
-            Join leading companies using QuizzViz to streamline technical hiring, reduce time-to-hire, and identify top talent with AI-powered coding assessments.
+            Join leading companies using QuizzViz to streamline hiring for any role, reduce time-to-hire, and identify top talent with AI-powered assessments generated from documents or a tech stack.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/pricing">

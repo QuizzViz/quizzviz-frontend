@@ -26,7 +26,7 @@ const HowItWorksSection: FC = () => {
     {
       number: "1",
       title: "Create Assessment",
-      description: "Select coding topics relevant to the role, choose difficulty level, and set the number of questions to match your job requirements.",
+      description: "Upload a document, or select a tech stack, then choose difficulty level and set the number of questions to match your job requirements.",
       gradient: "from-green-500/80 to-blue-500/80",
       ring: "ring-green-500/30"
     },
@@ -64,7 +64,7 @@ const HowItWorksSection: FC = () => {
               </span>
             </h2>
             <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Three simple steps to find and hire the best technical talent efficiently and effectively.
+              Three simple steps to find and hire the best talent for any role, efficiently and effectively.
             </p>
           </div>
         </div>

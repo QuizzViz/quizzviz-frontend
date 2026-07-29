@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Gauge } from 'lucide-react';
+import { useAdminData } from '../useAdminData';
+import { AdminPageLoading, AdminErrorState } from '../AdminPageLoading';
+import { AdminRefreshButton } from '../AdminRefreshButton';
 
 interface UsageRow {
   company_id: string;
@@ -45,32 +47,32 @@ function UsageBar({ used, limit, pct }: { used: number; limit: number; pct: numb
 }
 
 export default function AdminUsagePage() {
-  const [usage, setUsage] = useState<UsageRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch('/api/admin/usage');
-        const data = await res.json();
-        setUsage(data.usage || []);
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, []);
+  const { data, isLoading, isRefreshing, error, refresh, lastUpdated } = useAdminData<UsageRow[]>('admin-usage', async () => {
+    const res = await fetch('/api/admin/usage');
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || `Failed to load usage (${res.status})`);
+    }
+    const json = await res.json();
+    return json.usage || [];
+  });
+  const usage = data || [];
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <div className="flex items-center gap-2.5 mb-1">
-        <Gauge className="h-5 w-5 text-green-400" />
-        <h1 className="text-2xl font-semibold text-white">Usage</h1>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2.5">
+          <Gauge className="h-5 w-5 text-green-400" />
+          <h1 className="text-2xl font-semibold text-white">Usage</h1>
+        </div>
+        <AdminRefreshButton onClick={refresh} isRefreshing={isRefreshing} lastUpdated={lastUpdated} />
       </div>
       <p className="text-sm text-zinc-500 mb-6">
         How much of each company&apos;s current billing period quota has been used — anchored to their actual subscription
         cycle, not the calendar month.
       </p>
+
+      {error && <div className="mb-5"><AdminErrorState message={error} onRetry={refresh} /></div>}
 
       <div className="border border-zinc-800 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
@@ -85,8 +87,8 @@ export default function AdminUsagePage() {
           </thead>
           <tbody className="divide-y divide-zinc-900">
             {isLoading ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-zinc-500">Loading...</td></tr>
-            ) : usage.length === 0 ? (
+              <tr><td colSpan={5} className="p-0"><AdminPageLoading /></td></tr>
+            ) : error ? null : usage.length === 0 ? (
               <tr><td colSpan={5} className="px-4 py-8 text-center text-zinc-500">No companies found</td></tr>
             ) : usage.map((u) => (
               <tr key={u.company_id} className="hover:bg-zinc-900/60">
