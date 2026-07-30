@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 
 const trustPills = [
   { icon: Sparkles, label: "AI-generated questions" },
-  { icon: ShieldCheck, label: "Secure evaluation" },
+  { icon: ShieldCheck, label: "Proctored evaluation" },
   { icon: BarChart3, label: "Actionable insights" },
 ];
 
 const pipelineSteps = [
   { icon: FileText, title: "Upload a Document", description: "Or generate from a tech stack instead." },
   { icon: Sparkles, title: "AI Builds the Assessment", description: "Role-specific questions, ready in minutes." },
-  { icon: ShieldCheck, title: "Evaluate Securely", description: "A protected link and key for every candidate." },
+  { icon: ShieldCheck, title: "Evaluate with Proctoring", description: "A protected link and key for every candidate." },
   { icon: BarChart3, title: "Decide with Confidence", description: "Compare candidates with actionable insights." },
 ];
 
@@ -36,7 +36,7 @@ const HeroSection: FC = () => {
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto">
-              Upload your documents, let AI create role-specific assessments, then securely evaluate candidates and make better hiring decisions with actionable insights.
+              Upload your documents, let AI create role-specific assessments, then evaluate candidates with proctoring and make better hiring decisions with actionable insights.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
