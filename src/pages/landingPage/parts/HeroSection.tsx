@@ -24,7 +24,7 @@ const HeroSection: FC = () => {
   };
 
   return (
-    <section id="hero" className="relative flex items-start justify-center min-h-screen overflow-hidden pt-28 sm:pt-32 md:pt-36 lg:pt-40 pb-16 sm:pb-20 scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
+    <section id="hero" className="relative flex items-center justify-center min-h-[calc(100vh-4rem)] overflow-hidden pb-16 sm:pb-20 scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background" />
       <div aria-hidden className="absolute right-[-12%] top-10 w-[65vw] max-w-[980px] aspect-square rounded-[36%] bg-[radial-gradient(60%_60%_at_30%_30%,rgba(147,197,253,0.25),rgba(59,130,246,0.12)_45%,rgba(34,197,94,0.08)_75%,transparent_85%)] blur-3xl opacity-70" />
 
