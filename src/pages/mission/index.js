@@ -111,7 +111,7 @@ export default function OurMission() {
                     <span className="text-teal-400 text-sm font-medium">3</span>
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-100">Share Securely</h4>
+                    <h4 className="font-medium text-gray-100">Share with Proctoring</h4>
                     <p className="text-gray-400 text-sm mt-1">Share the quiz link and secret key with candidates through email or job postings.</p>
                   </div>
                 </div>
