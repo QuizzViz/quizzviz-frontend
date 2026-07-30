@@ -32,7 +32,7 @@ const HowItWorksSection: FC = () => {
     },
     {
       number: "2",
-      title: "Share Securely",
+      title: "Share with Proctoring",
       description: "Configure test settings including time limits and maximum attempts, then share the assessment link with candidates via email or your ATS.",
       gradient: "from-blue-500/80 to-purple-500/80",
       ring: "ring-blue-500/30"

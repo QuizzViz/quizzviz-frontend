@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 
 const trustPills = [
   { icon: Sparkles, label: "AI-generated questions" },
-  { icon: ShieldCheck, label: "Secure evaluation" },
+  { icon: ShieldCheck, label: "Proctored evaluation" },
   { icon: BarChart3, label: "Actionable insights" },
 ];
 
 const pipelineSteps = [
   { icon: FileText, title: "Upload a Document", description: "Or generate from a tech stack instead." },
   { icon: Sparkles, title: "AI Builds the Assessment", description: "Role-specific questions, ready in minutes." },
-  { icon: ShieldCheck, title: "Evaluate Securely", description: "A protected link and key for every candidate." },
+  { icon: ShieldCheck, title: "Evaluate with Proctoring", description: "A protected link and key for every candidate." },
   { icon: BarChart3, title: "Decide with Confidence", description: "Compare candidates with actionable insights." },
 ];
 
@@ -28,9 +28,7 @@ const HeroSection: FC = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background" />
       <div aria-hidden className="absolute right-[-12%] top-10 w-[65vw] max-w-[980px] aspect-square rounded-[36%] bg-[radial-gradient(60%_60%_at_30%_30%,rgba(147,197,253,0.25),rgba(59,130,246,0.12)_45%,rgba(34,197,94,0.08)_75%,transparent_85%)] blur-3xl opacity-70" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center justify-center py-6">
-
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 max-w-4xl">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-5 leading-tight">
               Turn Any Document Into a{" "}
@@ -39,7 +37,7 @@ const HeroSection: FC = () => {
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-gray-300 leading-relaxed max-w-3xl mx-auto">
-              Upload your documents, let AI create role-specific assessments, then securely evaluate candidates and make better hiring decisions with actionable insights.
+              Upload your documents, let AI create role-specific assessments, then evaluate candidates with proctoring and make better hiring decisions with actionable insights.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
@@ -91,7 +89,6 @@ const HeroSection: FC = () => {
               </div>
             </div>
           </div>
-        </div>
       </div>
     </section>
   );

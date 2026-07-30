@@ -5,7 +5,6 @@ import { Zap, CheckCircle, BarChart3, Share2 } from "lucide-react";
 
 
 
-
 const Card: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
     <div className={`shadow-xl ${className || ''}`}>
         {children}
@@ -36,8 +35,8 @@ const FeaturesSection: FC = () => {
     },
     {
       icon: CheckCircle,
-      title: "Secure & Simple Access",
-      description: "Easily control who takes your quizzes. Share a secure link and secret key with candidates - that's all they need to start their assessment.",
+      title: "Proctored & Simple Access",
+      description: "Easily control who takes your quizzes. Share a proctored link and secret key with candidates - that's all they need to start their assessment.",
       gradient: "from-blue-500/80 to-purple-500/80",
       ring: "ring-blue-500/30"
     },
@@ -67,7 +66,7 @@ const FeaturesSection: FC = () => {
               </span>
             </h2>
             <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Designed exclusively for companies to identify top talent for any role, efficiently and securely. Scale your hiring without compromising on quality or security.
+              Designed exclusively for companies to identify top talent for any role, efficiently with proctored assessments. Scale your hiring without compromising on quality or proctoring.
             </p>
           </div>
         </div>
