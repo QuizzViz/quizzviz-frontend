@@ -1,92 +1,123 @@
 "use client";
+
 import React, { FC } from "react";
+import { UploadCloud, ShieldAlert, CheckCircle2, ArrowRight, Layers, FileCheck, Laptop, Trophy } from "lucide-react";
 
-const Card: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
-    <div className={`shadow-xl ${className || ''}`}>
-        {children}
-    </div>
-);
-const CardContent: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
-    <div className={`p-6 ${className || ''}`}>
-        {children}
-    </div>
-);
-
-
-type Step = {
-  number: string;
-  title?: string; 
-  description: string;
-  gradient: string;
-  ring: string;
-};
+const steps = [
+  {
+    stepNumber: "01",
+    icon: UploadCloud,
+    badge: "1-Minute Setup",
+    title: "Upload Your Material or Pick a Stack",
+    description:
+      "Drop in any PDF (job description, internal SOPs, product documentation) or select your stack (Python, React, Go, SQL, Sales). Set question count and difficulty in seconds.",
+    highlight: "No question-writing burnout",
+    accentColor: "from-emerald-500/20 to-teal-500/10",
+    iconColor: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    numberColor: "text-emerald-400",
+  },
+  {
+    stepNumber: "02",
+    icon: Laptop,
+    badge: "Anti-Cheat Lockdown",
+    title: "Dispatch Secure Proctored Links",
+    description:
+      "Send candidates a unique assessment link with an expiring passkey. Tests launch in-browser with automated webcam monitoring, full-screen lockdown, and tab-switch detection.",
+    highlight: "Zero software downloads for candidates",
+    accentColor: "from-blue-500/20 to-indigo-500/10",
+    iconColor: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+    numberColor: "text-blue-400",
+  },
+  {
+    stepNumber: "03",
+    icon: Trophy,
+    badge: "Instant Decision",
+    title: "Review Verified Talent & Hire",
+    description:
+      "Review auto-graded scorecards, question-by-question response speeds, and proctoring incident flags. Fast-track proven performers directly to final rounds.",
+    highlight: "Cut screening calls by 75%",
+    accentColor: "from-purple-500/20 to-pink-500/10",
+    iconColor: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+    numberColor: "text-purple-400",
+  },
+];
 
 const HowItWorksSection: FC = () => {
-  const steps = [
-    {
-      number: "1",
-      title: "Create Assessment",
-      description: "Upload a document, or select a tech stack, then choose difficulty level and set the number of questions to match your job requirements.",
-      gradient: "from-green-500/80 to-blue-500/80",
-      ring: "ring-green-500/30"
-    },
-    {
-      number: "2",
-      title: "Share with Proctoring",
-      description: "Configure test settings including time limits and maximum attempts, then share the assessment link with candidates via email or your ATS.",
-      gradient: "from-blue-500/80 to-purple-500/80",
-      ring: "ring-blue-500/30"
-    },
-    {
-      number: "3",
-      title: "Analyze & Hire",
-      description: "Review detailed performance metrics, compare candidates side-by-side, and download comprehensive reports to make confident hiring decisions.",
-      gradient: "from-purple-500/80 to-pink-500/80",
-      ring: "ring-purple-500/30"
-    }
-  ];
-
   return (
-    <section id="how-it-works" className="py-20 relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden">
-      {/* Subtle background elements for elegance */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-1/3 left-1/2 w-80 h-80 bg-gradient-to-r from-green-500/10 to-blue-500/10 rounded-full blur-3xl transform -translate-x-1/2"></div>
-        <div className="absolute bottom-1/3 right-1/2 w-96 h-96 bg-gradient-to-l from-purple-500/10 to-green-500/10 rounded-full blur-3xl transform translate-x-1/2"></div>
+    <section id="how-it-works" className="py-24 relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden bg-background">
+      {/* Background ambient lighting */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-blue-500/5 rounded-full blur-3xl" />
       </div>
-      
+
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <div className="text-center">
-            <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6">
-              Streamline Your 
-              <span className="font-medium ml-3 bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
-                Hiring Process
-              </span>
-            </h2>
-            <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Three simple steps to find and hire the best talent for any role, efficiently and effectively.
-            </p>
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-5">
+            <Layers className="w-3.5 h-3.5" />
+            Simple 3-Step Pipeline
           </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-6 leading-tight">
+            From job spec to{" "}
+            <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+              verified shortlist
+            </span>{" "}
+            in minutes.
+          </h2>
+          <p className="text-base sm:text-lg text-gray-300 leading-relaxed">
+            Eliminate manual question writing and stop booking 30-minute introductory phone calls with candidates who can't demonstrate real job skills.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-          {steps.map((step, index) => (
-            <Card 
-              key={index}
-              // Tailwind classes for glassmorphism and transition
-              className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 overflow-hidden"
-            >
-              <CardContent className="p-8 text-center relative">
-                <div className={`w-20 h-20 bg-gradient-to-br ${step.gradient} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg ring-1 ${step.ring} hover:animate-bounce`}>
-                  <span className="text-3xl font-bold text-white drop-shadow-sm">{step.number}</span>
+        {/* 3-Step Process Grid with Connecting Flow */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 relative">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            return (
+              <div
+                key={step.stepNumber}
+                className="relative group rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 hover:border-white/20 hover:bg-white/[0.05] hover:-translate-y-1"
+              >
+                {/* Subtle top gradient */}
+                <div
+                  className={`absolute inset-x-0 top-0 h-28 rounded-t-2xl bg-gradient-to-b ${step.accentColor} opacity-30 pointer-events-none`}
+                />
+
+                <div>
+                  {/* Step Number & Icon */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${step.iconColor}`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300">
+                        {step.badge}
+                      </span>
+                    </div>
+                    <span className={`text-2xl font-mono font-bold ${step.numberColor} opacity-60`}>
+                      {step.stepNumber}
+                    </span>
+                  </div>
+
+                  {/* Title & Description */}
+                  <h3 className="text-xl font-semibold text-white mb-3 tracking-tight">
+                    {step.title}
+                  </h3>
+                  <p className="text-sm text-gray-400 leading-relaxed mb-6">
+                    {step.description}
+                  </p>
                 </div>
-                <h3 className="text-2xl font-semibold text-foreground mb-4 tracking-tight">{step.title}</h3>
-                <p className="text-muted-foreground leading-relaxed text-sm opacity-90 mx-auto">
-                  {step.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+
+                {/* Bottom Highlight Tag */}
+                <div className="pt-4 border-t border-white/10">
+                  <div className="flex items-center gap-2 text-xs font-medium text-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>{step.highlight}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
