@@ -1,94 +1,95 @@
-"use client"
-import React, { FC } from "react";
-import { Zap, CheckCircle, BarChart3, Share2 } from "lucide-react";
+'use client';
 
+import { FC } from "react";
+import { motion } from "framer-motion";
+import { FileStack, KeyRound, LineChart, Users } from "lucide-react";
+import { fadeUp, stagger, viewportOnce } from "./motion";
 
+const lead = {
+  icon: FileStack,
+  title: "Enterprise-grade assessments",
+  description:
+    "Turn your own documents, or your company’s tech stack, into assessments tailored to any role, technical or non-technical. QuizzViz drafts the questions in minutes, so your hiring team doesn’t write them by hand.",
+};
 
-
-const Card: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
-    <div className={`shadow-xl ${className || ''}`}>
-        {children}
-    </div>
-);
-const CardContent: FC<{ className?: string, children: React.ReactNode }> = ({ className, children }) => (
-    <div className={`p-6 ${className || ''}`}>
-        {children}
-    </div>
-);
-
-interface Feature {
-  icon: React.ComponentType<any>;
-  title: string;
-  description: string;
-  gradient: string;
-  ring: string;
-}
+const support = [
+  {
+    icon: KeyRound,
+    title: "Proctored, simple access",
+    description:
+      "Candidates open the link, enter the secret key and their details, and start. No account required.",
+  },
+  {
+    icon: LineChart,
+    title: "Hiring analytics",
+    description:
+      "Every attempt appears in your analytics dashboard, filterable by role, score, and date, with performance metrics for each candidate.",
+  },
+  {
+    icon: Users,
+    title: "Team roles and permissions",
+    description:
+      "Add teammates to your workspace and assign roles. Each member’s permissions follow their role, so your team can work through hiring together.",
+  },
+];
 
 const FeaturesSection: FC = () => {
-  const features = [
-    {
-      icon: Zap,
-      title: "Enterprise-Grade Assessments",
-      description: "Turn your own documents, or your company's tech stack, into customized assessments tailored to any role, technical or non-technical. Our AI-powered platform generates relevant questions in minutes, saving your hiring team countless hours.",
-      gradient: "from-green-500/80 to-blue-500/80",
-      ring: "ring-green-500/30"
-    },
-    {
-      icon: CheckCircle,
-      title: "Proctored & Simple Access",
-      description: "Easily control who takes your quizzes. Share a proctored link and secret key with candidates - that's all they need to start their assessment.",
-      gradient: "from-blue-500/80 to-purple-500/80",
-      ring: "ring-blue-500/30"
-    },
-    {
-      icon: BarChart3,
-      title: "Hiring Analytics",
-      description: "Make data-driven hiring decisions with our advanced analytics. Track candidate performance, identify skill gaps, and optimize your recruitment funnel.",
-      gradient: "from-purple-500/80 to-pink-500/80",
-      ring: "ring-purple-500/30"
-    }
-  ];
-
   return (
-    <section id="features" className="py-20 relative scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32 overflow-hidden">
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-1/4 left-0 w-80 h-80 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-gradient-to-l from-green-500/10 to-blue-500/10 rounded-full blur-3xl"></div>
-      </div>
-      
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <div className="text-center">
-            <h2 className="text-4xl lg:text-5xl font-light tracking-wide text-foreground mb-6">
-              Enterprise-Grade 
-              <span className="font-medium ml-3 bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
-                Hiring Platform
-              </span>
-            </h2>
-            <p className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Designed exclusively for companies to identify top talent for any role, efficiently with proctored assessments. Scale your hiring without compromising on quality or proctoring.
-            </p>
-          </div>
-        </div>
+    <section id="features" className="relative bg-background py-20 scroll-mt-24 sm:scroll-mt-28 md:scroll-mt-32">
+      <div className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          viewport={viewportOnce}
+          className="max-w-2xl mb-14"
+        >
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-4">
+            A platform built to <span className="gradient-text">scale hiring</span>
+          </h2>
+          <p className="text-lg text-gray-400 leading-relaxed">
+            Purpose-built for teams that need to screen more candidates without lowering the bar.
+          </p>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {features.map((feature, index) => (
-            <Card 
-              key={index}
-              className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 overflow-hidden"
-            >
-              <CardContent className="p-8 text-center relative">
-                <div className={`w-20 h-20 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg ring-1 ${feature.ring} hover:animate-pulse`}>
-                  <feature.icon className="w-8 h-8 text-white drop-shadow-sm" />
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          whileInView="show"
+          viewport={viewportOnce}
+          className="grid grid-cols-1 lg:grid-cols-5 gap-5"
+        >
+          <motion.div
+            variants={fadeUp}
+            whileHover={{ y: -4 }}
+            className="lg:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-8 sm:p-10 transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.05]"
+          >
+            <div className="w-14 h-14 rounded-xl border border-white/10 bg-white/[0.04] flex items-center justify-center mb-6">
+              <lead.icon className="w-6 h-6 text-white" aria-hidden="true" />
+            </div>
+            <h3 className="text-xl sm:text-2xl font-semibold text-white mb-3">{lead.title}</h3>
+            <p className="text-gray-400 leading-relaxed max-w-md">{lead.description}</p>
+          </motion.div>
+
+          <div className="lg:col-span-2 flex flex-col gap-5">
+            {support.map((feature) => (
+              <motion.div
+                key={feature.title}
+                variants={fadeUp}
+                whileHover={{ y: -4 }}
+                className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] p-8 transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.05]"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg border border-white/10 bg-white/[0.04] flex items-center justify-center shrink-0">
+                    <feature.icon className="w-4 h-4 text-white" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">{feature.title}</h3>
                 </div>
-                <h3 className="text-2xl font-semibold text-foreground mb-4 tracking-tight">{feature.title}</h3>
-                <p className="text-muted-foreground leading-relaxed text-sm opacity-90 mx-auto">
-                  {feature.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </section>
   );
