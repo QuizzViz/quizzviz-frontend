@@ -3,20 +3,22 @@
 import { FC, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, FileUp, KeyRound, Eye, BarChart3, PlayCircle } from "lucide-react";
+import { ArrowRight, FileUp, KeyRound, Eye, ChartNoAxesColumn, PlayCircle } from "lucide-react";
 import { fadeUp, stagger, brand } from "./motion";
+import IconGradientDefs from "./IconGradientDefs";
+import IconGlow from "./IconGlow";
 
 const trustPills = [
   { icon: FileUp, label: "Generated from your material" },
   { icon: Eye, label: "Full-screen proctoring" },
-  { icon: BarChart3, label: "Filterable analytics" },
+  { icon: ChartNoAxesColumn, label: "Filterable analytics" },
 ];
 
 const pipelineSteps = [
   { icon: FileUp, step: "01", title: "Upload material", description: "Give QuizzViz a document or a tech stack, and it drafts role-specific questions from it." },
   { icon: KeyRound, step: "02", title: "Set access and publish", description: "Add a secret key, a time limit, and an expiration date, then publish and share the link." },
   { icon: Eye, step: "03", title: "Proctored assessment", description: "Candidates enter the secret key and their details, then start in full-screen. QuizzViz watches in real time: it warns when a face moves out of frame or a phone comes into view, and ends the attempt the moment a tab is switched." },
-  { icon: BarChart3, step: "04", title: "Review results", description: "Every attempt lands in your analytics dashboard, filterable by score. Open any candidate to see their performance metrics in detail." },
+  { icon: ChartNoAxesColumn, step: "04", title: "Review results", description: "Every attempt lands in your analytics dashboard, filterable by score. Open any candidate to see their performance metrics in detail." },
 ];
 
 const HeroSection: FC = () => {
@@ -39,6 +41,7 @@ const HeroSection: FC = () => {
       id="hero"
       className="relative overflow-hidden bg-background pt-24 sm:pt-28 md:pt-32 pb-20 sm:pb-24 scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28"
     >
+      <IconGradientDefs />
       <motion.div
         className="relative z-10 max-w-6xl mx-auto px-5 sm:px-6 lg:px-8"
         variants={stagger}
@@ -48,10 +51,6 @@ const HeroSection: FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-start">
           {/* Left: statement, left-biased, no centring */}
           <div className="lg:col-span-6">
-            <motion.p variants={fadeUp} className="text-sm font-semibold text-blue-400 mb-5">
-              AI hiring assessments
-            </motion.p>
-
             <motion.h1
               variants={fadeUp}
               className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-white mb-6"
@@ -86,7 +85,7 @@ const HeroSection: FC = () => {
             <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-x-6 gap-y-2">
               {trustPills.map(({ icon: Icon, label }) => (
                 <span key={label} className="inline-flex items-center gap-2 text-sm text-gray-400">
-                  <Icon className="w-4 h-4 text-gray-500" aria-hidden="true" />
+                  <IconGlow icon={Icon} size="w-4 h-4" glow={false} strokeWidth={2} />
                   {label}
                 </span>
               ))}
@@ -121,11 +120,12 @@ const HeroSection: FC = () => {
                         transition={{ type: "spring", stiffness: 350, damping: 32 }}
                       />
                     )}
-                    <div className="shrink-0 w-9 h-9 flex items-center justify-center">
-                      <step.icon
-                        className={`w-5 h-5 transition-colors duration-300 ${isActive ? "text-white" : "text-gray-600"}`}
-                        aria-hidden="true"
-                      />
+                    <div className="shrink-0 w-10 h-10 flex items-center justify-center">
+                      {isActive ? (
+                        <IconGlow icon={step.icon} size="w-6 h-6" glowSize="w-11 h-11" active />
+                      ) : (
+                        <step.icon className="w-6 h-6 text-gray-600" strokeWidth={1.75} aria-hidden="true" />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2 mb-1">

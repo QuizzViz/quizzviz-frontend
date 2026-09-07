@@ -2,8 +2,9 @@
 
 import { FC } from "react";
 import { motion } from "framer-motion";
-import { Clock, ShieldCheck, BarChart3 } from "lucide-react";
+import { Clock, ShieldCheck, ChartNoAxesColumn,ChartColumn,ChartColumnDecreasing } from "lucide-react";
 import { fadeUp, stagger, viewportOnce } from "./motion";
+import IconGlow from "./IconGlow";
 
 const items = [
   {
@@ -19,7 +20,7 @@ const items = [
       "Candidates attempt the quiz full-screen. Switching tabs ends it immediately, minimizing shows a continue-or-end prompt, and a mobile device triggers a warning.",
   },
   {
-    icon: BarChart3,
+    icon:ChartColumn,
     label: "Visibility",
     description:
       "Every attempt lands in your analytics dashboard. Filter by role, score, or date to see performance at a glance.",
@@ -60,7 +61,13 @@ const ProblemsSection: FC = () => {
               className="group grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 py-8 md:py-10 border-b border-white/10"
             >
               <div className="md:col-span-4 flex items-center gap-3">
-                <item.icon className="w-6 h-6 text-white shrink-0 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />
+                <IconGlow
+                  icon={item.icon}
+                  size="w-7 h-7"
+                  glowSize="w-12 h-12"
+                  strokeWidth={1.75}
+                  className="transition-transform duration-300 group-hover:scale-110"
+                />
                 <h3 className="text-lg font-semibold text-white">{item.label}</h3>
               </div>
               <p className="md:col-span-8 text-gray-400 leading-relaxed">{item.description}</p>

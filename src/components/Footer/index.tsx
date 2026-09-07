@@ -97,7 +97,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-16 pt-8 border-t border-border/50">
           <p className="text-sm text-muted-foreground text-center">
-            2025 QuizzViz. All rights reserved.
+            2026 QuizzViz. All rights reserved.
           </p>
         </div>
       </div>

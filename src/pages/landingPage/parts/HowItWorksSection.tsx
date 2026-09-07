@@ -2,7 +2,7 @@
 
 import { FC } from "react";
 import { motion } from "framer-motion";
-import { FileUp, Eye, BarChart3, CheckCircle2 } from "lucide-react";
+import { FileUp, Eye, ChartNoAxesColumn, CheckCircle2 } from "lucide-react";
 import { fadeUp, stagger, viewportOnce } from "./motion";
 
 const steps = [
@@ -26,7 +26,7 @@ const steps = [
   },
   {
     stepNumber: "03",
-    icon: BarChart3,
+    icon: ChartNoAxesColumn,
     badge: "Filterable analytics",
     title: "Review results in your dashboard",
     description:
@@ -78,9 +78,16 @@ const HowItWorksSection: FC = () => {
           >
             {steps.map((step) => (
               <motion.div key={step.stepNumber} variants={fadeUp} className="relative flex flex-col md:flex-row gap-4 md:gap-8">
-                <div className="flex md:w-14 shrink-0">
-                  <div className="relative z-10 w-14 h-14 rounded-full border border-white/15 bg-background flex items-center justify-center">
-                    <step.icon className="w-5 h-5 text-white" aria-hidden="true" />
+                <div className="flex md:w-16 shrink-0">
+                  <div className="relative z-10 w-16 h-16 rounded-full p-[1.5px] bg-gradient-to-br from-green-500 via-blue-500 to-purple-500">
+                    <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                      <step.icon
+                        className="w-6 h-6"
+                        color="url(#brand-icon-gradient)"
+                        strokeWidth={1.75}
+                        aria-hidden="true"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="flex-1 md:pt-1">

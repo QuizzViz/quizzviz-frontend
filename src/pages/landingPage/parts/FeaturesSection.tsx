@@ -2,8 +2,9 @@
 
 import { FC } from "react";
 import { motion } from "framer-motion";
-import { FileStack, KeyRound, LineChart, Users } from "lucide-react";
+import { FileStack, KeyRound, TrendingUp, Users } from "lucide-react";
 import { fadeUp, stagger, viewportOnce } from "./motion";
+import IconGlow from "./IconGlow";
 
 const lead = {
   icon: FileStack,
@@ -20,7 +21,7 @@ const support = [
       "Candidates open the link, enter the secret key and their details, and start. No account required.",
   },
   {
-    icon: LineChart,
+    icon: TrendingUp,
     title: "Hiring analytics",
     description:
       "Every attempt appears in your analytics dashboard, filterable by role, score, and date, with performance metrics for each candidate.",
@@ -64,7 +65,7 @@ const FeaturesSection: FC = () => {
             whileHover={{ y: -4 }}
             className="lg:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-8 sm:p-10 transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.05]"
           >
-            <lead.icon className="w-7 h-7 text-white mb-6" aria-hidden="true" />
+            <IconGlow icon={lead.icon} size="w-8 h-8" glowSize="w-14 h-14" className="mb-6" />
             <h3 className="text-xl sm:text-2xl font-semibold text-white mb-3">{lead.title}</h3>
             <p className="text-gray-400 leading-relaxed max-w-md">{lead.description}</p>
           </motion.div>
@@ -78,7 +79,7 @@ const FeaturesSection: FC = () => {
                 className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] p-8 transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.05]"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <feature.icon className="w-5 h-5 text-white shrink-0" aria-hidden="true" />
+                  <IconGlow icon={feature.icon} size="w-6 h-6" glowSize="w-10 h-10" />
                   <h3 className="text-lg font-semibold text-white">{feature.title}</h3>
                 </div>
                 <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
