@@ -2,7 +2,7 @@
 
 import { FC } from "react";
 import { motion } from "framer-motion";
-import { FileStack, KeyRound, TrendingUp, Users } from "lucide-react";
+import { FileStack, KeyRound, ChartColumn, Users } from "lucide-react";
 import { fadeUp, stagger, viewportOnce } from "./motion";
 import IconGlow from "./IconGlow";
 
@@ -21,7 +21,7 @@ const support = [
       "Candidates open the link, enter the secret key and their details, and start. No account required.",
   },
   {
-    icon: TrendingUp,
+    icon: ChartColumn,
     title: "Hiring analytics",
     description:
       "Every attempt appears in your analytics dashboard, filterable by role, score, and date, with performance metrics for each candidate.",
