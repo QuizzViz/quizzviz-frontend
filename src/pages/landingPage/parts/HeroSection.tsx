@@ -48,6 +48,10 @@ const HeroSection: FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-start">
           {/* Left: statement, left-biased, no centring */}
           <div className="lg:col-span-6">
+            <motion.p variants={fadeUp} className="text-sm font-semibold text-blue-400 mb-5">
+              AI hiring assessments
+            </motion.p>
+
             <motion.h1
               variants={fadeUp}
               className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] text-white mb-6"
@@ -82,9 +86,7 @@ const HeroSection: FC = () => {
             <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-x-6 gap-y-2">
               {trustPills.map(({ icon: Icon, label }) => (
                 <span key={label} className="inline-flex items-center gap-2 text-sm text-gray-400">
-                  <span className="w-6 h-6 rounded-md bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center shrink-0">
-                    <Icon className="w-3.5 h-3.5 text-white" aria-hidden="true" />
-                  </span>
+                  <Icon className="w-4 h-4 text-gray-500" aria-hidden="true" />
                   {label}
                 </span>
               ))}
@@ -119,12 +121,11 @@ const HeroSection: FC = () => {
                         transition={{ type: "spring", stiffness: 350, damping: 32 }}
                       />
                     )}
-                    <div
-                      className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-gradient-to-br from-green-500 to-blue-500 transition-opacity duration-300 ${
-                        isActive ? "opacity-100" : "opacity-50"
-                      }`}
-                    >
-                      <step.icon className="w-4 h-4 text-white" aria-hidden="true" />
+                    <div className="shrink-0 w-9 h-9 flex items-center justify-center">
+                      <step.icon
+                        className={`w-5 h-5 transition-colors duration-300 ${isActive ? "text-white" : "text-gray-600"}`}
+                        aria-hidden="true"
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2 mb-1">

@@ -79,7 +79,7 @@ const HowItWorksSection: FC = () => {
             {steps.map((step) => (
               <motion.div key={step.stepNumber} variants={fadeUp} className="relative flex flex-col md:flex-row gap-4 md:gap-8">
                 <div className="flex md:w-14 shrink-0">
-                  <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/10">
+                  <div className="relative z-10 w-14 h-14 rounded-full border border-white/15 bg-background flex items-center justify-center">
                     <step.icon className="w-5 h-5 text-white" aria-hidden="true" />
                   </div>
                 </div>

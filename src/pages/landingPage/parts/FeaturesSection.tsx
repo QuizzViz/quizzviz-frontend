@@ -64,9 +64,7 @@ const FeaturesSection: FC = () => {
             whileHover={{ y: -4 }}
             className="lg:col-span-3 rounded-2xl border border-white/10 bg-white/[0.03] p-8 sm:p-10 transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.05]"
           >
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 via-blue-500 to-purple-500 flex items-center justify-center mb-6 shadow-lg shadow-blue-500/10">
-              <lead.icon className="w-6 h-6 text-white" aria-hidden="true" />
-            </div>
+            <lead.icon className="w-7 h-7 text-white mb-6" aria-hidden="true" />
             <h3 className="text-xl sm:text-2xl font-semibold text-white mb-3">{lead.title}</h3>
             <p className="text-gray-400 leading-relaxed max-w-md">{lead.description}</p>
           </motion.div>
@@ -80,9 +78,7 @@ const FeaturesSection: FC = () => {
                 className="flex-1 rounded-2xl border border-white/10 bg-white/[0.03] p-8 transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.05]"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-blue-500 flex items-center justify-center shrink-0">
-                    <feature.icon className="w-4 h-4 text-white" aria-hidden="true" />
-                  </div>
+                  <feature.icon className="w-5 h-5 text-white shrink-0" aria-hidden="true" />
                   <h3 className="text-lg font-semibold text-white">{feature.title}</h3>
                 </div>
                 <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>
