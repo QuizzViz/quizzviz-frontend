@@ -60,7 +60,7 @@ const ProblemsSection: FC = () => {
               className="group grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 py-8 md:py-10 border-b border-white/10"
             >
               <div className="md:col-span-4 flex items-center gap-4">
-                <div className="w-11 h-11 rounded-lg flex items-center justify-center border border-white/10 bg-white/[0.03] shrink-0 transition-colors duration-300 group-hover:border-white/25 group-hover:bg-white/[0.06]">
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center bg-gradient-to-br from-green-500 to-blue-500 shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <item.icon className="w-5 h-5 text-white" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-semibold text-white">{item.label}</h3>

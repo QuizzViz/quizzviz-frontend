@@ -19,3 +19,6 @@ pnpm-debug.log*
 *.tar.gz
 
 feature_diagram.png
+
+.claude
+.agents

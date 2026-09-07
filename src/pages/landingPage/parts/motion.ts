@@ -47,3 +47,12 @@ export const brand = {
   bgGradientTriple: "bg-gradient-to-br from-green-500 via-blue-500 to-purple-500",
   ring: "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
 };
+
+// This file lives under `pages/`, so Next.js's Pages Router treats it as a
+// route candidate and its build-time type check requires every module there
+// to have a default export. `motion.ts` is a shared helper consumed via the
+// named exports above, never navigated to as a route, so this default export
+// exists purely to satisfy that constraint.
+export default function MotionUtils() {
+  return null;
+}
