@@ -21,6 +21,13 @@ const IconGlow: FC<IconGlowProps> = ({
   strokeWidth = 1.75,
   className = "",
 }) => {
+  if (!Icon) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("IconGlow: no valid icon component was passed");
+    }
+    return null;
+  }
+
   return (
     <span
       className={`relative inline-flex items-center justify-center shrink-0 ${className}`}
